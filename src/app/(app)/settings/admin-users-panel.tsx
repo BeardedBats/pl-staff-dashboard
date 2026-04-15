@@ -1,0 +1,536 @@
+"use client";
+
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { Check, Loader2, UserPlus, RefreshCw, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { UserAvatar } from "@/components/users/user-avatar";
+import { RoleBadgeGroup } from "@/components/users/role-badge";
+import type { StaffUserSummary } from "@/lib/users/queries";
+import type { AppRole, AppSite } from "@/lib/auth/current-user";
+
+const ALL_ROLES: AppRole[] = [
+  "writer",
+  "editor",
+  "graphics",
+  "manager",
+  "admin",
+  "eic",
+  "operations",
+];
+
+type AdminUsersPanelProps = {
+  initialUsers: StaffUserSummary[];
+  totalCount: number;
+};
+
+export function AdminUsersPanel({
+  initialUsers,
+  totalCount,
+}: AdminUsersPanelProps) {
+  const router = useRouter();
+  const [users, setUsers] = React.useState(initialUsers);
+  const [search, setSearch] = React.useState("");
+  const [editingUserId, setEditingUserId] = React.useState<string | null>(null);
+  const [importOpen, setImportOpen] = React.useState(false);
+
+  // Keep local state in sync if server revalidation happens.
+  React.useEffect(() => {
+    setUsers(initialUsers);
+  }, [initialUsers]);
+
+  const filtered = users.filter((u) => {
+    if (!search) return true;
+    const term = search.toLowerCase();
+    return (
+      u.display_name.toLowerCase().includes(term) ||
+      u.email.toLowerCase().includes(term)
+    );
+  });
+
+  async function togglePublish(user: StaffUserSummary) {
+    const next = !user.can_publish;
+    setUsers((prev) =>
+      prev.map((u) => (u.id === user.id ? { ...u, can_publish: next } : u)),
+    );
+    const res = await fetch(`/api/users/${user.id}/publish`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ can_publish: next }),
+    });
+    if (!res.ok) {
+      // Revert on failure.
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id ? { ...u, can_publish: !next } : u,
+        ),
+      );
+    }
+  }
+
+  const editingUser = users.find((u) => u.id === editingUserId) ?? null;
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <div>
+          <CardTitle>User management</CardTitle>
+          <CardDescription>
+            {totalCount} staff member{totalCount === 1 ? "" : "s"} · Click a row
+            to edit roles.
+          </CardDescription>
+        </div>
+        <ImportUserDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          onImported={() => {
+            setImportOpen(false);
+            router.refresh();
+          }}
+        />
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Input
+          placeholder="Search staff by name or email…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+
+        <div className="overflow-hidden rounded-md border border-border">
+          <table className="w-full divide-y divide-border text-sm">
+            <thead className="bg-navy-3 font-mono text-xs uppercase tracking-wider text-text-muted">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium">User</th>
+                <th className="px-3 py-2 text-left font-medium">Roles</th>
+                <th className="px-3 py-2 text-left font-medium">Site</th>
+                <th className="px-3 py-2 text-left font-medium">Primary team</th>
+                <th className="px-3 py-2 text-center font-medium">Publish</th>
+                <th className="px-3 py-2 text-right font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filtered.map((user) => (
+                <tr key={user.id} className="hover:bg-navy-3/50">
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <UserAvatar
+                        displayName={user.display_name}
+                        avatarUrl={user.avatar_url}
+                        size="sm"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-text-primary">
+                          {user.display_name}
+                        </p>
+                        <p className="truncate font-mono text-[10px] text-text-muted">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2">
+                    <RoleBadgeGroup roles={user.roles} />
+                  </td>
+                  <td className="px-3 py-2">
+                    <Badge variant="outline">
+                      {user.wp_site === "both"
+                        ? "PL+QB"
+                        : user.wp_site.toUpperCase()}
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-2 text-text-secondary">
+                    {user.primary_team?.team_name ?? (
+                      <span className="italic text-text-muted">none</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <Switch
+                      checked={user.can_publish}
+                      onCheckedChange={() => togglePublish(user)}
+                      aria-label={`Toggle publish permission for ${user.display_name}`}
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingUserId(user.id)}
+                    >
+                      Edit roles
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-3 py-6 text-center text-sm italic text-text-muted"
+                  >
+                    No users match your search.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+
+      {editingUser ? (
+        <EditRolesDialog
+          user={editingUser}
+          open={Boolean(editingUserId)}
+          onClose={() => setEditingUserId(null)}
+          onSaved={(updated) => {
+            setUsers((prev) =>
+              prev.map((u) => (u.id === updated.id ? updated : u)),
+            );
+            setEditingUserId(null);
+            router.refresh();
+          }}
+        />
+      ) : null}
+    </Card>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Edit roles dialog
+// --------------------------------------------------------------------------
+
+function EditRolesDialog({
+  user,
+  open,
+  onClose,
+  onSaved,
+}: {
+  user: StaffUserSummary;
+  open: boolean;
+  onClose: () => void;
+  onSaved: (updated: StaffUserSummary) => void;
+}) {
+  type RoleRow = { role: AppRole; site: AppSite };
+  const [rows, setRows] = React.useState<RoleRow[]>(user.role_rows);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setRows(user.role_rows);
+    setError(null);
+  }, [user]);
+
+  function toggleRole(role: AppRole) {
+    const existingIdx = rows.findIndex((r) => r.role === role);
+    if (existingIdx >= 0) {
+      setRows(rows.filter((_, i) => i !== existingIdx));
+    } else {
+      setRows([...rows, { role, site: "pl" }]);
+    }
+  }
+
+  function setRoleSite(role: AppRole, site: AppSite) {
+    setRows(rows.map((r) => (r.role === role ? { ...r, site } : r)));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/users/${user.id}/roles`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roles: rows }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        user?: StaffUserSummary;
+        error?: string;
+      };
+      if (!res.ok || !data.user) {
+        setError(data.error ?? "Save failed");
+        setSaving(false);
+        return;
+      }
+      onSaved(data.user);
+    } catch {
+      setError("Network error");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => (o ? null : onClose())}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit roles · {user.display_name}</DialogTitle>
+          <DialogDescription>
+            Choose which roles this user holds and which site each role applies
+            to.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          {ALL_ROLES.map((role) => {
+            const assignment = rows.find((r) => r.role === role);
+            const isActive = Boolean(assignment);
+            return (
+              <div
+                key={role}
+                className="flex items-center justify-between gap-3 rounded-md border border-border bg-navy-3/50 px-3 py-2"
+              >
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={isActive}
+                    onCheckedChange={() => toggleRole(role)}
+                    id={`role-${role}`}
+                  />
+                  <Label
+                    htmlFor={`role-${role}`}
+                    className="text-sm font-medium capitalize"
+                  >
+                    {role}
+                  </Label>
+                </div>
+                {isActive ? (
+                  <Select
+                    value={assignment!.site}
+                    onValueChange={(value) =>
+                      setRoleSite(role, value as AppSite)
+                    }
+                  >
+                    <SelectTrigger className="h-7 w-[120px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pl">Pitcher List</SelectItem>
+                      <SelectItem value="qb">QB List</SelectItem>
+                      <SelectItem value="both">Both</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className="text-xs text-text-muted">—</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {error ? (
+          <p className="text-sm text-destructive">{error}</p>
+        ) : null}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                Save roles
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Manual WP import dialog
+// --------------------------------------------------------------------------
+
+function ImportUserDialog({
+  open,
+  onOpenChange,
+  onImported,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onImported: () => void;
+}) {
+  const [site, setSite] = React.useState<"pl" | "qb">("pl");
+  const [identifier, setIdentifier] = React.useState("");
+  const [importing, setImporting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState<string | null>(null);
+
+  function reset() {
+    setIdentifier("");
+    setError(null);
+    setSuccess(null);
+  }
+
+  async function handleImport() {
+    setImporting(true);
+    setError(null);
+    setSuccess(null);
+
+    const isNumeric = /^\d+$/.test(identifier.trim());
+    const payload: Record<string, unknown> = { site };
+    if (isNumeric) {
+      payload.wp_user_id = Number(identifier.trim());
+    } else {
+      payload.username = identifier.trim();
+    }
+
+    try {
+      const res = await fetch("/api/users/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        user?: { display_name: string };
+        created?: boolean;
+      };
+      if (!res.ok || !data.user) {
+        setError(data.error ?? "Import failed");
+        setImporting(false);
+        return;
+      }
+      setSuccess(
+        data.created
+          ? `Imported ${data.user.display_name}`
+          : `Updated ${data.user.display_name}`,
+      );
+      setImporting(false);
+      setTimeout(() => {
+        reset();
+        onImported();
+      }, 800);
+    } catch {
+      setError("Network error");
+      setImporting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) reset();
+        onOpenChange(o);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <UserPlus className="h-3.5 w-3.5" />
+          Import WP user
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Import a WordPress user</DialogTitle>
+          <DialogDescription>
+            Pull a staff member into the dashboard without waiting for them to
+            log in. Provide their WordPress username (slug) or numeric user ID.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Site</Label>
+            <Select value={site} onValueChange={(v) => setSite(v as "pl" | "qb")}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pl">Pitcher List</SelectItem>
+                <SelectItem value="qb">QB List</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="identifier">Username or WP user ID</Label>
+            <Input
+              id="identifier"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="e.g. nickpollack or 42"
+            />
+            <p className="text-xs text-text-muted">
+              If it&apos;s all numbers, it&apos;ll be treated as a WP user ID.
+              Otherwise it&apos;ll be looked up by username slug.
+            </p>
+          </div>
+
+          {error ? (
+            <p className="flex items-center gap-1.5 text-sm text-destructive">
+              <X className="h-3.5 w-3.5" />
+              {error}
+            </p>
+          ) : null}
+          {success ? (
+            <p className="flex items-center gap-1.5 text-sm text-success">
+              <Check className="h-3.5 w-3.5" />
+              {success}
+            </p>
+          ) : null}
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={importing}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleImport}
+            disabled={importing || !identifier.trim()}
+          >
+            {importing ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Importing…
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-3.5 w-3.5" />
+                Import
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

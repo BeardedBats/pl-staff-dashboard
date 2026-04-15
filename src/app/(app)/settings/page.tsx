@@ -1,0 +1,86 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getUserById, listUsers } from "@/lib/users/queries";
+import { listTeams } from "@/lib/teams/data";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { ProfileForm } from "./profile-form";
+import { AdminUsersPanel } from "./admin-users-panel";
+import { AdminTeamsPanel } from "./admin-teams-panel";
+
+export const metadata = {
+  title: "Settings",
+};
+
+type SearchParams = Promise<{ tab?: string }>;
+
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const viewer = await getCurrentUser();
+  if (!viewer) redirect("/login");
+
+  const myProfile = await getUserById(viewer.id);
+  if (!myProfile) redirect("/login");
+
+  const adminAccess = isAdminPlus(viewer);
+  const params = await searchParams;
+
+  // Fetch admin data in parallel if the viewer has access.
+  const [staffList, teams] = adminAccess
+    ? await Promise.all([listUsers({ limit: 200 }), listTeams()])
+    : [{ users: [], totalCount: 0 }, []];
+
+  const defaultTab =
+    adminAccess && (params.tab === "users" || params.tab === "teams")
+      ? params.tab
+      : "profile";
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-text-primary">Settings</h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          Manage your profile and — if you&apos;re an admin — user permissions
+          and teams.
+        </p>
+      </div>
+
+      <Tabs defaultValue={defaultTab} className="w-full">
+        <TabsList>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          {adminAccess ? (
+            <>
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="teams">Teams</TabsTrigger>
+            </>
+          ) : null}
+        </TabsList>
+
+        <TabsContent value="profile">
+          <ProfileForm profile={myProfile} />
+        </TabsContent>
+
+        {adminAccess ? (
+          <>
+            <TabsContent value="users">
+              <AdminUsersPanel
+                initialUsers={staffList.users}
+                totalCount={staffList.totalCount}
+              />
+            </TabsContent>
+            <TabsContent value="teams">
+              <AdminTeamsPanel initialTeams={teams} allUsers={staffList.users} />
+            </TabsContent>
+          </>
+        ) : null}
+      </Tabs>
+    </div>
+  );
+}

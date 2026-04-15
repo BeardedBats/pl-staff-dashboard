@@ -188,3 +188,199 @@ export async function validateWpAnywhere(
   }
   return { ok: false, error: qbResult.error };
 }
+
+// --------------------------------------------------------------------------
+// Admin-only: fetch WP users for manual import / profile sync.
+//
+// These use the site's application password (already configured in env)
+// to hit the REST API with admin privileges, so they can see unlisted
+// users and the `edit` context (email, roles, etc.).
+// --------------------------------------------------------------------------
+
+function adminAuthHeader(site: WpSiteKey): string | null {
+  const config = getSiteConfig(site);
+  if (!config) return null;
+  return basicAuth(config.appUsername, config.appPassword);
+}
+
+function siteBaseUrl(site: WpSiteKey): string | null {
+  const config = getSiteConfig(site);
+  return config ? config.url : null;
+}
+
+/** Roles the dashboard considers "staff" and willing to import. */
+export const STAFF_WP_ROLES = ["administrator", "editor", "author"] as const;
+export type StaffWpRole = (typeof STAFF_WP_ROLES)[number];
+
+/** Map a WP role to a dashboard default role on first sync. */
+export function wpRoleToDashboardRole(
+  wpRoles: readonly string[],
+): "admin" | "editor" | "writer" {
+  if (wpRoles.includes("administrator")) return "admin";
+  if (wpRoles.includes("editor")) return "editor";
+  return "writer";
+}
+
+/** Is this WP user importable as staff? (Filters out contributors/subscribers.) */
+export function isStaffWpUser(wpRoles: readonly string[]): boolean {
+  return wpRoles.some((r) => STAFF_WP_ROLES.includes(r as StaffWpRole));
+}
+
+export type WpAdminError =
+  | { kind: "not_configured"; message: string }
+  | { kind: "network"; message: string }
+  | { kind: "not_found"; message: string }
+  | { kind: "unexpected"; status: number; message: string };
+
+export type WpAdminResult<T> = { ok: true; value: T } | { ok: false; error: WpAdminError };
+
+/**
+ * Fetch a single WP user by numeric ID with `context=edit`.
+ * Requires an application password with edit privileges (administrator).
+ */
+export async function fetchWpUserById(
+  site: WpSiteKey,
+  wpUserId: number,
+): Promise<WpAdminResult<WpUser>> {
+  const auth = adminAuthHeader(site);
+  const base = siteBaseUrl(site);
+  if (!auth || !base) {
+    return {
+      ok: false,
+      error: {
+        kind: "not_configured",
+        message: `WordPress ${site.toUpperCase()} is not configured`,
+      },
+    };
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${base}/wp-json/wp/v2/users/${wpUserId}?context=edit`, {
+      headers: { Authorization: auth, Accept: "application/json" },
+      cache: "no-store",
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      error: { kind: "network", message: err instanceof Error ? err.message : "Network error" },
+    };
+  }
+
+  if (response.status === 404) {
+    return { ok: false, error: { kind: "not_found", message: "WP user not found" } };
+  }
+  if (!response.ok) {
+    return {
+      ok: false,
+      error: { kind: "unexpected", status: response.status, message: `WP returned ${response.status}` },
+    };
+  }
+
+  const data = (await response.json()) as {
+    id: number;
+    username?: string;
+    slug?: string;
+    name: string;
+    email?: string;
+    avatar_urls?: Record<string, string>;
+    roles?: string[];
+    description?: string;
+  };
+
+  return {
+    ok: true,
+    value: {
+      id: data.id,
+      username: data.username ?? data.slug ?? "",
+      name: data.name,
+      email: data.email ?? "",
+      avatar_url:
+        data.avatar_urls?.["96"] ??
+        data.avatar_urls?.["48"] ??
+        data.avatar_urls?.["24"] ??
+        null,
+      wp_roles: data.roles ?? [],
+      description: data.description ?? "",
+    },
+  };
+}
+
+/**
+ * Fetch a WP user by username (slug). Uses the search parameter.
+ */
+export async function fetchWpUserByUsername(
+  site: WpSiteKey,
+  username: string,
+): Promise<WpAdminResult<WpUser>> {
+  const auth = adminAuthHeader(site);
+  const base = siteBaseUrl(site);
+  if (!auth || !base) {
+    return {
+      ok: false,
+      error: {
+        kind: "not_configured",
+        message: `WordPress ${site.toUpperCase()} is not configured`,
+      },
+    };
+  }
+
+  const params = new URLSearchParams({
+    slug: username,
+    context: "edit",
+    per_page: "1",
+  });
+
+  let response: Response;
+  try {
+    response = await fetch(`${base}/wp-json/wp/v2/users?${params.toString()}`, {
+      headers: { Authorization: auth, Accept: "application/json" },
+      cache: "no-store",
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      error: { kind: "network", message: err instanceof Error ? err.message : "Network error" },
+    };
+  }
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      error: { kind: "unexpected", status: response.status, message: `WP returned ${response.status}` },
+    };
+  }
+
+  const rows = (await response.json()) as Array<{
+    id: number;
+    username?: string;
+    slug?: string;
+    name: string;
+    email?: string;
+    avatar_urls?: Record<string, string>;
+    roles?: string[];
+    description?: string;
+  }>;
+
+  const match = rows[0];
+  if (!match) {
+    return { ok: false, error: { kind: "not_found", message: "WP user not found" } };
+  }
+
+  return {
+    ok: true,
+    value: {
+      id: match.id,
+      username: match.username ?? match.slug ?? username,
+      name: match.name,
+      email: match.email ?? "",
+      avatar_url:
+        match.avatar_urls?.["96"] ??
+        match.avatar_urls?.["48"] ??
+        match.avatar_urls?.["24"] ??
+        null,
+      wp_roles: match.roles ?? [],
+      description: match.description ?? "",
+    },
+  };
+}
