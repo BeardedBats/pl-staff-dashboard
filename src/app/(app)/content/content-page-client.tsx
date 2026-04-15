@@ -1,0 +1,48 @@
+"use client";
+
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { EntriesTable } from "@/components/entries/entries-table";
+import { CreateEntryDialog } from "@/components/entries/create-entry-dialog";
+import type { EntryCategory, EntryTier } from "@/lib/entries/queries";
+import type { SavedViewRecord } from "@/lib/views/data";
+
+type ContentPageClientProps = {
+  tiers: EntryTier[];
+  categories: EntryCategory[];
+  initialViews: SavedViewRecord[];
+};
+
+export function ContentPageClient({
+  tiers,
+  categories,
+  initialViews,
+}: ContentPageClientProps) {
+  const router = useRouter();
+  const [createOpen, setCreateOpen] = React.useState(false);
+  // Bumped whenever a new entry is created so EntriesTable re-fetches.
+  const [refreshKey, setRefreshKey] = React.useState(0);
+
+  return (
+    <>
+      <EntriesTable
+        key={refreshKey}
+        tiers={tiers}
+        initialViews={initialViews}
+        onCreateClick={() => setCreateOpen(true)}
+      />
+
+      <CreateEntryDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        tiers={tiers}
+        categories={categories}
+        onCreated={() => {
+          setCreateOpen(false);
+          setRefreshKey((k) => k + 1);
+          router.refresh();
+        }}
+      />
+    </>
+  );
+}
