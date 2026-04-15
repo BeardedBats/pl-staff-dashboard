@@ -97,9 +97,13 @@ export type ListEntriesFilters = {
   tierId?: string;
   categoryId?: string;
   contentStatus?: ContentStatus;
+  contentStatusIn?: ContentStatus[];
   editorStatus?: EditorStatus;
+  editorStatusIn?: EditorStatus[];
   priority?: boolean;
   authorId?: string;
+  /** Entries where the specified user appears in entry_editors. */
+  editorId?: string;
   includeArchived?: boolean;
   dateFrom?: string; // ISO
   dateTo?: string;   // ISO
@@ -160,7 +164,13 @@ export async function listEntries(
   if (filters.tierId) query = query.eq("tier_id", filters.tierId);
   if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
   if (filters.contentStatus) query = query.eq("content_status", filters.contentStatus);
+  if (filters.contentStatusIn && filters.contentStatusIn.length > 0) {
+    query = query.in("content_status", filters.contentStatusIn);
+  }
   if (filters.editorStatus) query = query.eq("editor_status", filters.editorStatus);
+  if (filters.editorStatusIn && filters.editorStatusIn.length > 0) {
+    query = query.in("editor_status", filters.editorStatusIn);
+  }
   if (typeof filters.priority === "boolean") query = query.eq("priority", filters.priority);
   if (filters.dateFrom) query = query.gte("publish_date", filters.dateFrom);
   if (filters.dateTo) query = query.lte("publish_date", filters.dateTo);
@@ -222,6 +232,11 @@ export async function listEntries(
   if (filters.authorId) {
     entries = entries.filter((e) =>
       e.authors.some((a) => a.user_id === filters.authorId),
+    );
+  }
+  if (filters.editorId) {
+    entries = entries.filter((e) =>
+      e.editors.some((ed) => ed.user_id === filters.editorId),
     );
   }
 
