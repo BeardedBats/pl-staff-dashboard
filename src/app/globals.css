@@ -1,26 +1,222 @@
 @import "tailwindcss";
 
+/* Class-based dark mode instead of media-query default */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===========================================================
+   PL STAFF DASHBOARD — DESIGN TOKENS
+   Dark mode default (class="dark" on <html>)
+   =========================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* PL brand surface scale (dark mode defaults) */
+  --navy-1: #0f1420;         /* Page background */
+  --navy-2: #161d2e;         /* Card / surface */
+  --navy-3: #1e2740;         /* Elevated surfaces, inputs */
+  --navy-4: #283550;         /* Borders, dividers */
+  --navy-5: #334163;         /* Subtle borders */
+
+  /* Accents */
+  --cyan: #55e8ff;
+  --cyan-dim: #55e8ff18;
+  --amber: #fb9e2a;
+  --amber-dim: #fb9e2a18;
+  --purple: #a78bfa;         /* Graphics role */
+
+  /* Text */
+  --text-primary: #d4dae6;
+  --text-secondary: #9aa8be;
+  --text-muted: #6b7a94;
+
+  /* Status */
+  --success: #34d399;
+  --danger: #f87171;
+  --warning: #fb9e2a;
+
+  /* shadcn-compatible token aliases (dark-mode values) */
+  --background: var(--navy-1);
+  --foreground: var(--text-primary);
+  --card: var(--navy-2);
+  --card-foreground: var(--text-primary);
+  --popover: var(--navy-2);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--cyan);
+  --primary-foreground: #0f1420;
+  --secondary: var(--navy-3);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--navy-3);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--amber);
+  --accent-foreground: #0f1420;
+  --destructive: var(--danger);
+  --destructive-foreground: #0f1420;
+  --border: var(--navy-4);
+  --input: var(--navy-3);
+  --ring: var(--cyan);
+  --radius: 0.5rem;           /* 8px cards; inputs/buttons override to 0.25rem */
 }
+
+/* Light mode overrides — applied when <html class="light"> */
+.light {
+  --navy-1: #ffffff;
+  --navy-2: #f8f9fb;
+  --navy-3: #f0f2f5;
+  --navy-4: #e2e6ed;
+  --navy-5: #cdd3de;
+
+  --cyan: #0891b2;
+  --cyan-dim: #0891b218;
+  --amber: #d97706;
+  --amber-dim: #d9770618;
+  --purple: #7c3aed;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+
+  --background: var(--navy-1);
+  --foreground: var(--text-primary);
+  --card: var(--navy-2);
+  --card-foreground: var(--text-primary);
+  --popover: var(--navy-1);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--cyan);
+  --primary-foreground: #ffffff;
+  --secondary: var(--navy-3);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--navy-3);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--amber);
+  --accent-foreground: #ffffff;
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--navy-4);
+  --input: var(--navy-2);
+  --ring: var(--cyan);
+}
+
+/* ===========================================================
+   TAILWIND @theme — expose tokens as utility classes
+   =========================================================== */
 
 @theme inline {
+  /* Surface + brand */
+  --color-navy-1: var(--navy-1);
+  --color-navy-2: var(--navy-2);
+  --color-navy-3: var(--navy-3);
+  --color-navy-4: var(--navy-4);
+  --color-navy-5: var(--navy-5);
+  --color-cyan: var(--cyan);
+  --color-cyan-dim: var(--cyan-dim);
+  --color-amber: var(--amber);
+  --color-amber-dim: var(--amber-dim);
+  --color-purple: var(--purple);
+
+  /* Text */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  /* Status */
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+
+  /* shadcn aliases (so `bg-card`, `text-foreground`, etc. all work) */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Fonts (injected by next/font/google in layout.tsx) */
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* Radii — per spec: 6-8px cards, 4px inputs/buttons */
+  --radius-sm: 0.25rem;       /* 4px — inputs/buttons */
+  --radius-md: 0.375rem;      /* 6px */
+  --radius-lg: 0.5rem;        /* 8px — cards */
+  --radius-xl: 0.75rem;       /* 12px — modals */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ===========================================================
+   BASE STYLES
+   =========================================================== */
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+code, kbd, pre, samp {
+  font-family: var(--font-mono);
+}
+
+/* Focus ring — keyboard accessibility */
+*:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Scrollbar styling (dark mode) */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--navy-2);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--navy-4);
+  border-radius: 6px;
+  border: 2px solid var(--navy-2);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--navy-5);
+}
+
+/* Disable tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
