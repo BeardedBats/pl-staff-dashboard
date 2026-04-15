@@ -176,6 +176,17 @@ export async function approveClaim(
     return { ok: false, error: "Only managers can approve claims" };
   }
 
+  // Read the entry's current content_status so the audit log captures the
+  // actual transition. This matters because auto-approval skips the
+  // `claim_requested` intermediate state — the entry jumps straight from
+  // `writer_needed` to `claimed` — and we want the audit row to reflect that.
+  const { data: priorEntry } = await supabase
+    .from("entries")
+    .select("content_status")
+    .eq("id", claim.entry_id)
+    .maybeSingle();
+  const previousContentStatus = (priorEntry?.content_status as string | null) ?? "writer_needed";
+
   // 1. Mark the claim approved.
   await supabase
     .from("claims")
@@ -207,7 +218,7 @@ export async function approveClaim(
     approver.id,
     "status_change",
     "content_status",
-    "claim_requested",
+    previousContentStatus,
     "claimed",
   );
 
