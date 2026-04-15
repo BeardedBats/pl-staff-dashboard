@@ -43,7 +43,10 @@ import {
   EditorStatusBadge,
   GraphicStatusBadge,
 } from "./status-badges";
+import { CreateGraphicRequestDialog } from "@/components/graphics/create-graphic-request-dialog";
+import { GraphicRequestCard } from "@/components/graphics/graphic-request-card";
 import type { EntryDetail } from "@/lib/entries/queries";
+import type { GraphicRequestRecord } from "@/lib/graphics/data";
 
 type EntryDetailPanelProps = {
   entryId: string;
@@ -67,6 +70,9 @@ export function EntryDetailPanel({
   onChanged,
 }: EntryDetailPanelProps) {
   const [entry, setEntry] = React.useState<EntryDetail | null>(null);
+  const [graphicRequests, setGraphicRequests] = React.useState<
+    GraphicRequestRecord[]
+  >([]);
   const [me, setMe] = React.useState<{
     id: string;
     roles: string[];
@@ -79,12 +85,16 @@ export function EntryDetailPanel({
 
   const [polishDialogOpen, setPolishDialogOpen] = React.useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = React.useState(false);
+  const [createGraphicOpen, setCreateGraphicOpen] = React.useState(false);
 
   const reload = React.useCallback(async () => {
-    const res = await fetch(`/api/entries/${entryId}`);
-    const data = (await res.json()) as { entry?: EntryDetail; error?: string };
-    if (data.entry) setEntry(data.entry);
-    else setError(data.error ?? "Failed to load");
+    const [entryRes, graphicsRes] = await Promise.all([
+      fetch(`/api/entries/${entryId}`).then((r) => r.json()),
+      fetch(`/api/graphic-requests?entryId=${entryId}`).then((r) => r.json()),
+    ]);
+    if (entryRes.entry) setEntry(entryRes.entry);
+    else setError(entryRes.error ?? "Failed to load");
+    setGraphicRequests(graphicsRes.requests ?? []);
   }, [entryId]);
 
   React.useEffect(() => {
@@ -94,12 +104,14 @@ export function EntryDetailPanel({
 
     Promise.all([
       fetch(`/api/entries/${entryId}`).then((r) => r.json()),
+      fetch(`/api/graphic-requests?entryId=${entryId}`).then((r) => r.json()),
       fetch(`/api/auth/me`).then((r) => r.json()),
     ])
-      .then(([entryRes, meRes]) => {
+      .then(([entryRes, graphicsRes, meRes]) => {
         if (cancelled) return;
         if (entryRes.entry) setEntry(entryRes.entry);
         else setError(entryRes.error ?? "Failed to load");
+        setGraphicRequests(graphicsRes.requests ?? []);
         if (meRes.user) {
           setMe({
             id: meRes.user.id,
@@ -373,7 +385,16 @@ export function EntryDetailPanel({
         </TabsList>
 
         <TabsContent value="pipeline">
-          <PipelineTab entry={entry} />
+          <PipelineTab
+            entry={entry}
+            graphicRequests={graphicRequests}
+            currentUserId={me?.id ?? ""}
+            onGraphicsChanged={() => {
+              void reload();
+              onChanged();
+            }}
+            onCreateGraphic={() => setCreateGraphicOpen(true)}
+          />
         </TabsContent>
 
         <TabsContent value="audit">
@@ -393,6 +414,16 @@ export function EntryDetailPanel({
         onOpenChange={setArchiveDialogOpen}
         onConfirm={handleArchive}
         busy={busyAction === "archive"}
+      />
+      <CreateGraphicRequestDialog
+        open={createGraphicOpen}
+        onOpenChange={setCreateGraphicOpen}
+        entryId={entryId}
+        onCreated={() => {
+          setCreateGraphicOpen(false);
+          void reload();
+          onChanged();
+        }}
       />
     </div>
   );
@@ -481,7 +512,19 @@ function EntryTopBar({
 // Pipeline tab
 // --------------------------------------------------------------------------
 
-function PipelineTab({ entry }: { entry: EntryDetail }) {
+function PipelineTab({
+  entry,
+  graphicRequests,
+  currentUserId,
+  onGraphicsChanged,
+  onCreateGraphic,
+}: {
+  entry: EntryDetail;
+  graphicRequests: GraphicRequestRecord[];
+  currentUserId: string;
+  onGraphicsChanged: () => void;
+  onCreateGraphic: () => void;
+}) {
   return (
     <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
       <div className="space-y-5">
@@ -517,9 +560,9 @@ function PipelineTab({ entry }: { entry: EntryDetail }) {
             <TrackSummary
               label="Graphics"
               badge={
-                entry.graphic_requests.length > 0 ? (
+                graphicRequests.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {entry.graphic_requests.map((g) => (
+                    {graphicRequests.map((g) => (
                       <GraphicStatusBadge key={g.id} status={g.graphic_status} />
                     ))}
                   </div>
@@ -529,9 +572,9 @@ function PipelineTab({ entry }: { entry: EntryDetail }) {
               }
               people={[]}
               emptyText={
-                entry.graphic_requests.length === 0
+                graphicRequests.length === 0
                   ? "No graphic requests"
-                  : `${entry.graphic_requests.length} ${entry.graphic_requests.length === 1 ? "request" : "requests"}`
+                  : `${graphicRequests.length} ${graphicRequests.length === 1 ? "request" : "requests"}`
               }
             />
           </div>
@@ -654,41 +697,40 @@ function PipelineTab({ entry }: { entry: EntryDetail }) {
           </dl>
         </section>
 
-        {entry.graphic_requests.length > 0 ? (
-          <section>
-            <h4 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
-              Graphic requests
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <h4 className="flex items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+              <ImageIcon className="h-3 w-3" />
+              Graphics ({graphicRequests.length})
             </h4>
-            <ul className="space-y-1">
-              {entry.graphic_requests.map((g) => (
-                <li
+            <Button size="sm" variant="outline" onClick={onCreateGraphic}>
+              <ImageIcon className="h-3 w-3" />
+              Request
+            </Button>
+          </div>
+          {graphicRequests.length === 0 ? (
+            <p className="rounded-md border border-dashed border-border bg-card/50 p-3 text-center text-xs italic text-text-muted">
+              No graphic requests yet. Click &quot;Request&quot; to add one.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {graphicRequests.map((g) => (
+                <GraphicRequestCard
                   key={g.id}
-                  className="rounded-sm border border-border bg-card px-3 py-2 text-xs"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 font-medium text-text-primary">
-                      <ImageIcon className="h-3 w-3" />
-                      {g.title}
-                    </span>
-                    <GraphicStatusBadge status={g.graphic_status} />
-                  </div>
-                  {g.flag_reason ? (
-                    <p className="mt-1 text-destructive">
-                      Flagged: {g.flag_reason}
-                    </p>
-                  ) : null}
-                </li>
+                  request={g}
+                  currentUserId={currentUserId}
+                  onChanged={onGraphicsChanged}
+                />
               ))}
-            </ul>
-          </section>
-        ) : null}
+            </div>
+          )}
+        </section>
 
         <section className="rounded-md border border-dashed border-border bg-navy-3/30 p-3 text-xs text-text-muted">
           <p className="font-semibold uppercase tracking-wider text-text-muted">
             Coming in later steps
           </p>
           <ul className="mt-1 list-disc space-y-0.5 pl-4">
-            <li>Graphic requests CRUD + upload → Step 5</li>
             <li>Comments thread + @mentions → Step 6</li>
             <li>Discord + email notifications → Step 7</li>
             <li>Full WP sync cron → Step 10</li>
