@@ -45,6 +45,7 @@ import {
 } from "./status-badges";
 import { CreateGraphicRequestDialog } from "@/components/graphics/create-graphic-request-dialog";
 import { GraphicRequestCard } from "@/components/graphics/graphic-request-card";
+import { CommentThread } from "@/components/comments/comment-thread";
 import type { EntryDetail } from "@/lib/entries/queries";
 import type { GraphicRequestRecord } from "@/lib/graphics/data";
 
@@ -378,6 +379,7 @@ export function EntryDetailPanel({
       <Tabs defaultValue="pipeline" className="mt-5">
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="comments">Comments</TabsTrigger>
           <TabsTrigger value="audit">
             <History className="mr-1 h-3 w-3" />
             Audit
@@ -394,6 +396,18 @@ export function EntryDetailPanel({
               onChanged();
             }}
             onCreateGraphic={() => setCreateGraphicOpen(true)}
+          />
+        </TabsContent>
+
+        <TabsContent value="comments">
+          <CommentThread
+            entryId={entryId}
+            currentUserId={me?.id ?? ""}
+            isAdmin={
+              me?.roles.some((r) =>
+                ["admin", "eic", "operations"].includes(r),
+              ) ?? false
+            }
           />
         </TabsContent>
 

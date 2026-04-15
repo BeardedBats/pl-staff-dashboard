@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { appendRecentActivity } from "@/lib/entries/recent-activity";
 
 // --------------------------------------------------------------------------
 // Create entry
@@ -97,12 +98,20 @@ export async function createEntry(
       .eq("id", entryId);
   }
 
-  // 4. Audit log.
+  // 4. Audit log + recent activity cache.
   await supabase.from("audit_log").insert({
     entry_id: entryId,
     user_id: userId,
     action: "created",
     new_value: input.title,
+  });
+
+  await appendRecentActivity(entryId, {
+    type: "created",
+    actor_id: userId,
+    actor_name: "System",
+    label: `created: ${input.title}`,
+    at: new Date().toISOString(),
   });
 
   return { ok: true, entryId };

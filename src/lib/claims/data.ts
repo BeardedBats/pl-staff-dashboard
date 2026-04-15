@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { CurrentUser } from "@/lib/auth/current-user";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
+import { appendRecentActivity } from "@/lib/entries/recent-activity";
 import { createWpDraftForEntry } from "@/lib/entries/wp-post";
 
 // --------------------------------------------------------------------------
@@ -221,6 +222,17 @@ export async function approveClaim(
     previousContentStatus,
     "claimed",
   );
+
+  await appendRecentActivity(claim.entry_id as string, {
+    type: "claim",
+    actor_id: approver.id,
+    actor_name: approver.display_name,
+    label:
+      opts.autoApproval && approver.id === claim.user_id
+        ? "claimed to write"
+        : "claim approved — writer assigned",
+    at: new Date().toISOString(),
+  });
 
   // 4. Create the WP draft. Best-effort — if WP is down, we still mark
   //    the claim approved but flag the failure in the audit log.

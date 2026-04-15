@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { appendRecentActivity } from "@/lib/entries/recent-activity";
 import type {
   ContentStatus,
   EditorStatus,
@@ -102,6 +103,14 @@ export async function submitContent(
     );
   }
 
+  await appendRecentActivity(entryId, {
+    type: "status_change",
+    actor_id: viewer.id,
+    actor_name: viewer.display_name,
+    label: `submitted for edit`,
+    at: new Date().toISOString(),
+  });
+
   return { ok: true };
 }
 
@@ -169,6 +178,14 @@ export async function sendToPolishing(
     "submitted",
     `polishing: ${reason.trim()}`,
   );
+
+  await appendRecentActivity(entryId, {
+    type: "status_change",
+    actor_id: viewer.id,
+    actor_name: viewer.display_name,
+    label: `sent back for polishing: ${reason.trim().slice(0, 100)}`,
+    at: new Date().toISOString(),
+  });
 
   return { ok: true };
 }
@@ -326,6 +343,14 @@ export async function markEdited(
     "edited",
   );
 
+  await appendRecentActivity(entryId, {
+    type: "status_change",
+    actor_id: viewer.id,
+    actor_name: viewer.display_name,
+    label: `marked as edited — ready to schedule in WordPress`,
+    at: new Date().toISOString(),
+  });
+
   return { ok: true };
 }
 
@@ -390,6 +415,16 @@ export async function applyWpStateToEntry(
       currentEditor,
       `${nextEditor} (via WP sync)`,
     );
+    await appendRecentActivity(entryId, {
+      type: "status_change",
+      actor_id: systemUserId,
+      actor_name: "WordPress sync",
+      label:
+        nextEditor === "published"
+          ? "published — article is live"
+          : "scheduled in WordPress",
+      at: new Date().toISOString(),
+    });
   }
 }
 
