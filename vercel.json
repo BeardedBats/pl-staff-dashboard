@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/recurring-generate",
+      "schedule": "17 5 * * *"
+    },
+    {
+      "path": "/api/cron/unclaimed-alerts",
+      "schedule": "13 */3 * * *"
+    }
+  ]
+}

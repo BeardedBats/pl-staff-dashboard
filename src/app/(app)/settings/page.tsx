@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
 import { getUserById, listUsers } from "@/lib/users/queries";
 import { listTeams } from "@/lib/teams/data";
+import { listTiers } from "@/lib/entries/queries";
+import { listTemplates } from "@/lib/recurring-templates/data";
+import { listSeasonModes } from "@/lib/season-modes/data";
 import {
   Tabs,
   TabsContent,
@@ -11,6 +14,8 @@ import {
 import { ProfileForm } from "./profile-form";
 import { AdminUsersPanel } from "./admin-users-panel";
 import { AdminTeamsPanel } from "./admin-teams-panel";
+import { AdminTemplatesPanel } from "./admin-templates-panel";
+import { AdminSeasonPanel } from "./admin-season-panel";
 import { NotificationPrefsPanel } from "./notification-prefs-panel";
 
 export const metadata = {
@@ -34,12 +39,26 @@ export default async function SettingsPage({
   const params = await searchParams;
 
   // Fetch admin data in parallel if the viewer has access.
-  const [staffList, teams] = adminAccess
-    ? await Promise.all([listUsers({ limit: 200 }), listTeams()])
-    : [{ users: [], totalCount: 0 }, []];
+  const [staffList, teams, tiers, templates, seasonModes] = adminAccess
+    ? await Promise.all([
+        listUsers({ limit: 200 }),
+        listTeams(),
+        listTiers(),
+        listTemplates(),
+        listSeasonModes(),
+      ])
+    : [
+        { users: [], totalCount: 0 },
+        [],
+        [],
+        [],
+        [],
+      ];
 
   const validTabs = ["profile", "notifications"];
-  if (adminAccess) validTabs.push("users", "teams");
+  if (adminAccess) {
+    validTabs.push("users", "teams", "templates", "season");
+  }
   const defaultTab =
     params.tab && validTabs.includes(params.tab) ? params.tab : "profile";
 
@@ -48,8 +67,8 @@ export default async function SettingsPage({
       <div>
         <h1 className="text-2xl font-semibold text-text-primary">Settings</h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Manage your profile and — if you&apos;re an admin — user permissions
-          and teams.
+          Manage your profile and — if you&apos;re an admin — user permissions,
+          teams, templates, and season mode.
         </p>
       </div>
 
@@ -61,6 +80,8 @@ export default async function SettingsPage({
             <>
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="teams">Teams</TabsTrigger>
+              <TabsTrigger value="templates">Templates</TabsTrigger>
+              <TabsTrigger value="season">Season</TabsTrigger>
             </>
           ) : null}
         </TabsList>
@@ -83,6 +104,17 @@ export default async function SettingsPage({
             </TabsContent>
             <TabsContent value="teams">
               <AdminTeamsPanel initialTeams={teams} allUsers={staffList.users} />
+            </TabsContent>
+            <TabsContent value="templates">
+              <AdminTemplatesPanel
+                initialTemplates={templates}
+                seasonModes={seasonModes}
+                tiers={tiers}
+                assignableUsers={staffList.users}
+              />
+            </TabsContent>
+            <TabsContent value="season">
+              <AdminSeasonPanel initialModes={seasonModes} />
             </TabsContent>
           </>
         ) : null}
