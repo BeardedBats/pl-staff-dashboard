@@ -44,6 +44,7 @@ const EDITOR_VARIANT: Record<
   ready_for_edit: "amber",
   edited: "cyan",
   scheduled: "success",
+  published: "success",
 };
 
 const EDITOR_LABEL: Record<EditorStatus, string> = {
@@ -51,6 +52,7 @@ const EDITOR_LABEL: Record<EditorStatus, string> = {
   ready_for_edit: "Ready for edit",
   edited: "Edited",
   scheduled: "Scheduled",
+  published: "Published",
 };
 
 export function EditorStatusBadge({ status }: { status: EditorStatus }) {

@@ -1,5 +1,15 @@
-import { getCurrentUser } from "@/lib/auth/current-user";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { getCurrentUser, isManagerPlus } from "@/lib/auth/current-user";
+import { listPendingClaims } from "@/lib/claims/data";
+import { listPendingArchiveRequests } from "@/lib/archive-requests/data";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ManagerInbox } from "./manager-inbox";
 
 export const metadata = {
   title: "Home",
@@ -7,8 +17,15 @@ export const metadata = {
 
 export default async function HomePage() {
   const user = await getCurrentUser();
-  // The layout guard already redirected non-users. This is a safety net.
   if (!user) return null;
+
+  const showInbox = isManagerPlus(user);
+  const [pendingClaims, pendingArchives] = showInbox
+    ? await Promise.all([
+        listPendingClaims(user),
+        listPendingArchiveRequests(user),
+      ])
+    : [[], []];
 
   return (
     <div className="space-y-6">
@@ -21,7 +38,8 @@ export default async function HomePage() {
           <span className="font-mono text-text-primary">{user.email}</span>
           {user.roles.length > 0 ? (
             <>
-              {" "}· Roles:{" "}
+              {" "}
+              · Roles:{" "}
               <span className="font-mono uppercase tracking-wider text-cyan">
                 {user.roles.join(" · ")}
               </span>
@@ -30,58 +48,62 @@ export default async function HomePage() {
         </p>
       </div>
 
+      {showInbox ? (
+        <ManagerInbox
+          initialClaims={pendingClaims}
+          initialArchives={pendingArchives}
+        />
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>Step 1 complete</CardTitle>
+            <CardTitle>Content pipeline</CardTitle>
             <CardDescription>
-              Scaffold, auth, and shell are wired up.
+              The main workspace. Jump to the Content Table.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-text-secondary">
-            Next up: user sync from WordPress, staff directory, and team
-            management (Step 2).
+            <Link
+              href="/content"
+              className="text-cyan underline underline-offset-2"
+            >
+              Open the Content Table →
+            </Link>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Your details</CardTitle>
-            <CardDescription>From WordPress + dashboard DB.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-1 font-mono text-xs text-text-secondary">
-            <div>
-              <span className="text-text-muted">Display name:</span>{" "}
-              {user.display_name}
-            </div>
-            <div>
-              <span className="text-text-muted">WP user ID:</span>{" "}
-              {user.wp_user_id}
-            </div>
-            <div>
-              <span className="text-text-muted">Site:</span> {user.wp_site.toUpperCase()}
-            </div>
-            <div>
-              <span className="text-text-muted">Timezone:</span> {user.timezone}
-            </div>
-            <div>
-              <span className="text-text-muted">Theme:</span> {user.theme}
-            </div>
-            <div>
-              <span className="text-text-muted">Publish:</span>{" "}
-              {user.can_publish ? "yes" : "no"}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Theme system</CardTitle>
-            <CardDescription>Click the moon/sun in the header.</CardDescription>
+            <CardTitle>Staff directory</CardTitle>
+            <CardDescription>
+              Who&apos;s on the team and what they&apos;re working on.
+            </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-text-secondary">
-            Dashboard defaults to dark. Toggle to confirm both palettes render
-            cleanly with Tailwind v4 class-based dark mode.
+            <Link
+              href="/staff"
+              className="text-cyan underline underline-offset-2"
+            >
+              Browse the directory →
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Your profile</CardTitle>
+            <CardDescription>
+              Bio, socials, Discord ID, timezone.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm text-text-secondary">
+            <Link
+              href="/settings"
+              className="text-cyan underline underline-offset-2"
+            >
+              Open settings →
+            </Link>
           </CardContent>
         </Card>
       </div>

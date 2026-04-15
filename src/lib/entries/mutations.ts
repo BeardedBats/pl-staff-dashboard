@@ -200,53 +200,6 @@ export async function updateEntry(
   return true;
 }
 
-// --------------------------------------------------------------------------
-// Archive flow
-// --------------------------------------------------------------------------
-
-export const archiveEntrySchema = z.object({
-  reason: z.string().trim().min(1).max(500),
-});
-
-/**
- * Request an archive. Admin+ / EIC / Operations can archive directly.
- * Others create an archive_request row that a manager approves.
- */
-export async function archiveEntry(
-  userId: string,
-  entryId: string,
-  reason: string,
-  directArchive: boolean,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const supabase = getSupabaseAdmin();
-
-  if (directArchive) {
-    const { error } = await supabase
-      .from("entries")
-      .update({
-        is_archived: true,
-        archive_reason: reason,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", entryId);
-
-    if (error) return { ok: false, error: "Archive failed" };
-
-    await supabase.from("audit_log").insert({
-      entry_id: entryId,
-      user_id: userId,
-      action: "archive",
-      new_value: reason,
-    });
-    return { ok: true };
-  }
-
-  // Otherwise file a pending request.
-  const { error } = await supabase.from("archive_requests").insert({
-    entry_id: entryId,
-    requested_by: userId,
-    reason,
-  });
-  if (error) return { ok: false, error: "Failed to file request" };
-  return { ok: true };
-}
+// The archive helpers moved to lib/archive-requests/data.ts in Step 4 so the
+// request + approval flows share one code path. The /api/entries/:id/archive
+// route uses that module directly.

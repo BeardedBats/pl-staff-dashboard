@@ -14,7 +14,12 @@ export type ContentStatus =
   | "submitted"
   | "polishing";
 
-export type EditorStatus = "none" | "ready_for_edit" | "edited" | "scheduled";
+export type EditorStatus =
+  | "none"
+  | "ready_for_edit"
+  | "edited"
+  | "scheduled"
+  | "published";
 
 export type GraphicStatus = "needed" | "claimed" | "submitted" | "flagged";
 
