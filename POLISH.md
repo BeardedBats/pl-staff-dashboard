@@ -1,0 +1,61 @@
+# Polish Backlog
+
+Running list of UI/UX items to revisit in one focused pass **after Step 14**.
+Don't fix these mid-build — they'll compound with later work or get redone
+during the PL Pro Design Unification effort.
+
+Format: `- [ ] <where> — <what> — <why it matters, if non-obvious>`
+
+Flag anything *architectural* (layout grid, breakpoints, a11y) separately —
+those get fixed immediately when spotted, not deferred here.
+
+---
+
+## Brand identity
+
+- [ ] Login page — replace the text-mark "Pitcher List" brand tile with the actual PL logo (wordmark + glyph). Currently a placeholder cyan `font-mono` block.
+- [ ] Sidebar brand — same as above, the top-left "Pitcher List · Staff" stack needs the real mark.
+- [ ] QB List views — need QB List logo asset to swap in when viewing QB content (per spec: "QB List logo displayed when viewing QB List content").
+
+## Tone / feel (from CLAUDE.md: "Savant base + neon/glass/mesh accents")
+
+- [ ] Cards feel flat — the `shadow-sm` on cards is barely visible in dark mode. Consider subtle inner glow or a more premium surface treatment.
+- [ ] Active nav item — the cyan-tinted bg is functional but not "neon." Could use a soft cyan glow/halo once the rest of the design system lands.
+- [ ] Login background — currently solid navy. Could use a subtle mesh gradient or low-opacity radial to feel more premium.
+- [ ] Header — pretty sparse. Might benefit from a brand/pagetitle slot on the left.
+
+## Typography
+
+- [ ] Review heading scale across pages once we have more content to judge against.
+- [ ] Check letter-spacing on the `font-mono` brand mark vs. Savant Dashboard reference.
+
+## Micro-interactions
+
+- [ ] Theme toggle transition — currently instant. Consider a short cross-fade on theme change.
+- [ ] Sidebar collapse animation — functional but snappy. Could feel smoother.
+- [ ] Avatar dropdown entry/exit — uses Radix defaults; verify it feels right.
+
+## Components
+
+- [ ] `Button` — hover state is a simple opacity tweak. Primary button could feel punchier (slight scale? subtle shadow?).
+- [ ] `Input` — focus ring is the cyan brand color. Works, but worth verifying it doesn't look harsh in light mode.
+- [ ] `Avatar` — fallback initials look fine but could use a subtle gradient background per-user.
+
+## Accessibility
+
+- [ ] Audit all color contrasts once design is final.
+- [ ] Verify focus visibility on every interactive element.
+- [ ] Ensure keyboard nav flows logically through the sidebar → header → main content.
+- [ ] Screen-reader labels on icon-only buttons (already present via `aria-label`, but verify).
+
+## Mobile
+
+- [ ] MVP spec says "mobile-friendly but not over-invested." Pass it once the full desktop UX is locked.
+
+---
+
+## How to add items
+
+- Spot something during a step handoff? Jot a line here with the step context (e.g., "Step 5 — graphic requests kanban column widths feel cramped on 1440px").
+- Architectural issues → fix immediately, not logged here.
+- Items with `[WONTFIX]` prefix stay listed for posterity but won't be addressed.
