@@ -1,0 +1,402 @@
+import "server-only";
+
+import { env } from "@/lib/env";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { applyWpStateToEntry } from "@/lib/entries/status-transitions";
+import type { WpSiteKey } from "@/lib/auth/wordpress";
+
+/**
+ * WordPress → dashboard post sync.
+ *
+ * Polls the WP REST API for posts modified since the last sync watermark
+ * stored in `global_settings` (`wp_last_sync_pl` / `wp_last_sync_qb`) and
+ * reconciles each post with a dashboard entry:
+ *
+ *   - If an entry already exists (matched by wp_post_id + site), we hand
+ *     off to `applyWpStateToEntry`, which mirrors draft/pending/future/
+ *     publish transitions onto wp_status, editor_status, and published_at.
+ *
+ *   - If no entry exists and the WP author maps to a dashboard user,
+ *     create a new "drafted" entry so the writer sees it in their queue.
+ *     Authors with `auto_approve_drafts` skip the drafted flag — their
+ *     work is visible to the whole team immediately.
+ *
+ *   - If the WP author doesn't map to any dashboard user, we skip the
+ *     post entirely (it belongs to someone outside the dashboard's staff).
+ *
+ * Errors on individual posts are caught and reported — one bad post never
+ * blocks the rest of the sync.
+ */
+
+// --------------------------------------------------------------------------
+// Site config + auth (mirrors the internal helpers in lib/auth/wordpress.ts)
+// --------------------------------------------------------------------------
+
+type SiteConfig = {
+  url: string;
+  appUsername: string;
+  appPassword: string;
+};
+
+function getSiteConfig(site: WpSiteKey): SiteConfig | null {
+  if (site === "pl") {
+    if (!env.WP_PL_URL || !env.WP_PL_USERNAME || !env.WP_PL_APP_PASSWORD) return null;
+    return {
+      url: env.WP_PL_URL.replace(/\/$/, ""),
+      appUsername: env.WP_PL_USERNAME,
+      appPassword: env.WP_PL_APP_PASSWORD,
+    };
+  }
+  if (!env.WP_QB_URL || !env.WP_QB_USERNAME || !env.WP_QB_APP_PASSWORD) return null;
+  return {
+    url: env.WP_QB_URL.replace(/\/$/, ""),
+    appUsername: env.WP_QB_USERNAME,
+    appPassword: env.WP_QB_APP_PASSWORD,
+  };
+}
+
+function basicAuth(username: string, password: string): string {
+  const normalized = password.replace(/\s+/g, "");
+  return "Basic " + Buffer.from(`${username}:${normalized}`).toString("base64");
+}
+
+// --------------------------------------------------------------------------
+// Types
+// --------------------------------------------------------------------------
+
+export type PostSyncReport = {
+  site: WpSiteKey;
+  postsFetched: number;
+  entriesUpdated: number;
+  draftedEntriesCreated: number;
+  skippedNoMatchingUser: number;
+  errors: Array<{ wpPostId: number; message: string }>;
+};
+
+type WpPost = {
+  id: number;
+  status: string;
+  author: number;
+  date_gmt: string | null;
+  modified_gmt: string | null;
+  title:
+    | { rendered?: string; raw?: string }
+    | string
+    | null
+    | undefined;
+};
+
+// --------------------------------------------------------------------------
+// Watermark helpers
+// --------------------------------------------------------------------------
+
+function settingsKeyForSite(site: WpSiteKey): string {
+  return site === "pl" ? "wp_last_sync_pl" : "wp_last_sync_qb";
+}
+
+async function readLastSyncIso(site: WpSiteKey): Promise<string> {
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("global_settings")
+    .select("value")
+    .eq("key", settingsKeyForSite(site))
+    .maybeSingle();
+
+  // `value` is JSONB: a JSON string like `"2026-04-15T12:00:00Z"`.
+  const raw = (data?.value as unknown) ?? null;
+  if (typeof raw === "string" && raw.length > 0) return raw;
+
+  // Default: 7 days ago.
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  return sevenDaysAgo.toISOString();
+}
+
+async function writeLastSyncIso(site: WpSiteKey, iso: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const key = settingsKeyForSite(site);
+
+  // Explicit select-then-insert-or-update — Supabase's upsert() requires
+  // a UNIQUE constraint target, and we want to stay simple.
+  const { data: existing } = await supabase
+    .from("global_settings")
+    .select("id")
+    .eq("key", key)
+    .maybeSingle();
+
+  if (existing?.id) {
+    await supabase
+      .from("global_settings")
+      .update({ value: iso, updated_at: new Date().toISOString() })
+      .eq("id", existing.id as string);
+  } else {
+    await supabase.from("global_settings").insert({ key, value: iso });
+  }
+}
+
+// --------------------------------------------------------------------------
+// Core sync helpers
+// --------------------------------------------------------------------------
+
+function pickTitle(wp: WpPost): string {
+  const t = wp.title;
+  if (!t) return "Untitled";
+  if (typeof t === "string") return t.length > 0 ? t : "Untitled";
+  if (typeof t.rendered === "string" && t.rendered.length > 0) return t.rendered;
+  if (typeof t.raw === "string" && t.raw.length > 0) return t.raw;
+  return "Untitled";
+}
+
+async function findDefaultTierId(): Promise<string | null> {
+  const supabase = getSupabaseAdmin();
+  // Prefer "A" (Daily), fall back to "C" (Unscheduled).
+  const { data: tierA } = await supabase
+    .from("tiers")
+    .select("id")
+    .eq("name", "A")
+    .maybeSingle();
+  if (tierA?.id) return tierA.id as string;
+
+  const { data: tierC } = await supabase
+    .from("tiers")
+    .select("id")
+    .eq("name", "C")
+    .maybeSingle();
+  return (tierC?.id as string | undefined) ?? null;
+}
+
+async function seedChecklistForEntry(
+  entryId: string,
+  tierId: string,
+): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { data: items } = await supabase
+    .from("checklist_items")
+    .select("id")
+    .eq("tier_id", tierId);
+  const rows = ((items ?? []) as Array<{ id: string }>).map((item) => ({
+    entry_id: entryId,
+    checklist_item_id: item.id,
+    is_completed: false,
+  }));
+  if (rows.length > 0) {
+    await supabase.from("entry_checklist").insert(rows);
+  }
+}
+
+// --------------------------------------------------------------------------
+// Main: sync one site
+// --------------------------------------------------------------------------
+
+export async function syncWpPostsForSite(
+  site: WpSiteKey,
+  systemUserId: string,
+): Promise<PostSyncReport> {
+  const report: PostSyncReport = {
+    site,
+    postsFetched: 0,
+    entriesUpdated: 0,
+    draftedEntriesCreated: 0,
+    skippedNoMatchingUser: 0,
+    errors: [],
+  };
+
+  const config = getSiteConfig(site);
+  if (!config) {
+    report.errors.push({
+      wpPostId: 0,
+      message: `WordPress ${site.toUpperCase()} not configured`,
+    });
+    return report;
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  // Mark the "started at" time BEFORE we fetch so that any changes made
+  // during the sync are still caught next time.
+  const syncStartedAt = new Date().toISOString();
+  const modifiedAfter = await readLastSyncIso(site);
+
+  const params = new URLSearchParams({
+    modified_after: modifiedAfter,
+    per_page: "100",
+    status: "draft,pending,publish,future",
+    context: "edit",
+    orderby: "modified",
+    order: "asc",
+  });
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `${config.url}/wp-json/wp/v2/posts?${params.toString()}`,
+      {
+        headers: {
+          Authorization: basicAuth(config.appUsername, config.appPassword),
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      },
+    );
+  } catch (err) {
+    report.errors.push({
+      wpPostId: 0,
+      message: err instanceof Error ? err.message : "Network error",
+    });
+    return report;
+  }
+
+  if (!response.ok) {
+    report.errors.push({
+      wpPostId: 0,
+      message: `WP returned ${response.status}`,
+    });
+    return report;
+  }
+
+  let posts: WpPost[];
+  try {
+    posts = (await response.json()) as WpPost[];
+  } catch (err) {
+    report.errors.push({
+      wpPostId: 0,
+      message: err instanceof Error ? err.message : "Invalid JSON",
+    });
+    return report;
+  }
+
+  report.postsFetched = posts.length;
+
+  const defaultTierId = await findDefaultTierId();
+
+  for (const post of posts) {
+    try {
+      // Look up an existing entry for this WP post on this site.
+      const { data: existing } = await supabase
+        .from("entries")
+        .select("id")
+        .eq("wp_post_id", post.id)
+        .eq("site", site)
+        .maybeSingle();
+
+      if (existing?.id) {
+        // Update path — hand off to the status-transitions helper.
+        await applyWpStateToEntry(existing.id as string, systemUserId, {
+          status: post.status,
+          modified: post.modified_gmt ? `${post.modified_gmt}Z` : null,
+          date: post.date_gmt ? `${post.date_gmt}Z` : null,
+        });
+        report.entriesUpdated++;
+        continue;
+      }
+
+      // Create path — but only if the WP author maps to a dashboard user.
+      const { data: dashboardUser } = await supabase
+        .from("users")
+        .select("id, auto_approve_drafts")
+        .eq("wp_user_id", post.author)
+        .maybeSingle();
+
+      if (!dashboardUser?.id) {
+        report.skippedNoMatchingUser++;
+        continue;
+      }
+
+      if (!defaultTierId) {
+        report.errors.push({
+          wpPostId: post.id,
+          message: "No default tier found (need 'A' or 'C' in tiers table)",
+        });
+        continue;
+      }
+
+      const title = pickTitle(post);
+      const editUrl = `${config.url}/wp-admin/post.php?post=${post.id}&action=edit`;
+      const autoApprove = Boolean(
+        (dashboardUser as { auto_approve_drafts?: boolean }).auto_approve_drafts,
+      );
+
+      const { data: inserted, error: insertError } = await supabase
+        .from("entries")
+        .insert({
+          title,
+          site,
+          tier_id: defaultTierId,
+          wp_post_id: post.id,
+          wp_post_url: editUrl,
+          wp_status: post.status,
+          wp_modified_at: post.modified_gmt ? `${post.modified_gmt}Z` : null,
+          content_status: "claimed",
+          editor_status: "none",
+          created_by: dashboardUser.id as string,
+          is_drafted: !autoApprove,
+        })
+        .select("id")
+        .single();
+
+      if (insertError || !inserted) {
+        report.errors.push({
+          wpPostId: post.id,
+          message: `Insert failed: ${insertError?.message ?? "unknown"}`,
+        });
+        continue;
+      }
+
+      const newEntryId = inserted.id as string;
+
+      // Seed entry_authors with the mapped dashboard user as primary.
+      await supabase.from("entry_authors").insert({
+        entry_id: newEntryId,
+        user_id: dashboardUser.id as string,
+        role: "primary",
+      });
+
+      // Seed the tier's checklist items.
+      await seedChecklistForEntry(newEntryId, defaultTierId);
+
+      // Audit row.
+      await supabase.from("audit_log").insert({
+        entry_id: newEntryId,
+        user_id: dashboardUser.id as string,
+        action: "created",
+        new_value: "auto-picked up from WordPress draft",
+      });
+
+      report.draftedEntriesCreated++;
+    } catch (err) {
+      report.errors.push({
+        wpPostId: post.id,
+        message: err instanceof Error ? err.message : "Unknown error",
+      });
+    }
+  }
+
+  // Update the watermark to the time we started the fetch.
+  try {
+    await writeLastSyncIso(site, syncStartedAt);
+  } catch (err) {
+    report.errors.push({
+      wpPostId: 0,
+      message: `Failed to update watermark: ${
+        err instanceof Error ? err.message : "unknown"
+      }`,
+    });
+  }
+
+  return report;
+}
+
+// --------------------------------------------------------------------------
+// Main: sync both sites
+// --------------------------------------------------------------------------
+
+export async function syncWpPostsForBothSites(
+  systemUserId: string,
+): Promise<PostSyncReport[]> {
+  const reports: PostSyncReport[] = [];
+  reports.push(await syncWpPostsForSite("pl", systemUserId));
+  if (env.WP_QB_URL) {
+    reports.push(await syncWpPostsForSite("qb", systemUserId));
+  }
+  return reports;
+}

@@ -5,6 +5,7 @@ import { listTeams } from "@/lib/teams/data";
 import { listTiers } from "@/lib/entries/queries";
 import { listTemplates } from "@/lib/recurring-templates/data";
 import { listSeasonModes } from "@/lib/season-modes/data";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   Tabs,
   TabsContent,
@@ -16,6 +17,7 @@ import { AdminUsersPanel } from "./admin-users-panel";
 import { AdminTeamsPanel } from "./admin-teams-panel";
 import { AdminTemplatesPanel } from "./admin-templates-panel";
 import { AdminSeasonPanel } from "./admin-season-panel";
+import { AdminSyncPanel } from "./admin-sync-panel";
 import { NotificationPrefsPanel } from "./notification-prefs-panel";
 
 export const metadata = {
@@ -39,13 +41,14 @@ export default async function SettingsPage({
   const params = await searchParams;
 
   // Fetch admin data in parallel if the viewer has access.
-  const [staffList, teams, tiers, templates, seasonModes] = adminAccess
+  const [staffList, teams, tiers, templates, seasonModes, syncStatus] = adminAccess
     ? await Promise.all([
         listUsers({ limit: 200 }),
         listTeams(),
         listTiers(),
         listTemplates(),
         listSeasonModes(),
+        loadSyncStatus(),
       ])
     : [
         { users: [], totalCount: 0 },
@@ -53,11 +56,12 @@ export default async function SettingsPage({
         [],
         [],
         [],
+        { pl: null, qb: null },
       ];
 
   const validTabs = ["profile", "notifications"];
   if (adminAccess) {
-    validTabs.push("users", "teams", "templates", "season");
+    validTabs.push("users", "teams", "templates", "season", "sync");
   }
   const defaultTab =
     params.tab && validTabs.includes(params.tab) ? params.tab : "profile";
@@ -82,6 +86,7 @@ export default async function SettingsPage({
               <TabsTrigger value="teams">Teams</TabsTrigger>
               <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="season">Season</TabsTrigger>
+              <TabsTrigger value="sync">Sync</TabsTrigger>
             </>
           ) : null}
         </TabsList>
@@ -116,9 +121,31 @@ export default async function SettingsPage({
             <TabsContent value="season">
               <AdminSeasonPanel initialModes={seasonModes} />
             </TabsContent>
+            <TabsContent value="sync">
+              <AdminSyncPanel initialLastSync={syncStatus} />
+            </TabsContent>
           </>
         ) : null}
       </Tabs>
     </div>
   );
+}
+
+async function loadSyncStatus(): Promise<{
+  pl: string | null;
+  qb: string | null;
+}> {
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("global_settings")
+    .select("key, value")
+    .in("key", ["wp_last_sync_pl", "wp_last_sync_qb"]);
+
+  const rows = (data ?? []) as Array<{ key: string; value: unknown }>;
+  const pl = rows.find((r) => r.key === "wp_last_sync_pl");
+  const qb = rows.find((r) => r.key === "wp_last_sync_qb");
+  return {
+    pl: (pl?.value as string | null) ?? null,
+    qb: (qb?.value as string | null) ?? null,
+  };
 }

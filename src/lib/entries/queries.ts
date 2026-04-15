@@ -105,6 +105,12 @@ export type ListEntriesFilters = {
   /** Entries where the specified user appears in entry_editors. */
   editorId?: string;
   includeArchived?: boolean;
+  /**
+   * Include drafted entries (is_drafted = true). Hidden by default — only
+   * the author + Admin+ should see drafts before the author approves
+   * them. Pass true from My Tasks and the admin draft-approval view.
+   */
+  includeDrafted?: boolean;
   dateFrom?: string; // ISO
   dateTo?: string;   // ISO
   sortBy?: "publish_date" | "created_at" | "updated_at" | "title";
@@ -149,6 +155,11 @@ export async function listEntries(
   // Filter: archived or not.
   if (!filters.includeArchived) {
     query = query.eq("is_archived", false);
+  }
+
+  // Filter: hide drafted entries unless explicitly requested.
+  if (!filters.includeDrafted) {
+    query = query.eq("is_drafted", false);
   }
 
   if (filters.search) {
