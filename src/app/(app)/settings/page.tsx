@@ -11,6 +11,7 @@ import {
 import { ProfileForm } from "./profile-form";
 import { AdminUsersPanel } from "./admin-users-panel";
 import { AdminTeamsPanel } from "./admin-teams-panel";
+import { NotificationPrefsPanel } from "./notification-prefs-panel";
 
 export const metadata = {
   title: "Settings",
@@ -37,10 +38,10 @@ export default async function SettingsPage({
     ? await Promise.all([listUsers({ limit: 200 }), listTeams()])
     : [{ users: [], totalCount: 0 }, []];
 
+  const validTabs = ["profile", "notifications"];
+  if (adminAccess) validTabs.push("users", "teams");
   const defaultTab =
-    adminAccess && (params.tab === "users" || params.tab === "teams")
-      ? params.tab
-      : "profile";
+    params.tab && validTabs.includes(params.tab) ? params.tab : "profile";
 
   return (
     <div className="space-y-6">
@@ -55,6 +56,7 @@ export default async function SettingsPage({
       <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
           {adminAccess ? (
             <>
               <TabsTrigger value="users">Users</TabsTrigger>
@@ -65,6 +67,10 @@ export default async function SettingsPage({
 
         <TabsContent value="profile">
           <ProfileForm profile={myProfile} />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <NotificationPrefsPanel userId={viewer.id} />
         </TabsContent>
 
         {adminAccess ? (

@@ -7,6 +7,8 @@ import {
   type TransitionError,
 } from "@/lib/entries/status-transitions";
 import { createComment } from "@/lib/comments/data";
+import { triggerSentToPolishing } from "@/lib/notifications/trigger";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +80,19 @@ export async function PATCH(request: Request, context: RouteContext) {
   await createComment(viewer, id, { body: parsed.data.reason }, {
     systemLabel: "Polishing request",
   });
+
+  // Notify the writer(s) that their article is back for revisions.
+  const { data: entryRow } = await getSupabaseAdmin()
+    .from("entries")
+    .select("title")
+    .eq("id", id)
+    .maybeSingle();
+  await triggerSentToPolishing(
+    viewer,
+    id,
+    (entryRow?.title as string | undefined) ?? "an entry",
+    parsed.data.reason,
+  );
 
   return NextResponse.json({ ok: true });
 }

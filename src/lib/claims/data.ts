@@ -5,6 +5,10 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { CurrentUser } from "@/lib/auth/current-user";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
 import { appendRecentActivity } from "@/lib/entries/recent-activity";
+import {
+  triggerClaimRequested,
+  triggerClaimResolved,
+} from "@/lib/notifications/trigger";
 import { createWpDraftForEntry } from "@/lib/entries/wp-post";
 
 // --------------------------------------------------------------------------
@@ -147,6 +151,9 @@ export async function createClaim(
     "claim_requested",
   );
 
+  // Notify team managers that there's a new claim to resolve.
+  await triggerClaimRequested(viewer, entryId, entry.title as string);
+
   return { ok: true, status: "pending", claim_id: created.id as string };
 }
 
@@ -248,6 +255,20 @@ export async function approveClaim(
     );
   }
 
+  // 5. Notify the claimer (unless this was their own self-approval).
+  const { data: entryForNotif } = await supabase
+    .from("entries")
+    .select("title")
+    .eq("id", claim.entry_id)
+    .maybeSingle();
+  await triggerClaimResolved(
+    approver,
+    claim.user_id as string,
+    claim.entry_id as string,
+    (entryForNotif?.title as string | undefined) ?? "an entry",
+    true,
+  );
+
   return { ok: true };
 }
 
@@ -296,6 +317,20 @@ export async function denyClaim(
     "content_status",
     "claim_requested",
     "writer_needed (claim denied)",
+  );
+
+  // Notify the claimer their claim was denied.
+  const { data: entryForNotif } = await supabase
+    .from("entries")
+    .select("title")
+    .eq("id", claim.entry_id)
+    .maybeSingle();
+  await triggerClaimResolved(
+    approver,
+    claim.user_id as string,
+    claim.entry_id as string,
+    (entryForNotif?.title as string | undefined) ?? "an entry",
+    false,
   );
 
   return { ok: true };

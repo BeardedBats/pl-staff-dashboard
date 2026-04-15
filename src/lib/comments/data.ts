@@ -4,7 +4,8 @@ import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
 import { appendRecentActivity } from "@/lib/entries/recent-activity";
-import { resolveMentions, type ResolvedMention } from "./mention-parser";
+import { triggerMention } from "@/lib/notifications/trigger";
+import { resolveMentions } from "./mention-parser";
 import type { CurrentUser } from "@/lib/auth/current-user";
 
 // --------------------------------------------------------------------------
@@ -183,40 +184,25 @@ export async function createComment(
   });
 
   // Emit notifications for each mentioned user (skip self-mentions).
+  // triggerMention handles preference resolution + channel dispatch.
   if (resolvedMentions.length > 0) {
-    await createMentionNotifications(
-      entryId,
+    const { data: entryRow } = await supabase
+      .from("entries")
+      .select("title")
+      .eq("id", entryId)
+      .maybeSingle();
+    const entryTitle = (entryRow?.title as string | undefined) ?? "an entry";
+
+    await triggerMention(
       viewer,
-      resolvedMentions,
+      entryId,
+      entryTitle,
+      resolvedMentions.map((m) => m.user_id),
       bodyToStore,
     );
   }
 
   return { ok: true, id: commentId };
-}
-
-async function createMentionNotifications(
-  entryId: string,
-  viewer: CurrentUser,
-  mentions: ResolvedMention[],
-  body: string,
-): Promise<void> {
-  const supabase = getSupabaseAdmin();
-
-  const rows = mentions
-    .filter((m) => m.user_id !== viewer.id)
-    .map((m) => ({
-      user_id: m.user_id,
-      entry_id: entryId,
-      type: "mention" as const,
-      title: `${viewer.display_name} mentioned you`,
-      body: body.slice(0, 200),
-      is_read: false,
-    }));
-
-  if (rows.length > 0) {
-    await supabase.from("notifications").insert(rows);
-  }
 }
 
 // --------------------------------------------------------------------------

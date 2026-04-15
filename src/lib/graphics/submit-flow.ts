@@ -2,6 +2,7 @@ import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
+import { triggerGraphicSubmitted } from "@/lib/notifications/trigger";
 import { downloadGraphicBytes } from "./storage";
 import { uploadMediaToWp, setFeaturedMedia } from "./wp-media";
 import type { CurrentUser } from "@/lib/auth/current-user";
@@ -150,6 +151,19 @@ export async function submitGraphicRequest(
     "graphic_request",
     "claimed",
     `submitted + featured (wp_media=${upload.media.mediaId})`,
+  );
+
+  // Notify the writer + entry creator that the graphic is live.
+  const { data: parentEntry } = await supabase
+    .from("entries")
+    .select("title")
+    .eq("id", req.entry_id as string)
+    .maybeSingle();
+  await triggerGraphicSubmitted(
+    viewer,
+    req.entry_id as string,
+    (parentEntry?.title as string | undefined) ?? "an entry",
+    req.title as string,
   );
 
   return { ok: true, wp_media_id: upload.media.mediaId };

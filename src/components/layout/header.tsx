@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, User as UserIcon } from "lucide-react";
+import { LogOut, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -15,8 +15,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 type HeaderProps = {
+  userId: string;
   displayName: string;
   email: string;
   avatarUrl: string | null;
@@ -28,7 +30,7 @@ function initialsFromName(name: string): string {
   return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "PL";
 }
 
-export function Header({ displayName, email, avatarUrl, roles }: HeaderProps) {
+export function Header({ userId, displayName, email, avatarUrl, roles }: HeaderProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
@@ -52,17 +54,7 @@ export function Header({ displayName, email, avatarUrl, roles }: HeaderProps) {
 
       {/* Right — notifications, theme, user menu */}
       <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          asChild
-          aria-label="Notifications"
-          title="Notifications"
-        >
-          <Link href="/notifications">
-            <Bell className="h-4 w-4" />
-          </Link>
-        </Button>
+        <NotificationBell userId={userId} />
 
         <ThemeToggle />
 

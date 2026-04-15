@@ -25,6 +25,7 @@ export default async function AppLayout({
       <Sidebar userRoles={user.roles} userDisplayName={user.display_name} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header
+          userId={user.id}
           displayName={user.display_name}
           email={user.email}
           avatarUrl={user.avatar_url}

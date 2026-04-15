@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { CurrentUser } from "@/lib/auth/current-user";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
+import { triggerArchiveRequested } from "@/lib/notifications/trigger";
 
 export type ArchiveRequestRecord = {
   id: string;
@@ -50,6 +51,19 @@ export async function createArchiveRequest(
     "archive_request",
     null,
     `Requested: ${reason.slice(0, 100)}`,
+  );
+
+  // Notify team managers.
+  const { data: entryRow } = await supabase
+    .from("entries")
+    .select("title")
+    .eq("id", entryId)
+    .maybeSingle();
+  await triggerArchiveRequested(
+    viewer,
+    entryId,
+    (entryRow?.title as string | undefined) ?? "an entry",
+    reason,
   );
 
   return { ok: true, id: data.id as string };

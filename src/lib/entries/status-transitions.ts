@@ -2,12 +2,17 @@ import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendRecentActivity } from "@/lib/entries/recent-activity";
+import {
+  triggerContentSubmitted,
+  triggerEntryPublished,
+  triggerEntryScheduled,
+} from "@/lib/notifications/trigger";
 import type {
   ContentStatus,
   EditorStatus,
   GraphicStatus,
 } from "@/lib/entries/queries";
-import type { CurrentUser } from "@/lib/auth/current-user";
+import type { AppSite, CurrentUser } from "@/lib/auth/current-user";
 
 /**
  * Central state machine for the content + editor status tracks.
@@ -110,6 +115,18 @@ export async function submitContent(
     label: `submitted for edit`,
     at: new Date().toISOString(),
   });
+
+  // Notify the editor pool that there's new content waiting.
+  const { data: entryRow } = await supabase
+    .from("entries")
+    .select("title")
+    .eq("id", entryId)
+    .maybeSingle();
+  await triggerContentSubmitted(
+    viewer,
+    entryId,
+    (entryRow?.title as string | undefined) ?? "an entry",
+  );
 
   return { ok: true };
 }
@@ -425,6 +442,23 @@ export async function applyWpStateToEntry(
           : "scheduled in WordPress",
       at: new Date().toISOString(),
     });
+
+    // Fire notifications for scheduled / published transitions.
+    const { data: full } = await supabase
+      .from("entries")
+      .select("title, site")
+      .eq("id", entryId)
+      .maybeSingle();
+    const title = (full?.title as string | undefined) ?? "an entry";
+    if (nextEditor === "scheduled") {
+      await triggerEntryScheduled(
+        entryId,
+        title,
+        (full?.site as AppSite | undefined) ?? "pl",
+      );
+    } else if (nextEditor === "published") {
+      await triggerEntryPublished(entryId, title);
+    }
   }
 }
 

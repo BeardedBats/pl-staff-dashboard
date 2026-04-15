@@ -3,6 +3,10 @@ import "server-only";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
+import {
+  triggerGraphicFlagged,
+  triggerGraphicRequested,
+} from "@/lib/notifications/trigger";
 import type { AppSite, CurrentUser } from "@/lib/auth/current-user";
 import type { GraphicStatus } from "@/lib/entries/queries";
 
@@ -354,6 +358,13 @@ export async function createGraphicRequest(
     `Requested: ${input.title}`,
   );
 
+  await triggerGraphicRequested(
+    viewer,
+    entryId,
+    entry.title as string,
+    input.title,
+  );
+
   return { ok: true, id: data.id as string };
 }
 
@@ -457,7 +468,7 @@ export async function flagGraphicRequest(
 
   const { data: req } = await supabase
     .from("graphic_requests")
-    .select("id, entry_id, title, graphic_status")
+    .select("id, entry_id, title, graphic_status, claimed_by")
     .eq("id", requestId)
     .maybeSingle();
   if (!req) return { ok: false, error: "Request not found" };
@@ -480,6 +491,23 @@ export async function flagGraphicRequest(
     "graphic_request",
     req.graphic_status as string,
     `flagged: ${reason.trim().slice(0, 120)}`,
+  );
+
+  // Notify the artist who claimed this graphic (or the whole graphics
+  // team if nobody's claimed it yet).
+  const { data: parentEntry } = await supabase
+    .from("entries")
+    .select("title")
+    .eq("id", req.entry_id as string)
+    .maybeSingle();
+
+  await triggerGraphicFlagged(
+    viewer,
+    req.entry_id as string,
+    (parentEntry?.title as string | undefined) ?? "an entry",
+    req.title as string,
+    reason.trim(),
+    (req.claimed_by as string | null) ?? null,
   );
 
   return { ok: true };
