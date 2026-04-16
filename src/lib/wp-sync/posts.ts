@@ -70,6 +70,8 @@ export type PostSyncReport = {
   entriesUpdated: number;
   draftedEntriesCreated: number;
   skippedNoMatchingUser: number;
+  /** Published / scheduled posts skipped because they pre-date the dashboard. */
+  skippedNotDraft: number;
   errors: Array<{ wpPostId: number; message: string }>;
 };
 
@@ -198,6 +200,7 @@ export async function syncWpPostsForSite(
     entriesUpdated: 0,
     draftedEntriesCreated: 0,
     skippedNoMatchingUser: 0,
+    skippedNotDraft: 0,
     errors: [],
   };
 
@@ -290,7 +293,16 @@ export async function syncWpPostsForSite(
         continue;
       }
 
-      // Create path — but only if the WP author maps to a dashboard user.
+      // Create path — only for draft/pending posts. Published and scheduled
+      // posts that don't already have a dashboard entry pre-date the
+      // dashboard's tracking and shouldn't auto-create backdated entries.
+      // This keeps the smoke test from accidentally pulling thousands of
+      // old pitcherlist.com articles into the dashboard.
+      if (post.status !== "draft" && post.status !== "pending") {
+        report.skippedNotDraft++;
+        continue;
+      }
+
       const { data: dashboardUser } = await supabase
         .from("users")
         .select("id, auto_approve_drafts")
