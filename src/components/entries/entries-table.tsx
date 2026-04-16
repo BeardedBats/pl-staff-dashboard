@@ -7,10 +7,12 @@ import {
   getCoreRowModel,
   useReactTable,
   type ColumnDef,
+  type RowSelectionState,
   type VisibilityState,
 } from "@tanstack/react-table";
 import {
   AlertTriangle,
+  Archive,
   ArrowDown,
   ArrowUp,
   ChevronDown,
@@ -139,6 +141,8 @@ export function EntriesTable({
   const [loading, setLoading] = React.useState(true);
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [views, setViews] = React.useState<SavedViewRecord[]>(initialViews);
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+  const [bulkBusy, setBulkBusy] = React.useState(false);
 
   // Apply default view on mount.
   React.useEffect(() => {
@@ -223,11 +227,34 @@ export function EntriesTable({
   const table = useReactTable({
     data: entries,
     columns,
-    state: { columnVisibility: visibility },
+    state: { columnVisibility: visibility, rowSelection },
     onColumnVisibilityChange: setVisibility,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
   });
+
+  const selectedCount = Object.keys(rowSelection).length;
+  const selectedIds = Object.keys(rowSelection);
+
+  async function runBulk(body: Record<string, unknown>) {
+    setBulkBusy(true);
+    try {
+      const res = await fetch("/api/entries/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...body, entry_ids: selectedIds }),
+      });
+      if (res.ok) {
+        setRowSelection({});
+        setFilters((f) => ({ ...f })); // re-fetch
+        router.refresh();
+      }
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   const hasActiveFilters =
     filters.search !== "" ||
@@ -304,12 +331,82 @@ export function EntriesTable({
         onVisibilityChange={setVisibility}
       />
 
+      {/* Bulk actions bar */}
+      {selectedCount > 0 ? (
+        <div className="flex items-center gap-3 rounded-md border border-cyan/30 bg-cyan-dim/20 px-4 py-2 text-xs">
+          <span className="font-medium text-text-primary">
+            {selectedCount} selected
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={bulkBusy}
+            onClick={() => {
+              if (
+                window.confirm(
+                  `Archive ${selectedCount} entries? They'll be soft-deleted and can be restored later.`,
+                )
+              ) {
+                void runBulk({ action: "archive" });
+              }
+            }}
+          >
+            <Archive className="h-3.5 w-3.5" />
+            Archive
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={bulkBusy}
+            onClick={() => {
+              void runBulk({ action: "set_priority", priority: true });
+            }}
+          >
+            <Star className="h-3.5 w-3.5 text-amber" />
+            Set priority
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={bulkBusy}
+            onClick={() => {
+              void runBulk({ action: "set_priority", priority: false });
+            }}
+          >
+            <Star className="h-3.5 w-3.5" />
+            Remove priority
+          </Button>
+          <div className="ml-auto">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRowSelection({})}
+            >
+              <X className="h-3 w-3" />
+              Clear
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Table */}
       <div className="overflow-hidden rounded-lg border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-navy-3">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
+                <th className="w-8 px-2 py-2">
+                  <Checkbox
+                    checked={
+                      entries.length > 0 &&
+                      table.getIsAllRowsSelected()
+                    }
+                    onCheckedChange={(checked) =>
+                      table.toggleAllRowsSelected(Boolean(checked))
+                    }
+                    aria-label="Select all"
+                  />
+                </th>
                 <th className="w-8 px-2 py-2" />
                 {headerGroup.headers.map((header) => (
                   <th
@@ -331,7 +428,7 @@ export function EntriesTable({
             {loading && entries.length === 0 ? (
               <tr>
                 <td
-                  colSpan={table.getVisibleFlatColumns().length + 1}
+                  colSpan={table.getVisibleFlatColumns().length + 2}
                   className="px-4 py-10 text-center text-text-muted"
                 >
                   <Loader2 className="mx-auto h-5 w-5 animate-spin" />
@@ -340,7 +437,7 @@ export function EntriesTable({
             ) : entries.length === 0 ? (
               <tr>
                 <td
-                  colSpan={table.getVisibleFlatColumns().length + 1}
+                  colSpan={table.getVisibleFlatColumns().length + 2}
                   className="px-4 py-10"
                 >
                   <EmptyState
@@ -375,11 +472,24 @@ export function EntriesTable({
                         isExpanded && "bg-navy-3/50",
                         entry.content_status === "writer_needed" &&
                           "bg-amber-dim/30",
+                        row.getIsSelected() && "bg-cyan-dim/20",
                       )}
                       onClick={() =>
                         setExpandedId(isExpanded ? null : row.id)
                       }
                     >
+                      <td
+                        className="w-8 px-2 py-3 align-top"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={row.getIsSelected()}
+                          onCheckedChange={(checked) =>
+                            row.toggleSelected(Boolean(checked))
+                          }
+                          aria-label={`Select ${entry.title}`}
+                        />
+                      </td>
                       <td className="w-8 px-2 py-3 align-top text-text-muted">
                         {isExpanded ? (
                           <ChevronDown className="h-4 w-4" />
@@ -402,7 +512,7 @@ export function EntriesTable({
                     {isExpanded ? (
                       <tr>
                         <td
-                          colSpan={table.getVisibleFlatColumns().length + 1}
+                          colSpan={table.getVisibleFlatColumns().length + 2}
                           className="bg-navy-2/50 p-0"
                         >
                           <EntryDetailPanel

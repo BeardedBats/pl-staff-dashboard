@@ -85,6 +85,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         <Button
           variant="ghost"
           size="icon"
+          data-tour="notification-bell"
           aria-label={
             unreadCount > 0
               ? `${unreadCount} unread notifications`

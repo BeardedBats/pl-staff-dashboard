@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 
 /**
  * Authenticated layout.
@@ -35,6 +36,7 @@ export default async function AppLayout({
           <div className="mx-auto w-full max-w-[1600px] p-6">{children}</div>
         </main>
       </div>
+      <OnboardingTour enabled={!user.onboarding_completed} />
     </div>
   );
 }

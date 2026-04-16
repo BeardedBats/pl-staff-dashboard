@@ -62,6 +62,16 @@ those get fixed immediately when spotted, not deferred here.
 - [ ] Publish-to-peak analysis chart — spec calls this out, needs cumulative pageviews curve per article since publish. Can re-use article_analytics + entries.publish_date.
 - [ ] Per-entry analytics in the entry detail panel — spec says EIC/Ops see a mini analytics block in the inline detail panel. Not wired yet.
 
+## Step 14 — Onboarding & Polish
+
+- [ ] Joyride tour styling — colours use CSS vars that may not resolve in the Joyride portal. Verify at first login that the cards look right in both dark and light modes.
+- [ ] Bulk operations — "change tier" and "unarchive" actions exist in the API but aren't in the UI toolbar yet. Easy add.
+- [ ] Bulk create modal — spec calls for creating multiple entries at once. Low priority; single-create dialog is fast enough.
+- [ ] Mobile sidebar — collapses to collapsed mode on `md:` breakpoint. Needs a hamburger toggle on mobile to open/close as a drawer. Currently it's just always narrow.
+- [ ] Mobile tables — content table, analytics tables, and staff directory all need a card/list fallback on < 768px.
+- [ ] Virtual scrolling — TanStack Virtualizer for the content table when row counts exceed ~200. Not needed yet.
+- [ ] Loading skeletons — most pages have loading spinners, a few could use proper Skeleton placeholder components (staff directory, calendar).
+
 ---
 
 ## How to add items

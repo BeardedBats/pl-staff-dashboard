@@ -39,6 +39,7 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
 
   return (
     <aside
+      data-tour="sidebar"
       className={cn(
         "flex h-screen flex-col border-r border-border bg-card transition-all duration-200",
         collapsed ? "w-16" : "w-60",
@@ -113,9 +114,13 @@ function NavLink({
   collapsed: boolean;
 }) {
   const Icon = item.icon;
+  // Derive the data-tour slug from the href so the Joyride tour can target
+  // specific nav items ("/content" → "nav-content", "/my-tasks" → "nav-my-tasks").
+  const tourId = `nav-${item.href.replace(/^\//, "")}`;
   return (
     <Link
       href={item.href}
+      data-tour={tourId}
       title={collapsed ? item.label : undefined}
       className={cn(
         "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
