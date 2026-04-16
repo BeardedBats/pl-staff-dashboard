@@ -52,6 +52,16 @@ those get fixed immediately when spotted, not deferred here.
 
 - [ ] MVP spec says "mobile-friendly but not over-invested." Pass it once the full desktop UX is locked.
 
+## Step 12 — Analytics
+
+- [ ] Analytics Trends tab — add day-of-week + time-of-day heatmap (spec §"Analytics Page"). Deferred: Recharts has no first-class heatmap, would need a custom grid.
+- [ ] PDF export on Articles/Writers tabs — CSV ships, PDF deferred. Likely `@react-pdf/renderer` or a print stylesheet + browser print.
+- [ ] Author filter — the filters bar has no author picker yet. Needs a debounced user search combobox (same pattern as graphics assignees).
+- [ ] Category filter — same deal; tier filter only for now.
+- [ ] Raptive upload dialog — no drag-drop zone, just a click-to-pick label. Works fine; nicer DnD later.
+- [ ] Publish-to-peak analysis chart — spec calls this out, needs cumulative pageviews curve per article since publish. Can re-use article_analytics + entries.publish_date.
+- [ ] Per-entry analytics in the entry detail panel — spec says EIC/Ops see a mini analytics block in the inline detail panel. Not wired yet.
+
 ---
 
 ## How to add items

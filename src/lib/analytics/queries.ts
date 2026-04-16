@@ -1,0 +1,576 @@
+import "server-only";
+
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import type { AppSite } from "@/lib/auth/current-user";
+
+// --------------------------------------------------------------------------
+// Types
+// --------------------------------------------------------------------------
+
+export type AnalyticsFilters = {
+  /** ISO date (YYYY-MM-DD) inclusive lower bound. */
+  dateFrom: string;
+  /** ISO date (YYYY-MM-DD) inclusive upper bound. */
+  dateTo: string;
+  site?: AppSite;
+  tierId?: string;
+  categoryId?: string;
+  authorId?: string;
+};
+
+export type AnalyticsOverview = {
+  /** Entries that received at least one pageview or raptive row in range. */
+  articlesCount: number;
+  totalPageviews: number;
+  totalSessions: number;
+  totalEarnings: number;
+  /** Revenue per mille (sessions). */
+  avgRpm: number;
+  /** Revenue per mille (pageviews) — Raptive's "Page RPM". */
+  avgPageRpm: number;
+  /** Daily series for sparklines. */
+  daily: Array<{
+    date: string;
+    pageviews: number;
+    earnings: number;
+  }>;
+};
+
+export type AnalyticsArticleRow = {
+  entry_id: string;
+  title: string;
+  site: AppSite;
+  tier_name: string;
+  publish_date: string | null;
+  pageviews: number;
+  sessions: number;
+  avg_time_on_page: number;
+  earnings: number;
+  page_rpm: number;
+  authors: string;
+};
+
+export type AnalyticsWriterRow = {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  articles: number;
+  pageviews: number;
+  earnings: number;
+  /** Revenue divided by total words across their articles. */
+  revenue_per_word: number;
+};
+
+// --------------------------------------------------------------------------
+// Helpers
+// --------------------------------------------------------------------------
+
+type EntryRow = {
+  id: string;
+  title: string;
+  site: AppSite;
+  tier_id: string;
+  publish_date: string | null;
+  word_count: number;
+  category_id: string | null;
+  is_archived: boolean;
+};
+
+async function loadEntriesForRange(
+  filters: AnalyticsFilters,
+): Promise<Map<string, EntryRow>> {
+  const supabase = getSupabaseAdmin();
+  let q = supabase
+    .from("entries")
+    .select(
+      "id, title, site, tier_id, publish_date, word_count, category_id, is_archived",
+    )
+    .eq("is_archived", false);
+
+  // Keep any entry that was published on/before dateTo — we don't filter by
+  // publish_date on the lower bound because an older article can still
+  // accumulate pageviews during the filter window.
+  if (filters.site) q = q.eq("site", filters.site);
+  if (filters.tierId) q = q.eq("tier_id", filters.tierId);
+  if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
+
+  const { data } = await q;
+  const rows = (data ?? []) as unknown as EntryRow[];
+
+  const map = new Map<string, EntryRow>();
+  for (const r of rows) map.set(r.id, r);
+  return map;
+}
+
+async function loadGa4Rows(
+  filters: AnalyticsFilters,
+  entryIds: string[],
+): Promise<
+  Array<{
+    entry_id: string;
+    date: string;
+    pageviews: number;
+    sessions: number;
+    avg_time_on_page: number;
+  }>
+> {
+  if (entryIds.length === 0) return [];
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("article_analytics")
+    .select("entry_id, date, pageviews, sessions, avg_time_on_page")
+    .in("entry_id", entryIds)
+    .gte("date", filters.dateFrom)
+    .lte("date", filters.dateTo);
+
+  return (data ?? []) as unknown as Array<{
+    entry_id: string;
+    date: string;
+    pageviews: number;
+    sessions: number;
+    avg_time_on_page: number;
+  }>;
+}
+
+async function loadRaptiveRows(
+  filters: AnalyticsFilters,
+  entryIds: string[],
+): Promise<
+  Array<{
+    entry_id: string | null;
+    date: string;
+    page_url: string;
+    earnings: number;
+    rpm: number;
+    page_rpm: number;
+    sessions: number;
+    pageviews: number;
+  }>
+> {
+  const supabase = getSupabaseAdmin();
+  // Raptive rows may not have an entry_id (unmatched) — we still want the
+  // overall revenue bucket, so we scope by date first and then filter
+  // entry_id on the consumer side when the consumer requires a match.
+  let q = supabase
+    .from("raptive_revenue")
+    .select(
+      "entry_id, date, page_url, earnings, rpm, page_rpm, sessions, pageviews",
+    )
+    .gte("date", filters.dateFrom)
+    .lte("date", filters.dateTo);
+
+  // If a site/tier/category filter is on, we can only score rows that link
+  // back to an entry in our filtered set.
+  if (filters.site || filters.tierId || filters.categoryId || filters.authorId) {
+    if (entryIds.length === 0) return [];
+    q = q.in("entry_id", entryIds);
+  }
+
+  const { data } = await q;
+  return (data ?? []) as unknown as Array<{
+    entry_id: string | null;
+    date: string;
+    page_url: string;
+    earnings: number;
+    rpm: number;
+    page_rpm: number;
+    sessions: number;
+    pageviews: number;
+  }>;
+}
+
+async function loadEntryAuthors(
+  entryIds: string[],
+): Promise<Map<string, Array<{ user_id: string; display_name: string; avatar_url: string | null; word_count: number; role: string }>>> {
+  if (entryIds.length === 0) return new Map();
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("entry_authors")
+    .select(
+      "entry_id, role, user_id, users!inner(id, display_name, avatar_url)",
+    )
+    .in("entry_id", entryIds);
+
+  const rows = (data ?? []) as unknown as Array<{
+    entry_id: string;
+    role: string;
+    user_id: string;
+    users: { id: string; display_name: string; avatar_url: string | null };
+  }>;
+
+  const map = new Map<
+    string,
+    Array<{ user_id: string; display_name: string; avatar_url: string | null; word_count: number; role: string }>
+  >();
+  for (const r of rows) {
+    const arr = map.get(r.entry_id) ?? [];
+    arr.push({
+      user_id: r.user_id,
+      display_name: r.users.display_name,
+      avatar_url: r.users.avatar_url,
+      word_count: 0,
+      role: r.role,
+    });
+    map.set(r.entry_id, arr);
+  }
+  return map;
+}
+
+// --------------------------------------------------------------------------
+// Overview
+// --------------------------------------------------------------------------
+
+export async function getAnalyticsOverview(
+  filters: AnalyticsFilters,
+): Promise<AnalyticsOverview> {
+  const entries = await loadEntriesForRange(filters);
+  const entryIds = Array.from(entries.keys());
+
+  // Restrict by authorId — pulls only entries where this user is in entry_authors
+  let filteredEntryIds = entryIds;
+  if (filters.authorId) {
+    const supabase = getSupabaseAdmin();
+    const { data } = await supabase
+      .from("entry_authors")
+      .select("entry_id")
+      .eq("user_id", filters.authorId);
+    const authored = new Set(
+      ((data ?? []) as Array<{ entry_id: string }>).map((r) => r.entry_id),
+    );
+    filteredEntryIds = entryIds.filter((id) => authored.has(id));
+  }
+
+  const [ga4Rows, raptiveRows] = await Promise.all([
+    loadGa4Rows(filters, filteredEntryIds),
+    loadRaptiveRows(filters, filteredEntryIds),
+  ]);
+
+  // Aggregate
+  const daily = new Map<string, { pageviews: number; earnings: number }>();
+  let totalPageviews = 0;
+  let totalSessions = 0;
+  let totalEarnings = 0;
+
+  for (const r of ga4Rows) {
+    totalPageviews += r.pageviews;
+    totalSessions += r.sessions;
+    const bucket = daily.get(r.date) ?? { pageviews: 0, earnings: 0 };
+    bucket.pageviews += r.pageviews;
+    daily.set(r.date, bucket);
+  }
+  for (const r of raptiveRows) {
+    totalEarnings += Number(r.earnings) || 0;
+    // Raptive also reports pageviews/sessions — if we have no GA4 data yet,
+    // these keep the overview populated. If we have both, GA4 wins (it's
+    // more granular) and we don't double-count.
+    if (ga4Rows.length === 0) {
+      totalPageviews += r.pageviews;
+      totalSessions += r.sessions;
+      const bucket = daily.get(r.date) ?? { pageviews: 0, earnings: 0 };
+      bucket.pageviews += r.pageviews;
+      bucket.earnings += Number(r.earnings) || 0;
+      daily.set(r.date, bucket);
+    } else {
+      const bucket = daily.get(r.date) ?? { pageviews: 0, earnings: 0 };
+      bucket.earnings += Number(r.earnings) || 0;
+      daily.set(r.date, bucket);
+    }
+  }
+
+  // Count distinct entries that saw traffic or revenue
+  const seenEntries = new Set<string>();
+  for (const r of ga4Rows) seenEntries.add(r.entry_id);
+  for (const r of raptiveRows) if (r.entry_id) seenEntries.add(r.entry_id);
+
+  const avgRpm = totalSessions > 0 ? (totalEarnings / totalSessions) * 1000 : 0;
+  const avgPageRpm =
+    totalPageviews > 0 ? (totalEarnings / totalPageviews) * 1000 : 0;
+
+  const dailySeries = Array.from(daily.entries())
+    .map(([date, v]) => ({ date, pageviews: v.pageviews, earnings: v.earnings }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  return {
+    articlesCount: seenEntries.size,
+    totalPageviews,
+    totalSessions,
+    totalEarnings,
+    avgRpm,
+    avgPageRpm,
+    daily: dailySeries,
+  };
+}
+
+// --------------------------------------------------------------------------
+// Article rollup
+// --------------------------------------------------------------------------
+
+export async function getAnalyticsArticles(
+  filters: AnalyticsFilters,
+): Promise<AnalyticsArticleRow[]> {
+  const entries = await loadEntriesForRange(filters);
+  const entryIds = Array.from(entries.keys());
+
+  // Authors (for filter + display)
+  const authors = await loadEntryAuthors(entryIds);
+
+  // Author filter
+  let filteredEntryIds = entryIds;
+  if (filters.authorId) {
+    filteredEntryIds = entryIds.filter((id) =>
+      (authors.get(id) ?? []).some((a) => a.user_id === filters.authorId),
+    );
+  }
+
+  // Tiers — single lookup
+  const supabase = getSupabaseAdmin();
+  const { data: tierRows } = await supabase
+    .from("tiers")
+    .select("id, name");
+  const tierMap = new Map<string, string>();
+  for (const t of (tierRows ?? []) as Array<{ id: string; name: string }>) {
+    tierMap.set(t.id, t.name);
+  }
+
+  const [ga4Rows, raptiveRows] = await Promise.all([
+    loadGa4Rows(filters, filteredEntryIds),
+    loadRaptiveRows(filters, filteredEntryIds),
+  ]);
+
+  type Agg = {
+    pageviews: number;
+    sessions: number;
+    timeSum: number;
+    timeCount: number;
+    earnings: number;
+  };
+  const agg = new Map<string, Agg>();
+
+  for (const r of ga4Rows) {
+    const b = agg.get(r.entry_id) ?? {
+      pageviews: 0,
+      sessions: 0,
+      timeSum: 0,
+      timeCount: 0,
+      earnings: 0,
+    };
+    b.pageviews += r.pageviews;
+    b.sessions += r.sessions;
+    if (r.avg_time_on_page) {
+      b.timeSum += r.avg_time_on_page * r.pageviews;
+      b.timeCount += r.pageviews;
+    }
+    agg.set(r.entry_id, b);
+  }
+  for (const r of raptiveRows) {
+    if (!r.entry_id) continue;
+    const b = agg.get(r.entry_id) ?? {
+      pageviews: 0,
+      sessions: 0,
+      timeSum: 0,
+      timeCount: 0,
+      earnings: 0,
+    };
+    b.earnings += Number(r.earnings) || 0;
+    // Only bump pageviews/sessions from Raptive if we don't have GA4 for
+    // this article (avoid double-counting).
+    if (b.pageviews === 0) {
+      b.pageviews += r.pageviews;
+      b.sessions += r.sessions;
+    }
+    agg.set(r.entry_id, b);
+  }
+
+  const out: AnalyticsArticleRow[] = [];
+  for (const entryId of filteredEntryIds) {
+    const a = agg.get(entryId);
+    if (!a) continue;
+    const entry = entries.get(entryId);
+    if (!entry) continue;
+    const ents = authors.get(entryId) ?? [];
+    out.push({
+      entry_id: entryId,
+      title: entry.title,
+      site: entry.site,
+      tier_name: tierMap.get(entry.tier_id) ?? "?",
+      publish_date: entry.publish_date,
+      pageviews: a.pageviews,
+      sessions: a.sessions,
+      avg_time_on_page: a.timeCount > 0 ? a.timeSum / a.timeCount : 0,
+      earnings: a.earnings,
+      page_rpm: a.pageviews > 0 ? (a.earnings / a.pageviews) * 1000 : 0,
+      authors: ents.map((e) => e.display_name).join(", ") || "—",
+    });
+  }
+
+  out.sort((a, b) => b.earnings - a.earnings);
+  return out;
+}
+
+// --------------------------------------------------------------------------
+// Writer rollup
+// --------------------------------------------------------------------------
+
+export async function getAnalyticsWriters(
+  filters: AnalyticsFilters,
+): Promise<AnalyticsWriterRow[]> {
+  const entries = await loadEntriesForRange(filters);
+  const entryIds = Array.from(entries.keys());
+
+  // word_count lives on the entry record
+  const wordCounts = new Map<string, number>();
+  for (const [id, e] of entries) wordCounts.set(id, e.word_count ?? 0);
+
+  const authors = await loadEntryAuthors(entryIds);
+
+  const [ga4Rows, raptiveRows] = await Promise.all([
+    loadGa4Rows(filters, entryIds),
+    loadRaptiveRows(filters, entryIds),
+  ]);
+
+  type Agg = {
+    display_name: string;
+    avatar_url: string | null;
+    articleSet: Set<string>;
+    pageviews: number;
+    earnings: number;
+    words: number;
+  };
+  const byUser = new Map<string, Agg>();
+
+  for (const [entryId, authorList] of authors.entries()) {
+    for (const author of authorList) {
+      // Only primary authors count toward rollups
+      if (author.role !== "primary") continue;
+      const b = byUser.get(author.user_id) ?? {
+        display_name: author.display_name,
+        avatar_url: author.avatar_url,
+        articleSet: new Set<string>(),
+        pageviews: 0,
+        earnings: 0,
+        words: 0,
+      };
+      b.articleSet.add(entryId);
+      b.words += wordCounts.get(entryId) ?? 0;
+      byUser.set(author.user_id, b);
+    }
+  }
+
+  // Attribute traffic + earnings to primary authors only
+  const primaryAuthorByEntry = new Map<string, Set<string>>();
+  for (const [entryId, arr] of authors.entries()) {
+    const set = new Set(
+      arr.filter((a) => a.role === "primary").map((a) => a.user_id),
+    );
+    primaryAuthorByEntry.set(entryId, set);
+  }
+
+  for (const r of ga4Rows) {
+    const set = primaryAuthorByEntry.get(r.entry_id);
+    if (!set) continue;
+    for (const uid of set) {
+      const b = byUser.get(uid);
+      if (!b) continue;
+      b.pageviews += r.pageviews;
+    }
+  }
+  for (const r of raptiveRows) {
+    if (!r.entry_id) continue;
+    const set = primaryAuthorByEntry.get(r.entry_id);
+    if (!set) continue;
+    for (const uid of set) {
+      const b = byUser.get(uid);
+      if (!b) continue;
+      b.earnings += Number(r.earnings) || 0;
+    }
+  }
+
+  const out: AnalyticsWriterRow[] = Array.from(byUser.entries())
+    .map(([user_id, b]) => ({
+      user_id,
+      display_name: b.display_name,
+      avatar_url: b.avatar_url,
+      articles: b.articleSet.size,
+      pageviews: b.pageviews,
+      earnings: b.earnings,
+      revenue_per_word: b.words > 0 ? b.earnings / b.words : 0,
+    }))
+    .filter((r) => r.pageviews > 0 || r.earnings > 0);
+
+  out.sort((a, b) => b.earnings - a.earnings);
+  return out;
+}
+
+// --------------------------------------------------------------------------
+// CSV serialisation (used by export endpoint)
+// --------------------------------------------------------------------------
+
+export function articlesToCsv(rows: AnalyticsArticleRow[]): string {
+  const header = [
+    "Title",
+    "Site",
+    "Tier",
+    "Publish Date",
+    "Authors",
+    "Pageviews",
+    "Sessions",
+    "Avg Time on Page (s)",
+    "Earnings",
+    "Page RPM",
+  ];
+  const esc = (v: unknown) => {
+    const s = String(v ?? "");
+    if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  };
+  const lines = [header.join(",")];
+  for (const r of rows) {
+    lines.push(
+      [
+        esc(r.title),
+        esc(r.site.toUpperCase()),
+        esc(r.tier_name),
+        esc(r.publish_date ?? ""),
+        esc(r.authors),
+        r.pageviews,
+        r.sessions,
+        r.avg_time_on_page.toFixed(1),
+        r.earnings.toFixed(2),
+        r.page_rpm.toFixed(2),
+      ].join(","),
+    );
+  }
+  return lines.join("\n");
+}
+
+export function writersToCsv(rows: AnalyticsWriterRow[]): string {
+  const header = [
+    "Writer",
+    "Articles",
+    "Pageviews",
+    "Earnings",
+    "Revenue / Word",
+  ];
+  const esc = (v: unknown) => {
+    const s = String(v ?? "");
+    if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  };
+  const lines = [header.join(",")];
+  for (const r of rows) {
+    lines.push(
+      [
+        esc(r.display_name),
+        r.articles,
+        r.pageviews,
+        r.earnings.toFixed(2),
+        r.revenue_per_word.toFixed(4),
+      ].join(","),
+    );
+  }
+  return lines.join("\n");
+}

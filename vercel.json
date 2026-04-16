@@ -20,6 +20,10 @@
     {
       "path": "/api/cron/category-sync",
       "schedule": "37 3 * * 0"
+    },
+    {
+      "path": "/api/cron/ga4-sync",
+      "schedule": "47 7 * * *"
     }
   ]
 }

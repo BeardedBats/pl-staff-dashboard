@@ -113,6 +113,19 @@ export function isAdminPlus(user: CurrentUser): boolean {
   return hasRole(user, "admin", "eic", "operations");
 }
 
+/**
+ * Analytics is EIC + Operations only — deliberately NOT Admin, so contractor
+ * admins handling pipeline state can't see revenue numbers.
+ */
+export function canViewAnalytics(user: CurrentUser): boolean {
+  return hasRole(user, "eic", "operations");
+}
+
+/** Operations-only actions — uploading Raptive sheets, connecting GA4. */
+export function isOperations(user: CurrentUser): boolean {
+  return hasRole(user, "operations");
+}
+
 /** Manager or higher. */
 export function isManagerPlus(user: CurrentUser): boolean {
   return hasRole(user, "manager", "admin", "eic", "operations");

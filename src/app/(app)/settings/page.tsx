@@ -1,11 +1,18 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import {
+  canViewAnalytics,
+  getCurrentUser,
+  isAdminPlus,
+  isOperations,
+} from "@/lib/auth/current-user";
 import { getUserById, listUsers } from "@/lib/users/queries";
 import { listTeams } from "@/lib/teams/data";
 import { listTiers } from "@/lib/entries/queries";
 import { listTemplates } from "@/lib/recurring-templates/data";
 import { listSeasonModes } from "@/lib/season-modes/data";
 import { listChecklistItems } from "@/lib/checklist/data";
+import { getGa4Status } from "@/lib/analytics/ga4";
+import { listRaptiveUploads } from "@/lib/analytics/raptive";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   Tabs,
@@ -20,6 +27,7 @@ import { AdminTemplatesPanel } from "./admin-templates-panel";
 import { AdminSeasonPanel } from "./admin-season-panel";
 import { AdminSyncPanel } from "./admin-sync-panel";
 import { AdminChecklistsPanel } from "./admin-checklists-panel";
+import { AdminAnalyticsPanel } from "./admin-analytics-panel";
 import { NotificationPrefsPanel } from "./notification-prefs-panel";
 
 export const metadata = {
@@ -40,6 +48,7 @@ export default async function SettingsPage({
   if (!myProfile) redirect("/login");
 
   const adminAccess = isAdminPlus(viewer);
+  const analyticsAccess = canViewAnalytics(viewer);
   const params = await searchParams;
 
   // Fetch admin data in parallel if the viewer has access.
@@ -64,9 +73,20 @@ export default async function SettingsPage({
           [],
         ];
 
+  // Analytics panel — only fetched for EIC/Operations viewers
+  const [ga4Status, raptiveUploads] = analyticsAccess
+    ? await Promise.all([getGa4Status(), listRaptiveUploads()])
+    : [
+        { configured: false, connected: false, propertyId: null, lastSyncedAt: null },
+        [],
+      ];
+
   const validTabs = ["profile", "notifications"];
   if (adminAccess) {
     validTabs.push("users", "teams", "templates", "season", "sync", "checklists");
+  }
+  if (analyticsAccess) {
+    validTabs.push("analytics");
   }
   const defaultTab =
     params.tab && validTabs.includes(params.tab) ? params.tab : "profile";
@@ -94,6 +114,9 @@ export default async function SettingsPage({
               <TabsTrigger value="sync">Sync</TabsTrigger>
               <TabsTrigger value="checklists">Checklists</TabsTrigger>
             </>
+          ) : null}
+          {analyticsAccess ? (
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           ) : null}
         </TabsList>
 
@@ -137,6 +160,15 @@ export default async function SettingsPage({
               />
             </TabsContent>
           </>
+        ) : null}
+        {analyticsAccess ? (
+          <TabsContent value="analytics">
+            <AdminAnalyticsPanel
+              initialGa4Status={ga4Status}
+              initialUploads={raptiveUploads}
+              canConnectGa4={isOperations(viewer)}
+            />
+          </TabsContent>
         ) : null}
       </Tabs>
     </div>
