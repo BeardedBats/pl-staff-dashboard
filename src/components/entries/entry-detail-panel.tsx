@@ -23,7 +23,7 @@ import {
   Hand,
   History,
 } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -246,7 +246,15 @@ export function EntryDetailPanel({
     me?.roles.some((r) =>
       ["editor", "manager", "admin", "eic", "operations"].includes(r),
     ) ?? false;
+  const isAdminLike =
+    me?.roles.some((r) => ["admin", "eic", "operations"].includes(r)) ??
+    false;
   const isAuthor = entry.authors.some((a) => a.user_id === me?.id);
+  const canEditChecklist = isAuthor || isEditorLike || isAdminLike;
+  const missingRequired = entry.checklist.filter(
+    (c) => c.is_required && !c.is_completed,
+  );
+  const submitGateBlocked = missingRequired.length > 0;
   const isClaimableContent = entry.content_status === "writer_needed";
   const canSubmit =
     isAuthor &&
@@ -294,7 +302,14 @@ export function EntryDetailPanel({
           <Button
             size="sm"
             onClick={handleSubmit}
-            disabled={busyAction === "submit"}
+            disabled={busyAction === "submit" || submitGateBlocked}
+            title={
+              submitGateBlocked
+                ? `Checklist incomplete (${missingRequired.length} required): ${missingRequired
+                    .map((m) => m.label)
+                    .join(", ")}`
+                : undefined
+            }
           >
             {busyAction === "submit" ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -302,6 +317,11 @@ export function EntryDetailPanel({
               <Send className="h-3.5 w-3.5" />
             )}
             Submit
+            {submitGateBlocked ? (
+              <span className="ml-1 font-mono text-[10px] opacity-70">
+                ({missingRequired.length} to check)
+              </span>
+            ) : null}
           </Button>
         ) : null}
 
@@ -391,11 +411,25 @@ export function EntryDetailPanel({
             entry={entry}
             graphicRequests={graphicRequests}
             currentUserId={me?.id ?? ""}
+            canEditChecklist={canEditChecklist}
             onGraphicsChanged={() => {
               void reload();
               onChanged();
             }}
             onCreateGraphic={() => setCreateGraphicOpen(true)}
+            onChecklistToggle={async (itemId, nextCompleted) => {
+              const res = await fetch(
+                `/api/entries/${entryId}/checklist/${itemId}`,
+                {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ is_completed: nextCompleted }),
+                },
+              );
+              if (res.ok) {
+                await reload();
+              }
+            }}
           />
         </TabsContent>
 
@@ -530,14 +564,18 @@ function PipelineTab({
   entry,
   graphicRequests,
   currentUserId,
+  canEditChecklist,
   onGraphicsChanged,
   onCreateGraphic,
+  onChecklistToggle,
 }: {
   entry: EntryDetail;
   graphicRequests: GraphicRequestRecord[];
   currentUserId: string;
+  canEditChecklist: boolean;
   onGraphicsChanged: () => void;
   onCreateGraphic: () => void;
+  onChecklistToggle: (itemId: string, nextCompleted: boolean) => Promise<void>;
 }) {
   return (
     <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
@@ -622,29 +660,12 @@ function PipelineTab({
             </h4>
             <ul className="space-y-1">
               {entry.checklist.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex items-center gap-2 rounded-sm border border-border bg-card px-3 py-2 text-sm"
-                >
-                  {item.is_completed ? (
-                    <CheckCircle2 className="h-4 w-4 text-success" />
-                  ) : (
-                    <Circle className="h-4 w-4 text-text-muted" />
-                  )}
-                  <span
-                    className={
-                      item.is_completed
-                        ? "text-text-muted line-through"
-                        : "text-text-secondary"
-                    }
-                  >
-                    {item.label}
-                  </span>
-                  {item.is_required ? (
-                    <Badge variant="outline" className="ml-auto">
-                      Required
-                    </Badge>
-                  ) : null}
+                <li key={item.id}>
+                  <ChecklistItemRow
+                    item={item}
+                    canEdit={canEditChecklist}
+                    onToggle={onChecklistToggle}
+                  />
                 </li>
               ))}
             </ul>
@@ -1014,5 +1035,75 @@ function MetaRow({
       </div>
       <span className="text-text-secondary">{value}</span>
     </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Interactive checklist item row
+// --------------------------------------------------------------------------
+
+function ChecklistItemRow({
+  item,
+  canEdit,
+  onToggle,
+}: {
+  item: {
+    id: string;
+    label: string;
+    is_completed: boolean;
+    is_required: boolean;
+  };
+  canEdit: boolean;
+  onToggle: (itemId: string, nextCompleted: boolean) => Promise<void>;
+}) {
+  const [busy, setBusy] = React.useState(false);
+
+  async function handleClick() {
+    if (!canEdit || busy) return;
+    setBusy(true);
+    try {
+      await onToggle(item.id, !item.is_completed);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const Wrapper = canEdit ? "button" : "div";
+
+  return (
+    <Wrapper
+      type={canEdit ? "button" : undefined}
+      onClick={canEdit ? handleClick : undefined}
+      disabled={canEdit && busy ? true : undefined}
+      className={cn(
+        "flex w-full items-center gap-2 rounded-sm border border-border bg-card px-3 py-2 text-left text-sm",
+        canEdit && !busy && "cursor-pointer hover:bg-navy-3",
+        busy && "opacity-60",
+      )}
+    >
+      {busy ? (
+        <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
+      ) : item.is_completed ? (
+        <CheckCircle2 className="h-4 w-4 text-success" />
+      ) : (
+        <Circle className="h-4 w-4 text-text-muted" />
+      )}
+      <span
+        className={
+          item.is_completed
+            ? "text-text-muted line-through"
+            : item.is_required
+              ? "text-text-secondary"
+              : "text-text-muted"
+        }
+      >
+        {item.label}
+      </span>
+      {item.is_required ? (
+        <Badge variant="outline" className="ml-auto">
+          Required
+        </Badge>
+      ) : null}
+    </Wrapper>
   );
 }

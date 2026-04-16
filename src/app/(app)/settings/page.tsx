@@ -5,6 +5,7 @@ import { listTeams } from "@/lib/teams/data";
 import { listTiers } from "@/lib/entries/queries";
 import { listTemplates } from "@/lib/recurring-templates/data";
 import { listSeasonModes } from "@/lib/season-modes/data";
+import { listChecklistItems } from "@/lib/checklist/data";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   Tabs,
@@ -18,6 +19,7 @@ import { AdminTeamsPanel } from "./admin-teams-panel";
 import { AdminTemplatesPanel } from "./admin-templates-panel";
 import { AdminSeasonPanel } from "./admin-season-panel";
 import { AdminSyncPanel } from "./admin-sync-panel";
+import { AdminChecklistsPanel } from "./admin-checklists-panel";
 import { NotificationPrefsPanel } from "./notification-prefs-panel";
 
 export const metadata = {
@@ -41,27 +43,30 @@ export default async function SettingsPage({
   const params = await searchParams;
 
   // Fetch admin data in parallel if the viewer has access.
-  const [staffList, teams, tiers, templates, seasonModes, syncStatus] = adminAccess
-    ? await Promise.all([
-        listUsers({ limit: 200 }),
-        listTeams(),
-        listTiers(),
-        listTemplates(),
-        listSeasonModes(),
-        loadSyncStatus(),
-      ])
-    : [
-        { users: [], totalCount: 0 },
-        [],
-        [],
-        [],
-        [],
-        { pl: null, qb: null },
-      ];
+  const [staffList, teams, tiers, templates, seasonModes, syncStatus, checklistItems] =
+    adminAccess
+      ? await Promise.all([
+          listUsers({ limit: 200 }),
+          listTeams(),
+          listTiers(),
+          listTemplates(),
+          listSeasonModes(),
+          loadSyncStatus(),
+          listChecklistItems(),
+        ])
+      : [
+          { users: [], totalCount: 0 },
+          [],
+          [],
+          [],
+          [],
+          { pl: null, qb: null },
+          [],
+        ];
 
   const validTabs = ["profile", "notifications"];
   if (adminAccess) {
-    validTabs.push("users", "teams", "templates", "season", "sync");
+    validTabs.push("users", "teams", "templates", "season", "sync", "checklists");
   }
   const defaultTab =
     params.tab && validTabs.includes(params.tab) ? params.tab : "profile";
@@ -87,6 +92,7 @@ export default async function SettingsPage({
               <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="season">Season</TabsTrigger>
               <TabsTrigger value="sync">Sync</TabsTrigger>
+              <TabsTrigger value="checklists">Checklists</TabsTrigger>
             </>
           ) : null}
         </TabsList>
@@ -123,6 +129,12 @@ export default async function SettingsPage({
             </TabsContent>
             <TabsContent value="sync">
               <AdminSyncPanel initialLastSync={syncStatus} />
+            </TabsContent>
+            <TabsContent value="checklists">
+              <AdminChecklistsPanel
+                initialItems={checklistItems}
+                tiers={tiers}
+              />
             </TabsContent>
           </>
         ) : null}

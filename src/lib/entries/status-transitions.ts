@@ -2,6 +2,7 @@ import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendRecentActivity } from "@/lib/entries/recent-activity";
+import { findMissingRequiredItems } from "@/lib/checklist/data";
 import {
   triggerContentSubmitted,
   triggerEntryPublished,
@@ -79,6 +80,18 @@ export async function submitContent(
     return {
       ok: false,
       error: { kind: "forbidden", message: "Only the assigned writer can submit." },
+    };
+  }
+
+  // Checklist gate: block submission until every required item is checked.
+  const missing = await findMissingRequiredItems(entryId);
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      error: {
+        kind: "gate_blocked",
+        message: `Checklist incomplete — tick these before submitting: ${missing.join("; ")}`,
+      },
     };
   }
 
