@@ -28,6 +28,7 @@ import {
   X,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -143,6 +144,8 @@ export function EntriesTable({
   const [views, setViews] = React.useState<SavedViewRecord[]>(initialViews);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [bulkBusy, setBulkBusy] = React.useState(false);
+  const isMobile = useIsMobile();
+  const tableContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   // Apply default view on mount.
   React.useEffect(() => {
@@ -236,6 +239,8 @@ export function EntriesTable({
   });
 
   const [bulkTierId, setBulkTierId] = React.useState<string>("");
+
+  const allRows = table.getRowModel().rows;
 
   const selectedCount = Object.keys(rowSelection).length;
   const selectedIds = Object.keys(rowSelection);
@@ -431,151 +436,257 @@ export function EntriesTable({
         </div>
       ) : null}
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <table className="w-full text-sm">
-          <thead className="border-b border-border bg-navy-3">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                <th className="w-8 px-2 py-2">
-                  <Checkbox
-                    checked={
-                      entries.length > 0 &&
-                      table.getIsAllRowsSelected()
-                    }
-                    onCheckedChange={(checked) =>
-                      table.toggleAllRowsSelected(Boolean(checked))
-                    }
-                    aria-label="Select all"
-                  />
-                </th>
-                <th className="w-8 px-2 py-2" />
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted"
+      {/* Entries — table on desktop, card list on mobile */}
+      {isMobile ? (
+        <div className="space-y-2">
+          {loading && entries.length === 0 ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+            </div>
+          ) : entries.length === 0 ? (
+            <EmptyState
+              title={
+                hasActiveFilters
+                  ? "No entries match these filters"
+                  : "No entries yet"
+              }
+              description={
+                hasActiveFilters
+                  ? "Try clearing some filters or create a new entry."
+                  : "Create your first content entry to get the pipeline going."
+              }
+              action={
+                <Button onClick={onCreateClick}>
+                  <Plus className="h-3.5 w-3.5" />
+                  New entry
+                </Button>
+              }
+            />
+          ) : (
+            entries.map((entry) => {
+              const isExpanded = expandedId === entry.id;
+              return (
+                <React.Fragment key={entry.id}>
+                  <button
+                    type="button"
+                    className={cn(
+                      "w-full rounded-lg border border-border bg-card p-3 text-left transition-colors",
+                      isExpanded && "border-cyan/40 bg-navy-3/50",
+                      entry.content_status === "writer_needed" && "border-amber/30",
+                    )}
+                    onClick={() => setExpandedId(isExpanded ? null : entry.id)}
                   >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="divide-y divide-border">
-            {loading && entries.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={table.getVisibleFlatColumns().length + 2}
-                  className="px-4 py-10 text-center text-text-muted"
-                >
-                  <Loader2 className="mx-auto h-5 w-5 animate-spin" />
-                </td>
-              </tr>
-            ) : entries.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={table.getVisibleFlatColumns().length + 2}
-                  className="px-4 py-10"
-                >
-                  <EmptyState
-                    title={
-                      hasActiveFilters
-                        ? "No entries match these filters"
-                        : "No entries yet"
-                    }
-                    description={
-                      hasActiveFilters
-                        ? "Try clearing some filters or create a new entry."
-                        : "Create your first content entry to get the pipeline going."
-                    }
-                    action={
-                      <Button onClick={onCreateClick}>
-                        <Plus className="h-3.5 w-3.5" />
-                        New entry
-                      </Button>
-                    }
-                  />
-                </td>
-              </tr>
-            ) : (
-              table.getRowModel().rows.map((row) => {
-                const isExpanded = expandedId === row.id;
-                const entry = row.original;
-                return (
-                  <React.Fragment key={row.id}>
-                    <tr
-                      className={cn(
-                        "cursor-pointer transition-colors hover:bg-navy-3/50",
-                        isExpanded && "bg-navy-3/50",
-                        entry.content_status === "writer_needed" &&
-                          "bg-amber-dim/30",
-                        row.getIsSelected() && "bg-cyan-dim/20",
+                    <div className="flex items-start gap-2">
+                      {entry.priority ? (
+                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber" />
+                      ) : null}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-text-primary">
+                          {entry.title}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <ContentStatusBadge status={entry.content_status} />
+                          <EditorStatusBadge status={entry.editor_status} />
+                          <Badge variant="outline" className="text-[9px]">
+                            {entry.site.toUpperCase()}
+                          </Badge>
+                          <Badge variant="outline" className="text-[9px]">
+                            {entry.tier.name}
+                          </Badge>
+                        </div>
+                        {entry.publish_date ? (
+                          <p className="mt-1 text-[10px] text-text-muted">
+                            {formatDate(entry.publish_date, { dateStyle: "medium" })}
+                          </p>
+                        ) : null}
+                      </div>
+                      {isExpanded ? (
+                        <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
+                      ) : (
+                        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
                       )}
-                      onClick={() =>
-                        setExpandedId(isExpanded ? null : row.id)
+                    </div>
+                    {entry.authors.length > 0 ? (
+                      <div className="mt-1.5 flex items-center gap-1">
+                        {entry.authors.slice(0, 3).map((a) => (
+                          <UserAvatar
+                            key={a.user_id}
+                            displayName={a.display_name}
+                            avatarUrl={a.avatar_url}
+                            size="xs"
+                          />
+                        ))}
+                        <span className="text-[10px] text-text-muted">
+                          {entry.authors.map((a) => a.display_name).join(", ")}
+                        </span>
+                      </div>
+                    ) : null}
+                  </button>
+                  {isExpanded ? (
+                    <div className="rounded-lg border border-border bg-navy-2/50 p-0">
+                      <EntryDetailPanel
+                        entryId={entry.id}
+                        onClose={() => setExpandedId(null)}
+                        onChanged={() => {
+                          router.refresh();
+                          setFilters((f) => ({ ...f }));
+                        }}
+                      />
+                    </div>
+                  ) : null}
+                </React.Fragment>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        <div
+          ref={tableContainerRef}
+          className="max-h-[70vh] overflow-auto rounded-lg border border-border bg-card"
+        >
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-10 border-b border-border bg-navy-3">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  <th className="w-8 px-2 py-2">
+                    <Checkbox
+                      checked={
+                        entries.length > 0 &&
+                        table.getIsAllRowsSelected()
                       }
+                      onCheckedChange={(checked) =>
+                        table.toggleAllRowsSelected(Boolean(checked))
+                      }
+                      aria-label="Select all"
+                    />
+                  </th>
+                  <th className="w-8 px-2 py-2" />
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted"
                     >
-                      <td
-                        className="w-8 px-2 py-3 align-top"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Checkbox
-                          checked={row.getIsSelected()}
-                          onCheckedChange={(checked) =>
-                            row.toggleSelected(Boolean(checked))
-                          }
-                          aria-label={`Select ${entry.title}`}
-                        />
-                      </td>
-                      <td className="w-8 px-2 py-3 align-top text-text-muted">
-                        {isExpanded ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </td>
-                      {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className="px-3 py-3 align-top"
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
                           )}
-                        </td>
-                      ))}
-                    </tr>
-                    {isExpanded ? (
-                      <tr>
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody className="divide-y divide-border">
+              {loading && entries.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={table.getVisibleFlatColumns().length + 2}
+                    className="px-4 py-10 text-center text-text-muted"
+                  >
+                    <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+                  </td>
+                </tr>
+              ) : entries.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={table.getVisibleFlatColumns().length + 2}
+                    className="px-4 py-10"
+                  >
+                    <EmptyState
+                      title={
+                        hasActiveFilters
+                          ? "No entries match these filters"
+                          : "No entries yet"
+                      }
+                      description={
+                        hasActiveFilters
+                          ? "Try clearing some filters or create a new entry."
+                          : "Create your first content entry to get the pipeline going."
+                      }
+                      action={
+                        <Button onClick={onCreateClick}>
+                          <Plus className="h-3.5 w-3.5" />
+                          New entry
+                        </Button>
+                      }
+                    />
+                  </td>
+                </tr>
+              ) : (
+                allRows.map((row) => {
+                  const isExpanded = expandedId === row.id;
+                  const entry = row.original;
+                  return (
+                    <React.Fragment key={row.id}>
+                      <tr
+                        className={cn(
+                          "cursor-pointer transition-colors hover:bg-navy-3/50",
+                          isExpanded && "bg-navy-3/50",
+                          entry.content_status === "writer_needed" &&
+                            "bg-amber-dim/30",
+                          row.getIsSelected() && "bg-cyan-dim/20",
+                        )}
+                        onClick={() =>
+                          setExpandedId(isExpanded ? null : row.id)
+                        }
+                      >
                         <td
-                          colSpan={table.getVisibleFlatColumns().length + 2}
-                          className="bg-navy-2/50 p-0"
+                          className="w-8 px-2 py-3 align-top"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <EntryDetailPanel
-                            entryId={entry.id}
-                            onClose={() => setExpandedId(null)}
-                            onChanged={() => {
-                              router.refresh();
-                              // Re-fetch by touching the filter state.
-                              setFilters((f) => ({ ...f }));
-                            }}
+                          <Checkbox
+                            checked={row.getIsSelected()}
+                            onCheckedChange={(checked) =>
+                              row.toggleSelected(Boolean(checked))
+                            }
+                            aria-label={`Select ${entry.title}`}
                           />
                         </td>
+                        <td className="w-8 px-2 py-3 align-top text-text-muted">
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </td>
+                        {row.getVisibleCells().map((cell) => (
+                          <td
+                            key={cell.id}
+                            className="px-3 py-3 align-top"
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </td>
+                        ))}
                       </tr>
-                    ) : null}
-                  </React.Fragment>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                      {isExpanded ? (
+                        <tr>
+                          <td
+                            colSpan={table.getVisibleFlatColumns().length + 2}
+                            className="bg-navy-2/50 p-0"
+                          >
+                            <EntryDetailPanel
+                              entryId={entry.id}
+                              onClose={() => setExpandedId(null)}
+                              onChanged={() => {
+                                router.refresh();
+                                setFilters((f) => ({ ...f }));
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      ) : null}
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="flex items-center justify-between text-xs text-text-muted">
         <span>

@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import type { AnalyticsArticleRow } from "@/lib/analytics/queries";
 
 type Props = { query: string };
@@ -14,6 +15,7 @@ type SortKey = keyof Pick<
 >;
 
 export function AnalyticsArticlesTab({ query }: Props) {
+  const isMobile = useIsMobile();
   const [rows, setRows] = React.useState<AnalyticsArticleRow[] | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -90,6 +92,71 @@ export function AnalyticsArticlesTab({ query }: Props) {
       setSortKey(key);
       setSortDir("desc");
     }
+  }
+
+  if (isMobile) {
+    return (
+      <div className="space-y-2">
+        {sorted.map((r) => (
+          <div
+            key={r.entry_id}
+            className="rounded-lg border border-border bg-card p-3"
+          >
+            <div className="mb-2">
+              <div className="font-medium text-sm text-text-primary leading-snug">
+                {r.title}
+              </div>
+              <div className="text-[10px] text-text-muted mt-0.5">{r.authors}</div>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="outline" className="text-[10px]">
+                  {r.site.toUpperCase()}
+                </Badge>
+                {r.tier_name && (
+                  <span className="text-[10px] text-text-secondary">{r.tier_name}</span>
+                )}
+                {r.publish_date && (
+                  <span className="text-[10px] text-text-muted">
+                    {new Date(r.publish_date).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-text-muted">Pageviews</span>
+                <span className="tabular-nums text-text-primary">
+                  {r.pageviews.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-muted">Sessions</span>
+                <span className="tabular-nums text-text-primary">
+                  {r.sessions.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-muted">Revenue</span>
+                <span className="tabular-nums font-medium text-amber">
+                  ${r.earnings.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-muted">Page RPM</span>
+                <span className="tabular-nums text-text-secondary">
+                  ${r.page_rpm.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+        <div className="rounded-lg border border-border bg-navy-3/40 px-3 py-2 text-xs font-semibold flex justify-between">
+          <span className="text-text-muted">
+            {rows.length} article{rows.length === 1 ? "" : "s"}
+          </span>
+          <span className="tabular-nums text-amber">${totalEarnings.toFixed(2)}</span>
+        </div>
+      </div>
+    );
   }
 
   return (

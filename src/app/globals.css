@@ -220,3 +220,46 @@ code, kbd, pre, samp {
 * {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* ===========================================================
+   JOYRIDE PORTAL OVERRIDES
+   Joyride renders inside a portal at document body level —
+   outside the .dark class — so CSS vars don't resolve.
+   We hardcode the dark-mode values here and override for
+   .light at the end.
+   =========================================================== */
+
+#react-joyride-portal {
+  --joyride-bg: #161d2e;
+  --joyride-text: #d4dae6;
+  --joyride-muted: #9aa8be;
+  --joyride-primary: #55e8ff;
+  --joyride-overlay: rgba(15, 20, 32, 0.75);
+}
+
+.light #react-joyride-portal {
+  --joyride-bg: #ffffff;
+  --joyride-text: #0f172a;
+  --joyride-muted: #475569;
+  --joyride-primary: #0891b2;
+  --joyride-overlay: rgba(0, 0, 0, 0.4);
+}
+
+#react-joyride-portal .__floater {
+  font-family: var(--font-sans) !important;
+}
+
+#react-joyride-portal [data-test-id="button-primary"] {
+  background-color: var(--joyride-primary) !important;
+  color: #0f1420 !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+}
+
+#react-joyride-portal [data-test-id="button-skip"] {
+  color: var(--joyride-muted) !important;
+}
+
+#react-joyride-portal [data-test-id="button-back"] {
+  color: var(--joyride-muted) !important;
+}

@@ -47,10 +47,12 @@ export function OnboardingTour({ enabled }: Props) {
       run={run}
       continuous
       options={{
-        primaryColor: "var(--color-cyan)",
-        backgroundColor: "var(--color-card)",
-        textColor: "var(--color-text-primary)",
-        overlayColor: "rgba(5, 12, 26, 0.75)",
+        // Hardcoded because Joyride renders in a portal outside .dark —
+        // CSS vars won't resolve. See globals.css for portal overrides.
+        primaryColor: "#55e8ff",
+        backgroundColor: "#161d2e",
+        textColor: "#d4dae6",
+        overlayColor: "rgba(15, 20, 32, 0.75)",
         zIndex: 10000,
         showProgress: true,
         skipBeacon: true,

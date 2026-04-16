@@ -9,11 +9,13 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import type { AnalyticsWriterRow } from "@/lib/analytics/queries";
 
 type Props = { query: string };
 
 export function AnalyticsWritersTab({ query }: Props) {
+  const isMobile = useIsMobile();
   const [rows, setRows] = React.useState<AnalyticsWriterRow[] | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -64,6 +66,50 @@ export function AnalyticsWritersTab({ query }: Props) {
         title="No writer data in this range"
         description="Writer rollups appear once articles have tracked pageviews or revenue."
       />
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div className="space-y-2">
+        {rows.map((r) => (
+          <div
+            key={r.user_id}
+            className="rounded-lg border border-border bg-card p-3"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={r.avatar_url ?? undefined} alt={r.display_name} />
+                <AvatarFallback className="text-[10px]">
+                  {r.display_name.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-medium text-sm text-text-primary leading-tight">
+                  {r.display_name}
+                </div>
+                <div className="text-[10px] text-text-muted">
+                  {r.articles} {r.articles === 1 ? "article" : "articles"}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-text-muted">Revenue</span>
+                <span className="tabular-nums font-medium text-amber">
+                  ${r.earnings.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-muted">Pageviews</span>
+                <span className="tabular-nums text-text-primary">
+                  {r.pageviews.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     );
   }
 

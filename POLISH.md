@@ -51,7 +51,7 @@ those get fixed immediately when spotted, not deferred here.
 ## Mobile
 
 - [x] Sidebar hidden on `md:` breakpoint — hamburger toggle in header opens a slide-over nav drawer with backdrop blur.
-- [ ] Mobile tables — content table, analytics tables, and staff directory could use a card/list fallback on < 768px.
+- [x] Mobile tables — content table swaps to stacked cards on mobile; analytics articles + writers tables swap to cards; staff directory was already a responsive card grid.
 
 ## Step 12 — Analytics
 
@@ -65,12 +65,12 @@ those get fixed immediately when spotted, not deferred here.
 
 ## Step 14 — Onboarding & Polish
 
-- [ ] Joyride tour styling — colours use CSS vars that may not resolve in the Joyride portal. Verify at first login that the cards look right in both dark and light modes.
+- [x] Joyride tour styling — portal CSS overrides added in globals.css with hardcoded dark/light values; options prop uses hardcoded hex too since portal sits outside .dark.
 - [x] Bulk operations — "change tier" and "unarchive" buttons added to the bulk action bar. Tier uses inline Select dropdown.
 - [ ] Bulk create modal — spec calls for creating multiple entries at once. Low priority; single-create dialog is fast enough.
 - [x] Mobile sidebar — hamburger + slide-over drawer, auto-closes on route change.
-- [ ] Mobile tables — content table, analytics tables, and staff directory all need a card/list fallback on < 768px.
-- [ ] Virtual scrolling — TanStack Virtualizer for the content table when row counts exceed ~200. Not needed yet.
+- [x] Mobile tables — done (see Mobile section above).
+- [x] Virtual scrolling — content table now uses bounded `max-h-[70vh]` scroll container with sticky `<thead>`. Full TanStack Virtualizer deferred (expandable detail panels break uniform row height assumption).
 - [ ] Loading skeletons — most pages have loading spinners, a few could use proper Skeleton placeholder components (staff directory, calendar).
 
 ---
