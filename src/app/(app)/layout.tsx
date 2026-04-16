@@ -23,7 +23,10 @@ export default async function AppLayout({
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
-      <Sidebar userRoles={user.roles} userDisplayName={user.display_name} />
+      {/* Sidebar hidden on mobile, visible on md+ */}
+      <div className="hidden md:block">
+        <Sidebar userRoles={user.roles} userDisplayName={user.display_name} />
+      </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <Header
           userId={user.id}
@@ -31,6 +34,8 @@ export default async function AppLayout({
           email={user.email}
           avatarUrl={user.avatar_url}
           roles={user.roles}
+          userRoles={user.roles}
+          userDisplayName={user.display_name}
         />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1600px] p-6">{children}</div>

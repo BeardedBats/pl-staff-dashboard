@@ -13,16 +13,16 @@ those get fixed immediately when spotted, not deferred here.
 
 ## Brand identity
 
-- [ ] Login page — replace the text-mark "Pitcher List" brand tile with the actual PL logo (wordmark + glyph). Currently a placeholder cyan `font-mono` block.
+- [ ] Login page — replace the text-mark "Pitcher List" brand tile with the actual PL logo (wordmark + glyph). Need the SVG/PNG asset.
 - [ ] Sidebar brand — same as above, the top-left "Pitcher List · Staff" stack needs the real mark.
 - [ ] QB List views — need QB List logo asset to swap in when viewing QB content (per spec: "QB List logo displayed when viewing QB List content").
 
 ## Tone / feel (from CLAUDE.md: "Savant base + neon/glass/mesh accents")
 
-- [ ] Cards feel flat — the `shadow-sm` on cards is barely visible in dark mode. Consider subtle inner glow or a more premium surface treatment.
-- [ ] Active nav item — the cyan-tinted bg is functional but not "neon." Could use a soft cyan glow/halo once the rest of the design system lands.
-- [ ] Login background — currently solid navy. Could use a subtle mesh gradient or low-opacity radial to feel more premium.
-- [ ] Header — pretty sparse. Might benefit from a brand/pagetitle slot on the left.
+- [x] Cards feel flat — added `ring-1 ring-white/[0.03]` subtle inner ring for premium surface depth.
+- [x] Active nav item — added inset cyan border ring + soft outer glow shadow.
+- [x] Login background — added mesh gradient (cyan, amber, purple radial blurs).
+- [x] Header — added "Staff Dashboard" label on left; header now has `backdrop-blur-sm` glass effect.
 
 ## Typography
 
@@ -32,14 +32,14 @@ those get fixed immediately when spotted, not deferred here.
 ## Micro-interactions
 
 - [ ] Theme toggle transition — currently instant. Consider a short cross-fade on theme change.
-- [ ] Sidebar collapse animation — functional but snappy. Could feel smoother.
+- [x] Sidebar collapse animation — smoothed to 300ms ease-in-out (was 200ms linear).
 - [ ] Avatar dropdown entry/exit — uses Radix defaults; verify it feels right.
 
 ## Components
 
-- [ ] `Button` — hover state is a simple opacity tweak. Primary button could feel punchier (slight scale? subtle shadow?).
+- [x] `Button` — primary variant now has cyan glow shadow on hover + 0.98 active scale. `transition-all duration-150` for smoothness.
 - [ ] `Input` — focus ring is the cyan brand color. Works, but worth verifying it doesn't look harsh in light mode.
-- [ ] `Avatar` — fallback initials look fine but could use a subtle gradient background per-user.
+- [x] `Avatar` — fallback now uses `bg-gradient-to-br from-navy-3 to-navy-4` for subtle depth.
 
 ## Accessibility
 
@@ -50,7 +50,8 @@ those get fixed immediately when spotted, not deferred here.
 
 ## Mobile
 
-- [ ] MVP spec says "mobile-friendly but not over-invested." Pass it once the full desktop UX is locked.
+- [x] Sidebar hidden on `md:` breakpoint — hamburger toggle in header opens a slide-over nav drawer with backdrop blur.
+- [ ] Mobile tables — content table, analytics tables, and staff directory could use a card/list fallback on < 768px.
 
 ## Step 12 — Analytics
 
@@ -60,14 +61,14 @@ those get fixed immediately when spotted, not deferred here.
 - [ ] Category filter — same deal; tier filter only for now.
 - [ ] Raptive upload dialog — no drag-drop zone, just a click-to-pick label. Works fine; nicer DnD later.
 - [ ] Publish-to-peak analysis chart — spec calls this out, needs cumulative pageviews curve per article since publish. Can re-use article_analytics + entries.publish_date.
-- [ ] Per-entry analytics in the entry detail panel — spec says EIC/Ops see a mini analytics block in the inline detail panel. Not wired yet.
+- [x] Per-entry analytics in the entry detail panel — EIC/Ops now see an "Analytics" tab with 30-day pageviews, sessions, revenue, and Page RPM.
 
 ## Step 14 — Onboarding & Polish
 
 - [ ] Joyride tour styling — colours use CSS vars that may not resolve in the Joyride portal. Verify at first login that the cards look right in both dark and light modes.
-- [ ] Bulk operations — "change tier" and "unarchive" actions exist in the API but aren't in the UI toolbar yet. Easy add.
+- [x] Bulk operations — "change tier" and "unarchive" buttons added to the bulk action bar. Tier uses inline Select dropdown.
 - [ ] Bulk create modal — spec calls for creating multiple entries at once. Low priority; single-create dialog is fast enough.
-- [ ] Mobile sidebar — collapses to collapsed mode on `md:` breakpoint. Needs a hamburger toggle on mobile to open/close as a drawer. Currently it's just always narrow.
+- [x] Mobile sidebar — hamburger + slide-over drawer, auto-closes on route change.
 - [ ] Mobile tables — content table, analytics tables, and staff directory all need a card/list fallback on < 768px.
 - [ ] Virtual scrolling — TanStack Virtualizer for the content table when row counts exceed ~200. Not needed yet.
 - [ ] Loading skeletons — most pages have loading spinners, a few could use proper Skeleton placeholder components (staff directory, calendar).

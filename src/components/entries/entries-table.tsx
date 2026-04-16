@@ -235,6 +235,8 @@ export function EntriesTable({
     getRowId: (row) => row.id,
   });
 
+  const [bulkTierId, setBulkTierId] = React.useState<string>("");
+
   const selectedCount = Object.keys(rowSelection).length;
   const selectedIds = Object.keys(rowSelection);
 
@@ -376,6 +378,46 @@ export function EntriesTable({
             <Star className="h-3.5 w-3.5" />
             Remove priority
           </Button>
+          {filters.includeArchived ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={bulkBusy}
+              onClick={() => {
+                void runBulk({ action: "unarchive" });
+              }}
+            >
+              <Archive className="h-3.5 w-3.5 text-cyan" />
+              Unarchive
+            </Button>
+          ) : null}
+          <div className="flex items-center gap-1.5">
+            <Select
+              value={bulkTierId}
+              onValueChange={setBulkTierId}
+            >
+              <SelectTrigger className="h-8 w-[140px] text-xs">
+                <SelectValue placeholder="Pick tier…" />
+              </SelectTrigger>
+              <SelectContent>
+                {tiers.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name} — {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={bulkBusy || !bulkTierId}
+              onClick={() => {
+                void runBulk({ action: "change_tier", tier_id: bulkTierId });
+              }}
+            >
+              Change tier
+            </Button>
+          </div>
           <div className="ml-auto">
             <Button
               variant="ghost"

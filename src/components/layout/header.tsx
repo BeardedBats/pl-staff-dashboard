@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut, Menu, User as UserIcon, X as XIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -16,6 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { NAV_ITEMS, isNavVisible } from "@/components/layout/nav-config";
+import type { AppRole } from "@/lib/auth/current-user";
 
 type HeaderProps = {
   userId: string;
@@ -23,6 +26,9 @@ type HeaderProps = {
   email: string;
   avatarUrl: string | null;
   roles: string[];
+  /** Needed for the mobile nav drawer — optional for backwards compat */
+  userRoles?: AppRole[];
+  userDisplayName?: string;
 };
 
 function initialsFromName(name: string): string {
@@ -30,9 +36,24 @@ function initialsFromName(name: string): string {
   return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "PL";
 }
 
-export function Header({ userId, displayName, email, avatarUrl, roles }: HeaderProps) {
+export function Header({
+  userId,
+  displayName,
+  email,
+  avatarUrl,
+  roles,
+  userRoles = [],
+  userDisplayName = "",
+}: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+
+  // Close mobile nav on route change
+  React.useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -46,10 +67,25 @@ export function Header({ userId, displayName, email, avatarUrl, roles }: HeaderP
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-6">
-      {/* Left — placeholder for page title / breadcrumbs */}
-      <div className="text-sm text-text-muted">
-        {/* Intentionally empty for Step 1 — pages will render their own title below */}
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card/80 px-6 backdrop-blur-sm">
+      {/* Left — hamburger on mobile, brand echo on desktop */}
+      <div className="flex items-center gap-2 text-sm">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setMobileNavOpen((o) => !o)}
+          aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+        >
+          {mobileNavOpen ? (
+            <XIcon className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </Button>
+        <span className="hidden font-mono text-[10px] font-semibold uppercase tracking-wider text-text-muted md:inline">
+          Staff Dashboard
+        </span>
       </div>
 
       {/* Right — notifications, theme, user menu */}
@@ -107,6 +143,65 @@ export function Header({ userId, displayName, email, avatarUrl, roles }: HeaderP
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Mobile navigation slide-over */}
+      {mobileNavOpen ? (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-background/60 backdrop-blur-sm"
+            onClick={() => setMobileNavOpen(false)}
+          />
+          {/* Drawer */}
+          <nav className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card p-4 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="font-mono text-sm font-bold uppercase tracking-wider text-cyan">
+                Pitcher List
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileNavOpen(false)}
+                aria-label="Close menu"
+              >
+                <XIcon className="h-4 w-4" />
+              </Button>
+            </div>
+            <ul className="space-y-1">
+              {NAV_ITEMS.filter((item) =>
+                isNavVisible(item, userRoles as AppRole[]),
+              ).map((item) => {
+                const Icon = item.icon;
+                const active =
+                  pathname === item.href ||
+                  (item.href !== "/home" && pathname.startsWith(`${item.href}/`));
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
+                        "hover:bg-secondary hover:text-foreground",
+                        active
+                          ? "bg-cyan-dim text-cyan"
+                          : "text-text-secondary",
+                      )}
+                    >
+                      <Icon className={cn("h-4 w-4 shrink-0", active && "text-cyan")} />
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            {userDisplayName ? (
+              <div className="mt-6 border-t border-border pt-4 text-xs text-text-muted">
+                {userDisplayName}
+              </div>
+            ) : null}
+          </nav>
+        </div>
+      ) : null}
     </header>
   );
 }

@@ -41,7 +41,7 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
     <aside
       data-tour="sidebar"
       className={cn(
-        "flex h-screen flex-col border-r border-border bg-card transition-all duration-200",
+        "flex h-screen flex-col border-r border-border bg-card transition-all duration-300 ease-in-out",
         collapsed ? "w-16" : "w-60",
       )}
     >
@@ -123,10 +123,10 @@ function NavLink({
       data-tour={tourId}
       title={collapsed ? item.label : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
+        "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-150",
         "hover:bg-secondary hover:text-foreground",
         isActive
-          ? "bg-cyan-dim text-cyan"
+          ? "bg-cyan-dim text-cyan shadow-[inset_0_0_0_1px_rgba(85,232,255,0.15),0_0_8px_rgba(85,232,255,0.08)]"
           : "text-text-secondary",
         collapsed && "justify-center px-2",
       )}

@@ -6,11 +6,14 @@ import {
   AlertTriangle,
   Archive,
   ArchiveRestore,
+  BarChart3,
   CheckCircle2,
   Circle,
   Clock,
+  DollarSign,
   Edit3,
   ExternalLink,
+  Eye,
   FileText,
   Image as ImageIcon,
   Loader2,
@@ -404,6 +407,12 @@ export function EntryDetailPanel({
             <History className="mr-1 h-3 w-3" />
             Audit
           </TabsTrigger>
+          {isAdminLike ? (
+            <TabsTrigger value="analytics">
+              <BarChart3 className="mr-1 h-3 w-3" />
+              Analytics
+            </TabsTrigger>
+          ) : null}
         </TabsList>
 
         <TabsContent value="pipeline">
@@ -448,6 +457,11 @@ export function EntryDetailPanel({
         <TabsContent value="audit">
           <AuditTab entryId={entryId} />
         </TabsContent>
+        {isAdminLike ? (
+          <TabsContent value="analytics">
+            <EntryAnalyticsMini entryId={entryId} />
+          </TabsContent>
+        ) : null}
       </Tabs>
 
       {/* Modals */}
@@ -1106,4 +1120,147 @@ function ChecklistItemRow({
       ) : null}
     </Wrapper>
   );
+}
+
+// --------------------------------------------------------------------------
+// Per-entry analytics mini — EIC/Ops only
+// --------------------------------------------------------------------------
+
+type MiniStats = {
+  totalPageviews: number;
+  totalSessions: number;
+  totalEarnings: number;
+  pageRpm: number;
+  days: Array<{ date: string; pageviews: number }>;
+};
+
+function EntryAnalyticsMini({ entryId }: { entryId: string }) {
+  const [data, setData] = React.useState<MiniStats | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    // Fetch last 30 days of this entry's GA4 + Raptive data
+    Promise.all([
+      fetch(
+        `/api/analytics/articles?dateFrom=${thirtyDaysAgo()}&dateTo=${today()}`,
+      ).then((r) => r.json()),
+    ])
+      .then(([articlesRes]: [{ rows?: Array<{
+        entry_id: string;
+        pageviews: number;
+        sessions: number;
+        earnings: number;
+        page_rpm: number;
+      }> }]) => {
+        if (cancelled) return;
+        const row = (articlesRes.rows ?? []).find(
+          (r) => r.entry_id === entryId,
+        );
+        if (row) {
+          setData({
+            totalPageviews: row.pageviews,
+            totalSessions: row.sessions,
+            totalEarnings: row.earnings,
+            pageRpm: row.page_rpm,
+            days: [],
+          });
+        } else {
+          setData(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [entryId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="py-6 text-center text-xs text-text-muted">
+        No analytics data for this entry in the last 30 days.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-3 py-2 sm:grid-cols-4">
+      <MiniMetric
+        label="Pageviews"
+        value={data.totalPageviews.toLocaleString()}
+        icon={<Eye className="h-3 w-3" />}
+      />
+      <MiniMetric
+        label="Sessions"
+        value={data.totalSessions.toLocaleString()}
+        icon={<BarChart3 className="h-3 w-3" />}
+      />
+      <MiniMetric
+        label="Revenue"
+        value={`$${data.totalEarnings.toFixed(2)}`}
+        icon={<DollarSign className="h-3 w-3" />}
+        highlight
+      />
+      <MiniMetric
+        label="Page RPM"
+        value={`$${data.pageRpm.toFixed(2)}`}
+        icon={<BarChart3 className="h-3 w-3" />}
+      />
+    </div>
+  );
+}
+
+function MiniMetric({
+  label,
+  value,
+  icon,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="rounded-md border border-border bg-navy-3/40 p-2">
+      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+        {icon}
+        {label}
+      </div>
+      <div
+        className={cn(
+          "mt-0.5 text-base font-semibold tabular-nums",
+          highlight ? "text-amber" : "text-text-primary",
+        )}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function thirtyDaysAgo(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 29);
+  return d.toISOString().slice(0, 10);
+}
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
 }
