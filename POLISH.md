@@ -73,6 +73,12 @@ those get fixed immediately when spotted, not deferred here.
 - [x] Virtual scrolling — content table now uses bounded `max-h-[70vh]` scroll container with sticky `<thead>`. Full TanStack Virtualizer deferred (expandable detail panels break uniform row height assumption).
 - [ ] Loading skeletons — most pages have loading spinners, a few could use proper Skeleton placeholder components (staff directory, calendar).
 
+## Security — post-hardening follow-ups
+
+- [ ] **Storage bucket privacy** — `graphics` bucket is currently public (uses `getPublicUrl` in `src/lib/graphics/storage.ts`). Flip to private via `storage.buckets` UPDATE (or dashboard toggle) and refactor `lib/graphics/data.ts` + `lib/entries/queries.ts` to regenerate signed URLs on every read using the stored `storage_path` (already persisted). Consider 1-hour expiry. Objects are UUID-pathed so the practical risk is low, but worth closing. Graphics get re-uploaded to WP (public there anyway) so only the pre-submission window is exposed.
+- [ ] **Supabase `anon` key exposure** — `NEXT_PUBLIC_SUPABASE_ANON_KEY` isn't currently used anywhere (we only use the service role). If we never add auth-based browser queries, consider dropping the anon key from env entirely and removing `@supabase/ssr` if unused.
+- [ ] **Live curl test** — after applying migration 0007, verify directly: `curl "https://<proj>.supabase.co/rest/v1/users?select=*" -H "apikey: <anon_key>"` should return `[]` or 401/403 — not user data.
+
 ---
 
 ## How to add items
