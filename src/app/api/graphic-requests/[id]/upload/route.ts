@@ -85,12 +85,15 @@ export async function POST(request: Request, context: RouteContext) {
     await deleteStoredGraphic(existing.storage_path);
   }
 
-  // Update the DB row.
+  // Update the DB row. file_url stores the most recent signed URL — it'll
+  // expire, but the read path always regenerates from storage_path so it
+  // doesn't matter long-term. We keep it populated as a hint to migrations
+  // and for the audit log "uploaded:" marker.
   const supabase = getSupabaseAdmin();
   const { error } = await supabase
     .from("graphic_requests")
     .update({
-      file_url: upload.file.publicUrl,
+      file_url: upload.file.signedUrl,
       storage_path: upload.file.storagePath,
       file_name: upload.file.fileName,
       file_size: upload.file.fileSize,

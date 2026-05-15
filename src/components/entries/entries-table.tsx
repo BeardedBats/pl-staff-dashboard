@@ -127,12 +127,14 @@ type EntriesTableProps = {
   tiers: EntryTier[];
   initialViews: SavedViewRecord[];
   onCreateClick: () => void;
+  onBulkCreateClick?: () => void;
 };
 
 export function EntriesTable({
   tiers,
   initialViews,
   onCreateClick,
+  onBulkCreateClick,
 }: EntriesTableProps) {
   const router = useRouter();
   const [filters, setFilters] = React.useState<EntriesFilterState>(DEFAULT_FILTERS);
@@ -299,6 +301,7 @@ export function EntriesTable({
         activeFilterCount={activeFilterCount}
         hasActiveFilters={hasActiveFilters}
         onCreateClick={onCreateClick}
+        onBulkCreateClick={onBulkCreateClick}
         views={views}
         onApplyView={applyView}
         onSaveView={async () => {
@@ -719,6 +722,7 @@ type ToolbarProps = {
   activeFilterCount: number;
   hasActiveFilters: boolean;
   onCreateClick: () => void;
+  onBulkCreateClick?: () => void;
   views: SavedViewRecord[];
   onApplyView: (view: SavedViewRecord) => void;
   onSaveView: () => Promise<void>;
@@ -735,6 +739,7 @@ function EntriesToolbar({
   activeFilterCount,
   hasActiveFilters,
   onCreateClick,
+  onBulkCreateClick,
   views,
   onApplyView,
   onSaveView,
@@ -868,6 +873,13 @@ function EntriesToolbar({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {onBulkCreateClick ? (
+          <Button variant="outline" onClick={onBulkCreateClick}>
+            <Plus className="h-3.5 w-3.5" />
+            Bulk
+          </Button>
+        ) : null}
 
         <Button onClick={onCreateClick}>
           <Plus className="h-3.5 w-3.5" />

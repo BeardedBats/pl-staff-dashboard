@@ -61,6 +61,23 @@ export type AnalyticsWriterRow = {
   revenue_per_word: number;
 };
 
+export type PublishToPeakPoint = {
+  /** Days since publish (0 = publish day, 1 = next day, ...). */
+  day: number;
+  /** Average pageviews on that day across all articles in range. */
+  avgPageviews: number;
+  /** How many distinct articles contributed to this bucket. */
+  articleCount: number;
+};
+
+export type DayOfWeekHeatPoint = {
+  /** 0 = Sunday … 6 = Saturday */
+  dayOfWeek: number;
+  /** ISO week start (YYYY-MM-DD of the Sunday). */
+  weekStart: string;
+  pageviews: number;
+};
+
 // --------------------------------------------------------------------------
 // Helpers
 // --------------------------------------------------------------------------
@@ -573,4 +590,127 @@ export function writersToCsv(rows: AnalyticsWriterRow[]): string {
     );
   }
   return lines.join("\n");
+}
+
+// --------------------------------------------------------------------------
+// Publish-to-peak curve
+//
+// Question this answers: "for the average article in this filter set, what
+// does the pageview decay curve look like by day-since-publish?" Useful for
+// spotting articles that under- or over-perform their natural lifecycle.
+// --------------------------------------------------------------------------
+
+export async function getPublishToPeakCurve(
+  filters: AnalyticsFilters,
+  maxDays = 30,
+): Promise<PublishToPeakPoint[]> {
+  const entries = await loadEntriesForRange(filters);
+  let entryIds = Array.from(entries.keys());
+
+  // Author filter — match the per-author rollup logic
+  if (filters.authorId) {
+    const supabase = getSupabaseAdmin();
+    const { data } = await supabase
+      .from("entry_authors")
+      .select("entry_id")
+      .eq("user_id", filters.authorId);
+    const authored = new Set(
+      ((data ?? []) as Array<{ entry_id: string }>).map((r) => r.entry_id),
+    );
+    entryIds = entryIds.filter((id) => authored.has(id));
+  }
+
+  const ga4Rows = await loadGa4Rows(filters, entryIds);
+
+  // Bucket pageviews by (entry, day-since-publish)
+  type Bucket = { pageviews: number; saw: Set<string> };
+  const buckets = new Map<number, Bucket>(); // day → bucket
+
+  for (const r of ga4Rows) {
+    const entry = entries.get(r.entry_id);
+    if (!entry?.publish_date) continue;
+    const pubDate = new Date(entry.publish_date);
+    const viewDate = new Date(`${r.date}T00:00:00Z`);
+    const diffMs = viewDate.getTime() - pubDate.setUTCHours(0, 0, 0, 0);
+    const day = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (day < 0 || day > maxDays) continue;
+    const b = buckets.get(day) ?? { pageviews: 0, saw: new Set<string>() };
+    b.pageviews += r.pageviews;
+    b.saw.add(r.entry_id);
+    buckets.set(day, b);
+  }
+
+  const out: PublishToPeakPoint[] = [];
+  for (let day = 0; day <= maxDays; day += 1) {
+    const b = buckets.get(day);
+    if (!b) {
+      out.push({ day, avgPageviews: 0, articleCount: 0 });
+      continue;
+    }
+    const articleCount = b.saw.size;
+    out.push({
+      day,
+      avgPageviews: articleCount > 0 ? b.pageviews / articleCount : 0,
+      articleCount,
+    });
+  }
+  return out;
+}
+
+// --------------------------------------------------------------------------
+// Day-of-week heatmap
+//
+// We don't have hour-of-day data (GA4 sync pulls daily totals only), so the
+// heatmap is week × day-of-week. Useful for spotting weekday vs weekend
+// performance patterns at a glance.
+// --------------------------------------------------------------------------
+
+export async function getDayOfWeekHeatmap(
+  filters: AnalyticsFilters,
+): Promise<DayOfWeekHeatPoint[]> {
+  const entries = await loadEntriesForRange(filters);
+  let entryIds = Array.from(entries.keys());
+
+  if (filters.authorId) {
+    const supabase = getSupabaseAdmin();
+    const { data } = await supabase
+      .from("entry_authors")
+      .select("entry_id")
+      .eq("user_id", filters.authorId);
+    const authored = new Set(
+      ((data ?? []) as Array<{ entry_id: string }>).map((r) => r.entry_id),
+    );
+    entryIds = entryIds.filter((id) => authored.has(id));
+  }
+
+  const ga4Rows = await loadGa4Rows(filters, entryIds);
+
+  // Aggregate by (weekStart, dayOfWeek)
+  const buckets = new Map<string, number>(); // key = `${weekStart}|${dow}`
+  for (const r of ga4Rows) {
+    const d = new Date(`${r.date}T00:00:00Z`);
+    const dow = d.getUTCDay();
+    // Week starts on Sunday (UTC).
+    const weekStart = new Date(d);
+    weekStart.setUTCDate(d.getUTCDate() - dow);
+    const weekStartIso = weekStart.toISOString().slice(0, 10);
+    const key = `${weekStartIso}|${dow}`;
+    buckets.set(key, (buckets.get(key) ?? 0) + r.pageviews);
+  }
+
+  const out: DayOfWeekHeatPoint[] = [];
+  for (const [key, pageviews] of buckets.entries()) {
+    const [weekStart, dowStr] = key.split("|");
+    out.push({
+      weekStart,
+      dayOfWeek: Number(dowStr),
+      pageviews,
+    });
+  }
+  // Sort by week, then day
+  out.sort(
+    (a, b) =>
+      a.weekStart.localeCompare(b.weekStart) || a.dayOfWeek - b.dayOfWeek,
+  );
+  return out;
 }

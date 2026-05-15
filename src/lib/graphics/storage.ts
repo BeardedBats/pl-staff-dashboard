@@ -5,8 +5,9 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 /**
  * Supabase Storage helpers for graphics.
  *
- * Bucket name is hardcoded as `graphics`. The bucket is public so we can
- * serve thumbnails directly from the CDN without signed URLs.
+ * Bucket name is hardcoded as `graphics`. The bucket is PRIVATE — reads
+ * happen via short-lived signed URLs generated server-side by the data
+ * fetchers. We never expose `getPublicUrl` results to the browser.
  *
  * Naming convention: {entryId}/{timestamp}-{sanitized-filename}
  * This lets us find all graphics for a given entry by prefix and avoid
@@ -14,6 +15,9 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
  */
 
 export const GRAPHICS_BUCKET = "graphics";
+
+/** Signed-URL TTL — long enough for a page session, short enough to limit blast radius if leaked. */
+export const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hour
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -93,7 +97,12 @@ export function buildStoragePath(entryId: string, fileName: string): string {
 
 export type UploadedFile = {
   storagePath: string;
-  publicUrl: string;
+  /**
+   * Signed URL valid for SIGNED_URL_TTL_SECONDS. The bucket is private,
+   * so this URL is the only way to read the object — and it expires.
+   * Read-paths should always regenerate, not trust persisted URLs.
+   */
+  signedUrl: string;
   fileName: string;
   fileSize: number;
   mimeType: string;
@@ -130,20 +139,72 @@ export async function uploadGraphicFile(
     return { ok: false, error: `Storage upload failed: ${error.message}` };
   }
 
-  const { data: publicData } = supabase.storage
+  // Return a signed URL so the upload response can preview immediately.
+  const { data: signed, error: signError } = await supabase.storage
     .from(GRAPHICS_BUCKET)
-    .getPublicUrl(storagePath);
+    .createSignedUrl(storagePath, SIGNED_URL_TTL_SECONDS);
+
+  if (signError || !signed) {
+    return { ok: false, error: `Failed to sign URL: ${signError?.message ?? "unknown"}` };
+  }
 
   return {
     ok: true,
     file: {
       storagePath,
-      publicUrl: publicData.publicUrl,
+      signedUrl: signed.signedUrl,
       fileName: cleanName,
       fileSize: data.byteLength,
       mimeType,
     },
   };
+}
+
+// --------------------------------------------------------------------------
+// Signed URL helpers — used by read paths
+// --------------------------------------------------------------------------
+
+/**
+ * Generate a signed URL for a single storage path. Returns null if signing
+ * fails (e.g. the object was deleted) — callers should treat null as
+ * "no preview available."
+ */
+export async function getSignedGraphicUrl(
+  storagePath: string,
+  ttl: number = SIGNED_URL_TTL_SECONDS,
+): Promise<string | null> {
+  if (!storagePath) return null;
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase.storage
+    .from(GRAPHICS_BUCKET)
+    .createSignedUrl(storagePath, ttl);
+  return data?.signedUrl ?? null;
+}
+
+/**
+ * Batch-sign multiple storage paths in one call. Order is preserved.
+ * Used by listGraphicRequests + listEntries to avoid N round-trips.
+ */
+export async function getSignedGraphicUrls(
+  storagePaths: string[],
+  ttl: number = SIGNED_URL_TTL_SECONDS,
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const valid = storagePaths.filter((p): p is string => Boolean(p));
+  if (valid.length === 0) return out;
+
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase.storage
+    .from(GRAPHICS_BUCKET)
+    .createSignedUrls(valid, ttl);
+
+  if (!data) return out;
+  for (const entry of data) {
+    if (entry.path && entry.signedUrl) {
+      out.set(entry.path, entry.signedUrl);
+    }
+  }
+  return out;
 }
 
 // --------------------------------------------------------------------------

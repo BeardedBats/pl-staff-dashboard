@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BarChart3, Download, Upload } from "lucide-react";
+import { BarChart3, Download, FileText, Upload } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -9,7 +9,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import type { EntryTier } from "@/lib/entries/queries";
+import type { EntryCategory, EntryTier } from "@/lib/entries/queries";
 import { AnalyticsFiltersBar } from "./analytics-filters-bar";
 import { AnalyticsOverviewTab } from "./analytics-overview-tab";
 import { AnalyticsArticlesTab } from "./analytics-articles-tab";
@@ -22,8 +22,11 @@ export type AnalyticsFilterState = {
   dateTo: string;
   site: "pl" | "qb" | "both" | "all";
   tierId: string; // "" = all
+  categoryId: string; // "" = all
   authorId: string; // "" = all
 };
+
+export type AuthorCandidate = { id: string; display_name: string };
 
 function defaultFilters(): AnalyticsFilterState {
   const now = new Date();
@@ -35,6 +38,7 @@ function defaultFilters(): AnalyticsFilterState {
     dateTo: to,
     site: "all",
     tierId: "",
+    categoryId: "",
     authorId: "",
   };
 }
@@ -45,16 +49,24 @@ export function filterStateToQuery(state: AnalyticsFilterState): URLSearchParams
   params.set("dateTo", state.dateTo);
   if (state.site !== "all") params.set("site", state.site);
   if (state.tierId) params.set("tierId", state.tierId);
+  if (state.categoryId) params.set("categoryId", state.categoryId);
   if (state.authorId) params.set("authorId", state.authorId);
   return params;
 }
 
 type Props = {
   tiers: EntryTier[];
+  categories: EntryCategory[];
+  authorCandidates: AuthorCandidate[];
   isOperations: boolean;
 };
 
-export function AnalyticsPageClient({ tiers, isOperations }: Props) {
+export function AnalyticsPageClient({
+  tiers,
+  categories,
+  authorCandidates,
+  isOperations,
+}: Props) {
   const [filters, setFilters] = React.useState<AnalyticsFilterState>(() =>
     defaultFilters(),
   );
@@ -68,10 +80,12 @@ export function AnalyticsPageClient({ tiers, isOperations }: Props) {
       <div className="flex flex-wrap items-center gap-3">
         <AnalyticsFiltersBar
           tiers={tiers}
+          categories={categories}
+          authorCandidates={authorCandidates}
           value={filters}
           onChange={setFilters}
         />
-        <div className="ml-auto flex items-center gap-2">
+        <div className="no-print ml-auto flex items-center gap-2">
           {activeTab === "articles" ? (
             <Button variant="outline" size="sm" asChild>
               <a
@@ -89,6 +103,18 @@ export function AnalyticsPageClient({ tiers, isOperations }: Props) {
                 <Download className="h-3.5 w-3.5" />
                 Export CSV
               </a>
+            </Button>
+          ) : null}
+          {/* Print/PDF — uses the browser's print dialog. globals.css has
+              `@media print` rules that hide chrome and reflow the tables. */}
+          {(activeTab === "articles" || activeTab === "writers" || activeTab === "overview") ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Print / PDF
             </Button>
           ) : null}
           {isOperations ? (

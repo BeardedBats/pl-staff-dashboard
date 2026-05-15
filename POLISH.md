@@ -1,88 +1,85 @@
 # Polish Backlog
 
-Running list of UI/UX items to revisit in one focused pass **after Step 14**.
-Don't fix these mid-build — they'll compound with later work or get redone
-during the PL Pro Design Unification effort.
+Running list of UI/UX items revisited after Step 14. Most items have been
+closed; only asset-dependent and subjective-review items remain open.
 
-Format: `- [ ] <where> — <what> — <why it matters, if non-obvious>`
-
-Flag anything *architectural* (layout grid, breakpoints, a11y) separately —
-those get fixed immediately when spotted, not deferred here.
+Format: `- [x] <where> — <what>` for done, `- [ ]` for open.
 
 ---
 
-## Brand identity
+## Brand identity (asset-dependent, not code-fixable)
 
-- [ ] Login page — replace the text-mark "Pitcher List" brand tile with the actual PL logo (wordmark + glyph). Need the SVG/PNG asset.
-- [ ] Sidebar brand — same as above, the top-left "Pitcher List · Staff" stack needs the real mark.
-- [ ] QB List views — need QB List logo asset to swap in when viewing QB content (per spec: "QB List logo displayed when viewing QB List content").
+- [ ] Login page logo — replace the text-mark "Pitcher List" brand tile with the real PL logo (wordmark + glyph). Need an SVG/PNG asset.
+- [ ] Sidebar brand — same as above for the top-left "Pitcher List · Staff" stack.
+- [ ] QB List logo — needed for the conditional swap when viewing QB content.
 
-## Tone / feel (from CLAUDE.md: "Savant base + neon/glass/mesh accents")
+## Tone / feel
 
-- [x] Cards feel flat — added `ring-1 ring-white/[0.03]` subtle inner ring for premium surface depth.
-- [x] Active nav item — added inset cyan border ring + soft outer glow shadow.
-- [x] Login background — added mesh gradient (cyan, amber, purple radial blurs).
-- [x] Header — added "Staff Dashboard" label on left; header now has `backdrop-blur-sm` glass effect.
+- [x] Cards — `ring-1 ring-white/[0.03]` subtle inner ring for premium depth.
+- [x] Active nav item — inset cyan ring + soft outer glow.
+- [x] Login background — mesh gradient (cyan / amber / purple radials).
+- [x] Header — "Staff Dashboard" label + `backdrop-blur-sm` glass.
 
-## Typography
+## Typography (subjective review — defer to design unification effort)
 
-- [ ] Review heading scale across pages once we have more content to judge against.
-- [ ] Check letter-spacing on the `font-mono` brand mark vs. Savant Dashboard reference.
+- [ ] Review heading scale across pages once we have more content.
+- [ ] Letter-spacing on the `font-mono` brand mark vs. Savant Dashboard reference.
 
 ## Micro-interactions
 
-- [ ] Theme toggle transition — currently instant. Consider a short cross-fade on theme change.
-- [x] Sidebar collapse animation — smoothed to 300ms ease-in-out (was 200ms linear).
-- [ ] Avatar dropdown entry/exit — uses Radix defaults; verify it feels right.
+- [x] Theme toggle — `transition: 180ms ease` on background/border/text across all token-driven elements.
+- [x] Sidebar collapse — smoothed to 300ms ease-in-out.
+- [ ] Avatar dropdown entry/exit — Radix defaults; subjective review.
 
 ## Components
 
-- [x] `Button` — primary variant now has cyan glow shadow on hover + 0.98 active scale. `transition-all duration-150` for smoothness.
-- [ ] `Input` — focus ring is the cyan brand color. Works, but worth verifying it doesn't look harsh in light mode.
-- [x] `Avatar` — fallback now uses `bg-gradient-to-br from-navy-3 to-navy-4` for subtle depth.
+- [x] `Button` — cyan glow on hover + 0.98 active scale + 150ms transitions.
+- [x] `Input` focus ring — light-mode ring softened from `#0891b2` to `#0ea5b7`.
+- [x] `Avatar` fallback — `bg-gradient-to-br from-navy-3 to-navy-4`.
+- [x] `Skeleton` primitive — added at `components/ui/skeleton.tsx`.
 
-## Accessibility
+## Accessibility (review-style, no code change needed yet)
 
-- [ ] Audit all color contrasts once design is final.
+- [ ] Audit all colour contrasts once final design lands.
 - [ ] Verify focus visibility on every interactive element.
-- [ ] Ensure keyboard nav flows logically through the sidebar → header → main content.
-- [ ] Screen-reader labels on icon-only buttons (already present via `aria-label`, but verify).
+- [ ] Ensure keyboard nav flows logically (sidebar → header → main).
+- [ ] Screen-reader labels on icon-only buttons — most have `aria-label`; spot-check the rest.
 
 ## Mobile
 
-- [x] Sidebar hidden on `md:` breakpoint — hamburger toggle in header opens a slide-over nav drawer with backdrop blur.
-- [x] Mobile tables — content table swaps to stacked cards on mobile; analytics articles + writers tables swap to cards; staff directory was already a responsive card grid.
+- [x] Sidebar — hidden on `md:` breakpoint; hamburger drawer in header.
+- [x] Mobile tables — content table, analytics articles/writers stack into cards; staff directory was already a responsive grid.
 
 ## Step 12 — Analytics
 
-- [ ] Analytics Trends tab — add day-of-week + time-of-day heatmap (spec §"Analytics Page"). Deferred: Recharts has no first-class heatmap, would need a custom grid.
-- [ ] PDF export on Articles/Writers tabs — CSV ships, PDF deferred. Likely `@react-pdf/renderer` or a print stylesheet + browser print.
-- [ ] Author filter — the filters bar has no author picker yet. Needs a debounced user search combobox (same pattern as graphics assignees).
-- [ ] Category filter — same deal; tier filter only for now.
-- [ ] Raptive upload dialog — no drag-drop zone, just a click-to-pick label. Works fine; nicer DnD later.
-- [ ] Publish-to-peak analysis chart — spec calls this out, needs cumulative pageviews curve per article since publish. Can re-use article_analytics + entries.publish_date.
-- [x] Per-entry analytics in the entry detail panel — EIC/Ops now see an "Analytics" tab with 30-day pageviews, sessions, revenue, and Page RPM.
+- [x] Author filter — preloaded list of writer/editor/admin staff in a Select.
+- [x] Category filter — auto-filtered by selected site.
+- [x] Publish-to-peak curve chart — averages pageviews per day-since-publish across the filtered set.
+- [x] Day-of-week heatmap — custom CSS grid (week × dow) with cyan intensity ramp.
+- [x] PDF export — "Print / PDF" button uses browser print; `@media print` strips chrome, forces light colours, expands scroll containers.
+- [x] Raptive dialog drag-drop zone — full drop target with hover state, validates extension on drop.
+- [x] Per-entry analytics — EIC/Ops see an "Analytics" tab inside entry detail panels.
 
 ## Step 14 — Onboarding & Polish
 
-- [x] Joyride tour styling — portal CSS overrides added in globals.css with hardcoded dark/light values; options prop uses hardcoded hex too since portal sits outside .dark.
-- [x] Bulk operations — "change tier" and "unarchive" buttons added to the bulk action bar. Tier uses inline Select dropdown.
-- [ ] Bulk create modal — spec calls for creating multiple entries at once. Low priority; single-create dialog is fast enough.
-- [x] Mobile sidebar — hamburger + slide-over drawer, auto-closes on route change.
-- [x] Mobile tables — done (see Mobile section above).
-- [x] Virtual scrolling — content table now uses bounded `max-h-[70vh]` scroll container with sticky `<thead>`. Full TanStack Virtualizer deferred (expandable detail panels break uniform row height assumption).
-- [ ] Loading skeletons — most pages have loading spinners, a few could use proper Skeleton placeholder components (staff directory, calendar).
+- [x] Joyride portal styling — hardcoded dark + light overrides in globals.css.
+- [x] Bulk operations — archive, unarchive, set/remove priority, change tier all in the bulk action bar.
+- [x] Bulk create modal — multi-row form with shared site/tier/precision + per-row title/date.
+- [x] Mobile sidebar — hamburger + slide-over drawer.
+- [x] Mobile tables — done (see Mobile section).
+- [x] Virtual scrolling — content table uses bounded `max-h-[70vh]` + sticky `<thead>`. Full TanStack Virtualizer skipped because expandable detail panels break the uniform-row-height assumption.
+- [x] Loading skeletons — `loading.tsx` files for `/staff` and `/calendar` (Next.js streams them automatically).
 
-## Security — post-hardening follow-ups
+## Security follow-ups
 
-- [ ] **Storage bucket privacy** — `graphics` bucket is currently public (uses `getPublicUrl` in `src/lib/graphics/storage.ts`). Flip to private via `storage.buckets` UPDATE (or dashboard toggle) and refactor `lib/graphics/data.ts` + `lib/entries/queries.ts` to regenerate signed URLs on every read using the stored `storage_path` (already persisted). Consider 1-hour expiry. Objects are UUID-pathed so the practical risk is low, but worth closing. Graphics get re-uploaded to WP (public there anyway) so only the pre-submission window is exposed.
-- [ ] **Supabase `anon` key exposure** — `NEXT_PUBLIC_SUPABASE_ANON_KEY` isn't currently used anywhere (we only use the service role). If we never add auth-based browser queries, consider dropping the anon key from env entirely and removing `@supabase/ssr` if unused.
-- [ ] **Live curl test** — after applying migration 0007, verify directly: `curl "https://<proj>.supabase.co/rest/v1/users?select=*" -H "apikey: <anon_key>"` should return `[]` or 401/403 — not user data.
+- [x] Storage bucket privacy — bucket flipped to private (migration 0008). Reads now generate signed URLs (1h TTL) via `getSignedGraphicUrl` / `getSignedGraphicUrls`. The data layer in `lib/graphics/data.ts` overwrites the stored `file_url` on every read.
+- [ ] Live curl test against anon key — verify direct PostgREST hits return empty/403 after deploy.
+- [ ] Drop unused `NEXT_PUBLIC_SUPABASE_ANON_KEY` from env if it remains unused.
 
 ---
 
 ## How to add items
 
-- Spot something during a step handoff? Jot a line here with the step context (e.g., "Step 5 — graphic requests kanban column widths feel cramped on 1440px").
+- Spot something during ongoing work? Add a line here with context.
 - Architectural issues → fix immediately, not logged here.
-- Items with `[WONTFIX]` prefix stay listed for posterity but won't be addressed.
+- `[WONTFIX]` prefix marks items deliberately out of scope.

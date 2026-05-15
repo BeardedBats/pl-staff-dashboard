@@ -7,6 +7,10 @@ import {
   triggerGraphicFlagged,
   triggerGraphicRequested,
 } from "@/lib/notifications/trigger";
+import {
+  getSignedGraphicUrl,
+  getSignedGraphicUrls,
+} from "@/lib/graphics/storage";
 import type { AppSite, CurrentUser } from "@/lib/auth/current-user";
 import type { GraphicStatus } from "@/lib/entries/queries";
 
@@ -177,9 +181,20 @@ export async function listGraphicRequests(filters: {
     }
   }
 
+  // Batch-sign storage paths so every preview URL is fresh + auth'd.
+  // The bucket is private (migration 0008) so the stored file_url is
+  // useless on its own — we always regenerate from storage_path.
+  const paths = siteFiltered
+    .map((r) => r.storage_path)
+    .filter((p): p is string => Boolean(p));
+  const signedMap = await getSignedGraphicUrls(paths);
+
   return siteFiltered.map((r) => {
     const claimer = r.claimed_by ? userMap.get(r.claimed_by) : undefined;
     const creator = r.created_by ? userMap.get(r.created_by) : undefined;
+    const signedUrl = r.storage_path
+      ? (signedMap.get(r.storage_path) ?? null)
+      : null;
     return {
       id: r.id,
       entry_id: r.entry_id,
@@ -196,7 +211,7 @@ export async function listGraphicRequests(filters: {
       claimed_by_avatar: claimer?.avatar_url ?? null,
       created_by: r.created_by,
       created_by_name: creator?.display_name ?? null,
-      file_url: r.file_url,
+      file_url: signedUrl,
       file_name: r.file_name,
       file_size: r.file_size,
       mime_type: r.mime_type,
@@ -284,6 +299,9 @@ export async function getGraphicRequestById(
 
   const claimer = row.claimed_by ? userMap.get(row.claimed_by) : undefined;
   const creator = row.created_by ? userMap.get(row.created_by) : undefined;
+  const signedUrl = row.storage_path
+    ? await getSignedGraphicUrl(row.storage_path)
+    : null;
 
   return {
     id: row.id,
@@ -301,7 +319,7 @@ export async function getGraphicRequestById(
     claimed_by_avatar: claimer?.avatar_url ?? null,
     created_by: row.created_by,
     created_by_name: creator?.display_name ?? null,
-    file_url: row.file_url,
+    file_url: signedUrl,
     file_name: row.file_name,
     file_size: row.file_size,
     mime_type: row.mime_type,

@@ -25,9 +25,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 import type {
   AnalyticsArticleRow,
   AnalyticsOverview,
+  DayOfWeekHeatPoint,
+  PublishToPeakPoint,
 } from "@/lib/analytics/queries";
 
 type Props = { query: string };
+
+const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /**
  * Trends tab — pulls both overview (daily series) and articles (for tier
@@ -38,6 +42,8 @@ export function AnalyticsTrendsTab({ query }: Props) {
   const [articles, setArticles] = React.useState<AnalyticsArticleRow[] | null>(
     null,
   );
+  const [curve, setCurve] = React.useState<PublishToPeakPoint[] | null>(null);
+  const [heat, setHeat] = React.useState<DayOfWeekHeatPoint[] | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -48,14 +54,18 @@ export function AnalyticsTrendsTab({ query }: Props) {
     Promise.all([
       fetch(`/api/analytics/overview?${query}`).then((r) => r.json()),
       fetch(`/api/analytics/articles?${query}`).then((r) => r.json()),
+      fetch(`/api/analytics/publish-to-peak?${query}`).then((r) => r.json()),
     ])
-      .then(([ov, art]: [
+      .then(([ov, art, ptp]: [
         { overview: AnalyticsOverview },
         { rows: AnalyticsArticleRow[] },
+        { curve: PublishToPeakPoint[]; heat: DayOfWeekHeatPoint[] },
       ]) => {
         if (cancelled) return;
         setOverview(ov.overview);
         setArticles(art.rows);
+        setCurve(ptp.curve);
+        setHeat(ptp.heat);
       })
       .catch((e) => {
         if (cancelled) return;
@@ -253,6 +263,187 @@ export function AnalyticsTrendsTab({ query }: Props) {
           )}
         </CardContent>
       </Card>
+
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>Publish-to-peak curve</CardTitle>
+          <CardDescription>
+            Average pageviews per article on each day after publish.
+            Reveals the natural decay shape across the filtered set.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PublishToPeakChart curve={curve} />
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>Pageviews heatmap</CardTitle>
+          <CardDescription>
+            Pageviews bucketed by week × day-of-week. Spot weekday vs
+            weekend patterns. Darker cyan = more traffic.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DayOfWeekHeatmap heat={heat} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Publish-to-peak chart
+// --------------------------------------------------------------------------
+
+function PublishToPeakChart({ curve }: { curve: PublishToPeakPoint[] | null }) {
+  if (!curve || curve.length === 0 || curve.every((p) => p.avgPageviews === 0)) {
+    return (
+      <EmptyState
+        icon={<TrendingUp className="h-5 w-5" />}
+        title="No curve data"
+        description="Need articles with both a publish_date and GA4 pageviews to populate this."
+      />
+    );
+  }
+  return (
+    <div className="h-72 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={curve}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+          <XAxis
+            dataKey="day"
+            stroke="var(--color-text-muted)"
+            fontSize={11}
+            label={{
+              value: "Days since publish",
+              position: "insideBottom",
+              offset: -5,
+              fill: "var(--color-text-muted)",
+              fontSize: 10,
+            }}
+          />
+          <YAxis stroke="var(--color-cyan)" fontSize={11} />
+          <Tooltip
+            contentStyle={{
+              background: "var(--color-card)",
+              border: "1px solid var(--color-border)",
+              fontSize: 12,
+            }}
+            formatter={(value, _name, item) => {
+              const v = Number(value ?? 0);
+              const articleCount = (
+                item as { payload?: { articleCount?: number } }
+              )?.payload?.articleCount;
+              return [
+                `${v.toFixed(0)} avg (${articleCount ?? 0} articles)`,
+                "Pageviews",
+              ];
+            }}
+            labelFormatter={(label) => `Day ${label}`}
+          />
+          <Line
+            type="monotone"
+            dataKey="avgPageviews"
+            stroke="var(--color-cyan)"
+            strokeWidth={2}
+            dot={false}
+            name="Avg pageviews"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Day-of-week heatmap (CSS grid, no Recharts)
+// --------------------------------------------------------------------------
+
+function DayOfWeekHeatmap({ heat }: { heat: DayOfWeekHeatPoint[] | null }) {
+  if (!heat || heat.length === 0) {
+    return (
+      <EmptyState
+        icon={<TrendingUp className="h-5 w-5" />}
+        title="No heatmap data"
+        description="Come back after a GA4 sync — daily pageviews drive this grid."
+      />
+    );
+  }
+
+  // Group by week
+  const byWeek = new Map<string, Map<number, number>>(); // weekStart → dow → pageviews
+  let maxPv = 0;
+  for (const p of heat) {
+    const row = byWeek.get(p.weekStart) ?? new Map<number, number>();
+    row.set(p.dayOfWeek, p.pageviews);
+    byWeek.set(p.weekStart, row);
+    if (p.pageviews > maxPv) maxPv = p.pageviews;
+  }
+  const weeks = Array.from(byWeek.entries()).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+
+  // Helper: interpolate cyan opacity by relative intensity
+  function cellStyle(pv: number): React.CSSProperties {
+    if (pv === 0 || maxPv === 0) {
+      return { backgroundColor: "var(--color-navy-3)" };
+    }
+    const t = pv / maxPv;
+    // Min 0.1 so non-zero cells are visibly different from zero
+    const opacity = 0.1 + t * 0.9;
+    return {
+      backgroundColor: `rgba(85, 232, 255, ${opacity.toFixed(3)})`,
+      color: t > 0.6 ? "var(--color-navy-1)" : "var(--color-text-secondary)",
+    };
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[480px]">
+        {/* Header row */}
+        <div className="grid grid-cols-[80px_repeat(7,_minmax(0,_1fr))] gap-1 text-[10px] font-mono uppercase tracking-wide text-text-muted">
+          <div />
+          {DOW_LABELS.map((d) => (
+            <div key={d} className="px-1 py-0.5 text-center">
+              {d}
+            </div>
+          ))}
+        </div>
+        {/* Body rows */}
+        <div className="mt-1 space-y-1">
+          {weeks.map(([weekStart, row]) => {
+            const label = new Date(`${weekStart}T00:00:00Z`).toLocaleDateString(
+              undefined,
+              { month: "short", day: "numeric" },
+            );
+            return (
+              <div
+                key={weekStart}
+                className="grid grid-cols-[80px_repeat(7,_minmax(0,_1fr))] gap-1"
+              >
+                <div className="px-1 py-1.5 text-[10px] text-text-muted">
+                  Wk of {label}
+                </div>
+                {Array.from({ length: 7 }).map((_, dow) => {
+                  const pv = row.get(dow) ?? 0;
+                  return (
+                    <div
+                      key={dow}
+                      className="flex h-7 items-center justify-center rounded text-[10px] tabular-nums"
+                      style={cellStyle(pv)}
+                      title={`${DOW_LABELS[dow]}: ${pv.toLocaleString()} pageviews`}
+                    >
+                      {pv > 0 ? pv.toLocaleString() : "—"}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

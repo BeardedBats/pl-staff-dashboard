@@ -35,12 +35,30 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
     "idle" | "parsing" | "previewed" | "committing" | "done"
   >("idle");
   const [error, setError] = React.useState<string | null>(null);
+  const [dragging, setDragging] = React.useState(false);
+
+  // Accept a dropped file the same way the file picker does. We don't bother
+  // distinguishing between drag/drop and click — both end up setting `file`
+  // and clearing the previous preview.
+  function acceptFile(f: File) {
+    // Validate by extension since dragged files sometimes lack a MIME type
+    const name = f.name.toLowerCase();
+    if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+      setError("Drop an .xlsx or .xls file");
+      return;
+    }
+    setFile(f);
+    setPreview(null);
+    setPhase("idle");
+    setError(null);
+  }
 
   function reset() {
     setFile(null);
     setPreview(null);
     setPhase("idle");
     setError(null);
+    setDragging(false);
   }
 
   React.useEffect(() => {
@@ -138,12 +156,43 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
           </div>
         ) : (
           <div className="space-y-4">
-            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-border bg-navy-3/20 py-6 text-center text-xs text-text-muted hover:bg-navy-3/40">
+            <label
+              onDragEnter={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={(e) => {
+                // Only flip off when we actually leave the target, not on
+                // child-element transitions (relatedTarget gives us that).
+                if (
+                  !e.currentTarget.contains(e.relatedTarget as Node | null)
+                ) {
+                  setDragging(false);
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                const dropped = e.dataTransfer.files?.[0];
+                if (dropped) acceptFile(dropped);
+              }}
+              className={
+                dragging
+                  ? "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-cyan bg-cyan-dim/40 py-8 text-center text-xs text-cyan transition-colors"
+                  : "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-border bg-navy-3/20 py-6 text-center text-xs text-text-muted transition-colors hover:bg-navy-3/40"
+              }
+            >
               <Upload className="h-5 w-5" />
               {file ? (
                 <span className="font-medium text-text-primary">{file.name}</span>
+              ) : dragging ? (
+                <span className="font-medium">Drop to upload</span>
               ) : (
-                <span>Click to pick an .xlsx file</span>
+                <span>Drop an .xlsx file here, or click to pick one</span>
               )}
               <input
                 type="file"
@@ -151,11 +200,7 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (f) {
-                    setFile(f);
-                    setPreview(null);
-                    setPhase("idle");
-                  }
+                  if (f) acceptFile(f);
                 }}
               />
             </label>

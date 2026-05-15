@@ -96,7 +96,9 @@
   --destructive-foreground: #ffffff;
   --border: var(--navy-4);
   --input: var(--navy-2);
-  --ring: var(--cyan);
+  /* Slightly desaturated cyan for the focus ring in light mode — the full
+     #0891b2 is loud against white surfaces. Still legibly cyan, gentler. */
+  --ring: #0ea5b7;
 }
 
 /* ===========================================================
@@ -172,6 +174,35 @@ html {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Smooth theme-toggle transition. 180ms is enough to register but doesn't
+     slow down deliberate clicks. Tokens cascade through `bg-card`, `text-foreground`,
+     etc. — but each component's own `transition-colors` will repaint at the same time. */
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+body {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+/* Most card/border/surface elements should cross-fade too — limit to ones
+   that actually use the tokens, not animation-critical ones. */
+.bg-card,
+.bg-background,
+.bg-secondary,
+.bg-muted,
+.border-border,
+.text-foreground,
+.text-text-primary,
+.text-text-secondary,
+.text-text-muted {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
 }
 
 body {
@@ -219,6 +250,74 @@ code, kbd, pre, samp {
 /* Disable tap highlight on mobile */
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* ===========================================================
+   PRINT STYLES
+   Used by the "Print / PDF" button on the Analytics page.
+   Strip chrome (sidebar, header, filters bar), expand tables,
+   and force a light colour scheme so it actually saves to a
+   sensible PDF.
+   =========================================================== */
+
+@media print {
+  /* Force light colours for print regardless of current theme. */
+  :root,
+  .dark {
+    --background: #ffffff;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --border: #e2e6ed;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --cyan: #0891b2;
+    --amber: #d97706;
+  }
+
+  /* Hide nav chrome and interactive bits. */
+  aside,
+  header,
+  [data-tour="sidebar"],
+  [data-tour="notification-bell"],
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reset overflow on the main scroll container so everything prints. */
+  main,
+  .max-h-\[70vh\] {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* Cards: kill shadows, keep borders. */
+  .shadow-sm,
+  .shadow-lg,
+  .shadow-xl,
+  .ring-1 {
+    box-shadow: none !important;
+  }
+
+  /* Avoid breaking inside cards / table rows. */
+  .rounded-lg,
+  tr,
+  .grid > * {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Anchors print without underline. */
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
 }
 
 /* ===========================================================
