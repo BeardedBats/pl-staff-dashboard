@@ -56,6 +56,7 @@ export async function getMyActiveClaims(
     .in("id", entryIds)
     .in("content_status", ["claimed", "polishing"])
     .eq("is_archived", false)
+    .eq("is_historical", false)
     .order("publish_date", { ascending: true, nullsFirst: false })
     .limit(limit);
 
@@ -90,6 +91,7 @@ export async function getMySubmittedInFlight(
     .eq("content_status", "submitted")
     .in("editor_status", ["ready_for_edit", "edited"])
     .eq("is_archived", false)
+    .eq("is_historical", false)
     .order("publish_date", { ascending: true, nullsFirst: false })
     .limit(limit);
 
@@ -129,6 +131,7 @@ export async function getMyUpcomingDeadlines(
     .gte("publish_date", now.toISOString())
     .lte("publish_date", horizon.toISOString())
     .eq("is_archived", false)
+    .eq("is_historical", false)
     .not("editor_status", "eq", "published")
     .order("publish_date", { ascending: true })
     .limit(10);
@@ -162,6 +165,7 @@ export async function getMyDraftsToApprove(
     .in("id", entryIds)
     .eq("is_drafted", true)
     .eq("is_archived", false)
+    .eq("is_historical", false)
     .order("updated_at", { ascending: false })
     .limit(10);
 
@@ -190,6 +194,7 @@ export async function getUnclaimedWriterSlots(
     .eq("content_status", "writer_needed")
     .eq("is_archived", false)
     .eq("is_drafted", false)
+    .eq("is_historical", false)
     .order("priority", { ascending: false })
     .order("publish_date", { ascending: true, nullsFirst: false })
     .limit(limit);
@@ -219,6 +224,7 @@ export async function getEditorQueuePreview(
     )
     .in("editor_status", ["ready_for_edit"])
     .eq("is_archived", false)
+    .eq("is_historical", false)
     .order("priority", { ascending: false })
     .order("publish_date", { ascending: true, nullsFirst: false })
     .limit(limit);
@@ -255,6 +261,7 @@ export async function getMyActiveEdits(
     .in("id", entryIds)
     .in("editor_status", ["ready_for_edit", "edited"])
     .eq("is_archived", false)
+    .eq("is_historical", false)
     .order("publish_date", { ascending: true, nullsFirst: false })
     .limit(limit);
 
@@ -376,7 +383,8 @@ export async function getPipelineHealth(
       .from("entries")
       .select("id", { count: "exact", head: true })
       .eq("is_archived", false)
-      .eq("is_drafted", false);
+      .eq("is_drafted", false)
+      .eq("is_historical", false);
     if (userSite !== "both") q = q.in("site", [userSite, "both"]);
     return q;
   };
@@ -407,7 +415,8 @@ export async function getPipelineHealth(
         .from("entries")
         .select("id", { count: "exact", head: true })
         .eq("is_drafted", true)
-        .eq("is_archived", false);
+        .eq("is_archived", false)
+        .eq("is_historical", false);
       if (userSite !== "both") q = q.in("site", [userSite, "both"]);
       return q;
     })(),
@@ -421,6 +430,7 @@ export async function getPipelineHealth(
       .select("id", { count: "exact", head: true })
       .eq("is_archived", false)
       .eq("is_drafted", false)
+      .eq("is_historical", false)
       .eq("content_status", "submitted")
       .eq("editor_status", "edited");
     if (userSite !== "both") q = q.in("site", [userSite, "both"]);
@@ -549,6 +559,7 @@ export async function getStaleEntries(
     )
     .eq("is_archived", false)
     .eq("is_drafted", false)
+    .eq("is_historical", false)
     .in("content_status", ["claimed", "polishing"])
     .lt("updated_at", cutoff.toISOString())
     .order("updated_at", { ascending: true })

@@ -81,6 +81,7 @@ type WpPost = {
   author: number;
   date_gmt: string | null;
   modified_gmt: string | null;
+  link: string | null;
   title:
     | { rendered?: string; raw?: string }
     | string
@@ -283,6 +284,16 @@ export async function syncWpPostsForSite(
         .maybeSingle();
 
       if (existing?.id) {
+        // Refresh the public permalink alongside the status mirror so that
+        // migration 0010 can null out old admin URLs and trust the cron to
+        // repopulate them with `post.link` on the next pass.
+        if (typeof post.link === "string" && post.link.length > 0) {
+          await supabase
+            .from("entries")
+            .update({ wp_post_url: post.link })
+            .eq("id", existing.id as string);
+        }
+
         // Update path — hand off to the status-transitions helper.
         await applyWpStateToEntry(existing.id as string, systemUserId, {
           status: post.status,
@@ -323,7 +334,12 @@ export async function syncWpPostsForSite(
       }
 
       const title = pickTitle(post);
-      const editUrl = `${config.url}/wp-admin/post.php?post=${post.id}&action=edit`;
+      // Store the public permalink (post.link) so analytics joins on
+      // wp_post_url can match GA4 pagePath and Raptive page_url. The
+      // wp-admin edit URL is reachable via wp_post_id when needed.
+      const publicUrl = typeof post.link === "string" && post.link.length > 0
+        ? post.link
+        : null;
       const autoApprove = Boolean(
         (dashboardUser as { auto_approve_drafts?: boolean }).auto_approve_drafts,
       );
@@ -335,7 +351,7 @@ export async function syncWpPostsForSite(
           site,
           tier_id: defaultTierId,
           wp_post_id: post.id,
-          wp_post_url: editUrl,
+          wp_post_url: publicUrl,
           wp_status: post.status,
           wp_modified_at: post.modified_gmt ? `${post.modified_gmt}Z` : null,
           content_status: "claimed",

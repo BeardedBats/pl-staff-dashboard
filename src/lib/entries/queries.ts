@@ -111,6 +111,13 @@ export type ListEntriesFilters = {
    * them. Pass true from My Tasks and the admin draft-approval view.
    */
   includeDrafted?: boolean;
+  /**
+   * Include historical entries (is_historical = true). Hidden by default —
+   * historical entries are pre-existing published articles imported for
+   * analytics purposes and don't belong in the active pipeline. Pass true
+   * from the /archive page once it exists.
+   */
+  includeHistorical?: boolean;
   dateFrom?: string; // ISO
   dateTo?: string;   // ISO
   sortBy?: "publish_date" | "created_at" | "updated_at" | "title";
@@ -160,6 +167,13 @@ export async function listEntries(
   // Filter: hide drafted entries unless explicitly requested.
   if (!filters.includeDrafted) {
     query = query.eq("is_drafted", false);
+  }
+
+  // Filter: hide historical (back-imported) entries unless explicitly
+  // requested. These are pre-existing published posts that exist only
+  // for analytics joins, not for the active pipeline.
+  if (!filters.includeHistorical) {
+    query = query.eq("is_historical", false);
   }
 
   if (filters.search) {

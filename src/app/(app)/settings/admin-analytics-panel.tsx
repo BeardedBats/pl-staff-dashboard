@@ -4,7 +4,9 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import {
   BarChart3,
+  Calendar as CalendarIcon,
   Check,
+  History,
   Link2,
   Loader2,
   Plug,
@@ -268,6 +270,13 @@ export function AdminAnalyticsPanel({
               Only Operations can connect or disconnect GA4.
             </p>
           )}
+
+          {canConnectGa4 && status.connected ? (
+            <Ga4BackfillSection
+              setFlash={setFlash}
+              onComplete={() => void refreshStatus()}
+            />
+          ) : null}
         </CardContent>
       </Card>
 
@@ -339,6 +348,142 @@ export function AdminAnalyticsPanel({
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function yesterdayIso(): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function Ga4BackfillSection({
+  setFlash,
+  onComplete,
+}: {
+  setFlash: (flash: { kind: "success" | "error"; message: string } | null) => void;
+  onComplete: () => void;
+}) {
+  const [from, setFrom] = React.useState("2022-10-01");
+  const [to, setTo] = React.useState(yesterdayIso);
+  const [running, setRunning] = React.useState(false);
+  const [result, setResult] = React.useState<{
+    rowsUpserted: number;
+    matchedArticles: number;
+    dateFrom: string;
+    dateTo: string;
+  } | null>(null);
+
+  async function handleBackfill() {
+    setRunning(true);
+    setResult(null);
+    setFlash(null);
+    try {
+      const res = await fetch("/api/admin/ga4-backfill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date_from: from, date_to: to }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        rowsUpserted?: number;
+        matchedArticles?: number;
+        dateFrom?: string;
+        dateTo?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        setFlash({
+          kind: "error",
+          message: data.error ?? `Backfill failed (${res.status})`,
+        });
+        return;
+      }
+      setResult({
+        rowsUpserted: data.rowsUpserted ?? 0,
+        matchedArticles: data.matchedArticles ?? 0,
+        dateFrom: data.dateFrom ?? from,
+        dateTo: data.dateTo ?? to,
+      });
+      setFlash({
+        kind: "success",
+        message: `Backfill complete — ${data.rowsUpserted ?? 0} rows across ${data.matchedArticles ?? 0} articles.`,
+      });
+      onComplete();
+    } catch {
+      setFlash({ kind: "error", message: "Network error" });
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3 rounded-md border border-border bg-navy-3/30 p-3">
+      <div className="flex items-center gap-2">
+        <History className="h-3.5 w-3.5 text-text-muted" />
+        <p className="text-sm font-medium text-text-primary">
+          Backfill GA4 data
+        </p>
+      </div>
+      <p className="text-xs text-text-muted">
+        Pulls pageviews and sessions for a date range. Pair this with the
+        historical article import so GA4 rows have entries to match against.
+      </p>
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <label className="space-y-1">
+          <span className="block font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            From
+          </span>
+          <div className="flex items-center gap-1 rounded-sm border border-border bg-navy-2 px-2 py-1">
+            <CalendarIcon className="h-3 w-3 text-text-muted" />
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="flex-1 bg-transparent text-text-primary outline-none"
+            />
+          </div>
+        </label>
+        <label className="space-y-1">
+          <span className="block font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            To
+          </span>
+          <div className="flex items-center gap-1 rounded-sm border border-border bg-navy-2 px-2 py-1">
+            <CalendarIcon className="h-3 w-3 text-text-muted" />
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="flex-1 bg-transparent text-text-primary outline-none"
+            />
+          </div>
+        </label>
+      </div>
+      <Button
+        variant="outline"
+        onClick={handleBackfill}
+        disabled={running || !from || !to}
+      >
+        {running ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <RefreshCcw className="h-3.5 w-3.5" />
+        )}
+        Run backfill
+      </Button>
+      {result ? (
+        <p className="text-xs text-text-secondary">
+          {result.dateFrom} → {result.dateTo}:{" "}
+          <span className="font-medium text-text-primary">
+            {result.rowsUpserted}
+          </span>{" "}
+          rows upserted across{" "}
+          <span className="font-medium text-text-primary">
+            {result.matchedArticles}
+          </span>{" "}
+          articles.
+        </p>
+      ) : null}
     </div>
   );
 }

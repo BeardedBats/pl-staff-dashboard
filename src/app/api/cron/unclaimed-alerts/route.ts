@@ -36,6 +36,7 @@ export async function POST(request: Request) {
     .select("id, title, site, publish_date, created_by")
     .eq("content_status", "writer_needed")
     .eq("is_archived", false)
+    .eq("is_historical", false)
     .not("publish_date", "is", null)
     .gte("publish_date", now.toISOString())
     .lte("publish_date", horizon.toISOString());

@@ -151,7 +151,10 @@ export default async function SettingsPage({
               <AdminSeasonPanel initialModes={seasonModes} />
             </TabsContent>
             <TabsContent value="sync">
-              <AdminSyncPanel initialLastSync={syncStatus} />
+              <AdminSyncPanel
+                initialLastSync={syncStatus}
+                canRunHistoricalImport={isOperations(viewer)}
+              />
             </TabsContent>
             <TabsContent value="checklists">
               <AdminChecklistsPanel
