@@ -5,6 +5,18 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { AppSite } from "@/lib/auth/current-user";
 
 // --------------------------------------------------------------------------
+// Role assignment shape (used by both the dedicated /roles endpoint and the
+// admin Edit User dialog, which routes through PATCH /api/users/:id)
+// --------------------------------------------------------------------------
+
+export const roleAssignmentSchema = z.object({
+  role: z.enum(["writer", "editor", "graphics", "manager", "admin", "eic", "operations"]),
+  site: z.enum(["pl", "qb", "both"]),
+});
+
+export type RoleAssignment = z.infer<typeof roleAssignmentSchema>;
+
+// --------------------------------------------------------------------------
 // Profile updates
 // --------------------------------------------------------------------------
 
@@ -36,13 +48,38 @@ export const userProfileUpdateSchema = z.object({
   theme: z.enum(["dark", "light"]).optional(),
   auto_approve_drafts: z.boolean().optional(),
   email: z.email().optional(),
+  // Admin-only fields. Route handler MUST gate these on isAdminPlus; the
+  // schema accepts them so the same PATCH endpoint can power the admin
+  // Edit User dialog without spinning up a parallel route.
+  wp_site: z.enum(["pl", "qb", "both"]).optional(),
+  can_publish: z.boolean().optional(),
+  roles: z.array(roleAssignmentSchema).optional(),
+  team_id: z.uuid().nullable().optional(),
 });
 
 export type UserProfileUpdate = z.infer<typeof userProfileUpdateSchema>;
 
 /**
+ * Which fields on UserProfileUpdate may only be set by an admin. The route
+ * handler uses this to reject self-edits that include privileged fields.
+ */
+export const ADMIN_ONLY_PROFILE_FIELDS = [
+  "wp_site",
+  "can_publish",
+  "roles",
+  "team_id",
+] as const;
+
+/**
  * Update a user's profile fields. Returns `true` on success.
  * Caller is responsible for permission checks.
+ *
+ * If `display_name` is in the input we also flip `display_name_override`
+ * so the WP sync cron leaves the name alone on future runs.
+ *
+ * Role and primary-team mutations are handled separately by
+ * `setUserRoles` and `setUserPrimaryTeam`; this function only touches the
+ * `users` row.
  */
 export async function updateUserProfile(
   userId: string,
@@ -50,14 +87,25 @@ export async function updateUserProfile(
 ): Promise<boolean> {
   const supabase = getSupabaseAdmin();
 
-  // Normalize Twitter handles to have no leading @ (display adds it back).
-  const normalized = {
-    ...input,
-    twitter_handle: input.twitter_handle
-      ? input.twitter_handle.replace(/^@/, "")
-      : input.twitter_handle,
+  // Strip fields that aren't columns on `users`; those are handled by
+  // dedicated helpers (roles + primary team).
+  const { roles: _roles, team_id: _teamId, ...rest } = input;
+  void _roles;
+  void _teamId;
+
+  const normalized: Record<string, unknown> = {
+    ...rest,
+    twitter_handle: rest.twitter_handle
+      ? rest.twitter_handle.replace(/^@/, "")
+      : rest.twitter_handle,
     updated_at: new Date().toISOString(),
   };
+
+  // Lock the name against future WP overwrites whenever an admin (or the
+  // user themselves) explicitly writes a display_name.
+  if (typeof rest.display_name === "string") {
+    normalized.display_name_override = true;
+  }
 
   const { error } = await supabase
     .from("users")
@@ -67,16 +115,70 @@ export async function updateUserProfile(
   return !error;
 }
 
+/**
+ * Set (or clear) a user's primary team.
+ *
+ * Pass `null` to demote any existing primary team without removing the
+ * user from team_members. Pass a team UUID to make that team the user's
+ * primary — if they aren't yet a member, they're added; if they are, the
+ * primary flag flips and any previous primary is demoted.
+ */
+export async function setUserPrimaryTeam(
+  userId: string,
+  teamId: string | null,
+  fallbackSite: "pl" | "qb" | "both" = "pl",
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = getSupabaseAdmin();
+
+  if (teamId === null) {
+    const { error } = await supabase
+      .from("team_members")
+      .update({ is_primary: false })
+      .eq("user_id", userId)
+      .eq("is_primary", true);
+    if (error) return { ok: false, error: "Failed to clear primary team" };
+    return { ok: true };
+  }
+
+  // Demote any existing primary for this user, then upsert membership on
+  // the target team with is_primary = true. Mirrors `addTeamMember` in
+  // lib/teams/data.ts but kept inline so the user-edit flow doesn't pull
+  // in the broader teams mutation surface.
+  void fallbackSite;
+  await supabase
+    .from("team_members")
+    .update({ is_primary: false })
+    .eq("user_id", userId)
+    .eq("is_primary", true);
+
+  const { data: existing } = await supabase
+    .from("team_members")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("team_members")
+      .update({ is_primary: true })
+      .eq("id", existing.id as string);
+    if (error) return { ok: false, error: "Failed to set primary team" };
+    return { ok: true };
+  }
+
+  const { error } = await supabase.from("team_members").insert({
+    team_id: teamId,
+    user_id: userId,
+    is_primary: true,
+  });
+  if (error) return { ok: false, error: "Failed to join team as primary" };
+  return { ok: true };
+}
+
 // --------------------------------------------------------------------------
 // Role management (Admin+ only)
 // --------------------------------------------------------------------------
-
-export const roleAssignmentSchema = z.object({
-  role: z.enum(["writer", "editor", "graphics", "manager", "admin", "eic", "operations"]),
-  site: z.enum(["pl", "qb", "both"]),
-});
-
-export type RoleAssignment = z.infer<typeof roleAssignmentSchema>;
 
 /**
  * Replace a user's entire role set atomically. Pass an empty array to strip

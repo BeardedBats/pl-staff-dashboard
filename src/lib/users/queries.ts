@@ -11,7 +11,9 @@ export type StaffUserSummary = {
   id: string;
   wp_user_id: number;
   wp_site: AppSite;
-  email: string;
+  /** Nullable since migration 0009. Staff imported before they log in via
+   * WordPress can have a NULL placeholder email until first sign-in. */
+  email: string | null;
   display_name: string;
   avatar_url: string | null;
   bio: string | null;
@@ -167,7 +169,7 @@ export async function listUsers(filters: ListUsersFilters = {}): Promise<ListUse
       id: u.id as string,
       wp_user_id: u.wp_user_id as number,
       wp_site: u.wp_site as AppSite,
-      email: u.email as string,
+      email: (u.email as string | null) ?? null,
       display_name: u.display_name as string,
       avatar_url: (u.avatar_url as string | null) ?? null,
       bio: (u.bio as string | null) ?? null,
@@ -258,7 +260,7 @@ export async function getUserById(id: string): Promise<StaffUserSummary | null> 
     id: data.id as string,
     wp_user_id: data.wp_user_id as number,
     wp_site: data.wp_site as AppSite,
-    email: data.email as string,
+    email: (data.email as string | null) ?? null,
     display_name: data.display_name as string,
     avatar_url: (data.avatar_url as string | null) ?? null,
     bio: (data.bio as string | null) ?? null,

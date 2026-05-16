@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -35,17 +34,7 @@ import {
 import { UserAvatar } from "@/components/users/user-avatar";
 import { RoleBadgeGroup } from "@/components/users/role-badge";
 import type { StaffUserSummary } from "@/lib/users/queries";
-import type { AppRole, AppSite } from "@/lib/auth/current-user";
-
-const ALL_ROLES: AppRole[] = [
-  "writer",
-  "editor",
-  "graphics",
-  "manager",
-  "admin",
-  "eic",
-  "operations",
-];
+import { EditUserDialog } from "./edit-user-dialog";
 
 type AdminUsersPanelProps = {
   initialUsers: StaffUserSummary[];
@@ -72,7 +61,7 @@ export function AdminUsersPanel({
     const term = search.toLowerCase();
     return (
       u.display_name.toLowerCase().includes(term) ||
-      u.email.toLowerCase().includes(term)
+      (u.email?.toLowerCase().includes(term) ?? false)
     );
   });
 
@@ -105,7 +94,7 @@ export function AdminUsersPanel({
           <CardTitle>User management</CardTitle>
           <CardDescription>
             {totalCount} staff member{totalCount === 1 ? "" : "s"} · Click a row
-            to edit roles.
+            to edit roles, site, primary team, and more.
           </CardDescription>
         </div>
         <ImportUserDialog
@@ -139,7 +128,11 @@ export function AdminUsersPanel({
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.map((user) => (
-                <tr key={user.id} className="hover:bg-navy-3/50">
+                <tr
+                  key={user.id}
+                  className="cursor-pointer hover:bg-navy-3/50"
+                  onClick={() => setEditingUserId(user.id)}
+                >
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
                       <UserAvatar
@@ -152,7 +145,9 @@ export function AdminUsersPanel({
                           {user.display_name}
                         </p>
                         <p className="truncate font-mono text-[10px] text-text-muted">
-                          {user.email}
+                          {user.email ?? (
+                            <span className="italic">pending first login</span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -172,7 +167,10 @@ export function AdminUsersPanel({
                       <span className="italic text-text-muted">none</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-center">
+                  <td
+                    className="px-3 py-2 text-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Switch
                       checked={user.can_publish}
                       onCheckedChange={() => togglePublish(user)}
@@ -183,9 +181,12 @@ export function AdminUsersPanel({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setEditingUserId(user.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingUserId(user.id);
+                      }}
                     >
-                      Edit roles
+                      Edit user
                     </Button>
                   </td>
                 </tr>
@@ -206,7 +207,7 @@ export function AdminUsersPanel({
       </CardContent>
 
       {editingUser ? (
-        <EditRolesDialog
+        <EditUserDialog
           user={editingUser}
           open={Boolean(editingUserId)}
           onClose={() => setEditingUserId(null)}
@@ -220,153 +221,6 @@ export function AdminUsersPanel({
         />
       ) : null}
     </Card>
-  );
-}
-
-// --------------------------------------------------------------------------
-// Edit roles dialog
-// --------------------------------------------------------------------------
-
-function EditRolesDialog({
-  user,
-  open,
-  onClose,
-  onSaved,
-}: {
-  user: StaffUserSummary;
-  open: boolean;
-  onClose: () => void;
-  onSaved: (updated: StaffUserSummary) => void;
-}) {
-  type RoleRow = { role: AppRole; site: AppSite };
-  const [rows, setRows] = React.useState<RoleRow[]>(user.role_rows);
-  const [saving, setSaving] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    setRows(user.role_rows);
-    setError(null);
-  }, [user]);
-
-  function toggleRole(role: AppRole) {
-    const existingIdx = rows.findIndex((r) => r.role === role);
-    if (existingIdx >= 0) {
-      setRows(rows.filter((_, i) => i !== existingIdx));
-    } else {
-      setRows([...rows, { role, site: "pl" }]);
-    }
-  }
-
-  function setRoleSite(role: AppRole, site: AppSite) {
-    setRows(rows.map((r) => (r.role === role ? { ...r, site } : r)));
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/users/${user.id}/roles`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roles: rows }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        user?: StaffUserSummary;
-        error?: string;
-      };
-      if (!res.ok || !data.user) {
-        setError(data.error ?? "Save failed");
-        setSaving(false);
-        return;
-      }
-      onSaved(data.user);
-    } catch {
-      setError("Network error");
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => (o ? null : onClose())}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit roles · {user.display_name}</DialogTitle>
-          <DialogDescription>
-            Choose which roles this user holds and which site each role applies
-            to.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3">
-          {ALL_ROLES.map((role) => {
-            const assignment = rows.find((r) => r.role === role);
-            const isActive = Boolean(assignment);
-            return (
-              <div
-                key={role}
-                className="flex items-center justify-between gap-3 rounded-md border border-border bg-navy-3/50 px-3 py-2"
-              >
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={isActive}
-                    onCheckedChange={() => toggleRole(role)}
-                    id={`role-${role}`}
-                  />
-                  <Label
-                    htmlFor={`role-${role}`}
-                    className="text-sm font-medium capitalize"
-                  >
-                    {role}
-                  </Label>
-                </div>
-                {isActive ? (
-                  <Select
-                    value={assignment!.site}
-                    onValueChange={(value) =>
-                      setRoleSite(role, value as AppSite)
-                    }
-                  >
-                    <SelectTrigger className="h-7 w-[120px] text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pl">Pitcher List</SelectItem>
-                      <SelectItem value="qb">QB List</SelectItem>
-                      <SelectItem value="both">Both</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <span className="text-xs text-text-muted">—</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {error ? (
-          <p className="text-sm text-destructive">{error}</p>
-        ) : null}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Saving…
-              </>
-            ) : (
-              <>
-                <Check className="h-3.5 w-3.5" />
-                Save roles
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

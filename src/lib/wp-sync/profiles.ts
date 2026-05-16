@@ -31,6 +31,7 @@ type DashboardUserRow = {
   wp_user_id: number;
   wp_site: "pl" | "qb" | "both";
   display_name: string | null;
+  display_name_override: boolean;
   bio: string | null;
   avatar_url: string | null;
 };
@@ -94,7 +95,9 @@ export async function syncWpProfiles(): Promise<ProfileSyncReport> {
   const supabase = getSupabaseAdmin();
   const { data: users } = await supabase
     .from("users")
-    .select("id, wp_user_id, wp_site, display_name, bio, avatar_url")
+    .select(
+      "id, wp_user_id, wp_site, display_name, display_name_override, bio, avatar_url",
+    )
     .not("wp_user_id", "is", null);
 
   const rows = (users ?? []) as unknown as DashboardUserRow[];
@@ -115,7 +118,14 @@ export async function syncWpProfiles(): Promise<ProfileSyncReport> {
         continue;
       }
 
-      const nextDisplayName = result.value.name || user.display_name || "";
+      // Honor admin overrides: if display_name_override is set, leave the
+      // local value alone. Bio and avatar still sync from WP — only the
+      // name field is locked. (Add more override flags here if we ever
+      // need to protect bio/avatar too.)
+      const keepLocalName = user.display_name_override === true;
+      const nextDisplayName = keepLocalName
+        ? user.display_name ?? ""
+        : result.value.name || user.display_name || "";
       const nextBio = result.value.description || "";
       const nextAvatarUrl = result.value.avatar_url ?? null;
 
@@ -129,14 +139,18 @@ export async function syncWpProfiles(): Promise<ProfileSyncReport> {
         continue;
       }
 
+      const updatePayload: Record<string, unknown> = {
+        bio: nextBio,
+        avatar_url: nextAvatarUrl,
+        last_wp_sync: new Date().toISOString(),
+      };
+      if (!keepLocalName) {
+        updatePayload.display_name = nextDisplayName;
+      }
+
       const { error: updateError } = await supabase
         .from("users")
-        .update({
-          display_name: nextDisplayName,
-          bio: nextBio,
-          avatar_url: nextAvatarUrl,
-          last_wp_sync: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq("id", user.id);
 
       if (updateError) {

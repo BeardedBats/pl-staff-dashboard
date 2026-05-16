@@ -203,7 +203,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
               <Label htmlFor="email">Email (read-only)</Label>
               <Input
                 id="email"
-                value={profile.email}
+                value={profile.email ?? ""}
                 disabled
                 className="opacity-60"
               />

@@ -523,7 +523,9 @@ function EntryTopBar({
           <Badge variant="outline">{entry.category.name}</Badge>
         ) : null}
         {entry.series ? (
-          <Badge variant="cyan">Series: {entry.series.title_pattern}</Badge>
+          <Badge variant="cyan">
+            Series: {resolveSeriesLabel(entry.series.title_pattern, entry)}
+          </Badge>
         ) : null}
         {entry.is_archived ? (
           <Badge variant="danger">
@@ -775,16 +777,6 @@ function PipelineTab({
           )}
         </section>
 
-        <section className="rounded-md border border-dashed border-border bg-navy-3/30 p-3 text-xs text-text-muted">
-          <p className="font-semibold uppercase tracking-wider text-text-muted">
-            Coming in later steps
-          </p>
-          <ul className="mt-1 list-disc space-y-0.5 pl-4">
-            <li>Comments thread + @mentions → Step 6</li>
-            <li>Discord + email notifications → Step 7</li>
-            <li>Full WP sync cron → Step 10</li>
-          </ul>
-        </section>
       </div>
     </div>
   );
@@ -1263,4 +1255,45 @@ function thirtyDaysAgo(): string {
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+// --------------------------------------------------------------------------
+// Series label token resolution
+//
+// The recurring-template title_pattern can carry tokens like {date} that
+// the generator expands at entry-creation time. The detail panel doesn't
+// run that generator — it shows the raw pattern from the template. This
+// helper resolves the date-style tokens against the entry's own date so
+// staff never see a literal `{DATE}` in the badge.
+//
+// Format intentionally short ("Apr 15") to fit inside the badge — the
+// generator uses long format ("April 15") which is fine in the article
+// title but too wide for a chip.
+// --------------------------------------------------------------------------
+function resolveSeriesLabel(
+  pattern: string,
+  entry: { publish_date: string | null; created_at: string },
+): string {
+  const iso = entry.publish_date ?? entry.created_at;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return pattern.replace(/\{[^}]+\}/g, "").trim();
+
+  const shortDate = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(d);
+  const longMonth = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    timeZone: "UTC",
+  }).format(d);
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    timeZone: "UTC",
+  }).format(d);
+
+  return pattern
+    .replace(/\{date\}/gi, shortDate)
+    .replace(/\{month\}/gi, longMonth)
+    .replace(/\{day_of_week\}/gi, weekday);
 }

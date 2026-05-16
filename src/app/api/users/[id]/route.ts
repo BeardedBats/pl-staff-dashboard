@@ -6,6 +6,9 @@ import {
 } from "@/lib/auth/current-user";
 import { getUserById, type StaffUserSummary } from "@/lib/users/queries";
 import {
+  ADMIN_ONLY_PROFILE_FIELDS,
+  setUserPrimaryTeam,
+  setUserRoles,
   updateUserProfile,
   userProfileUpdateSchema,
 } from "@/lib/users/mutations";
@@ -40,7 +43,18 @@ export async function GET(_request: Request, context: RouteContext) {
 /**
  * PATCH /api/users/:id — update profile.
  *
- * Users may edit their own profile. Admin+ may edit anyone's profile.
+ * Users may edit their own profile (display_name, bio, socials, prefs).
+ * Admin+ may additionally edit privileged fields — `wp_site`,
+ * `can_publish`, `roles`, `team_id` — on any user. If a self-edit
+ * includes those fields, we 403 the whole request so a clever client
+ * can't promote themselves.
+ *
+ * Role replacement and primary-team assignment happen via dedicated
+ * helpers after the users-row update. Supabase JS can't open a true
+ * Postgres transaction so this isn't fully atomic — if the roles step
+ * fails after the row update succeeds, the caller gets a 500 and the
+ * users row will already reflect the new profile fields. We surface
+ * the failed step in the error message so the dialog can show it.
  */
 export async function PATCH(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
@@ -50,7 +64,8 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const { id } = await context.params;
   const isSelf = viewer.id === id;
-  if (!isSelf && !isAdminPlus(viewer)) {
+  const isAdmin = isAdminPlus(viewer);
+  if (!isSelf && !isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -69,9 +84,35 @@ export async function PATCH(request: Request, context: RouteContext) {
     );
   }
 
-  const ok = await updateUserProfile(id, parsed.data);
+  const input = parsed.data;
+
+  const adminFieldsPresent = ADMIN_ONLY_PROFILE_FIELDS.some(
+    (key) => input[key] !== undefined,
+  );
+  if (adminFieldsPresent && !isAdmin) {
+    return NextResponse.json(
+      { error: "Forbidden: admin-only fields in payload" },
+      { status: 403 },
+    );
+  }
+
+  const ok = await updateUserProfile(id, input);
   if (!ok) {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
+  }
+
+  if (input.roles !== undefined) {
+    const result = await setUserRoles(id, input.roles);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+  }
+
+  if (input.team_id !== undefined) {
+    const result = await setUserPrimaryTeam(id, input.team_id ?? null);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
   }
 
   const updated = await getUserById(id);
