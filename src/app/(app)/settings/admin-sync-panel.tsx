@@ -47,6 +47,8 @@ type ImportSiteReport = {
   authorsUnmatched: number;
   categoriesMatched: number;
   errors: string[];
+  pagesProcessed: number;
+  hasMore: boolean;
 };
 
 type ImportResponse = {
@@ -64,7 +66,21 @@ type ImportResponse = {
     categoriesMatched: number;
     errors: string[];
   };
+  nextPage: number | null;
+  totalPagesProcessed: number;
 };
+
+type LoopProgress = {
+  currentPage: number;
+  estimatedTotalPages: number;
+  importedSoFar: number;
+};
+
+function siteDisplayName(site: ImportSite): string {
+  if (site === "pl") return "Pitcher List";
+  if (site === "qb") return "QB List";
+  return "Pitcher List and QB List";
+}
 
 const initialState: SyncState = { running: false, result: null, error: null };
 
@@ -249,22 +265,30 @@ function HistoricalImportSection() {
   const [running, setRunning] = React.useState(false);
   const [response, setResponse] = React.useState<ImportResponse | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [progress, setProgress] = React.useState<LoopProgress | null>(null);
+  const [stoppedAtPage, setStoppedAtPage] = React.useState<number | null>(null);
 
-  async function runImport(dryRun: boolean) {
-    setRunning(true);
+  function resetPanelState() {
     setError(null);
+    setResponse(null);
+    setProgress(null);
+    setStoppedAtPage(null);
+  }
+
+  async function runDryRun() {
+    setRunning(true);
+    resetPanelState();
     try {
       const res = await fetch("/api/admin/historical-import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ site, dry_run: dryRun }),
+        body: JSON.stringify({ site, dry_run: true }),
       });
       const data = (await res.json().catch(() => ({}))) as Partial<ImportResponse> & {
         error?: string;
       };
       if (!res.ok || data.ok === false) {
         setError(data.error ?? `Import failed (${res.status})`);
-        setResponse(null);
         return;
       }
       setResponse(data as ImportResponse);
@@ -275,16 +299,135 @@ function HistoricalImportSection() {
     }
   }
 
+  async function runImportLoop() {
+    setRunning(true);
+    resetPanelState();
+
+    const MAX_PAGES = 20;
+    // Pre-pagination dry run showed ~10,441 PL posts (≈105 pages). QB is
+    // smaller, so this works as a ceiling for both single-site and 'both'
+    // modes. Only used for the progress denominator.
+    const ESTIMATED_TOTAL_PAGES = Math.ceil(10441 / 100);
+
+    const totals = {
+      postsFound: 0,
+      postsImported: 0,
+      postsSkipped: 0,
+      authorsMatched: 0,
+      authorsUnmatched: 0,
+      categoriesMatched: 0,
+      errors: [] as string[],
+    };
+    const reportsBySite = new Map<string, ImportSiteReport>();
+    let totalPagesProcessed = 0;
+    let startPage = 1;
+
+    const buildPartialResponse = (
+      nextPage: number | null,
+    ): ImportResponse => ({
+      ok: true,
+      dryRun: false,
+      site,
+      note: null,
+      reports: Array.from(reportsBySite.values()),
+      totals: {
+        ...totals,
+        errors: [...totals.errors],
+      },
+      nextPage,
+      totalPagesProcessed,
+    });
+
+    while (true) {
+      let res: Response;
+      let data: Partial<ImportResponse> & { error?: string };
+      try {
+        res = await fetch("/api/admin/historical-import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            site,
+            dry_run: false,
+            start_page: startPage,
+            max_pages: MAX_PAGES,
+          }),
+        });
+        data = (await res.json().catch(() => ({}))) as Partial<ImportResponse> & {
+          error?: string;
+        };
+      } catch {
+        setError("Network error");
+        setStoppedAtPage(startPage);
+        setResponse(buildPartialResponse(startPage));
+        setProgress(null);
+        setRunning(false);
+        return;
+      }
+
+      if (!res.ok || data.ok === false) {
+        setError(data.error ?? `Import failed (${res.status})`);
+        setStoppedAtPage(startPage);
+        setResponse(buildPartialResponse(startPage));
+        setProgress(null);
+        setRunning(false);
+        return;
+      }
+
+      const chunk = data as ImportResponse;
+
+      totals.postsFound += chunk.totals.postsFound;
+      totals.postsImported += chunk.totals.postsImported;
+      totals.postsSkipped += chunk.totals.postsSkipped;
+      totals.authorsMatched += chunk.totals.authorsMatched;
+      totals.authorsUnmatched += chunk.totals.authorsUnmatched;
+      totals.categoriesMatched += chunk.totals.categoriesMatched;
+      totals.errors = totals.errors.concat(chunk.totals.errors);
+      totalPagesProcessed += chunk.totalPagesProcessed;
+
+      for (const r of chunk.reports) {
+        const existing = reportsBySite.get(r.site);
+        if (existing) {
+          existing.postsFound += r.postsFound;
+          existing.postsImported += r.postsImported;
+          existing.postsSkipped += r.postsSkipped;
+          existing.authorsMatched += r.authorsMatched;
+          existing.authorsUnmatched += r.authorsUnmatched;
+          existing.categoriesMatched += r.categoriesMatched;
+          existing.errors = existing.errors.concat(r.errors);
+          existing.pagesProcessed += r.pagesProcessed;
+          existing.hasMore = r.hasMore;
+        } else {
+          reportsBySite.set(r.site, { ...r, errors: [...r.errors] });
+        }
+      }
+
+      if (chunk.nextPage === null) {
+        setResponse(buildPartialResponse(null));
+        setProgress(null);
+        setRunning(false);
+        return;
+      }
+
+      setProgress({
+        currentPage: startPage + chunk.totalPagesProcessed - 1,
+        estimatedTotalPages: ESTIMATED_TOTAL_PAGES,
+        importedSoFar: totals.postsImported,
+      });
+
+      startPage = chunk.nextPage;
+    }
+  }
+
   async function handleRunClick() {
     if (dryRunFirst) {
-      await runImport(true);
+      await runDryRun();
       return;
     }
     const confirmed = window.confirm(
       "This will import up to several thousand entries. Continue?",
     );
     if (!confirmed) return;
-    await runImport(false);
+    await runImportLoop();
   }
 
   return (
@@ -353,9 +496,35 @@ function HistoricalImportSection() {
           </p>
         ) : null}
 
-        {response ? <ImportResults response={response} /> : null}
+        {progress ? <ImportProgress site={site} progress={progress} /> : null}
+
+        {response ? (
+          <ImportResults response={response} stoppedAtPage={stoppedAtPage} />
+        ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+function ImportProgress({
+  site,
+  progress,
+}: {
+  site: ImportSite;
+  progress: LoopProgress;
+}) {
+  return (
+    <div className="space-y-1 rounded-md border border-cyan/30 bg-cyan-dim/40 p-3 text-xs">
+      <p className="flex items-center gap-1.5 font-medium text-cyan">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Importing {siteDisplayName(site)} articles...
+      </p>
+      <p className="text-text-secondary">
+        Page {progress.currentPage.toLocaleString()} of ~
+        {progress.estimatedTotalPages.toLocaleString()} processed —{" "}
+        {progress.importedSoFar.toLocaleString()} imported so far
+      </p>
+    </div>
   );
 }
 
@@ -385,14 +554,28 @@ function SiteRadio({
   );
 }
 
-function ImportResults({ response }: { response: ImportResponse }) {
+function ImportResults({
+  response,
+  stoppedAtPage,
+}: {
+  response: ImportResponse;
+  stoppedAtPage?: number | null;
+}) {
   const { totals, reports, dryRun, note } = response;
+  const wasStopped = stoppedAtPage != null;
   return (
     <div className="space-y-3 rounded-md border border-cyan/30 bg-cyan-dim/40 p-3 text-xs">
-      <p className="flex items-center gap-1.5 font-medium text-cyan">
-        <Check className="h-3 w-3" />
-        {dryRun ? "Dry run complete" : "Import complete"}
-      </p>
+      {wasStopped ? (
+        <p className="flex items-center gap-1.5 font-medium text-amber">
+          <X className="h-3 w-3" />
+          Import stopped — partial progress shown
+        </p>
+      ) : (
+        <p className="flex items-center gap-1.5 font-medium text-cyan">
+          <Check className="h-3 w-3" />
+          {dryRun ? "Dry run complete" : "Import complete"}
+        </p>
+      )}
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-text-secondary">
         <dt>Posts found</dt>
         <dd className="tabular-nums text-text-primary">{totals.postsFound}</dd>
@@ -427,6 +610,14 @@ function ImportResults({ response }: { response: ImportResponse }) {
       ) : null}
 
       {note ? <p className="text-text-muted">{note}</p> : null}
+
+      {wasStopped ? (
+        <p className="border-t border-amber/20 pt-2 text-amber">
+          Import stopped at page {stoppedAtPage} due to an error. Re-running
+          will resume from where it left off (already-imported entries are
+          skipped).
+        </p>
+      ) : null}
 
       {totals.errors.length > 0 ? (
         <details className="border-t border-cyan/20 pt-2">

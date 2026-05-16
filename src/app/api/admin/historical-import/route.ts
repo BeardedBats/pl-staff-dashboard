@@ -37,6 +37,8 @@ type SiteKey = "pl" | "qb";
 const bodySchema = z.object({
   site: z.enum(["pl", "qb", "both"]),
   dry_run: z.boolean().optional().default(false),
+  start_page: z.number().int().positive().optional().default(1),
+  max_pages: z.number().int().positive().optional().default(20),
 });
 
 type SiteConfig = {
@@ -135,6 +137,8 @@ type SiteReport = {
   authorsUnmatched: number;
   categoriesMatched: number;
   errors: string[];
+  pagesProcessed: number;
+  hasMore: boolean;
 };
 
 function emptyReport(site: SiteKey): SiteReport {
@@ -147,6 +151,8 @@ function emptyReport(site: SiteKey): SiteReport {
     authorsUnmatched: 0,
     categoriesMatched: 0,
     errors: [],
+    pagesProcessed: 0,
+    hasMore: false,
   };
 }
 
@@ -154,6 +160,8 @@ async function importSite(
   site: SiteKey,
   dryRun: boolean,
   systemUserId: string,
+  startPage: number,
+  maxPages: number,
 ): Promise<SiteReport> {
   const report = emptyReport(site);
   const config = getSiteConfig(site);
@@ -185,8 +193,14 @@ async function importSite(
     return report;
   }
 
-  let page = 1;
-  while (true) {
+  const endPage = startPage + maxPages - 1;
+  let page = startPage;
+  // We assume more pages exist until we see proof otherwise (a short page,
+  // an empty page, or a 400 past-the-end). hasMore flips to true if we
+  // exhaust the chunk without that proof.
+  let hitEndOfData = false;
+
+  while (page <= endPage) {
     const params = new URLSearchParams({
       status: "publish",
       after: HISTORICAL_CUTOFF_ISO,
@@ -219,7 +233,10 @@ async function importSite(
 
     if (!response.ok) {
       // WP returns 400 with `rest_post_invalid_page_number` past the end.
-      if (response.status === 400) break;
+      if (response.status === 400) {
+        hitEndOfData = true;
+        break;
+      }
       const text = await response.text().catch(() => "");
       report.errors.push(`Page ${page} returned ${response.status}: ${text.slice(0, 200)}`);
       break;
@@ -235,9 +252,13 @@ async function importSite(
       break;
     }
 
-    if (!Array.isArray(posts) || posts.length === 0) break;
+    if (!Array.isArray(posts) || posts.length === 0) {
+      hitEndOfData = true;
+      break;
+    }
 
     report.postsFound += posts.length;
+    report.pagesProcessed++;
 
     if (!dryRun) {
       for (const post of posts) {
@@ -251,14 +272,20 @@ async function importSite(
       }
     }
 
-    if (posts.length < 100) break;
+    if (posts.length < 100) {
+      hitEndOfData = true;
+      break;
+    }
+
     page++;
+    if (page > endPage) break;
 
     // 50ms between pages — gentle on the WP REST API. Per-post delays
     // would balloon the total time without meaningfully reducing load.
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
 
+  report.hasMore = !hitEndOfData;
   return report;
 }
 
@@ -401,7 +428,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const { site: requestedSite, dry_run: dryRun } = parsed.data;
+  const {
+    site: requestedSite,
+    dry_run: dryRun,
+    start_page: startPage,
+    max_pages: maxPages,
+  } = parsed.data;
 
   const systemUserId = await findSystemUserId();
   if (!systemUserId) {
@@ -422,7 +454,7 @@ export async function POST(request: Request) {
 
   const reports: SiteReport[] = [];
   for (const s of sites) {
-    reports.push(await importSite(s, dryRun, systemUserId));
+    reports.push(await importSite(s, dryRun, systemUserId, startPage, maxPages));
   }
 
   // Collapse for the response — UI shows per-site breakdown.
@@ -447,6 +479,15 @@ export async function POST(request: Request) {
     },
   );
 
+  // Sites paginate in lockstep on shared start_page/max_pages — if any site
+  // could still have more pages past this chunk, the UI needs to loop again.
+  const anyHasMore = reports.some((r) => r.hasMore);
+  const nextPage = anyHasMore ? startPage + maxPages : null;
+  const totalPagesProcessed = Math.max(
+    0,
+    ...reports.map((r) => r.pagesProcessed),
+  );
+
   return NextResponse.json({
     ok: true,
     dryRun,
@@ -456,5 +497,7 @@ export async function POST(request: Request) {
       : null,
     reports,
     totals,
+    nextPage,
+    totalPagesProcessed,
   });
 }
