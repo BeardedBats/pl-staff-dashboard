@@ -240,123 +240,98 @@ async function loadEntryAuthors(
 export async function getAnalyticsOverview(
   filters: AnalyticsFilters,
 ): Promise<AnalyticsOverview> {
-  // Inverted query order: fetch GA4 + Raptive by date range first (both are
-  // already bounded by the date window — typically a few hundred rows), then
-  // look up matching entries. The old "entries → GA4 by entry_id" path passed
-  // 7,000+ UUIDs to `.in(...)`, exceeded PostgREST's URL length limit, and
-  // returned [] silently — which surfaced as zeros on the analytics page.
-  const [allGa4Rows, allRaptiveRows] = await Promise.all([
-    loadGa4Rows(filters),
-    loadRaptiveRows(filters),
-  ]);
-
-  // Collect every entry_id observed in this date window. This set is small
-  // (bounded by daily article volume × days) so `.in(...)` is safe here.
-  const observedEntryIds = new Set<string>();
-  for (const r of allGa4Rows) observedEntryIds.add(r.entry_id);
-  for (const r of allRaptiveRows) if (r.entry_id) observedEntryIds.add(r.entry_id);
-
-  // Look up entries for those IDs, applying site/tier/category filters.
+  // The work is done by the get_analytics_overview SQL function: it joins
+  // article_analytics → entries → raptive_revenue with every filter applied
+  // server-side. The previous app-level join passed thousands of UUIDs to
+  // PostgREST via `.in(...)`, blew the URL length limit, and silently
+  // returned []. Pushing the join into Postgres avoids that entirely.
   const supabase = getSupabaseAdmin();
-  const entries = new Map<string, EntryRow>();
-  if (observedEntryIds.size > 0) {
-    let q = supabase
-      .from("entries")
-      .select(
-        "id, title, site, tier_id, publish_date, word_count, category_id, is_archived",
-      )
-      .eq("is_archived", false)
-      .in("id", Array.from(observedEntryIds));
-    if (filters.site) q = q.eq("site", filters.site);
-    if (filters.tierId) q = q.eq("tier_id", filters.tierId);
-    if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
-    const { data, error } = await q;
-    if (error)
-      console.error("[analytics] entries lookup failed:", error.message);
-    for (const r of (data ?? []) as unknown as EntryRow[]) entries.set(r.id, r);
-  }
-
-  // Author filter — restrict to entries this user authored.
-  let authoredEntryIds: Set<string> | null = null;
-  if (filters.authorId) {
-    const { data, error } = await supabase
-      .from("entry_authors")
-      .select("entry_id")
-      .eq("user_id", filters.authorId);
-    if (error)
-      console.error("[analytics] author lookup failed:", error.message);
-    authoredEntryIds = new Set(
-      ((data ?? []) as Array<{ entry_id: string }>).map((r) => r.entry_id),
-    );
-  }
-
-  // Entries that pass every filter — used to filter GA4 and Raptive rows.
-  const matchingEntryIds = new Set<string>();
-  for (const id of entries.keys()) {
-    if (authoredEntryIds && !authoredEntryIds.has(id)) continue;
-    matchingEntryIds.add(id);
-  }
-
-  // For Raptive: when no entry-scoped filter is active, keep unmatched rows
-  // (null entry_id) so overall revenue is preserved — matches the original
-  // behavior of loadRaptiveRows.
-  const hasEntryFilter = !!(
-    filters.site ||
-    filters.tierId ||
-    filters.categoryId ||
-    filters.authorId
-  );
-  const ga4Rows = allGa4Rows.filter((r) => matchingEntryIds.has(r.entry_id));
-  const raptiveRows = allRaptiveRows.filter((r) => {
-    if (hasEntryFilter) {
-      return r.entry_id != null && matchingEntryIds.has(r.entry_id);
-    }
-    return true;
+  const { data, error } = await supabase.rpc("get_analytics_overview", {
+    p_date_from: filters.dateFrom,
+    p_date_to: filters.dateTo,
+    p_site: filters.site || null,
+    p_tier_id: filters.tierId || null,
+    p_category_id: filters.categoryId || null,
+    p_author_id: filters.authorId || null,
   });
+  if (error)
+    console.error("[analytics] get_analytics_overview rpc failed:", error.message);
 
-  // Aggregate
-  const daily = new Map<string, { pageviews: number; earnings: number }>();
+  type RpcRow = {
+    entry_id: string;
+    title: string;
+    site: AppSite;
+    tier_id: string;
+    category_id: string | null;
+    publish_date: string | null;
+    word_count: number;
+    date: string;
+    pageviews: number;
+    sessions: number;
+    avg_time_on_page: number;
+    earnings: number | string;
+  };
+  const rows = (data ?? []) as unknown as RpcRow[];
+
+  // RPC contract: one row per (entry_id, date). `earnings` is the entry's
+  // SUM across the whole date window, duplicated on every row for that
+  // entry — so totalling it row-by-row would multiply by row count. Dedupe
+  // by entry_id when computing earnings totals.
+  const entryEarnings = new Map<string, number>();
+  const entryDailyPageviews = new Map<string, Map<string, number>>();
+  const dailyPageviews = new Map<string, number>();
+  const seenEntries = new Set<string>();
   let totalPageviews = 0;
   let totalSessions = 0;
-  let totalEarnings = 0;
 
-  for (const r of ga4Rows) {
+  for (const r of rows) {
     totalPageviews += r.pageviews;
     totalSessions += r.sessions;
-    const bucket = daily.get(r.date) ?? { pageviews: 0, earnings: 0 };
-    bucket.pageviews += r.pageviews;
-    daily.set(r.date, bucket);
+    seenEntries.add(r.entry_id);
+    if (!entryEarnings.has(r.entry_id)) {
+      entryEarnings.set(r.entry_id, Number(r.earnings) || 0);
+    }
+    dailyPageviews.set(r.date, (dailyPageviews.get(r.date) ?? 0) + r.pageviews);
+    const perDay =
+      entryDailyPageviews.get(r.entry_id) ?? new Map<string, number>();
+    perDay.set(r.date, (perDay.get(r.date) ?? 0) + r.pageviews);
+    entryDailyPageviews.set(r.entry_id, perDay);
   }
-  for (const r of raptiveRows) {
-    totalEarnings += Number(r.earnings) || 0;
-    // Raptive also reports pageviews/sessions — if we have no GA4 data yet,
-    // these keep the overview populated. If we have both, GA4 wins (it's
-    // more granular) and we don't double-count.
-    if (ga4Rows.length === 0) {
-      totalPageviews += r.pageviews;
-      totalSessions += r.sessions;
-      const bucket = daily.get(r.date) ?? { pageviews: 0, earnings: 0 };
-      bucket.pageviews += r.pageviews;
-      bucket.earnings += Number(r.earnings) || 0;
-      daily.set(r.date, bucket);
-    } else {
-      const bucket = daily.get(r.date) ?? { pageviews: 0, earnings: 0 };
-      bucket.earnings += Number(r.earnings) || 0;
-      daily.set(r.date, bucket);
+
+  // Distribute each entry's earnings across its dates proportionally to
+  // pageviews so the daily series still has a revenue dimension — the RPC
+  // only exposes per-entry totals.
+  const dailyEarnings = new Map<string, number>();
+  for (const [entryId, earnings] of entryEarnings) {
+    if (earnings === 0) continue;
+    const perDay = entryDailyPageviews.get(entryId);
+    if (!perDay) continue;
+    let totalForEntry = 0;
+    for (const v of perDay.values()) totalForEntry += v;
+    if (totalForEntry === 0) continue;
+    for (const [date, dayPageviews] of perDay) {
+      const share = (dayPageviews / totalForEntry) * earnings;
+      dailyEarnings.set(date, (dailyEarnings.get(date) ?? 0) + share);
     }
   }
 
-  // Count distinct entries that saw traffic or revenue
-  const seenEntries = new Set<string>();
-  for (const r of ga4Rows) seenEntries.add(r.entry_id);
-  for (const r of raptiveRows) if (r.entry_id) seenEntries.add(r.entry_id);
+  let totalEarnings = 0;
+  for (const e of entryEarnings.values()) totalEarnings += e;
 
   const avgRpm = totalSessions > 0 ? (totalEarnings / totalSessions) * 1000 : 0;
   const avgPageRpm =
     totalPageviews > 0 ? (totalEarnings / totalPageviews) * 1000 : 0;
 
-  const dailySeries = Array.from(daily.entries())
-    .map(([date, v]) => ({ date, pageviews: v.pageviews, earnings: v.earnings }))
+  const allDates = new Set<string>([
+    ...dailyPageviews.keys(),
+    ...dailyEarnings.keys(),
+  ]);
+  const dailySeries = Array.from(allDates)
+    .map((date) => ({
+      date,
+      pageviews: dailyPageviews.get(date) ?? 0,
+      earnings: dailyEarnings.get(date) ?? 0,
+    }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
   return {
