@@ -370,14 +370,25 @@ async function main(): Promise<void> {
   console.log("─────────────────────────────────────────");
 
   // ---- Build entry URL map (pl site only) ----
-  const { data: entryRows, error: entryErr } = await supabase
-    .from("entries")
-    .select("id, wp_post_url")
-    .eq("site", "pl")
-    .not("wp_post_url", "is", null)
-    .limit(10000);
-  if (entryErr) {
-    throw new Error(`Failed to load entries: ${entryErr.message}`);
+  const entryRows: Array<{ id: string; wp_post_url: string | null }> = [];
+  let entryFrom = 0;
+  const entryBatchSize = 1000;
+  while (true) {
+    const { data, error: entryErr } = await supabase
+      .from("entries")
+      .select("id, wp_post_url")
+      .eq("site", "pl")
+      .not("wp_post_url", "is", null)
+      .range(entryFrom, entryFrom + entryBatchSize - 1);
+    if (entryErr) {
+      throw new Error(`Failed to load entries: ${entryErr.message}`);
+    }
+    if (!data || data.length === 0) break;
+    entryRows.push(
+      ...(data as Array<{ id: string; wp_post_url: string | null }>),
+    );
+    if (data.length < entryBatchSize) break;
+    entryFrom += entryBatchSize;
   }
 
   const urlMap = new Map<string, string>();
