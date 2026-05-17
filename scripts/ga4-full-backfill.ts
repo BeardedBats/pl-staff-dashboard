@@ -374,7 +374,8 @@ async function main(): Promise<void> {
     .from("entries")
     .select("id, wp_post_url")
     .eq("site", "pl")
-    .not("wp_post_url", "is", null);
+    .not("wp_post_url", "is", null)
+    .limit(10000);
   if (entryErr) {
     throw new Error(`Failed to load entries: ${entryErr.message}`);
   }
