@@ -141,7 +141,8 @@ async function loadGa4Rows(
     .from("article_analytics")
     .select("entry_id, date, pageviews, sessions, avg_time_on_page")
     .gte("date", filters.dateFrom)
-    .lte("date", filters.dateTo);
+    .lte("date", filters.dateTo)
+    .limit(500000);
   if (error) console.error("[analytics] loadGa4Rows failed:", error.message);
 
   return (data ?? []) as unknown as Array<{
@@ -179,7 +180,8 @@ async function loadRaptiveRows(
       "entry_id, date, page_url, earnings, rpm, page_rpm, sessions, pageviews",
     )
     .gte("date", filters.dateFrom)
-    .lte("date", filters.dateTo);
+    .lte("date", filters.dateTo)
+    .limit(500000);
   if (error) console.error("[analytics] loadRaptiveRows failed:", error.message);
 
   return (data ?? []) as unknown as Array<{
