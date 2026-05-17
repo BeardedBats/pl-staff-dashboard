@@ -74,6 +74,15 @@ export async function GET(request: Request) {
   if (url.searchParams.get("includeArchived") === "true") {
     filters.includeArchived = true;
   }
+  if (url.searchParams.get("includeHistorical") === "true") {
+    filters.includeHistorical = true;
+  }
+  if (url.searchParams.get("archivedOnly") === "true") {
+    filters.archivedOnly = true;
+  }
+  if (url.searchParams.get("historicalOnly") === "true") {
+    filters.historicalOnly = true;
+  }
 
   const dateFrom = url.searchParams.get("dateFrom");
   if (dateFrom) filters.dateFrom = dateFrom;

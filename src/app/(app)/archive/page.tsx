@@ -1,0 +1,433 @@
+"use client";
+
+import * as React from "react";
+import { Archive, ExternalLink, Loader2, Search, Undo2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { UserAvatar } from "@/components/users/user-avatar";
+import { formatDate } from "@/lib/utils";
+import type { EntrySummary } from "@/lib/entries/queries";
+import type { AppRole, AppSite } from "@/lib/auth/current-user";
+
+const SITE_ALL = "__all__";
+
+type SiteFilter = AppSite | "";
+
+export default function ArchivePage() {
+  const [roles, setRoles] = React.useState<AppRole[]>([]);
+  const [siteArchived, setSiteArchived] = React.useState<SiteFilter>("");
+  const [siteHistorical, setSiteHistorical] = React.useState<SiteFilter>("");
+  const [searchArchived, setSearchArchived] = React.useState("");
+  const [searchHistorical, setSearchHistorical] = React.useState("");
+  const [archived, setArchived] = React.useState<EntrySummary[]>([]);
+  const [historical, setHistorical] = React.useState<EntrySummary[]>([]);
+  const [loadingArchived, setLoadingArchived] = React.useState(true);
+  const [loadingHistorical, setLoadingHistorical] = React.useState(true);
+  const [busyId, setBusyId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    void (async () => {
+      const res = await fetch("/api/auth/me");
+      if (!res.ok) return;
+      const data = (await res.json()) as { user: { roles: AppRole[] } };
+      setRoles(data.user.roles ?? []);
+    })();
+  }, []);
+
+  const canUnarchive = roles.includes("eic") || roles.includes("operations");
+
+  const fetchArchived = React.useCallback(async () => {
+    setLoadingArchived(true);
+    try {
+      const params = new URLSearchParams({
+        archivedOnly: "true",
+        sortBy: "publish_date",
+        sortDir: "desc",
+        limit: "200",
+      });
+      if (siteArchived) params.set("site", siteArchived);
+      if (searchArchived) params.set("search", searchArchived);
+      const res = await fetch(`/api/entries?${params.toString()}`);
+      if (!res.ok) {
+        setArchived([]);
+        return;
+      }
+      const data = (await res.json()) as { entries: EntrySummary[] };
+      setArchived(data.entries ?? []);
+    } finally {
+      setLoadingArchived(false);
+    }
+  }, [siteArchived, searchArchived]);
+
+  const fetchHistorical = React.useCallback(async () => {
+    setLoadingHistorical(true);
+    try {
+      const params = new URLSearchParams({
+        historicalOnly: "true",
+        sortBy: "publish_date",
+        sortDir: "desc",
+        limit: "200",
+      });
+      if (siteHistorical) params.set("site", siteHistorical);
+      if (searchHistorical) params.set("search", searchHistorical);
+      const res = await fetch(`/api/entries?${params.toString()}`);
+      if (!res.ok) {
+        setHistorical([]);
+        return;
+      }
+      const data = (await res.json()) as { entries: EntrySummary[] };
+      setHistorical(data.entries ?? []);
+    } finally {
+      setLoadingHistorical(false);
+    }
+  }, [siteHistorical, searchHistorical]);
+
+  React.useEffect(() => {
+    const id = setTimeout(() => {
+      void fetchArchived();
+    }, 200);
+    return () => clearTimeout(id);
+  }, [fetchArchived]);
+
+  React.useEffect(() => {
+    const id = setTimeout(() => {
+      void fetchHistorical();
+    }, 200);
+    return () => clearTimeout(id);
+  }, [fetchHistorical]);
+
+  async function unarchive(id: string) {
+    setBusyId(id);
+    try {
+      const res = await fetch("/api/entries/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "unarchive", entry_ids: [id] }),
+      });
+      if (res.ok) await fetchArchived();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-text-primary">
+          Published Archive
+        </h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          Archived pipeline entries and historical articles imported from
+          WordPress.
+        </p>
+      </div>
+
+      <Tabs defaultValue="archived" className="w-full">
+        <TabsList>
+          <TabsTrigger value="archived">
+            Archived
+            <Badge variant="outline" className="ml-2">
+              {archived.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="historical">
+            Historical imports
+            <Badge variant="outline" className="ml-2">
+              {historical.length}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="archived">
+          <ArchiveFilters
+            search={searchArchived}
+            onSearch={setSearchArchived}
+            site={siteArchived}
+            onSite={setSiteArchived}
+          />
+          <ArchivedTable
+            entries={archived}
+            loading={loadingArchived}
+            canUnarchive={canUnarchive}
+            onUnarchive={unarchive}
+            busyId={busyId}
+          />
+        </TabsContent>
+
+        <TabsContent value="historical">
+          <ArchiveFilters
+            search={searchHistorical}
+            onSearch={setSearchHistorical}
+            site={siteHistorical}
+            onSite={setSiteHistorical}
+          />
+          <HistoricalTable
+            entries={historical}
+            loading={loadingHistorical}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function ArchiveFilters({
+  search,
+  onSearch,
+  site,
+  onSite,
+}: {
+  search: string;
+  onSearch: (v: string) => void;
+  site: SiteFilter;
+  onSite: (v: SiteFilter) => void;
+}) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <div className="relative flex-1 max-w-md">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
+        <Input
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+          placeholder="Search titles…"
+          className="pl-8"
+        />
+      </div>
+      <Select
+        value={site || SITE_ALL}
+        onValueChange={(v) => onSite(v === SITE_ALL ? "" : (v as AppSite))}
+      >
+        <SelectTrigger className="h-9 w-[140px] text-xs">
+          <SelectValue placeholder="Site" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={SITE_ALL}>All sites</SelectItem>
+          <SelectItem value="pl">Pitcher List</SelectItem>
+          <SelectItem value="qb">QB List</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function ArchivedTable({
+  entries,
+  loading,
+  canUnarchive,
+  onUnarchive,
+  busyId,
+}: {
+  entries: EntrySummary[];
+  loading: boolean;
+  canUnarchive: boolean;
+  onUnarchive: (id: string) => void | Promise<void>;
+  busyId: string | null;
+}) {
+  if (loading && entries.length === 0) {
+    return (
+      <div className="flex justify-center rounded-lg border border-border bg-card p-10">
+        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+  if (entries.length === 0) {
+    return (
+      <EmptyState
+        icon={<Archive className="h-5 w-5" />}
+        title="No archived entries"
+        description="Entries archived from the pipeline will show here. Filters or search may be hiding results."
+      />
+    );
+  }
+  return (
+    <div className="overflow-auto rounded-lg border border-border bg-card">
+      <table className="w-full text-sm">
+        <thead className="border-b border-border bg-navy-3">
+          <tr className="text-left font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            <th className="px-3 py-2">Title</th>
+            <th className="px-3 py-2">Author</th>
+            <th className="px-3 py-2">Tier</th>
+            <th className="px-3 py-2">Site</th>
+            <th className="px-3 py-2">Publish date</th>
+            <th className="px-3 py-2">Archive reason</th>
+            {canUnarchive ? <th className="px-3 py-2" /> : null}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {entries.map((entry) => (
+            <tr key={entry.id} className="hover:bg-navy-3/40">
+              <td className="px-3 py-3 align-top">
+                <span className="font-medium text-text-primary">
+                  {entry.title}
+                </span>
+              </td>
+              <td className="px-3 py-3 align-top">
+                {entry.authors.length > 0 ? (
+                  <div className="flex items-center gap-1.5">
+                    {entry.authors.slice(0, 2).map((a) => (
+                      <UserAvatar
+                        key={a.user_id}
+                        displayName={a.display_name}
+                        avatarUrl={a.avatar_url}
+                        size="xs"
+                      />
+                    ))}
+                    <span className="text-xs text-text-secondary">
+                      {entry.authors.map((a) => a.display_name).join(", ")}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xs italic text-text-muted">—</span>
+                )}
+              </td>
+              <td className="px-3 py-3 align-top">
+                <Badge variant="outline">{entry.tier.name}</Badge>
+              </td>
+              <td className="px-3 py-3 align-top">
+                <Badge variant="outline">{entry.site.toUpperCase()}</Badge>
+              </td>
+              <td className="px-3 py-3 align-top text-xs text-text-secondary">
+                {entry.publish_date
+                  ? formatDate(entry.publish_date, { dateStyle: "medium" })
+                  : "—"}
+              </td>
+              <td className="px-3 py-3 align-top">
+                <span className="line-clamp-2 max-w-md text-xs text-text-secondary">
+                  {entry.archive_reason ?? (
+                    <span className="italic text-text-muted">—</span>
+                  )}
+                </span>
+              </td>
+              {canUnarchive ? (
+                <td className="px-3 py-3 align-top text-right">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busyId === entry.id}
+                    onClick={() => void onUnarchive(entry.id)}
+                  >
+                    {busyId === entry.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Undo2 className="h-3 w-3" />
+                    )}
+                    Unarchive
+                  </Button>
+                </td>
+              ) : null}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function HistoricalTable({
+  entries,
+  loading,
+}: {
+  entries: EntrySummary[];
+  loading: boolean;
+}) {
+  if (loading && entries.length === 0) {
+    return (
+      <div className="flex justify-center rounded-lg border border-border bg-card p-10">
+        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+  if (entries.length === 0) {
+    return (
+      <EmptyState
+        icon={<Archive className="h-5 w-5" />}
+        title="No historical imports"
+        description="Articles imported from WordPress for analytics will appear here after the historical import runs."
+      />
+    );
+  }
+  return (
+    <div className="overflow-auto rounded-lg border border-border bg-card">
+      <table className="w-full text-sm">
+        <thead className="border-b border-border bg-navy-3">
+          <tr className="text-left font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            <th className="px-3 py-2">Title</th>
+            <th className="px-3 py-2">Author</th>
+            <th className="px-3 py-2">Site</th>
+            <th className="px-3 py-2">Publish date</th>
+            <th className="px-3 py-2">Category</th>
+            <th className="px-3 py-2">WP link</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {entries.map((entry) => (
+            <tr key={entry.id} className="hover:bg-navy-3/40">
+              <td className="px-3 py-3 align-top">
+                <span className="font-medium text-text-primary">
+                  {entry.title}
+                </span>
+              </td>
+              <td className="px-3 py-3 align-top">
+                {entry.authors.length > 0 ? (
+                  <div className="flex items-center gap-1.5">
+                    {entry.authors.slice(0, 2).map((a) => (
+                      <UserAvatar
+                        key={a.user_id}
+                        displayName={a.display_name}
+                        avatarUrl={a.avatar_url}
+                        size="xs"
+                      />
+                    ))}
+                    <span className="text-xs text-text-secondary">
+                      {entry.authors.map((a) => a.display_name).join(", ")}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xs italic text-text-muted">—</span>
+                )}
+              </td>
+              <td className="px-3 py-3 align-top">
+                <Badge variant="outline">{entry.site.toUpperCase()}</Badge>
+              </td>
+              <td className="px-3 py-3 align-top text-xs text-text-secondary">
+                {entry.publish_date
+                  ? formatDate(entry.publish_date, { dateStyle: "medium" })
+                  : "—"}
+              </td>
+              <td className="px-3 py-3 align-top text-xs text-text-secondary">
+                {entry.category?.name ?? (
+                  <span className="italic text-text-muted">—</span>
+                )}
+              </td>
+              <td className="px-3 py-3 align-top">
+                {entry.wp_post_url ? (
+                  <a
+                    href={entry.wp_post_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-cyan hover:underline"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Open
+                  </a>
+                ) : (
+                  <span className="text-xs italic text-text-muted">—</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

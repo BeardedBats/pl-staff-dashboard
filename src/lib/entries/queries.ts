@@ -118,6 +118,10 @@ export type ListEntriesFilters = {
    * from the /archive page once it exists.
    */
   includeHistorical?: boolean;
+  /** Return ONLY archived entries (is_archived = true). Used by /archive. */
+  archivedOnly?: boolean;
+  /** Return ONLY historical entries (is_historical = true). Used by /archive. */
+  historicalOnly?: boolean;
   dateFrom?: string; // ISO
   dateTo?: string;   // ISO
   sortBy?: "publish_date" | "created_at" | "updated_at" | "title";
@@ -160,7 +164,9 @@ export async function listEntries(
     );
 
   // Filter: archived or not.
-  if (!filters.includeArchived) {
+  if (filters.archivedOnly) {
+    query = query.eq("is_archived", true);
+  } else if (!filters.includeArchived) {
     query = query.eq("is_archived", false);
   }
 
@@ -172,7 +178,9 @@ export async function listEntries(
   // Filter: hide historical (back-imported) entries unless explicitly
   // requested. These are pre-existing published posts that exist only
   // for analytics joins, not for the active pipeline.
-  if (!filters.includeHistorical) {
+  if (filters.historicalOnly) {
+    query = query.eq("is_historical", true);
+  } else if (!filters.includeHistorical) {
     query = query.eq("is_historical", false);
   }
 
