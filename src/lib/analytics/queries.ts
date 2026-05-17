@@ -102,7 +102,8 @@ async function loadEntriesForRange(
     .select(
       "id, title, site, tier_id, publish_date, word_count, category_id, is_archived",
     )
-    .eq("is_archived", false);
+    .eq("is_archived", false)
+    .limit(10000);
 
   // Keep any entry that was published on/before dateTo — we don't filter by
   // publish_date on the lower bound because an older article can still
@@ -111,7 +112,8 @@ async function loadEntriesForRange(
   if (filters.tierId) q = q.eq("tier_id", filters.tierId);
   if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
 
-  const { data } = await q;
+  const { data, error } = await q;
+  if (error) console.error("[analytics] loadEntriesForRange failed:", error.message);
   const rows = (data ?? []) as unknown as EntryRow[];
 
   const map = new Map<string, EntryRow>();
@@ -121,7 +123,6 @@ async function loadEntriesForRange(
 
 async function loadGa4Rows(
   filters: AnalyticsFilters,
-  entryIds: string[],
 ): Promise<
   Array<{
     entry_id: string;
@@ -131,14 +132,17 @@ async function loadGa4Rows(
     avg_time_on_page: number;
   }>
 > {
-  if (entryIds.length === 0) return [];
+  // Query by date only. The previous implementation filtered by entry_id
+  // with `.in(...)` on potentially thousands of UUIDs, which blew past
+  // PostgREST's URL length limit and silently returned []. Callers now
+  // filter the result set in memory against their own entry set.
   const supabase = getSupabaseAdmin();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("article_analytics")
     .select("entry_id, date, pageviews, sessions, avg_time_on_page")
-    .in("entry_id", entryIds)
     .gte("date", filters.dateFrom)
     .lte("date", filters.dateTo);
+  if (error) console.error("[analytics] loadGa4Rows failed:", error.message);
 
   return (data ?? []) as unknown as Array<{
     entry_id: string;
@@ -151,7 +155,6 @@ async function loadGa4Rows(
 
 async function loadRaptiveRows(
   filters: AnalyticsFilters,
-  entryIds: string[],
 ): Promise<
   Array<{
     entry_id: string | null;
@@ -165,25 +168,20 @@ async function loadRaptiveRows(
   }>
 > {
   const supabase = getSupabaseAdmin();
-  // Raptive rows may not have an entry_id (unmatched) — we still want the
-  // overall revenue bucket, so we scope by date first and then filter
-  // entry_id on the consumer side when the consumer requires a match.
-  let q = supabase
+  // Query by date only. Raptive rows may not have an entry_id (unmatched);
+  // callers decide whether to keep unmatched rows. As with loadGa4Rows,
+  // filtering by `.in("entry_id", entryIds)` on large entry sets exceeded
+  // PostgREST's URL length limit and silently returned []. Callers now
+  // filter in memory.
+  const { data, error } = await supabase
     .from("raptive_revenue")
     .select(
       "entry_id, date, page_url, earnings, rpm, page_rpm, sessions, pageviews",
     )
     .gte("date", filters.dateFrom)
     .lte("date", filters.dateTo);
+  if (error) console.error("[analytics] loadRaptiveRows failed:", error.message);
 
-  // If a site/tier/category filter is on, we can only score rows that link
-  // back to an entry in our filtered set.
-  if (filters.site || filters.tierId || filters.categoryId || filters.authorId) {
-    if (entryIds.length === 0) return [];
-    q = q.in("entry_id", entryIds);
-  }
-
-  const { data } = await q;
   return (data ?? []) as unknown as Array<{
     entry_id: string | null;
     date: string;
@@ -240,27 +238,79 @@ async function loadEntryAuthors(
 export async function getAnalyticsOverview(
   filters: AnalyticsFilters,
 ): Promise<AnalyticsOverview> {
-  const entries = await loadEntriesForRange(filters);
-  const entryIds = Array.from(entries.keys());
+  // Inverted query order: fetch GA4 + Raptive by date range first (both are
+  // already bounded by the date window — typically a few hundred rows), then
+  // look up matching entries. The old "entries → GA4 by entry_id" path passed
+  // 7,000+ UUIDs to `.in(...)`, exceeded PostgREST's URL length limit, and
+  // returned [] silently — which surfaced as zeros on the analytics page.
+  const [allGa4Rows, allRaptiveRows] = await Promise.all([
+    loadGa4Rows(filters),
+    loadRaptiveRows(filters),
+  ]);
 
-  // Restrict by authorId — pulls only entries where this user is in entry_authors
-  let filteredEntryIds = entryIds;
+  // Collect every entry_id observed in this date window. This set is small
+  // (bounded by daily article volume × days) so `.in(...)` is safe here.
+  const observedEntryIds = new Set<string>();
+  for (const r of allGa4Rows) observedEntryIds.add(r.entry_id);
+  for (const r of allRaptiveRows) if (r.entry_id) observedEntryIds.add(r.entry_id);
+
+  // Look up entries for those IDs, applying site/tier/category filters.
+  const supabase = getSupabaseAdmin();
+  const entries = new Map<string, EntryRow>();
+  if (observedEntryIds.size > 0) {
+    let q = supabase
+      .from("entries")
+      .select(
+        "id, title, site, tier_id, publish_date, word_count, category_id, is_archived",
+      )
+      .eq("is_archived", false)
+      .in("id", Array.from(observedEntryIds));
+    if (filters.site) q = q.eq("site", filters.site);
+    if (filters.tierId) q = q.eq("tier_id", filters.tierId);
+    if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
+    const { data, error } = await q;
+    if (error)
+      console.error("[analytics] entries lookup failed:", error.message);
+    for (const r of (data ?? []) as unknown as EntryRow[]) entries.set(r.id, r);
+  }
+
+  // Author filter — restrict to entries this user authored.
+  let authoredEntryIds: Set<string> | null = null;
   if (filters.authorId) {
-    const supabase = getSupabaseAdmin();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("entry_authors")
       .select("entry_id")
       .eq("user_id", filters.authorId);
-    const authored = new Set(
+    if (error)
+      console.error("[analytics] author lookup failed:", error.message);
+    authoredEntryIds = new Set(
       ((data ?? []) as Array<{ entry_id: string }>).map((r) => r.entry_id),
     );
-    filteredEntryIds = entryIds.filter((id) => authored.has(id));
   }
 
-  const [ga4Rows, raptiveRows] = await Promise.all([
-    loadGa4Rows(filters, filteredEntryIds),
-    loadRaptiveRows(filters, filteredEntryIds),
-  ]);
+  // Entries that pass every filter — used to filter GA4 and Raptive rows.
+  const matchingEntryIds = new Set<string>();
+  for (const id of entries.keys()) {
+    if (authoredEntryIds && !authoredEntryIds.has(id)) continue;
+    matchingEntryIds.add(id);
+  }
+
+  // For Raptive: when no entry-scoped filter is active, keep unmatched rows
+  // (null entry_id) so overall revenue is preserved — matches the original
+  // behavior of loadRaptiveRows.
+  const hasEntryFilter = !!(
+    filters.site ||
+    filters.tierId ||
+    filters.categoryId ||
+    filters.authorId
+  );
+  const ga4Rows = allGa4Rows.filter((r) => matchingEntryIds.has(r.entry_id));
+  const raptiveRows = allRaptiveRows.filter((r) => {
+    if (hasEntryFilter) {
+      return r.entry_id != null && matchingEntryIds.has(r.entry_id);
+    }
+    return true;
+  });
 
   // Aggregate
   const daily = new Map<string, { pageviews: number; earnings: number }>();
@@ -349,10 +399,18 @@ export async function getAnalyticsArticles(
     tierMap.set(t.id, t.name);
   }
 
-  const [ga4Rows, raptiveRows] = await Promise.all([
-    loadGa4Rows(filters, filteredEntryIds),
-    loadRaptiveRows(filters, filteredEntryIds),
+  const [allGa4Rows, allRaptiveRows] = await Promise.all([
+    loadGa4Rows(filters),
+    loadRaptiveRows(filters),
   ]);
+
+  // Filter in memory — the helpers used to do `.in("entry_id", entryIds)`
+  // but that exceeded PostgREST's URL length on large entry sets.
+  const filteredSet = new Set(filteredEntryIds);
+  const ga4Rows = allGa4Rows.filter((r) => filteredSet.has(r.entry_id));
+  const raptiveRows = allRaptiveRows.filter(
+    (r) => r.entry_id != null && filteredSet.has(r.entry_id),
+  );
 
   type Agg = {
     pageviews: number;
@@ -440,10 +498,17 @@ export async function getAnalyticsWriters(
 
   const authors = await loadEntryAuthors(entryIds);
 
-  const [ga4Rows, raptiveRows] = await Promise.all([
-    loadGa4Rows(filters, entryIds),
-    loadRaptiveRows(filters, entryIds),
+  const [allGa4Rows, allRaptiveRows] = await Promise.all([
+    loadGa4Rows(filters),
+    loadRaptiveRows(filters),
   ]);
+
+  // Filter in memory against this rollup's entry set.
+  const entrySet = new Set(entryIds);
+  const ga4Rows = allGa4Rows.filter((r) => entrySet.has(r.entry_id));
+  const raptiveRows = allRaptiveRows.filter(
+    (r) => r.entry_id != null && entrySet.has(r.entry_id),
+  );
 
   type Agg = {
     display_name: string;
@@ -620,7 +685,9 @@ export async function getPublishToPeakCurve(
     entryIds = entryIds.filter((id) => authored.has(id));
   }
 
-  const ga4Rows = await loadGa4Rows(filters, entryIds);
+  const allGa4Rows = await loadGa4Rows(filters);
+  const entrySet = new Set(entryIds);
+  const ga4Rows = allGa4Rows.filter((r) => entrySet.has(r.entry_id));
 
   // Bucket pageviews by (entry, day-since-publish)
   type Bucket = { pageviews: number; saw: Set<string> };
@@ -683,7 +750,9 @@ export async function getDayOfWeekHeatmap(
     entryIds = entryIds.filter((id) => authored.has(id));
   }
 
-  const ga4Rows = await loadGa4Rows(filters, entryIds);
+  const allGa4Rows = await loadGa4Rows(filters);
+  const entrySet = new Set(entryIds);
+  const ga4Rows = allGa4Rows.filter((r) => entrySet.has(r.entry_id));
 
   // Aggregate by (weekStart, dayOfWeek)
   const buckets = new Map<string, number>(); // key = `${weekStart}|${dow}`
