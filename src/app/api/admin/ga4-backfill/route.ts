@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { addMonths, endOfMonth, format, parseISO, startOfMonth } from "date-fns";
 import { getCurrentUser, isOperations } from "@/lib/auth/current-user";
 import { syncGa4 } from "@/lib/analytics/ga4";
 
@@ -31,6 +32,31 @@ const bodySchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "date_to must be YYYY-MM-DD"),
 });
+
+// GA4's runReport caps results at 100k rows ordered by pageviews desc. Across
+// a multi-year span that cap fills entirely with peak-traffic days, so quieter
+// periods never appear in the response and the chart looks like a cliff.
+// Chunking month by month gives each window its own 100k budget.
+function generateMonthlyWindows(
+  dateFrom: string,
+  dateTo: string,
+): Array<{ from: string; to: string }> {
+  const windows: Array<{ from: string; to: string }> = [];
+  const endDate = parseISO(dateTo);
+  let windowStart = parseISO(dateFrom);
+
+  while (windowStart <= endDate) {
+    const monthEnd = endOfMonth(windowStart);
+    const windowEnd = monthEnd > endDate ? endDate : monthEnd;
+    windows.push({
+      from: format(windowStart, "yyyy-MM-dd"),
+      to: format(windowEnd, "yyyy-MM-dd"),
+    });
+    windowStart = startOfMonth(addMonths(windowStart, 1));
+  }
+
+  return windows;
+}
 
 export async function POST(request: Request) {
   const viewer = await getCurrentUser();
@@ -67,31 +93,42 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await syncGa4(date_from, date_to);
-  if (!result.ok) {
-    // Surface the not-connected case explicitly so the UI can tell the user
-    // to go through Settings → Analytics first.
+  const monthlyWindows = generateMonthlyWindows(date_from, date_to);
+
+  let totalRowsUpserted = 0;
+  let totalMatchedArticles = 0;
+  const errors: string[] = [];
+
+  for (const window of monthlyWindows) {
+    const result = await syncGa4(window.from, window.to);
+    if (result.ok) {
+      totalRowsUpserted += result.rowsUpserted;
+      // May double-count an article that appears in multiple months; accepted
+      // tradeoff to avoid threading a Set through syncGa4's return shape.
+      totalMatchedArticles += result.matchedArticles;
+      continue;
+    }
+    // Config-level failures won't fix themselves between months — bail out so
+    // the operator can reconnect instead of waiting through dozens of retries.
     if (result.reason === "not_connected" || result.reason === "not_configured") {
       return NextResponse.json(
         {
-          error:
-            "GA4 not connected. Connect via Settings → Analytics first.",
+          error: "GA4 not connected. Connect via Settings → Analytics first.",
           reason: result.reason,
         },
         { status: 400 },
       );
     }
-    return NextResponse.json(
-      { error: result.error, reason: result.reason ?? null },
-      { status: 500 },
-    );
+    errors.push(`${window.from} → ${window.to}: ${result.error}`);
   }
 
   return NextResponse.json({
     ok: true,
-    rowsUpserted: result.rowsUpserted,
-    matchedArticles: result.matchedArticles,
+    rowsUpserted: totalRowsUpserted,
+    matchedArticles: totalMatchedArticles,
     dateFrom: date_from,
     dateTo: date_to,
+    monthsProcessed: monthlyWindows.length,
+    errors,
   });
 }

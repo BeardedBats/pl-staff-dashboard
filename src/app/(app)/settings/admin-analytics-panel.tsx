@@ -373,6 +373,8 @@ function Ga4BackfillSection({
     matchedArticles: number;
     dateFrom: string;
     dateTo: string;
+    monthsProcessed: number;
+    errors: string[];
   } | null>(null);
 
   async function handleBackfill() {
@@ -390,6 +392,8 @@ function Ga4BackfillSection({
         matchedArticles?: number;
         dateFrom?: string;
         dateTo?: string;
+        monthsProcessed?: number;
+        errors?: string[];
         error?: string;
       };
       if (!res.ok) {
@@ -399,15 +403,20 @@ function Ga4BackfillSection({
         });
         return;
       }
+      const rows = data.rowsUpserted ?? 0;
+      const articles = data.matchedArticles ?? 0;
+      const months = data.monthsProcessed ?? 0;
       setResult({
-        rowsUpserted: data.rowsUpserted ?? 0,
-        matchedArticles: data.matchedArticles ?? 0,
+        rowsUpserted: rows,
+        matchedArticles: articles,
         dateFrom: data.dateFrom ?? from,
         dateTo: data.dateTo ?? to,
+        monthsProcessed: months,
+        errors: data.errors ?? [],
       });
       setFlash({
         kind: "success",
-        message: `Backfill complete — ${data.rowsUpserted ?? 0} rows across ${data.matchedArticles ?? 0} articles.`,
+        message: `Backfill complete — ${rows.toLocaleString()} rows across ${articles.toLocaleString()} articles across ${months} months.`,
       });
       onComplete();
     } catch {
@@ -472,17 +481,32 @@ function Ga4BackfillSection({
         Run backfill
       </Button>
       {result ? (
-        <p className="text-xs text-text-secondary">
-          {result.dateFrom} → {result.dateTo}:{" "}
-          <span className="font-medium text-text-primary">
-            {result.rowsUpserted}
-          </span>{" "}
-          rows upserted across{" "}
-          <span className="font-medium text-text-primary">
-            {result.matchedArticles}
-          </span>{" "}
-          articles.
-        </p>
+        <div className="space-y-1">
+          <p className="text-xs text-text-secondary">
+            {result.dateFrom} → {result.dateTo}:{" "}
+            <span className="font-medium text-text-primary">
+              {result.rowsUpserted.toLocaleString()}
+            </span>{" "}
+            rows upserted across{" "}
+            <span className="font-medium text-text-primary">
+              {result.matchedArticles.toLocaleString()}
+            </span>{" "}
+            articles across{" "}
+            <span className="font-medium text-text-primary">
+              {result.monthsProcessed}
+            </span>{" "}
+            months.
+          </p>
+          {result.errors.length > 0 ? (
+            <div className="space-y-0.5">
+              {result.errors.map((err, idx) => (
+                <p key={idx} className="text-[11px] text-danger">
+                  {err}
+                </p>
+              ))}
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
