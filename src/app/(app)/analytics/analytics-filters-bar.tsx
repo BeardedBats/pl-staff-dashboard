@@ -66,6 +66,15 @@ export function AnalyticsFiltersBar({
     );
   }, [authorCandidates]);
 
+  // Today as YYYY-MM-DD — used to cap the "To" date so users can't
+  // select a future day with no data behind it.
+  const today = new Date().toISOString().slice(0, 10);
+
+  // The native date input returns "" while the user is mid-edit. Only
+  // forward fully-formed YYYY-MM-DD values upstream so we don't blank
+  // out the query string on every keystroke.
+  const isIsoDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-md border border-border bg-card/60 p-3">
       <div className="flex flex-col gap-1">
@@ -75,7 +84,19 @@ export function AnalyticsFiltersBar({
         <Input
           type="date"
           value={value.dateFrom}
-          onChange={(e) => setField("dateFrom", e.target.value)}
+          max={value.dateTo}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (isIsoDate(v) && v !== value.dateFrom) {
+              setField("dateFrom", v);
+            }
+          }}
+          onBlur={(e) => {
+            const v = e.target.value;
+            if (isIsoDate(v) && v !== value.dateFrom) {
+              setField("dateFrom", v);
+            }
+          }}
           className="h-8 w-36 text-xs"
         />
       </div>
@@ -86,7 +107,20 @@ export function AnalyticsFiltersBar({
         <Input
           type="date"
           value={value.dateTo}
-          onChange={(e) => setField("dateTo", e.target.value)}
+          min={value.dateFrom}
+          max={today}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (isIsoDate(v) && v !== value.dateTo) {
+              setField("dateTo", v);
+            }
+          }}
+          onBlur={(e) => {
+            const v = e.target.value;
+            if (isIsoDate(v) && v !== value.dateTo) {
+              setField("dateTo", v);
+            }
+          }}
           className="h-8 w-36 text-xs"
         />
       </div>
