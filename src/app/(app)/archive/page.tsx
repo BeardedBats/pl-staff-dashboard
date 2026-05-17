@@ -20,6 +20,7 @@ import type { EntrySummary } from "@/lib/entries/queries";
 import type { AppRole, AppSite } from "@/lib/auth/current-user";
 
 const SITE_ALL = "__all__";
+const PAGE_SIZE = 50;
 
 type SiteFilter = AppSite | "";
 
@@ -31,6 +32,10 @@ export default function ArchivePage() {
   const [searchHistorical, setSearchHistorical] = React.useState("");
   const [archived, setArchived] = React.useState<EntrySummary[]>([]);
   const [historical, setHistorical] = React.useState<EntrySummary[]>([]);
+  const [totalArchived, setTotalArchived] = React.useState(0);
+  const [totalHistorical, setTotalHistorical] = React.useState(0);
+  const [pageArchived, setPageArchived] = React.useState(1);
+  const [pageHistorical, setPageHistorical] = React.useState(1);
   const [loadingArchived, setLoadingArchived] = React.useState(true);
   const [loadingHistorical, setLoadingHistorical] = React.useState(true);
   const [busyId, setBusyId] = React.useState<string | null>(null);
@@ -53,21 +58,27 @@ export default function ArchivePage() {
         archivedOnly: "true",
         sortBy: "publish_date",
         sortDir: "desc",
-        limit: "200",
+        page: String(pageArchived),
+        pageSize: String(PAGE_SIZE),
       });
       if (siteArchived) params.set("site", siteArchived);
       if (searchArchived) params.set("search", searchArchived);
       const res = await fetch(`/api/entries?${params.toString()}`);
       if (!res.ok) {
         setArchived([]);
+        setTotalArchived(0);
         return;
       }
-      const data = (await res.json()) as { entries: EntrySummary[] };
+      const data = (await res.json()) as {
+        entries: EntrySummary[];
+        totalCount: number;
+      };
       setArchived(data.entries ?? []);
+      setTotalArchived(data.totalCount ?? 0);
     } finally {
       setLoadingArchived(false);
     }
-  }, [siteArchived, searchArchived]);
+  }, [siteArchived, searchArchived, pageArchived]);
 
   const fetchHistorical = React.useCallback(async () => {
     setLoadingHistorical(true);
@@ -76,20 +87,34 @@ export default function ArchivePage() {
         historicalOnly: "true",
         sortBy: "publish_date",
         sortDir: "desc",
-        limit: "200",
+        page: String(pageHistorical),
+        pageSize: String(PAGE_SIZE),
       });
       if (siteHistorical) params.set("site", siteHistorical);
       if (searchHistorical) params.set("search", searchHistorical);
       const res = await fetch(`/api/entries?${params.toString()}`);
       if (!res.ok) {
         setHistorical([]);
+        setTotalHistorical(0);
         return;
       }
-      const data = (await res.json()) as { entries: EntrySummary[] };
+      const data = (await res.json()) as {
+        entries: EntrySummary[];
+        totalCount: number;
+      };
       setHistorical(data.entries ?? []);
+      setTotalHistorical(data.totalCount ?? 0);
     } finally {
       setLoadingHistorical(false);
     }
+  }, [siteHistorical, searchHistorical, pageHistorical]);
+
+  React.useEffect(() => {
+    setPageArchived(1);
+  }, [siteArchived, searchArchived]);
+
+  React.useEffect(() => {
+    setPageHistorical(1);
   }, [siteHistorical, searchHistorical]);
 
   React.useEffect(() => {
@@ -137,13 +162,13 @@ export default function ArchivePage() {
           <TabsTrigger value="archived">
             Archived
             <Badge variant="outline" className="ml-2">
-              {archived.length}
+              {totalArchived}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="historical">
             Historical imports
             <Badge variant="outline" className="ml-2">
-              {historical.length}
+              {totalHistorical}
             </Badge>
           </TabsTrigger>
         </TabsList>
@@ -162,6 +187,12 @@ export default function ArchivePage() {
             onUnarchive={unarchive}
             busyId={busyId}
           />
+          <PaginationControls
+            page={pageArchived}
+            total={totalArchived}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPageArchived}
+          />
         </TabsContent>
 
         <TabsContent value="historical">
@@ -175,8 +206,52 @@ export default function ArchivePage() {
             entries={historical}
             loading={loadingHistorical}
           />
+          <PaginationControls
+            page={pageHistorical}
+            total={totalHistorical}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPageHistorical}
+          />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function PaginationControls({
+  page,
+  total,
+  pageSize,
+  onPageChange,
+}: {
+  page: number;
+  total: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (total === 0) return null;
+  const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+  return (
+    <div className="mt-3 flex items-center justify-center gap-3 text-xs text-text-secondary">
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={page <= 1}
+        onClick={() => onPageChange(page - 1)}
+      >
+        ← Previous
+      </Button>
+      <span>
+        Page {page} of {totalPages}
+      </span>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={page >= totalPages}
+        onClick={() => onPageChange(page + 1)}
+      >
+        Next →
+      </Button>
     </div>
   );
 }

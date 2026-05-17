@@ -96,10 +96,22 @@ export async function GET(request: Request) {
   const sortDir = url.searchParams.get("sortDir");
   if (sortDir === "asc" || sortDir === "desc") filters.sortDir = sortDir;
 
-  const limit = Number(url.searchParams.get("limit") ?? "50");
-  filters.limit = Math.min(Math.max(Number.isFinite(limit) ? limit : 50, 1), 200);
-  const offset = Number(url.searchParams.get("offset") ?? "0");
-  filters.offset = Math.max(Number.isFinite(offset) ? offset : 0, 0);
+  const pageParam = url.searchParams.get("page");
+  const pageSizeParam = url.searchParams.get("pageSize");
+  if (pageParam || pageSizeParam) {
+    const pageSize = Math.min(
+      Math.max(Number(pageSizeParam) || 50, 1),
+      200,
+    );
+    const page = Math.max(Number(pageParam) || 1, 1);
+    filters.limit = pageSize;
+    filters.offset = (page - 1) * pageSize;
+  } else {
+    const limit = Number(url.searchParams.get("limit") ?? "50");
+    filters.limit = Math.min(Math.max(Number.isFinite(limit) ? limit : 50, 1), 200);
+    const offset = Number(url.searchParams.get("offset") ?? "0");
+    filters.offset = Math.max(Number.isFinite(offset) ? offset : 0, 0);
+  }
 
   const result = await listEntries(filters);
   return NextResponse.json(result);
