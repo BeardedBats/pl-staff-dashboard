@@ -142,6 +142,8 @@ export function normaliseUrl(raw: string): string {
   let s = raw.trim().toLowerCase();
   s = s.replace(/^https?:\/\//, "");
   s = s.replace(/^www\./, "");
+  s = s.replace(/^[^/]+\//, "");
+  s = s.replace(/^\//, "");
   const qIdx = s.indexOf("?");
   if (qIdx >= 0) s = s.slice(0, qIdx);
   const hIdx = s.indexOf("#");
