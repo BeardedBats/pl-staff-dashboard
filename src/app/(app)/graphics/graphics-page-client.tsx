@@ -85,7 +85,7 @@ export function GraphicsPageClient({
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3">
         <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-zero" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -150,7 +150,7 @@ export function GraphicsPageClient({
 
       {/* Status tally */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-text-muted">Summary:</span>
+        <span className="text-text-zero">Summary:</span>
         <Badge variant="outline">
           Needed <span className="ml-1 font-mono tabular-nums">{statusCounts.needed}</span>
         </Badge>
@@ -172,7 +172,7 @@ export function GraphicsPageClient({
       {/* Content */}
       {loading && requests.length === 0 ? (
         <div className="flex items-center justify-center rounded-lg border border-border bg-card py-10">
-          <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+          <Loader2 className="h-5 w-5 animate-spin text-text-zero" />
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState

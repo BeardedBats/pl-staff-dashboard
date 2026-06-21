@@ -146,10 +146,10 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-dim text-cyan">
               <Check className="h-5 w-5" />
             </div>
-            <p className="text-sm font-medium text-text-primary">
+            <p className="text-sm font-medium text-text-cell">
               Imported {preview?.totalRows.toLocaleString()} rows
             </p>
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-text-zero">
               {preview?.matchedCount.toLocaleString()} matched to entries,{" "}
               {preview?.unmatchedCount.toLocaleString()} unmatched.
             </p>
@@ -183,12 +183,12 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
               className={
                 dragging
                   ? "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-cyan bg-cyan-dim/40 py-8 text-center text-xs text-cyan transition-colors"
-                  : "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-border bg-navy-3/20 py-6 text-center text-xs text-text-muted transition-colors hover:bg-navy-3/40"
+                  : "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-border bg-surface-3/20 py-6 text-center text-xs text-text-zero transition-colors hover:bg-surface-3/40"
               }
             >
               <Upload className="h-5 w-5" />
               {file ? (
-                <span className="font-medium text-text-primary">{file.name}</span>
+                <span className="font-medium text-text-cell">{file.name}</span>
               ) : dragging ? (
                 <span className="font-medium">Drop to upload</span>
               ) : (
@@ -207,54 +207,54 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
 
             {preview ? (
               <div className="rounded-md border border-border bg-card/60 p-3 text-xs">
-                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-text-zero">
                   Preview
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <dt className="text-text-muted">Date range</dt>
-                  <dd className="text-right text-text-primary">
+                  <dt className="text-text-zero">Date range</dt>
+                  <dd className="text-right text-text-cell">
                     {preview.dateRange.start} → {preview.dateRange.end}
                   </dd>
-                  <dt className="text-text-muted">Total rows</dt>
-                  <dd className="text-right text-text-primary">
+                  <dt className="text-text-zero">Total rows</dt>
+                  <dd className="text-right text-text-cell">
                     {preview.totalRows.toLocaleString()}
                   </dd>
-                  <dt className="text-text-muted">Matched to entries</dt>
+                  <dt className="text-text-zero">Matched to entries</dt>
                   <dd className="text-right text-cyan">
                     {preview.matchedCount.toLocaleString()}
                   </dd>
-                  <dt className="text-text-muted">Unmatched</dt>
+                  <dt className="text-text-zero">Unmatched</dt>
                   <dd
                     className={
                       preview.unmatchedCount > 0
                         ? "text-right text-amber"
-                        : "text-right text-text-primary"
+                        : "text-right text-text-cell"
                     }
                   >
                     {preview.unmatchedCount.toLocaleString()}
                   </dd>
-                  <dt className="text-text-muted">Total earnings</dt>
+                  <dt className="text-text-zero">Total earnings</dt>
                   <dd className="text-right font-medium text-amber">
                     ${preview.totalEarnings.toFixed(2)}
                   </dd>
                 </dl>
                 {preview.sampleUnmatched.length > 0 ? (
                   <div className="mt-3 border-t border-border/60 pt-2">
-                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-text-zero">
                       Sample unmatched URLs
                     </div>
                     <ul className="space-y-0.5">
                       {preview.sampleUnmatched.slice(0, 5).map((u) => (
                         <li
                           key={u}
-                          className="truncate text-[10px] text-text-muted"
+                          className="truncate text-[10px] text-text-zero"
                           title={u}
                         >
                           {u}
                         </li>
                       ))}
                     </ul>
-                    <p className="mt-1 text-[10px] text-text-muted">
+                    <p className="mt-1 text-[10px] text-text-zero">
                       Unmatched rows still import — they just have no entry
                       linked. Usually means the URL changed or the article
                       was archived.

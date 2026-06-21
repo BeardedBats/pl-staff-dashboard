@@ -171,7 +171,7 @@ export function GraphicsKanban({
         </DragOverlay>
       </DndContext>
 
-      <p className="text-[11px] italic text-text-muted">
+      <p className="text-[11px] italic text-text-zero">
         Drag to claim (Needed → Claimed), release (Claimed → Needed), or
         unflag (Flagged → Needed). Other transitions need a reason or an
         upload — use the card buttons.
@@ -213,11 +213,11 @@ function KanbanColumn({
     >
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-text-primary">{label}</h3>
+          <h3 className="text-sm font-semibold text-text-cell">{label}</h3>
           <Badge variant={badge}>{requests.length}</Badge>
         </div>
       </div>
-      <p className="mb-3 text-[11px] text-text-muted">{hint}</p>
+      <p className="mb-3 text-[11px] text-text-zero">{hint}</p>
 
       <SortableContext
         items={requests.map((r) => r.id)}
@@ -225,7 +225,7 @@ function KanbanColumn({
       >
         <div className="flex-1 space-y-2">
           {requests.length === 0 ? (
-            <p className="rounded-md border border-dashed border-border bg-card/30 p-4 text-center text-xs italic text-text-muted">
+            <p className="rounded-md border border-dashed border-border bg-card/30 p-4 text-center text-xs italic text-text-zero">
               Empty
             </p>
           ) : (

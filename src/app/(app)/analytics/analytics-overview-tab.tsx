@@ -113,7 +113,7 @@ export function AnalyticsOverviewTab({ query }: Props) {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data.daily}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="date" stroke="var(--color-text-muted)" fontSize={11} />
+                  <XAxis dataKey="date" stroke="var(--color-text-zero)" fontSize={11} />
                   <YAxis
                     yAxisId="left"
                     stroke="var(--color-cyan)"
@@ -185,14 +185,14 @@ function MetricCard({
   return (
     <Card>
       <CardContent className="flex flex-col gap-1 py-4">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-zero">
           {icon}
           {label}
         </div>
-        <div className="text-xl font-semibold text-text-primary tabular-nums">
+        <div className="text-xl font-semibold text-text-cell tabular-nums">
           {value}
         </div>
-        {hint ? <div className="text-[10px] text-text-muted">{hint}</div> : null}
+        {hint ? <div className="text-[10px] text-text-zero">{hint}</div> : null}
       </CardContent>
     </Card>
   );

@@ -8,7 +8,7 @@ export function StaffCard({ user }: { user: StaffUserSummary }) {
   return (
     <Link
       href={`/staff/${user.id}`}
-      className="group relative block rounded-lg border border-border bg-card p-4 transition-colors hover:border-navy-5 hover:bg-navy-3"
+      className="group relative block rounded-lg border border-border bg-card p-4 transition-colors hover:border-surface-5 hover:bg-surface-3"
     >
       <div className="flex items-start gap-3">
         <UserAvatar
@@ -18,7 +18,7 @@ export function StaffCard({ user }: { user: StaffUserSummary }) {
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="truncate text-sm font-semibold text-text-primary">
+            <h3 className="truncate text-sm font-semibold text-text-cell">
               {user.display_name}
             </h3>
             <Badge variant="outline" className="shrink-0">
@@ -26,22 +26,22 @@ export function StaffCard({ user }: { user: StaffUserSummary }) {
             </Badge>
           </div>
           {user.primary_team ? (
-            <p className="mt-0.5 truncate text-xs text-text-muted">
+            <p className="mt-0.5 truncate text-xs text-text-zero">
               {user.primary_team.team_name}
               {user.primary_team.manager_name ? (
                 <>
                   {" "}·{" "}
-                  <span className="text-text-secondary">
+                  <span className="text-text-team">
                     {user.primary_team.manager_name}
                   </span>
                 </>
               ) : null}
             </p>
           ) : (
-            <p className="mt-0.5 text-xs italic text-text-muted">No team</p>
+            <p className="mt-0.5 text-xs italic text-text-zero">No team</p>
           )}
           {user.bio ? (
-            <p className="mt-2 line-clamp-2 text-xs text-text-secondary">
+            <p className="mt-2 line-clamp-2 text-xs text-text-team">
               {user.bio}
             </p>
           ) : null}

@@ -55,7 +55,7 @@ export function CommentThread({
   if (comments === null) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
+        <Loader2 className="h-4 w-4 animate-spin text-text-zero" />
       </div>
     );
   }
@@ -107,7 +107,7 @@ export function CommentThread({
     <div className="space-y-6">
       {/* New comment composer */}
       <section>
-        <h4 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+        <h4 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
           Add a comment
         </h4>
         <CommentComposer
@@ -209,10 +209,10 @@ function CommentItem({
               size="sm"
             />
             <div>
-              <p className="text-sm font-medium text-text-primary">
+              <p className="text-sm font-medium text-text-cell">
                 {comment.author_name}
               </p>
-              <p className="text-[11px] text-text-muted">
+              <p className="text-[11px] text-text-zero">
                 {formatDate(comment.created_at, {
                   dateStyle: "medium",
                   timeStyle: "short",
@@ -269,7 +269,7 @@ function CommentItem({
                 variant="ghost"
                 size="sm"
                 onClick={onStartReply}
-                className="text-text-muted"
+                className="text-text-zero"
               >
                 <Reply className="h-3 w-3" />
                 Reply
@@ -314,10 +314,10 @@ function CommentItem({
                         size="sm"
                       />
                       <div>
-                        <p className="text-sm font-medium text-text-primary">
+                        <p className="text-sm font-medium text-text-cell">
                           {reply.author_name}
                         </p>
-                        <p className="text-[11px] text-text-muted">
+                        <p className="text-[11px] text-text-zero">
                           {formatDate(reply.created_at, {
                             dateStyle: "medium",
                             timeStyle: "short",

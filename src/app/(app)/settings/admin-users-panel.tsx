@@ -116,7 +116,7 @@ export function AdminUsersPanel({
 
         <div className="overflow-hidden rounded-md border border-border">
           <table className="w-full divide-y divide-border text-sm">
-            <thead className="bg-navy-3 font-mono text-xs uppercase tracking-wider text-text-muted">
+            <thead className="bg-surface-3 font-mono text-xs uppercase tracking-wider text-text-zero">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">User</th>
                 <th className="px-3 py-2 text-left font-medium">Roles</th>
@@ -130,7 +130,7 @@ export function AdminUsersPanel({
               {filtered.map((user) => (
                 <tr
                   key={user.id}
-                  className="cursor-pointer hover:bg-navy-3/50"
+                  className="cursor-pointer hover:bg-surface-3/50"
                   onClick={() => setEditingUserId(user.id)}
                 >
                   <td className="px-3 py-2">
@@ -141,10 +141,10 @@ export function AdminUsersPanel({
                         size="sm"
                       />
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-text-primary">
+                        <p className="truncate font-medium text-text-cell">
                           {user.display_name}
                         </p>
-                        <p className="truncate font-mono text-[10px] text-text-muted">
+                        <p className="truncate font-mono text-[10px] text-text-zero">
                           {user.email ?? (
                             <span className="italic">pending first login</span>
                           )}
@@ -162,9 +162,9 @@ export function AdminUsersPanel({
                         : user.wp_site.toUpperCase()}
                     </Badge>
                   </td>
-                  <td className="px-3 py-2 text-text-secondary">
+                  <td className="px-3 py-2 text-text-team">
                     {user.primary_team?.team_name ?? (
-                      <span className="italic text-text-muted">none</span>
+                      <span className="italic text-text-zero">none</span>
                     )}
                   </td>
                   <td
@@ -195,7 +195,7 @@ export function AdminUsersPanel({
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-3 py-6 text-center text-sm italic text-text-muted"
+                    className="px-3 py-6 text-center text-sm italic text-text-zero"
                   >
                     No users match your search.
                   </td>
@@ -339,7 +339,7 @@ function ImportUserDialog({
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="e.g. nickpollack or 42"
             />
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-text-zero">
               If it&apos;s all numbers, it&apos;ll be treated as a WP user ID.
               Otherwise it&apos;ll be looked up by username slug.
             </p>
@@ -352,7 +352,7 @@ function ImportUserDialog({
             </p>
           ) : null}
           {success ? (
-            <p className="flex items-center gap-1.5 text-sm text-success">
+            <p className="flex items-center gap-1.5 text-sm text-green">
               <Check className="h-3.5 w-3.5" />
               {success}
             </p>

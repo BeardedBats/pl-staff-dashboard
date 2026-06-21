@@ -113,10 +113,10 @@ function SeasonRow({
   }, [mode]);
 
   return (
-    <div className="rounded-md border border-border bg-navy-3/30 p-3">
+    <div className="rounded-md border border-border bg-surface-3/30 p-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-text-primary">
+          <h3 className="text-sm font-semibold text-text-cell">
             {mode.name}
           </h3>
           {mode.is_active ? (
@@ -135,7 +135,7 @@ function SeasonRow({
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <div className="space-y-1">
-          <Label className="text-[10px] uppercase text-text-muted">
+          <Label className="text-[10px] uppercase text-text-zero">
             Starts
           </Label>
           <Input
@@ -149,7 +149,7 @@ function SeasonRow({
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px] uppercase text-text-muted">Ends</Label>
+          <Label className="text-[10px] uppercase text-text-zero">Ends</Label>
           <Input
             type="date"
             value={end}

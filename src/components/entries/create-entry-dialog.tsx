@@ -246,7 +246,7 @@ export function CreateEntryDialog({
               </Select>
             </div>
           ) : (
-            <p className="rounded-sm border border-dashed border-border bg-navy-3/30 px-3 py-2 text-xs text-text-muted">
+            <p className="rounded-sm border border-dashed border-border bg-surface-3/30 px-3 py-2 text-xs text-text-zero">
               No categories synced from WordPress yet. Categories land in Step
               10 (WP sync). You can still create entries without one.
             </p>
@@ -284,10 +284,10 @@ export function CreateEntryDialog({
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-md border border-border bg-navy-3/40 px-3 py-2">
+          <div className="flex items-center justify-between rounded-md border border-border bg-surface-3/40 px-3 py-2">
             <div>
-              <p className="text-sm font-medium text-text-primary">Priority</p>
-              <p className="text-xs text-text-muted">
+              <p className="text-sm font-medium text-text-cell">Priority</p>
+              <p className="text-xs text-text-zero">
                 Flag this entry as high-priority. Shows a row highlight and an
                 amber alert icon in the table.
               </p>

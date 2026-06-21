@@ -42,10 +42,10 @@ export default async function EditingQueuePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-primary">
+        <h1 className="text-2xl font-semibold text-text-cell">
           Editing Queue
         </h1>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-sm text-text-team">
           {entries.length} {entries.length === 1 ? "entry" : "entries"} waiting
           for edits, sorted by publish date (most urgent first).
         </p>
@@ -60,28 +60,28 @@ export default async function EditingQueuePage() {
       ) : (
         <Card>
           <div className="overflow-hidden rounded-lg">
-            <table className="w-full text-sm">
-              <thead className="border-b border-border bg-navy-3">
+            <table className="w-full font-data text-sm">
+              <thead className="plpd-thead border-b border-border-thead">
                 <tr>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
                     Title
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
                     Author
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
                     Tier
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
                     Publish date
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
                     Content
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
                     Editor
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
                     Editors
                   </th>
                 </tr>
@@ -100,12 +100,12 @@ export default async function EditingQueuePage() {
                   return (
                     <tr
                       key={entry.id}
-                      className="hover:bg-navy-3/50"
+                      className="hover:bg-surface-3/50"
                     >
                       <td className="px-3 py-3 align-top">
                         <Link
                           href={`/content?entry=${entry.id}`}
-                          className="font-medium text-text-primary hover:text-cyan"
+                          className="font-medium text-text-cell hover:text-cyan"
                         >
                           {entry.title}
                         </Link>
@@ -126,17 +126,17 @@ export default async function EditingQueuePage() {
                               avatarUrl={entry.authors[0].avatar_url}
                               size="xs"
                             />
-                            <span className="text-xs text-text-secondary">
+                            <span className="text-xs text-text-team">
                               {entry.authors[0].display_name}
                             </span>
                             {entry.authors.length > 1 ? (
-                              <span className="text-[10px] text-text-muted">
+                              <span className="text-[10px] text-text-zero">
                                 +{entry.authors.length - 1}
                               </span>
                             ) : null}
                           </div>
                         ) : (
-                          <span className="text-xs italic text-text-muted">
+                          <span className="text-xs italic text-text-zero">
                             —
                           </span>
                         )}
@@ -153,7 +153,7 @@ export default async function EditingQueuePage() {
                                   ? "text-xs font-semibold text-destructive"
                                   : dueSoon
                                     ? "text-xs font-semibold text-amber"
-                                    : "text-xs text-text-primary"
+                                    : "text-xs text-text-cell"
                               }
                             >
                               {formatDate(entry.publish_date, {
@@ -172,7 +172,7 @@ export default async function EditingQueuePage() {
                             ) : null}
                           </div>
                         ) : (
-                          <span className="text-xs italic text-text-muted">
+                          <span className="text-xs italic text-text-zero">
                             Unscheduled
                           </span>
                         )}
@@ -196,7 +196,7 @@ export default async function EditingQueuePage() {
                             ))}
                           </div>
                         ) : (
-                          <span className="text-xs italic text-text-muted">
+                          <span className="text-xs italic text-text-zero">
                             Unclaimed
                           </span>
                         )}

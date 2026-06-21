@@ -85,24 +85,24 @@ export function AnalyticsWritersTab({ query }: Props) {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <div className="font-medium text-sm text-text-primary leading-tight">
+                <div className="font-medium text-sm text-text-cell leading-tight">
                   {r.display_name}
                 </div>
-                <div className="text-[10px] text-text-muted">
+                <div className="text-[10px] text-text-zero">
                   {r.articles} {r.articles === 1 ? "article" : "articles"}
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
               <div className="flex justify-between">
-                <span className="text-text-muted">Revenue</span>
+                <span className="text-text-zero">Revenue</span>
                 <span className="tabular-nums font-medium text-amber">
                   ${r.earnings.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-text-muted">Pageviews</span>
-                <span className="tabular-nums text-text-primary">
+                <span className="text-text-zero">Pageviews</span>
+                <span className="tabular-nums text-text-cell">
                   {r.pageviews.toLocaleString()}
                 </span>
               </div>
@@ -117,8 +117,8 @@ export function AnalyticsWritersTab({ query }: Props) {
     <Card>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-card text-[10px] uppercase tracking-wide text-text-muted">
+          <table className="w-full font-data text-sm">
+            <thead className="plpd-thead text-[12px] uppercase tracking-wide text-cyan-header">
               <tr className="border-b border-border">
                 <th className="px-3 py-2 text-left">Writer</th>
                 <th className="px-3 py-2 text-right">Articles</th>
@@ -131,7 +131,7 @@ export function AnalyticsWritersTab({ query }: Props) {
               {rows.map((r) => (
                 <tr
                   key={r.user_id}
-                  className="border-b border-border/50 hover:bg-navy-3/20"
+                  className="border-b border-border/50 hover:bg-surface-3/20"
                 >
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export function AnalyticsWritersTab({ query }: Props) {
                           {r.display_name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium text-text-primary">
+                      <span className="font-medium text-text-cell">
                         {r.display_name}
                       </span>
                     </div>
@@ -155,7 +155,7 @@ export function AnalyticsWritersTab({ query }: Props) {
                   <td className="px-3 py-2 text-right tabular-nums font-medium text-amber">
                     ${r.earnings.toFixed(2)}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-text-secondary">
+                  <td className="px-3 py-2 text-right tabular-nums text-text-team">
                     ${r.revenue_per_word.toFixed(4)}
                   </td>
                 </tr>

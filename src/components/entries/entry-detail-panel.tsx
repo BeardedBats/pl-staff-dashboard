@@ -228,7 +228,7 @@ export function EntryDetailPanel({
   if (loading && !entry) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
+        <Loader2 className="h-4 w-4 animate-spin text-text-zero" />
       </div>
     );
   }
@@ -285,7 +285,7 @@ export function EntryDetailPanel({
       />
 
       {/* Action bar */}
-      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-md border border-border bg-navy-3/40 p-3">
+      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-3/40 p-3">
         {isClaimableContent ? (
           <Button
             size="sm"
@@ -597,7 +597,7 @@ function PipelineTab({
     <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
       <div className="space-y-5">
         <div className="rounded-md border border-border bg-card p-4">
-          <h4 className="mb-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+          <h4 className="mb-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
             Pipeline
           </h4>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -658,10 +658,10 @@ function PipelineTab({
 
         {entry.description ? (
           <section>
-            <h4 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+            <h4 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
               Brief
             </h4>
-            <p className="whitespace-pre-wrap rounded-md border border-border bg-navy-3/40 p-3 text-sm text-text-secondary">
+            <p className="whitespace-pre-wrap rounded-md border border-border bg-surface-3/40 p-3 text-sm text-text-team">
               {entry.description}
             </p>
           </section>
@@ -669,7 +669,7 @@ function PipelineTab({
 
         {entry.checklist.length > 0 ? (
           <section>
-            <h4 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+            <h4 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
               Pre-submission checklist (
               {entry.checklist.filter((c) => c.is_completed).length}/
               {entry.checklist.length})
@@ -691,7 +691,7 @@ function PipelineTab({
 
       <div className="space-y-4">
         <section className="rounded-md border border-border bg-card p-4">
-          <h4 className="mb-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+          <h4 className="mb-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
             Meta
           </h4>
           <dl className="space-y-2 text-xs">
@@ -727,14 +727,14 @@ function PipelineTab({
               })}
             />
             {entry.creator ? (
-              <div className="flex items-center justify-between gap-2 text-text-secondary">
-                <div className="flex items-center gap-1 text-text-muted">
+              <div className="flex items-center justify-between gap-2 text-text-team">
+                <div className="flex items-center gap-1 text-text-zero">
                   <Pencil className="h-3 w-3" />
                   <span className="uppercase tracking-wider">Created by</span>
                 </div>
                 <Link
                   href={`/staff/${entry.creator.id}`}
-                  className="flex items-center gap-1.5 text-text-secondary hover:text-cyan"
+                  className="flex items-center gap-1.5 text-text-team hover:text-cyan"
                 >
                   <UserAvatar
                     displayName={entry.creator.display_name}
@@ -750,7 +750,7 @@ function PipelineTab({
 
         <section>
           <div className="mb-2 flex items-center justify-between">
-            <h4 className="flex items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+            <h4 className="flex items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
               <ImageIcon className="h-3 w-3" />
               Graphics ({graphicRequests.length})
             </h4>
@@ -760,7 +760,7 @@ function PipelineTab({
             </Button>
           </div>
           {graphicRequests.length === 0 ? (
-            <p className="rounded-md border border-dashed border-border bg-card/50 p-3 text-center text-xs italic text-text-muted">
+            <p className="rounded-md border border-dashed border-border bg-card/50 p-3 text-center text-xs italic text-text-zero">
               No graphic requests yet. Click &quot;Request&quot; to add one.
             </p>
           ) : (
@@ -804,14 +804,14 @@ function AuditTab({ entryId }: { entryId: string }) {
   if (events === null) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
+        <Loader2 className="h-4 w-4 animate-spin text-text-zero" />
       </div>
     );
   }
 
   if (events.length === 0) {
     return (
-      <p className="rounded-md border border-dashed border-border bg-card/50 p-6 text-center text-sm text-text-muted">
+      <p className="rounded-md border border-dashed border-border bg-card/50 p-6 text-center text-sm text-text-zero">
         No audit events yet.
       </p>
     );
@@ -830,11 +830,11 @@ function AuditTab({ entryId }: { entryId: string }) {
                 size="xs"
               />
             ) : null}
-            <span className="font-medium text-text-primary">
+            <span className="font-medium text-text-cell">
               {evt.actor?.display_name ?? "System"}
             </span>
             <Badge variant="outline">{evt.action}</Badge>
-            <span className="text-xs text-text-muted">
+            <span className="text-xs text-text-zero">
               {formatDate(evt.created_at, {
                 dateStyle: "short",
                 timeStyle: "short",
@@ -842,8 +842,8 @@ function AuditTab({ entryId }: { entryId: string }) {
             </span>
           </div>
           {evt.field_name ? (
-            <p className="mt-1 font-mono text-xs text-text-secondary">
-              <span className="text-text-muted">{evt.field_name}:</span>{" "}
+            <p className="mt-1 font-mono text-xs text-text-team">
+              <span className="text-text-zero">{evt.field_name}:</span>{" "}
               {evt.old_value ? (
                 <>
                   <span className="line-through opacity-60">{evt.old_value}</span>
@@ -1001,7 +1001,7 @@ function TrackSummary({
 }) {
   return (
     <div>
-      <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-text-zero">
         {label}
       </p>
       <div className="mb-2">{badge}</div>
@@ -1010,15 +1010,15 @@ function TrackSummary({
           {people.map((p) => (
             <li key={p.name} className="flex items-center gap-1.5 text-xs">
               <UserAvatar displayName={p.name} avatarUrl={p.avatar} size="xs" />
-              <span className="text-text-secondary">{p.name}</span>
-              <span className="font-mono text-[10px] text-text-muted">
+              <span className="text-text-team">{p.name}</span>
+              <span className="font-mono text-[10px] text-text-zero">
                 {p.role}
               </span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-xs italic text-text-muted">{emptyText}</p>
+        <p className="text-xs italic text-text-zero">{emptyText}</p>
       )}
     </div>
   );
@@ -1034,12 +1034,12 @@ function MetaRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 text-text-secondary">
-      <div className="flex items-center gap-1 text-text-muted">
+    <div className="flex items-center justify-between gap-2 text-text-team">
+      <div className="flex items-center gap-1 text-text-zero">
         {icon}
         <span className="uppercase tracking-wider">{label}</span>
       </div>
-      <span className="text-text-secondary">{value}</span>
+      <span className="text-text-team">{value}</span>
     </div>
   );
 }
@@ -1083,24 +1083,24 @@ function ChecklistItemRow({
       disabled={canEdit && busy ? true : undefined}
       className={cn(
         "flex w-full items-center gap-2 rounded-sm border border-border bg-card px-3 py-2 text-left text-sm",
-        canEdit && !busy && "cursor-pointer hover:bg-navy-3",
+        canEdit && !busy && "cursor-pointer hover:bg-surface-3",
         busy && "opacity-60",
       )}
     >
       {busy ? (
-        <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
+        <Loader2 className="h-4 w-4 animate-spin text-text-zero" />
       ) : item.is_completed ? (
-        <CheckCircle2 className="h-4 w-4 text-success" />
+        <CheckCircle2 className="h-4 w-4 text-green" />
       ) : (
-        <Circle className="h-4 w-4 text-text-muted" />
+        <Circle className="h-4 w-4 text-text-zero" />
       )}
       <span
         className={
           item.is_completed
-            ? "text-text-muted line-through"
+            ? "text-text-zero line-through"
             : item.is_required
-              ? "text-text-secondary"
-              : "text-text-muted"
+              ? "text-text-team"
+              : "text-text-zero"
         }
       >
         {item.label}
@@ -1178,14 +1178,14 @@ function EntryAnalyticsMini({ entryId }: { entryId: string }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
+        <Loader2 className="h-4 w-4 animate-spin text-text-zero" />
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="py-6 text-center text-xs text-text-muted">
+      <div className="py-6 text-center text-xs text-text-zero">
         No analytics data for this entry in the last 30 days.
       </div>
     );
@@ -1230,15 +1230,15 @@ function MiniMetric({
   highlight?: boolean;
 }) {
   return (
-    <div className="rounded-md border border-border bg-navy-3/40 p-2">
-      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+    <div className="rounded-md border border-border bg-surface-3/40 p-2">
+      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-text-zero">
         {icon}
         {label}
       </div>
       <div
         className={cn(
           "mt-0.5 text-base font-semibold tabular-nums",
-          highlight ? "text-amber" : "text-text-primary",
+          highlight ? "text-amber" : "text-text-cell",
         )}
       >
         {value}

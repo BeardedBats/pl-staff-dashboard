@@ -322,14 +322,14 @@ export function TemplateDialog({
               onChange={(e) => setPublishTime(e.target.value)}
               className="max-w-[160px]"
             />
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-text-zero">
               Time of day the generated entries will be scheduled for. Leave
               empty for flexible timing.
             </p>
           </div>
 
           {/* Schedule builder */}
-          <div className="space-y-2 rounded-md border border-border bg-navy-3/30 p-3">
+          <div className="space-y-2 rounded-md border border-border bg-surface-3/30 p-3">
             <Label>Schedule *</Label>
             <Select
               value={frequency}
@@ -356,7 +356,7 @@ export function TemplateDialog({
                     className={
                       dailyDays.includes(d.code)
                         ? "rounded-sm border border-cyan bg-cyan-dim px-3 py-1 font-mono text-xs uppercase text-cyan"
-                        : "rounded-sm border border-border bg-card px-3 py-1 font-mono text-xs uppercase text-text-muted"
+                        : "rounded-sm border border-border bg-card px-3 py-1 font-mono text-xs uppercase text-text-zero"
                     }
                   >
                     {d.label}
@@ -418,10 +418,10 @@ export function TemplateDialog({
             ) : null}
           </div>
 
-          <div className="flex items-center justify-between rounded-md border border-border bg-navy-3/40 p-3">
+          <div className="flex items-center justify-between rounded-md border border-border bg-surface-3/40 p-3">
             <div>
-              <p className="text-sm font-medium text-text-primary">Active</p>
-              <p className="text-xs text-text-muted">
+              <p className="text-sm font-medium text-text-cell">Active</p>
+              <p className="text-xs text-text-zero">
                 Inactive templates are skipped by the generator.
               </p>
             </div>

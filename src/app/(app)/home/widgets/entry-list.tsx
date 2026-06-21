@@ -48,9 +48,9 @@ export function EntryList({
           <li key={e.id}>
             <Link
               href={`/content?entry=${e.id}`}
-              className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-xs hover:border-border hover:bg-navy-3/30"
+              className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-xs hover:border-border hover:bg-surface-3/30"
             >
-              <span className="flex-1 truncate font-medium text-text-primary">
+              <span className="flex-1 truncate font-medium text-text-cell">
                 {e.priority ? (
                   <span className="mr-1 text-amber">★</span>
                 ) : null}
@@ -59,7 +59,7 @@ export function EntryList({
               <Badge variant="outline" className="text-[9px]">
                 {e.site.toUpperCase()}
               </Badge>
-              <span className="hidden shrink-0 text-[10px] text-text-muted sm:inline">
+              <span className="hidden shrink-0 text-[10px] text-text-zero sm:inline">
                 {e.tier_name}
               </span>
               {pub ? (
@@ -67,7 +67,7 @@ export function EntryList({
                   className={
                     overdue
                       ? "flex shrink-0 items-center gap-0.5 text-[10px] font-semibold text-destructive"
-                      : "flex shrink-0 items-center gap-0.5 text-[10px] text-text-muted"
+                      : "flex shrink-0 items-center gap-0.5 text-[10px] text-text-zero"
                   }
                 >
                   {overdue ? (
@@ -78,7 +78,7 @@ export function EntryList({
                   {formatDate(e.publish_date)}
                 </span>
               ) : (
-                <span className="flex shrink-0 items-center gap-0.5 text-[10px] text-text-muted">
+                <span className="flex shrink-0 items-center gap-0.5 text-[10px] text-text-zero">
                   <Clock className="h-2.5 w-2.5" />
                   loose
                 </span>

@@ -97,7 +97,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
           {unreadCount > 0 ? (
             <span
               className={cn(
-                "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan px-1 font-mono text-[9px] font-bold text-navy-1",
+                "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan px-1 font-mono text-[9px] font-bold text-surface-1",
               )}
             >
               {unreadCount > 99 ? "99+" : unreadCount}
@@ -108,7 +108,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       <PopoverContent align="end" className="w-96 p-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-text-primary">
+            <h3 className="text-sm font-semibold text-text-cell">
               Notifications
             </h3>
             {unreadCount > 0 ? (
@@ -120,7 +120,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
               size="sm"
               variant="ghost"
               onClick={markAllRead}
-              className="text-xs text-text-muted"
+              className="text-xs text-text-zero"
             >
               <Check className="h-3 w-3" />
               Mark all read
@@ -131,9 +131,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         <div className="max-h-96 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
-              <Inbox className="mb-2 h-6 w-6 text-text-muted" />
-              <p className="text-sm font-medium text-text-primary">All clear</p>
-              <p className="mt-1 text-xs text-text-muted">
+              <Inbox className="mb-2 h-6 w-6 text-text-zero" />
+              <p className="text-sm font-medium text-text-cell">All clear</p>
+              <p className="mt-1 text-xs text-text-zero">
                 No notifications yet. @mentions, claim updates, and graphic
                 requests will appear here.
               </p>
@@ -183,7 +183,7 @@ function NotificationListItem({
       href={href}
       onClick={onMarkRead}
       className={cn(
-        "block px-4 py-3 transition-colors hover:bg-navy-3",
+        "block px-4 py-3 transition-colors hover:bg-surface-3",
         !notification.is_read && "bg-cyan-dim/30",
       )}
     >
@@ -194,15 +194,15 @@ function NotificationListItem({
           <span className="mt-1.5 h-1.5 w-1.5 shrink-0" />
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-text-primary">
+          <p className="text-sm font-medium text-text-cell">
             {notification.title}
           </p>
           {notification.body ? (
-            <p className="mt-0.5 line-clamp-2 text-xs text-text-secondary">
+            <p className="mt-0.5 line-clamp-2 text-xs text-text-team">
               {notification.body}
             </p>
           ) : null}
-          <p className="mt-1 text-[10px] text-text-muted">
+          <p className="mt-1 text-[10px] text-text-zero">
             {formatDate(notification.created_at, {
               dateStyle: "short",
               timeStyle: "short",

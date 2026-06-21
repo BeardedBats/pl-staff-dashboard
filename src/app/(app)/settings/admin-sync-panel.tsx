@@ -445,7 +445,7 @@ function HistoricalImportSection() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-text-zero">
             Site
           </p>
           <div className="flex flex-col gap-1.5 text-sm">
@@ -470,7 +470,7 @@ function HistoricalImportSection() {
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-xs text-text-secondary">
+        <label className="flex items-center gap-2 text-xs text-text-team">
           <input
             type="checkbox"
             checked={dryRunFirst}
@@ -519,7 +519,7 @@ function ImportProgress({
         <Loader2 className="h-3 w-3 animate-spin" />
         Importing {siteDisplayName(site)} articles...
       </p>
-      <p className="text-text-secondary">
+      <p className="text-text-team">
         Page {progress.currentPage.toLocaleString()} of ~
         {progress.estimatedTotalPages.toLocaleString()} processed —{" "}
         {progress.importedSoFar.toLocaleString()} imported so far
@@ -576,29 +576,29 @@ function ImportResults({
           {dryRun ? "Dry run complete" : "Import complete"}
         </p>
       )}
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-text-secondary">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-text-team">
         <dt>Posts found</dt>
-        <dd className="tabular-nums text-text-primary">{totals.postsFound}</dd>
+        <dd className="tabular-nums text-text-cell">{totals.postsFound}</dd>
         <dt>Posts imported</dt>
-        <dd className="tabular-nums text-text-primary">{totals.postsImported}</dd>
+        <dd className="tabular-nums text-text-cell">{totals.postsImported}</dd>
         <dt>Posts skipped (already imported)</dt>
-        <dd className="tabular-nums text-text-primary">{totals.postsSkipped}</dd>
+        <dd className="tabular-nums text-text-cell">{totals.postsSkipped}</dd>
         <dt>Authors matched</dt>
-        <dd className="tabular-nums text-text-primary">{totals.authorsMatched}</dd>
+        <dd className="tabular-nums text-text-cell">{totals.authorsMatched}</dd>
         <dt>Authors unmatched</dt>
-        <dd className="tabular-nums text-text-primary">{totals.authorsUnmatched}</dd>
+        <dd className="tabular-nums text-text-cell">{totals.authorsUnmatched}</dd>
         <dt>Categories matched</dt>
-        <dd className="tabular-nums text-text-primary">{totals.categoriesMatched}</dd>
+        <dd className="tabular-nums text-text-cell">{totals.categoriesMatched}</dd>
       </dl>
 
       {reports.length > 1 ? (
         <div className="space-y-1 border-t border-cyan/20 pt-2">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-text-zero">
             By site
           </p>
           {reports.map((r) => (
-            <p key={r.site} className="text-text-secondary">
-              <span className="font-medium text-text-primary">
+            <p key={r.site} className="text-text-team">
+              <span className="font-medium text-text-cell">
                 {r.site.toUpperCase()}:
               </span>{" "}
               found {r.postsFound} · imported {r.postsImported} · skipped{" "}
@@ -609,7 +609,7 @@ function ImportResults({
         </div>
       ) : null}
 
-      {note ? <p className="text-text-muted">{note}</p> : null}
+      {note ? <p className="text-text-zero">{note}</p> : null}
 
       {wasStopped ? (
         <p className="border-t border-amber/20 pt-2 text-amber">
@@ -629,7 +629,7 @@ function ImportResults({
               <li key={idx}>{err}</li>
             ))}
             {totals.errors.length > 50 ? (
-              <li className="text-text-muted">
+              <li className="text-text-zero">
                 …{totals.errors.length - 50} more
               </li>
             ) : null}
@@ -648,11 +648,11 @@ function LastSyncRow({
   timestamp: string | null;
 }) {
   return (
-    <div className="rounded-md border border-border bg-navy-3/30 p-3">
-      <p className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+    <div className="rounded-md border border-border bg-surface-3/30 p-3">
+      <p className="font-mono text-[10px] uppercase tracking-wider text-text-zero">
         Last {site} sync
       </p>
-      <p className="mt-1 text-sm text-text-primary">
+      <p className="mt-1 text-sm text-text-cell">
         {timestamp
           ? formatDate(timestamp, { dateStyle: "medium", timeStyle: "short" })
           : "Never"}

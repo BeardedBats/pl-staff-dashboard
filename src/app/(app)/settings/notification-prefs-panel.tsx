@@ -97,7 +97,7 @@ export function NotificationPrefsPanel({ userId }: Props) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-10">
-          <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+          <Loader2 className="h-5 w-5 animate-spin text-text-zero" />
         </CardContent>
       </Card>
     );
@@ -116,25 +116,25 @@ export function NotificationPrefsPanel({ userId }: Props) {
         <CardContent className="space-y-6">
           {EVENT_TYPE_GROUPS.map((group) => (
             <section key={group.label}>
-              <h3 className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+              <h3 className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-text-zero">
                 {group.label}
               </h3>
               <div className="overflow-hidden rounded-md border border-border">
                 <table className="w-full text-sm">
-                  <thead className="bg-navy-3">
+                  <thead className="bg-surface-3">
                     <tr>
-                      <th className="w-full px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                      <th className="w-full px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                         Event
                       </th>
-                      <th className="px-3 py-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                      <th className="px-3 py-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                         <Bell className="mx-auto h-3 w-3" />
                         <span className="sr-only">In-app</span>
                       </th>
-                      <th className="px-3 py-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                      <th className="px-3 py-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                         <MessageSquare className="mx-auto h-3 w-3" />
                         <span className="sr-only">Discord</span>
                       </th>
-                      <th className="px-3 py-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                      <th className="px-3 py-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                         <Mail className="mx-auto h-3 w-3" />
                         <span className="sr-only">Email</span>
                       </th>
@@ -142,8 +142,8 @@ export function NotificationPrefsPanel({ userId }: Props) {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {group.types.map((type) => (
-                      <tr key={type} className="hover:bg-navy-3/40">
-                        <td className="px-3 py-2 text-text-secondary">
+                      <tr key={type} className="hover:bg-surface-3/40">
+                        <td className="px-3 py-2 text-text-team">
                           {EVENT_TYPE_LABELS[type]}
                         </td>
                         <td className="px-3 py-2 text-center">
@@ -181,7 +181,7 @@ export function NotificationPrefsPanel({ userId }: Props) {
             </section>
           ))}
 
-          <p className="rounded-sm border border-dashed border-border bg-navy-3/30 px-3 py-2 text-xs text-text-muted">
+          <p className="rounded-sm border border-dashed border-border bg-surface-3/30 px-3 py-2 text-xs text-text-zero">
             Discord DMs and email delivery are currently stubbed — notifications
             still create in-app rows and log intended deliveries. They&apos;ll
             send for real once the Discord bot and Resend account are wired up.
@@ -193,7 +193,7 @@ export function NotificationPrefsPanel({ userId }: Props) {
         {error ? (
           <p className="text-sm text-destructive">{error}</p>
         ) : savedAt ? (
-          <p className="flex items-center gap-1.5 text-sm text-success">
+          <p className="flex items-center gap-1.5 text-sm text-green">
             <Check className="h-3.5 w-3.5" />
             Saved
           </p>

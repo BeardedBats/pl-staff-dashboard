@@ -30,7 +30,7 @@ export function CommentBody({ body, mentions, className }: CommentBodyProps) {
           {header}
         </p>
       ) : null}
-      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-text-primary">
+      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-text-cell">
         {renderWithMentions(rest, mentionSet)}
       </p>
     </div>

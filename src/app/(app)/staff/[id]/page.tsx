@@ -44,7 +44,7 @@ export default async function StaffMemberPage({
   return (
     <div className="space-y-6">
       <div>
-        <Button variant="ghost" size="sm" asChild className="text-text-muted">
+        <Button variant="ghost" size="sm" asChild className="text-text-zero">
           <Link href="/staff">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to directory
@@ -61,11 +61,11 @@ export default async function StaffMemberPage({
               avatarUrl={target.avatar_url}
               size="xl"
             />
-            <h2 className="mt-4 text-lg font-semibold text-text-primary">
+            <h2 className="mt-4 text-lg font-semibold text-text-cell">
               {target.display_name}
             </h2>
             {isPrivileged && target.email ? (
-              <p className="mt-1 font-mono text-xs text-text-secondary">
+              <p className="mt-1 font-mono text-xs text-text-team">
                 {target.email}
               </p>
             ) : null}
@@ -99,7 +99,7 @@ export default async function StaffMemberPage({
                 <CardTitle className="text-sm">About</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-team">
                   {target.bio}
                 </p>
               </CardContent>
@@ -160,16 +160,16 @@ export default async function StaffMemberPage({
                       className="flex items-center justify-between py-2"
                     >
                       <div className="min-w-0">
-                        <p className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                        <p className="flex items-center gap-2 text-sm font-medium text-text-cell">
                           {t.team_name}
                           {t.is_primary ? (
                             <Badge variant="cyan">Primary</Badge>
                           ) : null}
                         </p>
                         {t.manager_name ? (
-                          <p className="mt-0.5 text-xs text-text-muted">
+                          <p className="mt-0.5 text-xs text-text-zero">
                             Managed by{" "}
-                            <span className="text-text-secondary">
+                            <span className="text-text-team">
                               {t.manager_name}
                             </span>
                           </p>
@@ -202,11 +202,11 @@ function DetailRow({
 }) {
   const content = (
     <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2 text-text-muted">
+      <div className="flex items-center gap-2 text-text-zero">
         {icon}
         <span className="text-xs uppercase tracking-wider">{label}</span>
       </div>
-      <span className="truncate text-text-secondary">{value}</span>
+      <span className="truncate text-text-team">{value}</span>
     </div>
   );
 

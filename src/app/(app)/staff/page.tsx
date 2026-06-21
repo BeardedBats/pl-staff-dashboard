@@ -54,10 +54,10 @@ export default async function StaffDirectoryPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-primary">
+        <h1 className="text-2xl font-semibold text-text-cell">
           Staff Directory
         </h1>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-sm text-text-team">
           {totalCount} {totalCount === 1 ? "staff member" : "staff members"} across
           Pitcher List and QB List.
         </p>

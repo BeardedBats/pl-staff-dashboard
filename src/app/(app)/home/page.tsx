@@ -105,12 +105,12 @@ export default async function HomePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-primary">
+        <h1 className="text-2xl font-semibold text-text-cell">
           Welcome, {user.display_name.split(" ")[0]}.
         </h1>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-sm text-text-team">
           You&apos;re signed in as{" "}
-          <span className="font-mono text-text-primary">{user.email}</span>
+          <span className="font-mono text-text-cell">{user.email}</span>
           {user.roles.length > 0 ? (
             <>
               {" "}

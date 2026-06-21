@@ -16,9 +16,11 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-9 w-full items-center justify-between rounded-sm border border-border bg-input px-3 py-1 text-sm text-foreground shadow-sm",
-      "placeholder:text-muted-foreground",
-      "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-background",
+      // PLPD dropdown trigger — 144.79° blue badge gradient + inset top
+      // highlight. NO white-fade layer (that is exclusive to Import buttons).
+      "relative flex h-9 w-full items-center justify-between rounded-sm border-0 px-3 py-1 text-sm font-bold text-text-cell",
+      "bg-[linear-gradient(144.79deg,#245297_0%,#0a2e63_100%)] shadow-[0_6px_20px_rgba(0,0,0,0.36),inset_0_1px_0_rgba(255,255,255,0.3)]",
+      "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
       "disabled:cursor-not-allowed disabled:opacity-50",
       "[&>span]:line-clamp-1",
       className,
@@ -27,7 +29,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
+      <ChevronDown className="h-4 w-4 text-white" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -70,7 +72,7 @@ const SelectContent = React.forwardRef<
       ref={ref}
       position={position}
       className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-lg",
+        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-[8px] border-0 text-text-cell shadow-[0_0_0_1px_rgba(0,80,100,0.4),0_6px_20px_rgba(0,0,0,0.36),inset_0_1px_0_rgba(255,255,255,0.3)] bg-[linear-gradient(118.49deg,rgba(36,82,151,0.92)_0%,rgba(10,46,99,0.92)_100%)]",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
@@ -113,8 +115,9 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none",
-      "focus:bg-secondary focus:text-foreground",
+      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm text-white/90 outline-none",
+      // PLPD highlighted row — lighter-blue gradient bar
+      "focus:bg-[linear-gradient(154.81deg,#4071ba_0%,#204b8c_100%)] focus:text-white",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,
     )}

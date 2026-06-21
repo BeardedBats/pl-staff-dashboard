@@ -19,7 +19,7 @@ export default async function LoginPage() {
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div className="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-cyan/[0.04] blur-[120px]" />
         <div className="absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-amber/[0.03] blur-[100px]" />
-        <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple/[0.03] blur-[80px]" />
+        <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet/[0.03] blur-[80px]" />
       </div>
       <div className="relative w-full max-w-sm">
         <div className="mb-8 text-center">
@@ -28,17 +28,17 @@ export default async function LoginPage() {
               Pitcher List
             </span>
           </div>
-          <h1 className="mt-4 text-xl font-semibold text-text-primary">
+          <h1 className="mt-4 text-xl font-semibold text-text-cell">
             Staff Dashboard
           </h1>
-          <p className="mt-1 text-sm text-text-muted">
+          <p className="mt-1 text-sm text-text-zero">
             Sign in with your Pitcher List WordPress credentials.
           </p>
         </div>
 
         <LoginForm />
 
-        <p className="mt-6 text-center text-xs text-text-muted">
+        <p className="mt-6 text-center text-xs text-text-zero">
           Trouble signing in? Reach out to a dashboard admin for help creating
           your WordPress application password.
         </p>

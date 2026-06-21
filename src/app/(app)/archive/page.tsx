@@ -148,10 +148,10 @@ export default function ArchivePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-primary">
+        <h1 className="text-2xl font-semibold text-text-cell">
           Published Archive
         </h1>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-sm text-text-team">
           Archived pipeline entries and historical articles imported from
           WordPress.
         </p>
@@ -232,7 +232,7 @@ function PaginationControls({
   if (total === 0) return null;
   const totalPages = Math.max(Math.ceil(total / pageSize), 1);
   return (
-    <div className="mt-3 flex items-center justify-center gap-3 text-xs text-text-secondary">
+    <div className="mt-3 flex items-center justify-center gap-3 text-xs text-text-team">
       <Button
         size="sm"
         variant="outline"
@@ -270,7 +270,7 @@ function ArchiveFilters({
   return (
     <div className="mb-3 flex items-center gap-2">
       <div className="relative flex-1 max-w-md">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-zero" />
         <Input
           value={search}
           onChange={(e) => onSearch(e.target.value)}
@@ -311,7 +311,7 @@ function ArchivedTable({
   if (loading && entries.length === 0) {
     return (
       <div className="flex justify-center rounded-lg border border-border bg-card p-10">
-        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+        <Loader2 className="h-5 w-5 animate-spin text-text-zero" />
       </div>
     );
   }
@@ -326,9 +326,9 @@ function ArchivedTable({
   }
   return (
     <div className="overflow-auto rounded-lg border border-border bg-card">
-      <table className="w-full text-sm">
-        <thead className="border-b border-border bg-navy-3">
-          <tr className="text-left font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <table className="w-full font-data text-sm">
+        <thead className="plpd-thead border-b border-border-thead">
+          <tr className="text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
             <th className="px-3 py-2">Title</th>
             <th className="px-3 py-2">Author</th>
             <th className="px-3 py-2">Tier</th>
@@ -340,9 +340,9 @@ function ArchivedTable({
         </thead>
         <tbody className="divide-y divide-border">
           {entries.map((entry) => (
-            <tr key={entry.id} className="hover:bg-navy-3/40">
+            <tr key={entry.id} className="hover:bg-surface-3/40">
               <td className="px-3 py-3 align-top">
-                <span className="font-medium text-text-primary">
+                <span className="font-medium text-text-cell">
                   {entry.title}
                 </span>
               </td>
@@ -357,12 +357,12 @@ function ArchivedTable({
                         size="xs"
                       />
                     ))}
-                    <span className="text-xs text-text-secondary">
+                    <span className="text-xs text-text-team">
                       {entry.authors.map((a) => a.display_name).join(", ")}
                     </span>
                   </div>
                 ) : (
-                  <span className="text-xs italic text-text-muted">—</span>
+                  <span className="text-xs italic text-text-zero">—</span>
                 )}
               </td>
               <td className="px-3 py-3 align-top">
@@ -371,15 +371,15 @@ function ArchivedTable({
               <td className="px-3 py-3 align-top">
                 <Badge variant="outline">{entry.site.toUpperCase()}</Badge>
               </td>
-              <td className="px-3 py-3 align-top text-xs text-text-secondary">
+              <td className="px-3 py-3 align-top text-xs text-text-team">
                 {entry.publish_date
                   ? formatDate(entry.publish_date, { dateStyle: "medium" })
                   : "—"}
               </td>
               <td className="px-3 py-3 align-top">
-                <span className="line-clamp-2 max-w-md text-xs text-text-secondary">
+                <span className="line-clamp-2 max-w-md text-xs text-text-team">
                   {entry.archive_reason ?? (
-                    <span className="italic text-text-muted">—</span>
+                    <span className="italic text-text-zero">—</span>
                   )}
                 </span>
               </td>
@@ -418,7 +418,7 @@ function HistoricalTable({
   if (loading && entries.length === 0) {
     return (
       <div className="flex justify-center rounded-lg border border-border bg-card p-10">
-        <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+        <Loader2 className="h-5 w-5 animate-spin text-text-zero" />
       </div>
     );
   }
@@ -433,9 +433,9 @@ function HistoricalTable({
   }
   return (
     <div className="overflow-auto rounded-lg border border-border bg-card">
-      <table className="w-full text-sm">
-        <thead className="border-b border-border bg-navy-3">
-          <tr className="text-left font-mono text-[10px] uppercase tracking-wider text-text-muted">
+      <table className="w-full font-data text-sm">
+        <thead className="plpd-thead border-b border-border-thead">
+          <tr className="text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
             <th className="px-3 py-2">Title</th>
             <th className="px-3 py-2">Author</th>
             <th className="px-3 py-2">Site</th>
@@ -446,9 +446,9 @@ function HistoricalTable({
         </thead>
         <tbody className="divide-y divide-border">
           {entries.map((entry) => (
-            <tr key={entry.id} className="hover:bg-navy-3/40">
+            <tr key={entry.id} className="hover:bg-surface-3/40">
               <td className="px-3 py-3 align-top">
-                <span className="font-medium text-text-primary">
+                <span className="font-medium text-text-cell">
                   {entry.title}
                 </span>
               </td>
@@ -463,25 +463,25 @@ function HistoricalTable({
                         size="xs"
                       />
                     ))}
-                    <span className="text-xs text-text-secondary">
+                    <span className="text-xs text-text-team">
                       {entry.authors.map((a) => a.display_name).join(", ")}
                     </span>
                   </div>
                 ) : (
-                  <span className="text-xs italic text-text-muted">—</span>
+                  <span className="text-xs italic text-text-zero">—</span>
                 )}
               </td>
               <td className="px-3 py-3 align-top">
                 <Badge variant="outline">{entry.site.toUpperCase()}</Badge>
               </td>
-              <td className="px-3 py-3 align-top text-xs text-text-secondary">
+              <td className="px-3 py-3 align-top text-xs text-text-team">
                 {entry.publish_date
                   ? formatDate(entry.publish_date, { dateStyle: "medium" })
                   : "—"}
               </td>
-              <td className="px-3 py-3 align-top text-xs text-text-secondary">
+              <td className="px-3 py-3 align-top text-xs text-text-team">
                 {entry.category?.name ?? (
-                  <span className="italic text-text-muted">—</span>
+                  <span className="italic text-text-zero">—</span>
                 )}
               </td>
               <td className="px-3 py-3 align-top">
@@ -496,7 +496,7 @@ function HistoricalTable({
                     Open
                   </a>
                 ) : (
-                  <span className="text-xs italic text-text-muted">—</span>
+                  <span className="text-xs italic text-text-zero">—</span>
                 )}
               </td>
             </tr>

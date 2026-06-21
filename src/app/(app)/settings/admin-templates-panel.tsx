@@ -185,46 +185,46 @@ export function AdminTemplatesPanel({
         ) : (
           <div className="overflow-hidden rounded-md border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-navy-3">
+              <thead className="bg-surface-3">
                 <tr>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Title pattern
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Schedule
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Tier
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Season
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Assignee
                   </th>
-                  <th className="px-3 py-2 text-center font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-center font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Active
                   </th>
-                  <th className="px-3 py-2 text-right font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <th className="px-3 py-2 text-right font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {templates.map((t) => (
-                  <tr key={t.id} className="hover:bg-navy-3/40">
+                  <tr key={t.id} className="hover:bg-surface-3/40">
                     <td className="px-3 py-2">
-                      <div className="font-medium text-text-primary">
+                      <div className="font-medium text-text-cell">
                         {t.title_pattern}
                       </div>
                       <div className="mt-0.5 flex items-center gap-1">
                         <Badge variant="outline">{t.site.toUpperCase()}</Badge>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-xs text-text-secondary">
+                    <td className="px-3 py-2 text-xs text-text-team">
                       {t.schedule_description}
                       {t.default_publish_time ? (
-                        <span className="ml-1 font-mono text-text-muted">
+                        <span className="ml-1 font-mono text-text-zero">
                           @ {t.default_publish_time.slice(0, 5)}
                         </span>
                       ) : null}
@@ -232,12 +232,12 @@ export function AdminTemplatesPanel({
                     <td className="px-3 py-2">
                       <Badge variant="outline">{t.tier_name}</Badge>
                     </td>
-                    <td className="px-3 py-2 text-xs text-text-secondary">
+                    <td className="px-3 py-2 text-xs text-text-team">
                       {t.season_mode_name}
                     </td>
-                    <td className="px-3 py-2 text-xs text-text-secondary">
+                    <td className="px-3 py-2 text-xs text-text-team">
                       {t.assigned_user_name ?? (
-                        <span className="italic text-text-muted">
+                        <span className="italic text-text-zero">
                           Unassigned
                         </span>
                       )}
@@ -254,9 +254,9 @@ export function AdminTemplatesPanel({
                         {busy === t.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : t.is_active ? (
-                          <Power className="h-3.5 w-3.5 text-success" />
+                          <Power className="h-3.5 w-3.5 text-green" />
                         ) : (
-                          <PowerOff className="h-3.5 w-3.5 text-text-muted" />
+                          <PowerOff className="h-3.5 w-3.5 text-text-zero" />
                         )}
                       </Button>
                     </td>
@@ -289,7 +289,7 @@ export function AdminTemplatesPanel({
           </div>
         )}
 
-        <p className="rounded-sm border border-dashed border-border bg-navy-3/30 px-3 py-2 text-xs text-text-muted">
+        <p className="rounded-sm border border-dashed border-border bg-surface-3/30 px-3 py-2 text-xs text-text-zero">
           <Check className="inline h-3 w-3" /> The nightly cron creates
           entries up to 14 days ahead. You can also hit &quot;Run generator&quot;
           above to trigger it on demand.
