@@ -17,10 +17,10 @@ export default async function NotificationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-primary">
+        <h1 className="text-2xl font-semibold text-text-cell">
           Notifications
         </h1>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-sm text-text-team">
           Everything that happened across entries you&apos;re involved in.
           {unreadCount > 0 ? (
             <>

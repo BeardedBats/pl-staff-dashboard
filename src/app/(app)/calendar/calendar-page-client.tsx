@@ -31,10 +31,10 @@ type CalendarPageClientProps = {
  * against each tier background.
  */
 const TIER_COLOR: Record<string, { bg: string; text: string }> = {
-  S: { bg: "var(--amber)", text: "#0f1420" },
-  A: { bg: "var(--cyan)", text: "#0f1420" },
-  B: { bg: "var(--purple)", text: "#0f1420" },
-  C: { bg: "var(--navy-4)", text: "var(--text-primary)" },
+  S: { bg: "var(--amber)", text: "#13152A" },
+  A: { bg: "var(--cyan)", text: "#13152A" },
+  B: { bg: "var(--violet)", text: "#13152A" },
+  C: { bg: "var(--surface-4)", text: "var(--text-cell)" },
 };
 
 const ALL = "__all__";
@@ -179,7 +179,7 @@ export function CalendarPageClient({
 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-text-muted">Tiers:</span>
+        <span className="text-text-zero">Tiers:</span>
         {tiers.map((t) => {
           const color = TIER_COLOR[t.name.toUpperCase()] ?? TIER_COLOR.C;
           return (
@@ -195,7 +195,7 @@ export function CalendarPageClient({
             </span>
           );
         })}
-        <span className="text-text-muted">
+        <span className="text-text-zero">
           · {events.length}{" "}
           {events.length === 1 ? "entry" : "entries"} scheduled
         </span>
@@ -225,7 +225,7 @@ export function CalendarPageClient({
         <style jsx global>{`
           .calendar-wrapper .fc {
             font-family: var(--font-sans);
-            color: var(--text-primary);
+            color: var(--text-cell);
           }
           .calendar-wrapper .fc-theme-standard td,
           .calendar-wrapper .fc-theme-standard th,
@@ -233,17 +233,17 @@ export function CalendarPageClient({
             border-color: var(--border);
           }
           .calendar-wrapper .fc-col-header-cell {
-            background: var(--navy-3);
+            background: var(--surface-3);
           }
           .calendar-wrapper .fc-col-header-cell-cushion {
-            color: var(--text-muted);
+            color: var(--text-zero);
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             padding: 8px 4px;
           }
           .calendar-wrapper .fc-daygrid-day-number {
-            color: var(--text-secondary);
+            color: var(--text-team);
             font-size: 12px;
             padding: 4px 6px;
           }
@@ -257,25 +257,25 @@ export function CalendarPageClient({
           .calendar-wrapper .fc-button {
             background: var(--secondary);
             border: 1px solid var(--border);
-            color: var(--text-secondary);
+            color: var(--text-team);
             text-transform: none;
             font-size: 12px;
             padding: 4px 10px;
           }
           .calendar-wrapper .fc-button:hover {
-            background: var(--navy-4);
-            color: var(--text-primary);
+            background: var(--surface-4);
+            color: var(--text-cell);
           }
           .calendar-wrapper .fc-button-primary:not(:disabled).fc-button-active,
           .calendar-wrapper .fc-button-primary:not(:disabled):active {
             background: var(--cyan);
-            color: var(--navy-1);
+            color: var(--surface-1);
             border-color: var(--cyan);
           }
           .calendar-wrapper .fc-toolbar-title {
             font-size: 16px;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--text-cell);
           }
           .calendar-wrapper .fc-event {
             border-radius: 3px;
@@ -284,14 +284,14 @@ export function CalendarPageClient({
             cursor: pointer;
           }
           .calendar-wrapper .fc-list-day-cushion {
-            background: var(--navy-3) !important;
+            background: var(--surface-3) !important;
           }
           .calendar-wrapper .fc-list-event:hover td {
-            background: var(--navy-3) !important;
+            background: var(--surface-3) !important;
           }
           .calendar-wrapper .fc-list-empty {
             background: var(--card);
-            color: var(--text-muted);
+            color: var(--text-zero);
           }
         `}</style>
       </div>
@@ -299,10 +299,10 @@ export function CalendarPageClient({
       {/* Unscheduled entries section */}
       {entries.filter((e) => !e.publish_date).length > 0 ? (
         <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+          <h3 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
             Unscheduled ({entries.filter((e) => !e.publish_date).length})
           </h3>
-          <p className="mb-3 text-xs text-text-muted">
+          <p className="mb-3 text-xs text-text-zero">
             Entries without a publish date yet.
           </p>
           <ul className="space-y-1">
@@ -314,11 +314,11 @@ export function CalendarPageClient({
                   <button
                     type="button"
                     onClick={() => router.push(`/content?entry=${e.id}`)}
-                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left text-sm hover:bg-navy-3"
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left text-sm hover:bg-surface-3"
                   >
                     <Badge variant="outline">{e.tier.name}</Badge>
                     <Badge variant="outline">{e.site.toUpperCase()}</Badge>
-                    <span className="truncate text-text-primary">{e.title}</span>
+                    <span className="truncate text-text-cell">{e.title}</span>
                   </button>
                 </li>
               ))}

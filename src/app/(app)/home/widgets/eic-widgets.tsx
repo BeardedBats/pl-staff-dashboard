@@ -49,7 +49,7 @@ export function PipelineHealthWidget({ health }: { health: PipelineHealth }) {
       label: "Claimed",
       count: health.claimed,
       icon: <Inbox className="h-3.5 w-3.5" />,
-      color: "text-text-primary",
+      color: "text-text-cell",
       href: "/content?status=claimed",
     },
     {
@@ -93,8 +93,8 @@ export function PipelineHealthWidget({ health }: { health: PipelineHealth }) {
           const inner = (
             <div className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-3 py-2 text-xs">
               <span className={r.color}>{r.icon}</span>
-              <span className="flex-1 text-text-secondary">{r.label}</span>
-              <span className="font-semibold tabular-nums text-text-primary">
+              <span className="flex-1 text-text-team">{r.label}</span>
+              <span className="font-semibold tabular-nums text-text-cell">
                 {r.count}
               </span>
             </div>
@@ -128,7 +128,7 @@ export function PipelineHealthWidget({ health }: { health: PipelineHealth }) {
           {health.drafted > 0 ? (
             <Link
               href="/content?drafts=true"
-              className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-3 py-2 text-xs text-text-secondary hover:bg-navy-3/30"
+              className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-3 py-2 text-xs text-text-team hover:bg-surface-3/30"
             >
               <AlertOctagon className="h-3.5 w-3.5" />
               <span className="flex-1">
@@ -178,7 +178,7 @@ export function WpSyncHealthWidget({ health }: { health: WpSyncHealth }) {
     >
       <dl className="space-y-2 text-xs">
         <div className="flex items-center justify-between rounded-md border border-border bg-card/60 px-3 py-2">
-          <dt className="text-text-muted">Pitcher List</dt>
+          <dt className="text-text-zero">Pitcher List</dt>
           <dd>
             <Badge variant="outline" className={badge(plS.kind)}>
               {plS.label}
@@ -186,7 +186,7 @@ export function WpSyncHealthWidget({ health }: { health: WpSyncHealth }) {
           </dd>
         </div>
         <div className="flex items-center justify-between rounded-md border border-border bg-card/60 px-3 py-2">
-          <dt className="text-text-muted">QB List</dt>
+          <dt className="text-text-zero">QB List</dt>
           <dd>
             <Badge variant="outline" className={badge(qbS.kind)}>
               {qbS.label}
@@ -213,18 +213,18 @@ export function AnalyticsMiniWidget({ data }: { data: MiniAnalytics }) {
           <div className="grid grid-cols-2 gap-2">
             <Card>
               <CardContent className="flex flex-col gap-0.5 py-3">
-                <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-text-zero">
                   <Eye className="h-3 w-3" />
                   Pageviews
                 </div>
-                <div className="text-lg font-semibold tabular-nums text-text-primary">
+                <div className="text-lg font-semibold tabular-nums text-text-cell">
                   {data.pageviews.toLocaleString()}
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="flex flex-col gap-0.5 py-3">
-                <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-text-zero">
                   <DollarSign className="h-3 w-3" />
                   Revenue
                 </div>

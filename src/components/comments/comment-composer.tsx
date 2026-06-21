@@ -201,7 +201,7 @@ export function CommentComposer({
                     "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm",
                     idx === suggestionIdx
                       ? "bg-cyan-dim text-cyan"
-                      : "text-text-secondary hover:bg-secondary",
+                      : "text-text-team hover:bg-secondary",
                   )}
                 >
                   <UserAvatar
@@ -218,7 +218,7 @@ export function CommentComposer({
       ) : null}
 
       <div className="flex items-center justify-between gap-2">
-        <p className="flex items-center gap-1 text-[11px] text-text-muted">
+        <p className="flex items-center gap-1 text-[11px] text-text-zero">
           <AtSign className="h-3 w-3" />
           Type @ to mention a teammate · ⌘/Ctrl+Enter to post
         </p>

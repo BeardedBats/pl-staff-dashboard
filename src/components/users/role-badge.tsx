@@ -1,17 +1,20 @@
+import type * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import type { AppRole } from "@/lib/auth/current-user";
 
-const ROLE_VARIANT: Record<
-  AppRole,
-  "cyan" | "amber" | "purple" | "success" | "danger" | "default" | "outline"
-> = {
-  writer: "default",
+// Roles are DECORATIVE identity, not status (addendum Q2). They never use the
+// reserved semantic colors (green/red/val-pos) — those are for status only.
+// manager vs eic are separated by fill-vs-outline amber, not a new hue.
+type BadgeVariant = React.ComponentProps<typeof Badge>["variant"];
+
+const ROLE_VARIANT: Record<AppRole, BadgeVariant> = {
+  writer: "zero", // gray/zero identity
   editor: "cyan",
-  graphics: "purple",
-  manager: "amber",
-  admin: "danger",
-  eic: "danger",
-  operations: "success",
+  graphics: "violet",
+  manager: "amber", // filled amber
+  admin: "cyanHeader", // brighter chrome accent — seniority without alarm
+  eic: "amberOutline", // amber emphasis, outline to distinguish from manager
+  operations: "blue",
 };
 
 const ROLE_LABEL: Record<AppRole, string> = {

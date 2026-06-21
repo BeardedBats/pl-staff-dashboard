@@ -185,20 +185,20 @@ export function EditUserDialog({
 
         <div className="space-y-5">
           {/* Read-only reference fields */}
-          <div className="grid grid-cols-2 gap-3 rounded-md border border-border bg-navy-3/40 p-3 font-mono text-[11px]">
+          <div className="grid grid-cols-2 gap-3 rounded-md border border-border bg-surface-3/40 p-3 font-mono text-[11px]">
             <div>
-              <p className="text-text-muted">Email</p>
-              <p className="text-text-secondary">
+              <p className="text-text-zero">Email</p>
+              <p className="text-text-team">
                 {user.email ?? (
-                  <span className="italic text-text-muted">
+                  <span className="italic text-text-zero">
                     (set on first WP login)
                   </span>
                 )}
               </p>
             </div>
             <div>
-              <p className="text-text-muted">WP user ID</p>
-              <p className="text-text-secondary">{user.wp_user_id}</p>
+              <p className="text-text-zero">WP user ID</p>
+              <p className="text-text-team">{user.wp_user_id}</p>
             </div>
           </div>
 
@@ -211,7 +211,7 @@ export function EditUserDialog({
               onChange={(e) => setDisplayName(e.target.value)}
               maxLength={120}
             />
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-text-zero">
               Manual edits won&apos;t be overwritten by WP sync.
             </p>
           </div>
@@ -232,12 +232,12 @@ export function EditUserDialog({
           </div>
 
           {/* Can publish */}
-          <div className="flex items-center justify-between rounded-md border border-border bg-navy-3/40 px-3 py-2">
+          <div className="flex items-center justify-between rounded-md border border-border bg-surface-3/40 px-3 py-2">
             <div>
-              <p className="text-sm font-medium text-text-primary">
+              <p className="text-sm font-medium text-text-cell">
                 Can publish
               </p>
-              <p className="text-xs text-text-muted">
+              <p className="text-xs text-text-zero">
                 Allow this user to schedule / publish entries directly.
               </p>
             </div>
@@ -265,7 +265,7 @@ export function EditUserDialog({
                 {teamOptions.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
                     {t.name}{" "}
-                    <span className="ml-1 text-[10px] text-text-muted">
+                    <span className="ml-1 text-[10px] text-text-zero">
                       ({t.site.toUpperCase()})
                     </span>
                   </SelectItem>
@@ -273,7 +273,7 @@ export function EditUserDialog({
               </SelectContent>
             </Select>
             {teams === null && !teamsError ? (
-              <p className="text-xs text-text-muted">Loading teams…</p>
+              <p className="text-xs text-text-zero">Loading teams…</p>
             ) : null}
             {teamsError ? (
               <p className="text-xs text-destructive">{teamsError}</p>
@@ -290,7 +290,7 @@ export function EditUserDialog({
                   <label
                     key={role}
                     htmlFor={`edituser-role-${role}`}
-                    className="flex cursor-pointer items-center gap-3 rounded-md border border-border bg-navy-3/40 px-3 py-2 hover:bg-navy-3"
+                    className="flex cursor-pointer items-center gap-3 rounded-md border border-border bg-surface-3/40 px-3 py-2 hover:bg-surface-3"
                   >
                     <Checkbox
                       id={`edituser-role-${role}`}
@@ -298,10 +298,10 @@ export function EditUserDialog({
                       onCheckedChange={() => toggleRole(role)}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium capitalize text-text-primary">
+                      <p className="text-sm font-medium capitalize text-text-cell">
                         {role}
                       </p>
-                      <p className="text-xs text-text-muted">{description}</p>
+                      <p className="text-xs text-text-zero">{description}</p>
                     </div>
                   </label>
                 );

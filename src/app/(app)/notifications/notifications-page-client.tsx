@@ -131,7 +131,7 @@ export function NotificationsPageClient({
             variant="ghost"
             size="sm"
             onClick={markAllRead}
-            className="ml-auto text-text-muted"
+            className="ml-auto text-text-zero"
           >
             <CheckCheck className="h-3 w-3" />
             Mark all read
@@ -141,7 +141,7 @@ export function NotificationsPageClient({
 
       {loading && rows.length === 0 ? (
         <div className="flex items-center justify-center rounded-lg border border-border bg-card py-10">
-          <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+          <Loader2 className="h-5 w-5 animate-spin text-text-zero" />
         </div>
       ) : rows.length === 0 ? (
         <EmptyState
@@ -183,20 +183,20 @@ function NotificationListRow({
   return (
     <div
       className={cn(
-        "group flex items-start gap-3 rounded-md border border-border bg-card p-3 transition-colors hover:border-navy-5",
+        "group flex items-start gap-3 rounded-md border border-border bg-card p-3 transition-colors hover:border-surface-5",
         !notification.is_read && "border-cyan/30 bg-cyan-dim/20",
       )}
     >
       <div className="mt-1.5 shrink-0">
         {notification.is_read ? (
-          <span className="block h-1.5 w-1.5 rounded-full bg-text-muted/40" />
+          <span className="block h-1.5 w-1.5 rounded-full bg-text-zero/40" />
         ) : (
           <span className="block h-1.5 w-1.5 rounded-full bg-cyan" />
         )}
       </div>
       <Link href={href} className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-medium text-text-primary">
+          <p className="truncate text-sm font-medium text-text-cell">
             {notification.title}
           </p>
           <Badge variant="outline" className="shrink-0">
@@ -204,11 +204,11 @@ function NotificationListRow({
           </Badge>
         </div>
         {notification.body ? (
-          <p className="mt-1 line-clamp-2 text-xs text-text-secondary">
+          <p className="mt-1 line-clamp-2 text-xs text-text-team">
             {notification.body}
           </p>
         ) : null}
-        <p className="mt-1 font-mono text-[10px] text-text-muted">
+        <p className="mt-1 font-mono text-[10px] text-text-zero">
           {formatDate(notification.created_at, {
             dateStyle: "medium",
             timeStyle: "short",
@@ -221,7 +221,7 @@ function NotificationListRow({
         variant="ghost"
         size="sm"
         onClick={onToggleRead}
-        className="shrink-0 text-text-muted opacity-0 group-hover:opacity-100"
+        className="shrink-0 text-text-zero opacity-0 group-hover:opacity-100"
       >
         <Check className="h-3 w-3" />
         {notification.is_read ? "Mark unread" : "Mark read"}

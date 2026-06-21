@@ -142,7 +142,7 @@ export function AdminChecklistsPanel({ initialItems, tiers: initialTiers }: Prop
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Tier tabs */}
-        <div className="flex items-center gap-1 rounded-md border border-border bg-navy-3/40 p-1">
+        <div className="flex items-center gap-1 rounded-md border border-border bg-surface-3/40 p-1">
           {tiers.map((t) => {
             const active = activeTierId === t.id;
             const count = items.filter((i) => i.tier_id === t.id).length;
@@ -154,7 +154,7 @@ export function AdminChecklistsPanel({ initialItems, tiers: initialTiers }: Prop
                 className={
                   active
                     ? "flex items-center gap-2 rounded-sm bg-cyan-dim px-3 py-1.5 text-xs font-semibold text-cyan"
-                    : "flex items-center gap-2 rounded-sm px-3 py-1.5 text-xs text-text-muted hover:text-text-primary"
+                    : "flex items-center gap-2 rounded-sm px-3 py-1.5 text-xs text-text-zero hover:text-text-cell"
                 }
               >
                 <span>
@@ -180,13 +180,13 @@ export function AdminChecklistsPanel({ initialItems, tiers: initialTiers }: Prop
                 key={item.id}
                 className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2"
               >
-                <span className="font-mono text-[10px] text-text-muted">
+                <span className="font-mono text-[10px] text-text-zero">
                   #{item.sort_order}
                 </span>
-                <span className="flex-1 text-sm text-text-primary">
+                <span className="flex-1 text-sm text-text-cell">
                   {item.label}
                 </span>
-                <div className="flex items-center gap-2 text-[11px] text-text-muted">
+                <div className="flex items-center gap-2 text-[11px] text-text-zero">
                   <span>Required</span>
                   <Switch
                     checked={item.is_required}
@@ -340,11 +340,11 @@ function TiersCard({
                 key={tier.id}
                 className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2"
               >
-                <span className="font-mono text-[10px] text-text-muted">
+                <span className="font-mono text-[10px] text-text-zero">
                   #{tier.sort_order}
                 </span>
                 <Badge variant="outline">{tier.name}</Badge>
-                <span className="flex-1 text-sm text-text-primary">
+                <span className="flex-1 text-sm text-text-cell">
                   {tier.label}
                 </span>
                 <Button
@@ -659,7 +659,7 @@ function ChecklistItemDialog({
                 </SelectContent>
               </Select>
               {isEdit ? (
-                <p className="text-xs text-text-muted">
+                <p className="text-xs text-text-zero">
                   Tier can&apos;t be changed after creation. Delete + recreate
                   if you need to move it.
                 </p>
@@ -681,10 +681,10 @@ function ChecklistItemDialog({
               />
             </div>
           </div>
-          <div className="flex items-center justify-between rounded-md border border-border bg-navy-3/40 p-3">
+          <div className="flex items-center justify-between rounded-md border border-border bg-surface-3/40 p-3">
             <div>
-              <p className="text-sm font-medium text-text-primary">Required</p>
-              <p className="text-xs text-text-muted">
+              <p className="text-sm font-medium text-text-cell">Required</p>
+              <p className="text-xs text-text-zero">
                 Required items block submission until checked. Optional items
                 are advisory only.
               </p>

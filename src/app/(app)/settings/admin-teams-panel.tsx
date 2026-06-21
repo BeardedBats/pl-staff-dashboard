@@ -143,12 +143,12 @@ export function AdminTeamsPanel({
                       className={`w-full rounded-sm border border-transparent px-3 py-2 text-left transition-colors ${
                         active
                           ? "border-cyan/30 bg-cyan-dim"
-                          : "hover:bg-navy-3"
+                          : "hover:bg-surface-3"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p
-                          className={`truncate text-sm font-medium ${active ? "text-cyan" : "text-text-primary"}`}
+                          className={`truncate text-sm font-medium ${active ? "text-cyan" : "text-text-cell"}`}
                         >
                           {team.name}
                         </p>
@@ -156,7 +156,7 @@ export function AdminTeamsPanel({
                           {team.site === "both" ? "PL+QB" : team.site.toUpperCase()}
                         </Badge>
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-text-muted">
+                      <p className="mt-0.5 truncate text-xs text-text-zero">
                         {team.manager_name} · {team.member_count}{" "}
                         {team.member_count === 1 ? "member" : "members"}
                       </p>
@@ -268,14 +268,14 @@ function TeamDetailPanel({
               {team.site === "both" ? "PL + QB" : team.site.toUpperCase()}
             </Badge>
             <span>
-              Managed by <span className="text-text-secondary">{team.manager_name}</span>
+              Managed by <span className="text-text-team">{team.manager_name}</span>
             </span>
             <span>
               · {team.member_count} {team.member_count === 1 ? "member" : "members"}
             </span>
           </CardDescription>
           {team.description ? (
-            <p className="mt-2 text-sm text-text-secondary">{team.description}</p>
+            <p className="mt-2 text-sm text-text-team">{team.description}</p>
           ) : null}
         </div>
         <Button
@@ -292,11 +292,11 @@ function TeamDetailPanel({
       <CardContent className="space-y-6">
         {/* Members */}
         <div>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-zero">
             Members
           </h4>
           {team.members.length === 0 ? (
-            <p className="italic text-text-muted">No members yet.</p>
+            <p className="italic text-text-zero">No members yet.</p>
           ) : (
             <ul className="divide-y divide-border rounded-md border border-border">
               {team.members.map((m) => (
@@ -311,10 +311,10 @@ function TeamDetailPanel({
                       size="sm"
                     />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-text-primary">
+                      <p className="truncate text-sm font-medium text-text-cell">
                         {m.display_name}
                       </p>
-                      <p className="truncate font-mono text-[10px] text-text-muted">
+                      <p className="truncate font-mono text-[10px] text-text-zero">
                         {m.email}
                       </p>
                     </div>
@@ -350,8 +350,8 @@ function TeamDetailPanel({
         </div>
 
         {/* Add member */}
-        <div className="rounded-md border border-dashed border-border bg-navy-3/30 p-3">
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+        <div className="rounded-md border border-dashed border-border bg-surface-3/30 p-3">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-zero">
             Add member
           </h4>
           <div className="flex flex-wrap items-center gap-2">
@@ -361,7 +361,7 @@ function TeamDetailPanel({
               </SelectTrigger>
               <SelectContent>
                 {nonMembers.length === 0 ? (
-                  <div className="px-2 py-1.5 text-xs text-text-muted">
+                  <div className="px-2 py-1.5 text-xs text-text-zero">
                     All staff are already on this team.
                   </div>
                 ) : (
@@ -373,7 +373,7 @@ function TeamDetailPanel({
                 )}
               </SelectContent>
             </Select>
-            <label className="flex items-center gap-2 text-sm text-text-secondary">
+            <label className="flex items-center gap-2 text-sm text-text-team">
               <Checkbox
                 checked={addAsPrimary}
                 onCheckedChange={(checked) => setAddAsPrimary(Boolean(checked))}
@@ -537,7 +537,7 @@ function CreateTeamDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {eligibleManagers.length === 0 ? (
-                    <div className="px-2 py-1.5 text-xs text-text-muted">
+                    <div className="px-2 py-1.5 text-xs text-text-zero">
                       No eligible managers found (need editor / manager / admin role).
                     </div>
                   ) : (

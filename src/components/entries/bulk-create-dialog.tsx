@@ -197,7 +197,7 @@ export function BulkCreateEntryDialog({
         {result ? (
           <div className="space-y-3">
             <div className="rounded-md border border-border bg-card/60 p-3 text-sm">
-              <p className="font-medium text-text-primary">
+              <p className="font-medium text-text-cell">
                 Created {result.ok} of {result.ok + result.failed} entries.
               </p>
               {result.failed > 0 ? (
@@ -205,7 +205,7 @@ export function BulkCreateEntryDialog({
                   <p className="text-destructive">
                     {result.failed} failed:
                   </p>
-                  <ul className="ml-4 list-disc text-text-muted">
+                  <ul className="ml-4 list-disc text-text-zero">
                     {result.errors.slice(0, 5).map((e, i) => (
                       <li key={i}>{e}</li>
                     ))}
@@ -221,7 +221,7 @@ export function BulkCreateEntryDialog({
           <>
             <div className="space-y-3">
               {/* Shared defaults */}
-              <div className="grid gap-3 rounded-md border border-border bg-navy-3/30 p-3 md:grid-cols-4">
+              <div className="grid gap-3 rounded-md border border-border bg-surface-3/30 p-3 md:grid-cols-4">
                 <div className="space-y-1">
                   <Label className="text-[10px] uppercase">Site</Label>
                   <Select
@@ -328,7 +328,7 @@ export function BulkCreateEntryDialog({
                       onClick={() => removeRow(r.uid)}
                       disabled={rows.length <= 1}
                       aria-label="Remove row"
-                      className="h-8 w-8 text-text-muted hover:text-destructive"
+                      className="h-8 w-8 text-text-zero hover:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -345,7 +345,7 @@ export function BulkCreateEntryDialog({
                     Add row
                   </Button>
                 ) : (
-                  <p className="text-center text-[10px] text-text-muted">
+                  <p className="text-center text-[10px] text-text-zero">
                     Max 25 entries per batch.
                   </p>
                 )}

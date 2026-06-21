@@ -28,13 +28,13 @@ export function EmptyState({
       )}
     >
       {icon ? (
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-navy-3 text-text-muted">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-surface-3 text-text-zero">
           {icon}
         </div>
       ) : null}
-      <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
+      <h3 className="text-sm font-semibold text-text-cell">{title}</h3>
       {description ? (
-        <p className="mt-1 max-w-md text-sm text-text-secondary">{description}</p>
+        <p className="mt-1 max-w-md text-sm text-text-team">{description}</p>
       ) : null}
       {action ? <div className="mt-4">{action}</div> : null}
     </div>

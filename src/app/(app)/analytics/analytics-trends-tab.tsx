@@ -136,7 +136,7 @@ export function AnalyticsTrendsTab({ query }: Props) {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={overview.daily}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="date" stroke="var(--color-text-muted)" fontSize={11} />
+                  <XAxis dataKey="date" stroke="var(--color-text-zero)" fontSize={11} />
                   <YAxis
                     yAxisId="left"
                     stroke="var(--color-cyan)"
@@ -201,7 +201,7 @@ export function AnalyticsTrendsTab({ query }: Props) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={tierData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="tier" stroke="var(--color-text-muted)" fontSize={11} />
+                  <XAxis dataKey="tier" stroke="var(--color-text-zero)" fontSize={11} />
                   <YAxis
                     stroke="var(--color-amber)"
                     fontSize={11}
@@ -240,7 +240,7 @@ export function AnalyticsTrendsTab({ query }: Props) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={tierData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="tier" stroke="var(--color-text-muted)" fontSize={11} />
+                  <XAxis dataKey="tier" stroke="var(--color-text-zero)" fontSize={11} />
                   <YAxis stroke="var(--color-cyan)" fontSize={11} />
                   <Tooltip
                     contentStyle={{
@@ -314,13 +314,13 @@ function PublishToPeakChart({ curve }: { curve: PublishToPeakPoint[] | null }) {
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           <XAxis
             dataKey="day"
-            stroke="var(--color-text-muted)"
+            stroke="var(--color-text-zero)"
             fontSize={11}
             label={{
               value: "Days since publish",
               position: "insideBottom",
               offset: -5,
-              fill: "var(--color-text-muted)",
+              fill: "var(--color-text-zero)",
               fontSize: 10,
             }}
           />
@@ -388,14 +388,14 @@ function DayOfWeekHeatmap({ heat }: { heat: DayOfWeekHeatPoint[] | null }) {
   // Helper: interpolate cyan opacity by relative intensity
   function cellStyle(pv: number): React.CSSProperties {
     if (pv === 0 || maxPv === 0) {
-      return { backgroundColor: "var(--color-navy-3)" };
+      return { backgroundColor: "var(--color-surface-3)" };
     }
     const t = pv / maxPv;
     // Min 0.1 so non-zero cells are visibly different from zero
     const opacity = 0.1 + t * 0.9;
     return {
       backgroundColor: `rgba(85, 232, 255, ${opacity.toFixed(3)})`,
-      color: t > 0.6 ? "var(--color-navy-1)" : "var(--color-text-secondary)",
+      color: t > 0.6 ? "var(--color-surface-1)" : "var(--color-text-team)",
     };
   }
 
@@ -403,7 +403,7 @@ function DayOfWeekHeatmap({ heat }: { heat: DayOfWeekHeatPoint[] | null }) {
     <div className="overflow-x-auto">
       <div className="min-w-[480px]">
         {/* Header row */}
-        <div className="grid grid-cols-[80px_repeat(7,_minmax(0,_1fr))] gap-1 text-[10px] font-mono uppercase tracking-wide text-text-muted">
+        <div className="grid grid-cols-[80px_repeat(7,_minmax(0,_1fr))] gap-1 text-[10px] font-mono uppercase tracking-wide text-text-zero">
           <div />
           {DOW_LABELS.map((d) => (
             <div key={d} className="px-1 py-0.5 text-center">
@@ -423,7 +423,7 @@ function DayOfWeekHeatmap({ heat }: { heat: DayOfWeekHeatPoint[] | null }) {
                 key={weekStart}
                 className="grid grid-cols-[80px_repeat(7,_minmax(0,_1fr))] gap-1"
               >
-                <div className="px-1 py-1.5 text-[10px] text-text-muted">
+                <div className="px-1 py-1.5 text-[10px] text-text-zero">
                   Wk of {label}
                 </div>
                 {Array.from({ length: 7 }).map((_, dow) => {

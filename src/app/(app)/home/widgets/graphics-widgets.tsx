@@ -30,12 +30,12 @@ function GraphicList({
         <li key={g.id}>
           <Link
             href={`/graphics?request=${g.id}`}
-            className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-xs hover:border-border hover:bg-navy-3/30"
+            className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-xs hover:border-border hover:bg-surface-3/30"
           >
             <span className="flex-1 truncate">
-              <span className="font-medium text-text-primary">{g.title}</span>
-              <span className="mx-1 text-text-muted">·</span>
-              <span className="text-text-secondary">{g.entry_title}</span>
+              <span className="font-medium text-text-cell">{g.title}</span>
+              <span className="mx-1 text-text-zero">·</span>
+              <span className="text-text-team">{g.entry_title}</span>
             </span>
             <Badge
               variant="outline"
@@ -47,7 +47,7 @@ function GraphicList({
             >
               {g.graphic_status}
             </Badge>
-            <span className="text-[10px] text-text-muted">
+            <span className="text-[10px] text-text-zero">
               {formatDate(g.created_at)}
             </span>
           </Link>

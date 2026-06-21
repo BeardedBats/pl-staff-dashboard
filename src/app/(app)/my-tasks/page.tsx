@@ -69,8 +69,8 @@ export default async function MyTasksPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-primary">My Tasks</h1>
-        <p className="mt-1 text-sm text-text-secondary">
+        <h1 className="text-2xl font-semibold text-text-cell">My Tasks</h1>
+        <p className="mt-1 text-sm text-text-team">
           Your court. Articles you&apos;re writing, edits you&apos;re owning,
           and upcoming deadlines.
         </p>
@@ -81,7 +81,7 @@ export default async function MyTasksPage() {
           {/* Writing */}
           <section>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+              <h2 className="flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                 <Pencil className="h-3 w-3" />
                 Your writing ({writing.entries.length})
               </h2>
@@ -106,7 +106,7 @@ export default async function MyTasksPage() {
           {/* Editing */}
           <section>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+              <h2 className="flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
                 <ClipboardEdit className="h-3 w-3" />
                 Your editing ({editing.entries.length})
               </h2>
@@ -151,7 +151,7 @@ export default async function MyTasksPage() {
             </CardHeader>
             <CardContent>
               {upcoming.length === 0 ? (
-                <p className="text-xs italic text-text-muted">
+                <p className="text-xs italic text-text-zero">
                   No scheduled tasks yet.
                 </p>
               ) : (
@@ -194,7 +194,7 @@ function TaskRow({
   return (
     <Link
       href={`/content?entry=${entry.id}`}
-      className="group block rounded-md border border-border bg-card p-3 transition-colors hover:border-navy-5 hover:bg-navy-3"
+      className="group block rounded-md border border-border bg-card p-3 transition-colors hover:border-surface-5 hover:bg-surface-3"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -202,7 +202,7 @@ function TaskRow({
             {entry.priority ? (
               <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber" />
             ) : null}
-            <h3 className="truncate text-sm font-medium text-text-primary">
+            <h3 className="truncate text-sm font-medium text-text-cell">
               {entry.title}
             </h3>
           </div>
@@ -215,7 +215,7 @@ function TaskRow({
               <ContentStatusBadge status={entry.content_status} />
             )}
             {entry.checklist_total > 0 ? (
-              <span className="font-mono text-[10px] text-text-muted">
+              <span className="font-mono text-[10px] text-text-zero">
                 {entry.checklist_completed}/{entry.checklist_total} checklist
               </span>
             ) : null}
@@ -229,7 +229,7 @@ function TaskRow({
                   ? "text-xs font-semibold text-destructive"
                   : dueSoon
                     ? "text-xs font-semibold text-amber"
-                    : "text-xs text-text-secondary"
+                    : "text-xs text-text-team"
               }
             >
               {formatDate(entry.publish_date, {
@@ -242,7 +242,7 @@ function TaskRow({
               })}
             </div>
           ) : (
-            <span className="text-xs italic text-text-muted">No date</span>
+            <span className="text-xs italic text-text-zero">No date</span>
           )}
           {overdue ? (
             <div className="mt-0.5 font-mono text-[9px] uppercase text-destructive">
@@ -274,10 +274,10 @@ function DeadlineItem({
     <li>
       <Link
         href={`/content?entry=${entry.id}`}
-        className="block rounded-sm px-2 py-1.5 hover:bg-navy-3"
+        className="block rounded-sm px-2 py-1.5 hover:bg-surface-3"
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-xs font-medium text-text-primary">
+          <span className="truncate text-xs font-medium text-text-cell">
             {entry.title}
           </span>
           <Badge variant="outline">{entry.tier.name}</Badge>
@@ -288,7 +288,7 @@ function DeadlineItem({
               ? "mt-0.5 font-mono text-[10px] uppercase text-destructive"
               : dueSoon
                 ? "mt-0.5 font-mono text-[10px] uppercase text-amber"
-                : "mt-0.5 font-mono text-[10px] text-text-muted"
+                : "mt-0.5 font-mono text-[10px] text-text-zero"
           }
         >
           {formatDate(entry.publish_date, {

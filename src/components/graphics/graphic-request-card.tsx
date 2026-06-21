@@ -181,15 +181,15 @@ export function GraphicRequestCard({
           "rounded-md border border-border bg-card transition-colors",
           compact ? "p-3" : "p-4",
           request.graphic_status === "flagged" && "border-destructive/40",
-          request.graphic_status === "submitted" && "border-success/30",
+          request.graphic_status === "submitted" && "border-green/30",
         )}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <ImageIcon className="h-3.5 w-3.5 shrink-0 text-text-muted" />
-              <h4 className="truncate text-sm font-medium text-text-primary">
+              <ImageIcon className="h-3.5 w-3.5 shrink-0 text-text-zero" />
+              <h4 className="truncate text-sm font-medium text-text-cell">
                 {request.title}
               </h4>
               {request.is_featured ? (
@@ -199,7 +199,7 @@ export function GraphicRequestCard({
             {showEntryLink ? (
               <Link
                 href={`/content?entry=${request.entry_id}`}
-                className="mt-0.5 truncate text-[11px] text-text-muted hover:text-cyan"
+                className="mt-0.5 truncate text-[11px] text-text-zero hover:text-cyan"
               >
                 for &ldquo;{request.entry_title}&rdquo;
               </Link>
@@ -210,7 +210,7 @@ export function GraphicRequestCard({
 
         {/* Description */}
         {request.description && !compact ? (
-          <p className="mt-2 line-clamp-2 text-xs text-text-secondary">
+          <p className="mt-2 line-clamp-2 text-xs text-text-team">
             {request.description}
           </p>
         ) : null}
@@ -235,7 +235,7 @@ export function GraphicRequestCard({
         ) : null}
 
         {/* Meta */}
-        <div className="mt-3 space-y-1 text-[11px] text-text-muted">
+        <div className="mt-3 space-y-1 text-[11px] text-text-zero">
           {request.urgency_date ? (
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
@@ -255,7 +255,7 @@ export function GraphicRequestCard({
                 avatarUrl={request.claimed_by_avatar}
                 size="xs"
               />
-              <span className="text-text-secondary">
+              <span className="text-text-team">
                 {request.claimed_by_name}
               </span>
             </div>

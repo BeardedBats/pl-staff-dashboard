@@ -31,8 +31,10 @@ const TabsTrigger = React.forwardRef<
       "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1 text-sm font-medium transition-colors",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       "disabled:pointer-events-none disabled:opacity-50",
-      "data-[state=active]:bg-cyan-dim data-[state=active]:text-cyan data-[state=active]:shadow-sm",
-      "hover:text-foreground",
+      // PLPD active tab — amber 700 + warm underline/glow (never cyan)
+      "data-[state=active]:bg-[rgba(255,194,119,0.08)] data-[state=active]:font-bold data-[state=active]:text-amber",
+      "data-[state=active]:shadow-[inset_0_-2px_0_0_var(--amber),0_0_10px_rgba(255,194,119,0.25)]",
+      "hover:text-text-cell",
       className,
     )}
     {...props}

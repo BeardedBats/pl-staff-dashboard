@@ -74,10 +74,10 @@ export function LoginForm() {
               disabled={isSubmitting}
               placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
             />
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-text-zero">
               Not your regular WordPress password. Create one under
               {" "}
-              <span className="font-mono text-text-secondary">
+              <span className="font-mono text-text-team">
                 Users → Profile → Application Passwords
               </span>{" "}
               in WordPress admin.

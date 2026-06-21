@@ -88,7 +88,7 @@ export function MySubmittedInFlightWidget({
     <WidgetShell
       title="Submitted — in editing"
       description="Your articles currently with an editor."
-      icon={<Hourglass className="h-4 w-4 text-text-muted" />}
+      icon={<Hourglass className="h-4 w-4 text-text-zero" />}
       count={entries.length}
     >
       <EntryList

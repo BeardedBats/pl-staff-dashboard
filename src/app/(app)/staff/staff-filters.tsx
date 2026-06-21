@@ -64,7 +64,7 @@ export function StaffFilters({
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3">
       <div className="relative min-w-[200px] flex-1">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-zero" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -131,7 +131,7 @@ export function StaffFilters({
           variant="ghost"
           size="sm"
           onClick={resetAll}
-          className="text-text-muted"
+          className="text-text-zero"
         >
           <X className="h-3.5 w-3.5" />
           Clear

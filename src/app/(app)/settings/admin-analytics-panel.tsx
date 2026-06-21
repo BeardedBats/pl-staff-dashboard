@@ -174,7 +174,7 @@ export function AdminAnalyticsPanel({
         </CardHeader>
         <CardContent className="space-y-4">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-            <dt className="text-text-muted">Configured</dt>
+            <dt className="text-text-zero">Configured</dt>
             <dd>
               {status.configured ? (
                 <Badge variant="outline" className="border-cyan/40 text-cyan">
@@ -186,7 +186,7 @@ export function AdminAnalyticsPanel({
                 </Badge>
               )}
             </dd>
-            <dt className="text-text-muted">Connected</dt>
+            <dt className="text-text-zero">Connected</dt>
             <dd>
               {status.connected ? (
                 <Badge variant="outline" className="border-cyan/40 text-cyan">
@@ -196,15 +196,15 @@ export function AdminAnalyticsPanel({
                 <Badge variant="outline">No</Badge>
               )}
             </dd>
-            <dt className="text-text-muted">Property ID</dt>
-            <dd className="text-text-primary">
-              {status.propertyId ?? <span className="text-text-muted">—</span>}
+            <dt className="text-text-zero">Property ID</dt>
+            <dd className="text-text-cell">
+              {status.propertyId ?? <span className="text-text-zero">—</span>}
             </dd>
-            <dt className="text-text-muted">Last synced</dt>
-            <dd className="text-text-primary">
+            <dt className="text-text-zero">Last synced</dt>
+            <dd className="text-text-cell">
               {status.lastSyncedAt
                 ? new Date(status.lastSyncedAt).toLocaleString()
-                : <span className="text-text-muted">never</span>}
+                : <span className="text-text-zero">never</span>}
             </dd>
           </dl>
 
@@ -266,7 +266,7 @@ export function AdminAnalyticsPanel({
               )}
             </div>
           ) : (
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-text-zero">
               Only Operations can connect or disconnect GA4.
             </p>
           )}
@@ -313,7 +313,7 @@ export function AdminAnalyticsPanel({
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-card text-[10px] uppercase tracking-wide text-text-muted">
+                <thead className="bg-card text-[10px] uppercase tracking-wide text-text-zero">
                   <tr className="border-b border-border">
                     <th className="px-3 py-2 text-left">File</th>
                     <th className="px-3 py-2 text-left">Range</th>
@@ -325,19 +325,19 @@ export function AdminAnalyticsPanel({
                 <tbody>
                   {uploads.map((u) => (
                     <tr key={u.id} className="border-b border-border/50">
-                      <td className="px-3 py-2 font-medium text-text-primary">
+                      <td className="px-3 py-2 font-medium text-text-cell">
                         {u.file_name}
                       </td>
-                      <td className="px-3 py-2 text-[11px] text-text-secondary">
+                      <td className="px-3 py-2 text-[11px] text-text-team">
                         {u.date_range_start} → {u.date_range_end}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">
                         {u.rows_imported.toLocaleString()}
                       </td>
-                      <td className="px-3 py-2 text-text-secondary">
+                      <td className="px-3 py-2 text-text-team">
                         {u.uploader_name}
                       </td>
-                      <td className="px-3 py-2 text-[11px] text-text-muted">
+                      <td className="px-3 py-2 text-[11px] text-text-zero">
                         {new Date(u.created_at).toLocaleString()}
                       </td>
                     </tr>
@@ -427,43 +427,43 @@ function Ga4BackfillSection({
   }
 
   return (
-    <div className="space-y-3 rounded-md border border-border bg-navy-3/30 p-3">
+    <div className="space-y-3 rounded-md border border-border bg-surface-3/30 p-3">
       <div className="flex items-center gap-2">
-        <History className="h-3.5 w-3.5 text-text-muted" />
-        <p className="text-sm font-medium text-text-primary">
+        <History className="h-3.5 w-3.5 text-text-zero" />
+        <p className="text-sm font-medium text-text-cell">
           Backfill GA4 data
         </p>
       </div>
-      <p className="text-xs text-text-muted">
+      <p className="text-xs text-text-zero">
         Pulls pageviews and sessions for a date range. Pair this with the
         historical article import so GA4 rows have entries to match against.
       </p>
       <div className="grid grid-cols-2 gap-3 text-xs">
         <label className="space-y-1">
-          <span className="block font-mono text-[10px] uppercase tracking-wider text-text-muted">
+          <span className="block font-mono text-[10px] uppercase tracking-wider text-text-zero">
             From
           </span>
-          <div className="flex items-center gap-1 rounded-sm border border-border bg-navy-2 px-2 py-1">
-            <CalendarIcon className="h-3 w-3 text-text-muted" />
+          <div className="flex items-center gap-1 rounded-sm border border-border bg-surface-2 px-2 py-1">
+            <CalendarIcon className="h-3 w-3 text-text-zero" />
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="flex-1 bg-transparent text-text-primary outline-none"
+              className="flex-1 bg-transparent text-text-cell outline-none"
             />
           </div>
         </label>
         <label className="space-y-1">
-          <span className="block font-mono text-[10px] uppercase tracking-wider text-text-muted">
+          <span className="block font-mono text-[10px] uppercase tracking-wider text-text-zero">
             To
           </span>
-          <div className="flex items-center gap-1 rounded-sm border border-border bg-navy-2 px-2 py-1">
-            <CalendarIcon className="h-3 w-3 text-text-muted" />
+          <div className="flex items-center gap-1 rounded-sm border border-border bg-surface-2 px-2 py-1">
+            <CalendarIcon className="h-3 w-3 text-text-zero" />
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="flex-1 bg-transparent text-text-primary outline-none"
+              className="flex-1 bg-transparent text-text-cell outline-none"
             />
           </div>
         </label>
@@ -482,17 +482,17 @@ function Ga4BackfillSection({
       </Button>
       {result ? (
         <div className="space-y-1">
-          <p className="text-xs text-text-secondary">
+          <p className="text-xs text-text-team">
             {result.dateFrom} → {result.dateTo}:{" "}
-            <span className="font-medium text-text-primary">
+            <span className="font-medium text-text-cell">
               {result.rowsUpserted.toLocaleString()}
             </span>{" "}
             rows upserted across{" "}
-            <span className="font-medium text-text-primary">
+            <span className="font-medium text-text-cell">
               {result.matchedArticles.toLocaleString()}
             </span>{" "}
             articles across{" "}
-            <span className="font-medium text-text-primary">
+            <span className="font-medium text-text-cell">
               {result.monthsProcessed}
             </span>{" "}
             months.
@@ -500,7 +500,7 @@ function Ga4BackfillSection({
           {result.errors.length > 0 ? (
             <div className="space-y-0.5">
               {result.errors.map((err, idx) => (
-                <p key={idx} className="text-[11px] text-danger">
+                <p key={idx} className="text-[11px] text-red">
                   {err}
                 </p>
               ))}

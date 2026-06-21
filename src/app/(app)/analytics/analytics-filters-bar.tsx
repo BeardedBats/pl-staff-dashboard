@@ -78,7 +78,7 @@ export function AnalyticsFiltersBar({
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-md border border-border bg-card/60 p-3">
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-zero">
           From
         </span>
         <Input
@@ -101,7 +101,7 @@ export function AnalyticsFiltersBar({
         />
       </div>
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-zero">
           To
         </span>
         <Input
@@ -128,27 +128,27 @@ export function AnalyticsFiltersBar({
         <button
           type="button"
           onClick={() => setPreset(7)}
-          className="h-8 rounded border border-border bg-navy-3/40 px-2 text-[11px] text-text-primary hover:bg-navy-3"
+          className="h-8 rounded border border-border bg-surface-3/40 px-2 text-[11px] text-text-cell hover:bg-surface-3"
         >
           7d
         </button>
         <button
           type="button"
           onClick={() => setPreset(30)}
-          className="h-8 rounded border border-border bg-navy-3/40 px-2 text-[11px] text-text-primary hover:bg-navy-3"
+          className="h-8 rounded border border-border bg-surface-3/40 px-2 text-[11px] text-text-cell hover:bg-surface-3"
         >
           30d
         </button>
         <button
           type="button"
           onClick={() => setPreset(90)}
-          className="h-8 rounded border border-border bg-navy-3/40 px-2 text-[11px] text-text-primary hover:bg-navy-3"
+          className="h-8 rounded border border-border bg-surface-3/40 px-2 text-[11px] text-text-cell hover:bg-surface-3"
         >
           90d
         </button>
       </div>
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-zero">
           Site
         </span>
         <Select
@@ -174,7 +174,7 @@ export function AnalyticsFiltersBar({
         </Select>
       </div>
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-zero">
           Tier
         </span>
         <Select
@@ -195,7 +195,7 @@ export function AnalyticsFiltersBar({
         </Select>
       </div>
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-zero">
           Category
         </span>
         <Select
@@ -216,7 +216,7 @@ export function AnalyticsFiltersBar({
         </Select>
       </div>
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-zero">
           Author
         </span>
         <Select

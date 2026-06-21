@@ -103,19 +103,19 @@ export function AnalyticsArticlesTab({ query }: Props) {
             className="rounded-lg border border-border bg-card p-3"
           >
             <div className="mb-2">
-              <div className="font-medium text-sm text-text-primary leading-snug">
+              <div className="font-medium text-sm text-text-cell leading-snug">
                 {r.title}
               </div>
-              <div className="text-[10px] text-text-muted mt-0.5">{r.authors}</div>
+              <div className="text-[10px] text-text-zero mt-0.5">{r.authors}</div>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="outline" className="text-[10px]">
                   {r.site.toUpperCase()}
                 </Badge>
                 {r.tier_name && (
-                  <span className="text-[10px] text-text-secondary">{r.tier_name}</span>
+                  <span className="text-[10px] text-text-team">{r.tier_name}</span>
                 )}
                 {r.publish_date && (
-                  <span className="text-[10px] text-text-muted">
+                  <span className="text-[10px] text-text-zero">
                     {new Date(r.publish_date).toLocaleDateString()}
                   </span>
                 )}
@@ -123,34 +123,34 @@ export function AnalyticsArticlesTab({ query }: Props) {
             </div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
               <div className="flex justify-between">
-                <span className="text-text-muted">Pageviews</span>
-                <span className="tabular-nums text-text-primary">
+                <span className="text-text-zero">Pageviews</span>
+                <span className="tabular-nums text-text-cell">
                   {r.pageviews.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-text-muted">Sessions</span>
-                <span className="tabular-nums text-text-primary">
+                <span className="text-text-zero">Sessions</span>
+                <span className="tabular-nums text-text-cell">
                   {r.sessions.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-text-muted">Revenue</span>
+                <span className="text-text-zero">Revenue</span>
                 <span className="tabular-nums font-medium text-amber">
                   ${r.earnings.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-text-muted">Page RPM</span>
-                <span className="tabular-nums text-text-secondary">
+                <span className="text-text-zero">Page RPM</span>
+                <span className="tabular-nums text-text-team">
                   ${r.page_rpm.toFixed(2)}
                 </span>
               </div>
             </div>
           </div>
         ))}
-        <div className="rounded-lg border border-border bg-navy-3/40 px-3 py-2 text-xs font-semibold flex justify-between">
-          <span className="text-text-muted">
+        <div className="rounded-lg border border-border bg-surface-3/40 px-3 py-2 text-xs font-semibold flex justify-between">
+          <span className="text-text-zero">
             {rows.length} article{rows.length === 1 ? "" : "s"}
           </span>
           <span className="tabular-nums text-amber">${totalEarnings.toFixed(2)}</span>
@@ -163,8 +163,8 @@ export function AnalyticsArticlesTab({ query }: Props) {
     <Card>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-card text-[10px] uppercase tracking-wide text-text-muted">
+          <table className="w-full font-data text-sm">
+            <thead className="plpd-thead sticky top-0 text-[12px] uppercase tracking-wide text-cyan-header">
               <tr className="border-b border-border">
                 <th className="px-3 py-2 text-left">Article</th>
                 <th className="px-3 py-2 text-left">Site</th>
@@ -206,19 +206,19 @@ export function AnalyticsArticlesTab({ query }: Props) {
               {sorted.map((r) => (
                 <tr
                   key={r.entry_id}
-                  className="border-b border-border/50 hover:bg-navy-3/20"
+                  className="border-b border-border/50 hover:bg-surface-3/20"
                 >
                   <td className="px-3 py-2">
-                    <div className="font-medium text-text-primary">{r.title}</div>
-                    <div className="text-[10px] text-text-muted">{r.authors}</div>
+                    <div className="font-medium text-text-cell">{r.title}</div>
+                    <div className="text-[10px] text-text-zero">{r.authors}</div>
                   </td>
                   <td className="px-3 py-2">
                     <Badge variant="outline" className="text-[10px]">
                       {r.site.toUpperCase()}
                     </Badge>
                   </td>
-                  <td className="px-3 py-2 text-text-secondary">{r.tier_name}</td>
-                  <td className="px-3 py-2 text-[11px] text-text-muted">
+                  <td className="px-3 py-2 text-text-team">{r.tier_name}</td>
+                  <td className="px-3 py-2 text-[11px] text-text-zero">
                     {r.publish_date
                       ? new Date(r.publish_date).toLocaleDateString()
                       : "—"}
@@ -229,7 +229,7 @@ export function AnalyticsArticlesTab({ query }: Props) {
                   <td className="px-3 py-2 text-right tabular-nums">
                     {r.sessions.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-text-secondary">
+                  <td className="px-3 py-2 text-right tabular-nums text-text-team">
                     {r.avg_time_on_page > 0
                       ? `${r.avg_time_on_page.toFixed(0)}s`
                       : "—"}
@@ -237,15 +237,15 @@ export function AnalyticsArticlesTab({ query }: Props) {
                   <td className="px-3 py-2 text-right tabular-nums font-medium text-amber">
                     ${r.earnings.toFixed(2)}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-text-secondary">
+                  <td className="px-3 py-2 text-right tabular-nums text-text-team">
                     ${r.page_rpm.toFixed(2)}
                   </td>
                 </tr>
               ))}
             </tbody>
-            <tfoot className="bg-navy-3/40 text-xs font-semibold">
+            <tfoot className="bg-surface-3/40 text-xs font-semibold">
               <tr>
-                <td colSpan={4} className="px-3 py-2 text-text-muted">
+                <td colSpan={4} className="px-3 py-2 text-text-zero">
                   Totals across {rows.length} article{rows.length === 1 ? "" : "s"}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">
@@ -284,7 +284,7 @@ function SortableTh({
         className={
           active
             ? "flex items-center gap-1 text-right text-cyan"
-            : "flex items-center gap-1 text-right text-text-muted hover:text-text-primary"
+            : "flex items-center gap-1 text-right text-text-zero hover:text-text-cell"
         }
       >
         {label}

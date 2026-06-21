@@ -36,8 +36,8 @@ export default async function AnalyticsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-text-primary">Analytics</h1>
-          <p className="mt-1 text-sm text-text-secondary">
+          <h1 className="text-2xl font-semibold text-text-cell">Analytics</h1>
+          <p className="mt-1 text-sm text-text-team">
             Pageviews from GA4 and revenue from Raptive, joined to every entry
             in the pipeline. Filter by date, site, tier, category, or author.
           </p>

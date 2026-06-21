@@ -97,12 +97,12 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
       <CardContent className="space-y-6">
         {/* Claims */}
         <section>
-          <h4 className="mb-2 flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+          <h4 className="mb-2 flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
             <Hand className="h-3 w-3" />
             Claim requests ({claims.length})
           </h4>
           {claims.length === 0 ? (
-            <p className="rounded-md border border-dashed border-border bg-card/50 p-4 text-center text-xs italic text-text-muted">
+            <p className="rounded-md border border-dashed border-border bg-card/50 p-4 text-center text-xs italic text-text-zero">
               No pending claim requests.
             </p>
           ) : (
@@ -110,7 +110,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
               {claims.map((claim) => (
                 <li
                   key={claim.id}
-                  className="flex items-center gap-3 rounded-md border border-border bg-navy-3/40 p-3"
+                  className="flex items-center gap-3 rounded-md border border-border bg-surface-3/40 p-3"
                 >
                   <UserAvatar
                     displayName={claim.claimer_name}
@@ -118,7 +118,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
                     size="sm"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-text-primary">
+                    <p className="text-sm text-text-cell">
                       <span className="font-medium">{claim.claimer_name}</span>{" "}
                       wants to write{" "}
                       <Link
@@ -128,7 +128,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
                         {claim.entry_title}
                       </Link>
                     </p>
-                    <p className="mt-0.5 text-[11px] text-text-muted">
+                    <p className="mt-0.5 text-[11px] text-text-zero">
                       {formatDate(claim.created_at, {
                         dateStyle: "medium",
                         timeStyle: "short",
@@ -166,12 +166,12 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
 
         {/* Archive requests */}
         <section>
-          <h4 className="mb-2 flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted">
+          <h4 className="mb-2 flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
             <Archive className="h-3 w-3" />
             Archive requests ({archives.length})
           </h4>
           {archives.length === 0 ? (
-            <p className="rounded-md border border-dashed border-border bg-card/50 p-4 text-center text-xs italic text-text-muted">
+            <p className="rounded-md border border-dashed border-border bg-card/50 p-4 text-center text-xs italic text-text-zero">
               No pending archive requests.
             </p>
           ) : (
@@ -179,7 +179,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
               {archives.map((req) => (
                 <li
                   key={req.id}
-                  className="rounded-md border border-border bg-navy-3/40 p-3"
+                  className="rounded-md border border-border bg-surface-3/40 p-3"
                 >
                   <div className="flex items-center gap-3">
                     <UserAvatar
@@ -188,16 +188,16 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
                       size="sm"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-text-primary">
+                      <p className="text-sm text-text-cell">
                         <span className="font-medium">
                           {req.requester_name}
                         </span>{" "}
                         wants to archive{" "}
-                        <span className="font-medium text-text-primary">
+                        <span className="font-medium text-text-cell">
                           {req.entry_title}
                         </span>
                       </p>
-                      <p className="mt-0.5 text-[11px] text-text-muted">
+                      <p className="mt-0.5 text-[11px] text-text-zero">
                         {formatDate(req.created_at, {
                           dateStyle: "medium",
                           timeStyle: "short",
@@ -227,7 +227,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
                       Approve
                     </Button>
                   </div>
-                  <p className="mt-2 rounded-sm border border-border bg-card px-3 py-2 text-xs text-text-secondary">
+                  <p className="mt-2 rounded-sm border border-border bg-card px-3 py-2 text-xs text-text-team">
                     &ldquo;{req.reason}&rdquo;
                   </p>
                 </li>

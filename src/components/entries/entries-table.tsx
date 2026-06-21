@@ -344,7 +344,7 @@ export function EntriesTable({
       {/* Bulk actions bar */}
       {selectedCount > 0 ? (
         <div className="flex items-center gap-3 rounded-md border border-cyan/30 bg-cyan-dim/20 px-4 py-2 text-xs">
-          <span className="font-medium text-text-primary">
+          <span className="font-medium text-text-cell">
             {selectedCount} selected
           </span>
           <Button
@@ -444,7 +444,7 @@ export function EntriesTable({
         <div className="space-y-2">
           {loading && entries.length === 0 ? (
             <div className="flex justify-center py-10">
-              <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+              <Loader2 className="h-5 w-5 animate-spin text-text-zero" />
             </div>
           ) : entries.length === 0 ? (
             <EmptyState
@@ -474,7 +474,7 @@ export function EntriesTable({
                     type="button"
                     className={cn(
                       "w-full rounded-lg border border-border bg-card p-3 text-left transition-colors",
-                      isExpanded && "border-cyan/40 bg-navy-3/50",
+                      isExpanded && "border-cyan/40 bg-surface-3/50",
                       entry.content_status === "writer_needed" && "border-amber/30",
                     )}
                     onClick={() => setExpandedId(isExpanded ? null : entry.id)}
@@ -484,7 +484,7 @@ export function EntriesTable({
                         <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber" />
                       ) : null}
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-text-primary">
+                        <p className="truncate text-sm font-medium text-text-cell">
                           {entry.title}
                         </p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -498,15 +498,15 @@ export function EntriesTable({
                           </Badge>
                         </div>
                         {entry.publish_date ? (
-                          <p className="mt-1 text-[10px] text-text-muted">
+                          <p className="mt-1 text-[10px] text-text-zero">
                             {formatDate(entry.publish_date, { dateStyle: "medium" })}
                           </p>
                         ) : null}
                       </div>
                       {isExpanded ? (
-                        <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
+                        <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-text-zero" />
                       ) : (
-                        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
+                        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-text-zero" />
                       )}
                     </div>
                     {entry.authors.length > 0 ? (
@@ -519,14 +519,14 @@ export function EntriesTable({
                             size="xs"
                           />
                         ))}
-                        <span className="text-[10px] text-text-muted">
+                        <span className="text-[10px] text-text-zero">
                           {entry.authors.map((a) => a.display_name).join(", ")}
                         </span>
                       </div>
                     ) : null}
                   </button>
                   {isExpanded ? (
-                    <div className="rounded-lg border border-border bg-navy-2/50 p-0">
+                    <div className="rounded-lg border border-border bg-surface-2/50 p-0">
                       <EntryDetailPanel
                         entryId={entry.id}
                         onClose={() => setExpandedId(null)}
@@ -545,10 +545,11 @@ export function EntriesTable({
       ) : (
         <div
           ref={tableContainerRef}
-          className="max-h-[70vh] overflow-auto rounded-lg border border-border bg-card"
+          className="max-h-[70vh] overflow-auto rounded-[10px] border border-border-table bg-transparent shadow-[0_0_0_1px_rgba(7,9,18,0.3),0_18px_30px_rgba(0,0,0,0.28)]"
         >
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 z-10 border-b border-border bg-navy-3">
+          {/* font-data → Work Sans for table DATA; badges keep DM Sans */}
+          <table className="w-full font-data text-sm">
+            <thead className="plpd-thead sticky top-0 z-10 border-b border-border-thead">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   <th className="w-8 px-2 py-2">
@@ -567,7 +568,7 @@ export function EntriesTable({
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
-                      className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-muted"
+                      className="px-3 py-2 text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header"
                     >
                       {header.isPlaceholder
                         ? null
@@ -580,12 +581,12 @@ export function EntriesTable({
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border-row">
               {loading && entries.length === 0 ? (
                 <tr>
                   <td
                     colSpan={table.getVisibleFlatColumns().length + 2}
-                    className="px-4 py-10 text-center text-text-muted"
+                    className="px-4 py-10 text-center text-text-zero"
                   >
                     <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                   </td>
@@ -617,18 +618,21 @@ export function EntriesTable({
                   </td>
                 </tr>
               ) : (
-                allRows.map((row) => {
+                allRows.map((row, idx) => {
                   const isExpanded = expandedId === row.id;
                   const entry = row.original;
                   return (
                     <React.Fragment key={row.id}>
                       <tr
                         className={cn(
-                          "cursor-pointer transition-colors hover:bg-navy-3/50",
-                          isExpanded && "bg-navy-3/50",
+                          // PLPD translucent zebra (mesh breathes through) + hover lift.
+                          // Row-state variants use dedicated fills, NEVER opacity.
+                          "cursor-pointer transition-colors hover:bg-[rgba(85,232,255,0.06)]",
+                          idx % 2 === 0 ? "bg-row-a" : "bg-row-b",
+                          isExpanded && "bg-[rgba(85,232,255,0.06)]",
                           entry.content_status === "writer_needed" &&
-                            "bg-amber-dim/30",
-                          row.getIsSelected() && "bg-cyan-dim/20",
+                            "bg-[rgba(255,194,119,0.08)]",
+                          row.getIsSelected() && "bg-[rgba(85,232,255,0.1)]",
                         )}
                         onClick={() =>
                           setExpandedId(isExpanded ? null : row.id)
@@ -646,7 +650,7 @@ export function EntriesTable({
                             aria-label={`Select ${entry.title}`}
                           />
                         </td>
-                        <td className="w-8 px-2 py-3 align-top text-text-muted">
+                        <td className="w-8 px-2 py-3 align-top text-text-zero">
                           {isExpanded ? (
                             <ChevronDown className="h-4 w-4" />
                           ) : (
@@ -669,7 +673,7 @@ export function EntriesTable({
                         <tr>
                           <td
                             colSpan={table.getVisibleFlatColumns().length + 2}
-                            className="bg-navy-2/50 p-0"
+                            className="bg-surface-2/50 p-0"
                           >
                             <EntryDetailPanel
                               entryId={entry.id}
@@ -691,7 +695,7 @@ export function EntriesTable({
         </div>
       )}
 
-      <div className="flex items-center justify-between text-xs text-text-muted">
+      <div className="flex items-center justify-between text-xs text-text-zero">
         <span>
           {loading ? (
             <span className="inline-flex items-center gap-1.5">
@@ -766,7 +770,7 @@ function EntriesToolbar({
       {/* Row 1 — search + create */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-zero" />
           <Input
             value={filters.search}
             onChange={(e) => update("search", e.target.value)}
@@ -798,7 +802,7 @@ function EntriesToolbar({
                 </Button>
               </div>
               {views.length === 0 ? (
-                <p className="text-xs italic text-text-muted">
+                <p className="text-xs italic text-text-zero">
                   No saved views yet. Set some filters, then click &quot;Save
                   current&quot; to remember this configuration.
                 </p>
@@ -807,7 +811,7 @@ function EntriesToolbar({
                   {views.map((view) => (
                     <li
                       key={view.id}
-                      className="flex items-center justify-between gap-1 rounded-sm px-2 py-1 hover:bg-navy-3"
+                      className="flex items-center justify-between gap-1 rounded-sm px-2 py-1 hover:bg-surface-3"
                     >
                       <button
                         type="button"
@@ -999,7 +1003,7 @@ function EntriesToolbar({
           </SelectContent>
         </Select>
 
-        <label className="flex items-center gap-2 text-xs text-text-secondary">
+        <label className="flex items-center gap-2 text-xs text-text-team">
           <Checkbox
             checked={filters.includeArchived}
             onCheckedChange={(checked) =>
@@ -1037,10 +1041,10 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
               {entry.priority ? (
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber" />
               ) : null}
-              <span className="font-medium text-text-primary">{entry.title}</span>
+              <span className="font-medium text-text-cell">{entry.title}</span>
             </div>
             {entry.description ? (
-              <p className="mt-0.5 line-clamp-1 text-xs text-text-muted">
+              <p className="mt-0.5 line-clamp-1 text-xs text-text-zero">
                 {entry.description}
               </p>
             ) : null}
@@ -1054,7 +1058,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       cell: ({ row }) => {
         const authors = row.original.authors;
         if (authors.length === 0) {
-          return <span className="text-xs italic text-text-muted">—</span>;
+          return <span className="text-xs italic text-text-zero">—</span>;
         }
         return (
           <div className="flex items-center gap-1.5">
@@ -1067,7 +1071,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
               />
             ))}
             {authors.length > 3 ? (
-              <span className="text-[10px] text-text-muted">
+              <span className="text-[10px] text-text-zero">
                 +{authors.length - 3}
               </span>
             ) : null}
@@ -1093,7 +1097,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
         const agg = aggregateGraphicStatus(statuses);
         if (!agg) {
           return (
-            <span className="inline-flex items-center gap-1 text-xs text-text-muted">
+            <span className="inline-flex items-center gap-1 text-xs text-text-zero">
               <ImageIcon className="h-3 w-3" />—
             </span>
           );
@@ -1125,21 +1129,21 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       cell: ({ row }) => {
         const { publish_date, publish_date_precision } = row.original;
         if (!publish_date) {
-          return <span className="text-xs italic text-text-muted">Unscheduled</span>;
+          return <span className="text-xs italic text-text-zero">Unscheduled</span>;
         }
         const showTime =
           publish_date_precision === "exact" ||
           publish_date_precision === "loose_time";
         return (
           <div className="text-xs">
-            <div className="font-medium text-text-primary">
+            <div className="font-medium text-text-cell">
               {formatDate(publish_date, {
                 dateStyle: "medium",
                 timeStyle: showTime ? "short" : undefined,
               })}
             </div>
             {publish_date_precision !== "exact" ? (
-              <div className="font-mono text-[10px] uppercase text-text-muted">
+              <div className="font-mono text-[10px] uppercase text-text-zero">
                 {precisionLabel(publish_date_precision)}
               </div>
             ) : null}
@@ -1154,7 +1158,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
         row.original.category ? (
           <span className="text-xs">{row.original.category.name}</span>
         ) : (
-          <span className="text-xs italic text-text-muted">—</span>
+          <span className="text-xs italic text-text-zero">—</span>
         ),
     },
     {
@@ -1163,17 +1167,17 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       cell: ({ row }) => {
         const { checklist_total, checklist_completed } = row.original;
         if (checklist_total === 0) {
-          return <span className="text-xs italic text-text-muted">—</span>;
+          return <span className="text-xs italic text-text-zero">—</span>;
         }
         const pct = Math.round(
           (checklist_completed / checklist_total) * 100,
         );
         return (
           <div className="flex items-center gap-1.5 text-xs">
-            <span className="font-mono tabular-nums text-text-secondary">
+            <span className="font-mono tabular-nums text-text-team">
               {checklist_completed}/{checklist_total}
             </span>
-            <div className="h-1 w-10 overflow-hidden rounded-full bg-navy-4">
+            <div className="h-1 w-10 overflow-hidden rounded-full bg-surface-4">
               <div
                 className="h-full bg-cyan"
                 style={{ width: `${pct}%` }}
@@ -1187,7 +1191,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       id: "word_count",
       header: () => "Words",
       cell: ({ row }) => (
-        <span className="font-mono text-xs tabular-nums text-text-secondary">
+        <span className="font-mono text-xs tabular-nums text-text-team">
           {row.original.word_count > 0
             ? row.original.word_count.toLocaleString()
             : "—"}
@@ -1198,7 +1202,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       id: "updated_at",
       header: () => "Updated",
       cell: ({ row }) => (
-        <span className="text-xs text-text-muted">
+        <span className="text-xs text-text-zero">
           {formatDate(row.original.updated_at, { dateStyle: "short" })}
         </span>
       ),

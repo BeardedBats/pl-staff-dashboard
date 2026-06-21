@@ -41,7 +41,7 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
     <aside
       data-tour="sidebar"
       className={cn(
-        "flex h-screen flex-col border-r border-border bg-card transition-all duration-300 ease-in-out",
+        "plpd-sidebar flex h-screen flex-col border-r border-border-sidebar transition-all duration-300 ease-in-out",
         collapsed ? "w-16" : "w-60",
       )}
     >
@@ -53,13 +53,13 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
         )}
       >
         {collapsed ? (
-          <span className="font-mono text-sm font-bold text-cyan">PL</span>
+          <span className="font-data text-sm font-bold tracking-[0.3px] text-cyan">PL</span>
         ) : (
           <Link href="/home" className="flex items-center gap-2">
-            <span className="font-mono text-sm font-bold uppercase tracking-wider text-cyan">
+            <span className="font-data text-sm font-bold uppercase tracking-[0.3px] text-cyan">
               Pitcher List
             </span>
-            <span className="rounded-sm border border-border bg-navy-3 px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-text-secondary">
+            <span className="rounded-[6px] border border-border bg-surface-3 px-1.5 py-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.05em] text-text-team">
               Staff
             </span>
           </Link>
@@ -86,7 +86,7 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
       {/* Collapse toggle */}
       <div className="flex h-12 shrink-0 items-center justify-end px-2">
         {!collapsed && (
-          <span className="flex-1 truncate px-2 text-xs text-text-muted">
+          <span className="flex-1 truncate px-2 text-xs text-text-zero">
             {userDisplayName}
           </span>
         )}
@@ -124,14 +124,13 @@ function NavLink({
       title={collapsed ? item.label : undefined}
       className={cn(
         "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-150",
-        "hover:bg-secondary hover:text-foreground",
         isActive
-          ? "bg-cyan-dim text-cyan shadow-[inset_0_0_0_1px_rgba(85,232,255,0.15),0_0_8px_rgba(85,232,255,0.08)]"
-          : "text-text-secondary",
+          ? "plpd-nav-active text-white"
+          : "text-text-nav hover:bg-[rgba(255,255,255,0.04)] hover:text-text-cell",
         collapsed && "justify-center px-2",
       )}
     >
-      <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-cyan")} />
+      <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-white")} />
       {!collapsed && <span className="truncate">{item.label}</span>}
     </Link>
   );

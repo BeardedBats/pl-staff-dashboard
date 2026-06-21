@@ -1,3 +1,4 @@
+import type * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import type {
   ContentStatus,
@@ -5,19 +6,23 @@ import type {
   GraphicStatus,
 } from "@/lib/entries/queries";
 
+// PLPD status → semantic mapping (approved artifact §4 + addendum Q1).
+// gray/zero · gold #f5b950 · blue #3da9f5 · green #34d399 · violet #a78bfa ·
+// val-pos #7fc8a9 · red #f4707c. CONFLICT-equivalent states (polishing,
+// flagged) are always visible — never hidden.
+
+type BadgeVariant = React.ComponentProps<typeof Badge>["variant"];
+
 // --------------------------------------------------------------------------
 // Content track
 // --------------------------------------------------------------------------
 
-const CONTENT_VARIANT: Record<
-  ContentStatus,
-  "outline" | "amber" | "cyan" | "success" | "danger"
-> = {
-  writer_needed: "outline",
-  claim_requested: "amber",
-  claimed: "cyan",
-  submitted: "success",
-  polishing: "danger",
+const CONTENT_VARIANT: Record<ContentStatus, BadgeVariant> = {
+  writer_needed: "zero",
+  claim_requested: "gold",
+  claimed: "blue",
+  submitted: "green",
+  polishing: "violet",
 };
 
 const CONTENT_LABEL: Record<ContentStatus, string> = {
@@ -36,15 +41,12 @@ export function ContentStatusBadge({ status }: { status: ContentStatus }) {
 // Editor track
 // --------------------------------------------------------------------------
 
-const EDITOR_VARIANT: Record<
-  EditorStatus,
-  "outline" | "amber" | "cyan" | "success"
-> = {
-  none: "outline",
-  ready_for_edit: "amber",
-  edited: "cyan",
-  scheduled: "success",
-  published: "success",
+const EDITOR_VARIANT: Record<EditorStatus, BadgeVariant> = {
+  none: "zero",
+  ready_for_edit: "gold",
+  edited: "blue",
+  scheduled: "valpos", // done, pending go-live (Q1)
+  published: "green", // LIVE (Q1)
 };
 
 const EDITOR_LABEL: Record<EditorStatus, string> = {
@@ -57,7 +59,7 @@ const EDITOR_LABEL: Record<EditorStatus, string> = {
 
 export function EditorStatusBadge({ status }: { status: EditorStatus }) {
   if (status === "none") {
-    return <Badge variant="outline">—</Badge>;
+    return <Badge variant="zero">—</Badge>;
   }
   return <Badge variant={EDITOR_VARIANT[status]}>{EDITOR_LABEL[status]}</Badge>;
 }
@@ -66,14 +68,11 @@ export function EditorStatusBadge({ status }: { status: EditorStatus }) {
 // Graphic track (rolled up to an aggregate summary across multiple requests)
 // --------------------------------------------------------------------------
 
-const GRAPHIC_VARIANT: Record<
-  GraphicStatus,
-  "outline" | "amber" | "cyan" | "success" | "danger"
-> = {
-  needed: "outline",
-  claimed: "cyan",
-  submitted: "success",
-  flagged: "danger",
+const GRAPHIC_VARIANT: Record<GraphicStatus, BadgeVariant> = {
+  needed: "zero",
+  claimed: "blue",
+  submitted: "green",
+  flagged: "red",
 };
 
 const GRAPHIC_LABEL: Record<GraphicStatus, string> = {

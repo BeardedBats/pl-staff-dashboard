@@ -174,7 +174,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
               avatarUrl={profile.avatar_url}
               size="xl"
             />
-            <p className="text-sm text-text-muted">
+            <p className="text-sm text-text-zero">
               Avatar comes from your WordPress account&apos;s Gravatar. To change
               it, update your Gravatar at{" "}
               <a
@@ -236,7 +236,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
             <div className="space-y-1.5">
               <Label htmlFor="twitter_handle">Twitter / X</Label>
               <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-muted">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-zero">
                   @
                 </span>
                 <Input
@@ -266,7 +266,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
               onChange={(e) => update("discord_id", e.target.value)}
               placeholder="123456789012345678"
             />
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-text-zero">
               Your numeric Discord user ID (not your username). Needed for DM
               notifications. Enable Developer Mode in Discord, right-click your
               name, and &quot;Copy User ID&quot;.
@@ -301,12 +301,12 @@ export function ProfileForm({ profile }: ProfileFormProps) {
             </Select>
           </div>
 
-          <div className="flex items-center justify-between rounded-md border border-border bg-navy-3 p-3">
+          <div className="flex items-center justify-between rounded-md border border-border bg-surface-3 p-3">
             <div>
-              <p className="text-sm font-medium text-text-primary">
+              <p className="text-sm font-medium text-text-cell">
                 Auto-approve my WordPress drafts
               </p>
-              <p className="text-xs text-text-muted">
+              <p className="text-xs text-text-zero">
                 Skip the manual approval step when a draft you started appears
                 via the WP sync.
               </p>
@@ -326,7 +326,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         {error ? (
           <p className="text-sm text-destructive">{error}</p>
         ) : status === "saved" ? (
-          <p className="flex items-center gap-1.5 text-sm text-success">
+          <p className="flex items-center gap-1.5 text-sm text-green">
             <Check className="h-3.5 w-3.5" />
             Saved
           </p>

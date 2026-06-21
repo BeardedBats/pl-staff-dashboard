@@ -31,8 +31,8 @@ export default async function CalendarPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-primary">Calendar</h1>
-        <p className="mt-1 text-sm text-text-secondary">
+        <h1 className="text-2xl font-semibold text-text-cell">Calendar</h1>
+        <p className="mt-1 text-sm text-text-team">
           Publishing schedule across Pitcher List and QB List. Color-coded by
           tier.
         </p>

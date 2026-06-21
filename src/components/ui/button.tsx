@@ -8,18 +8,19 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-[0_0_12px_rgba(85,232,255,0.25)] active:bg-primary/80 active:scale-[0.98]",
+        // PLPD Import construction (4 layers) — brand-blue primary
+        default: "plpd-btn-import font-bold active:scale-[0.98]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-navy-4 border border-border",
+          "bg-secondary text-secondary-foreground hover:bg-surface-4 border border-border",
         outline:
-          "border border-border bg-transparent text-foreground hover:bg-secondary",
-        ghost: "bg-transparent text-foreground hover:bg-secondary",
+          "border border-border bg-transparent text-foreground hover:bg-[rgba(255,255,255,0.04)]",
+        ghost:
+          "bg-transparent text-foreground hover:bg-[rgba(255,255,255,0.04)]",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        link: "text-primary underline-offset-4 hover:underline",
-        amber:
-          "bg-accent text-accent-foreground hover:bg-accent/90 active:bg-accent/80",
+        link: "text-cyan underline-offset-4 hover:underline",
+        // Warm CTA — same Import construction, amber gradient
+        amber: "plpd-btn-cta font-bold active:scale-[0.98]",
       },
       size: {
         default: "h-9 px-4 text-sm",

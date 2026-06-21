@@ -130,7 +130,7 @@ export function CreateGraphicRequestDialog({
               value={urgencyInput}
               onChange={(e) => setUrgencyInput(e.target.value)}
             />
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-text-zero">
               When this graphic is needed. Shown to the graphics team so they
               can prioritize.
             </p>
