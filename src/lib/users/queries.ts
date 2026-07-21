@@ -24,7 +24,6 @@ export type StaffUserSummary = {
   can_publish: boolean;
   onboarding_completed: boolean;
   auto_approve_drafts: boolean;
-  discord_id: string | null;
   last_wp_sync: string | null;
   created_at: string;
   roles: AppRole[];
@@ -77,7 +76,7 @@ export async function listUsers(filters: ListUsersFilters = {}): Promise<ListUse
   let query = supabase
     .from("users")
     .select(
-      "id, wp_user_id, wp_site, email, display_name, avatar_url, bio, twitter_handle, bluesky_handle, timezone, theme, can_publish, onboarding_completed, auto_approve_drafts, discord_id, last_wp_sync, created_at",
+      "id, wp_user_id, wp_site, email, display_name, avatar_url, bio, twitter_handle, bluesky_handle, timezone, theme, can_publish, onboarding_completed, auto_approve_drafts, last_wp_sync, created_at",
       { count: "exact" },
     )
     .order("display_name", { ascending: true });
@@ -180,7 +179,6 @@ export async function listUsers(filters: ListUsersFilters = {}): Promise<ListUse
       can_publish: Boolean(u.can_publish),
       onboarding_completed: Boolean(u.onboarding_completed),
       auto_approve_drafts: Boolean(u.auto_approve_drafts),
-      discord_id: (u.discord_id as string | null) ?? null,
       last_wp_sync: (u.last_wp_sync as string | null) ?? null,
       created_at: u.created_at as string,
       roles: Array.from(new Set(roleList.map((r) => r.role))),
@@ -212,7 +210,7 @@ export async function getUserById(id: string): Promise<StaffUserSummary | null> 
   const { data, error } = await supabase
     .from("users")
     .select(
-      "id, wp_user_id, wp_site, email, display_name, avatar_url, bio, twitter_handle, bluesky_handle, timezone, theme, can_publish, onboarding_completed, auto_approve_drafts, discord_id, last_wp_sync, created_at",
+      "id, wp_user_id, wp_site, email, display_name, avatar_url, bio, twitter_handle, bluesky_handle, timezone, theme, can_publish, onboarding_completed, auto_approve_drafts, last_wp_sync, created_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -271,7 +269,6 @@ export async function getUserById(id: string): Promise<StaffUserSummary | null> 
     can_publish: Boolean(data.can_publish),
     onboarding_completed: Boolean(data.onboarding_completed),
     auto_approve_drafts: Boolean(data.auto_approve_drafts),
-    discord_id: (data.discord_id as string | null) ?? null,
     last_wp_sync: (data.last_wp_sync as string | null) ?? null,
     created_at: data.created_at as string,
     roles: Array.from(new Set(roleList.map((r) => r.role))),

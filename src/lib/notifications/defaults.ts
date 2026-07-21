@@ -31,8 +31,6 @@ export type NotificationEventType = (typeof NOTIFICATION_EVENT_TYPES)[number];
 
 export type ChannelPrefs = {
   in_app_enabled: boolean;
-  discord_enabled: boolean;
-  email_enabled: boolean;
 };
 
 // --------------------------------------------------------------------------
@@ -42,80 +40,62 @@ export type ChannelPrefs = {
 // about. Users can override in /settings → Notifications.
 //
 // Defaults follow Nick's "mentioned users + direct action targets" rule:
-//  - Targeted events (mention, claim_resolved, sent_to_polishing, graphic_flagged)
-//    all channels ON by default.
-//  - Broadcast-ish events (new_claimable, content_submitted, graphic_requested)
-//    in-app ON, email + discord OFF by default (too noisy otherwise).
-//  - Admin-level events (archive_requested, priority_flagged, unclaimed_slot,
-//    deadline_approaching) all channels ON for admin+ / EIC / managers.
+// The dashboard currently supports in-app delivery only. External channels
+// are intentionally absent until a real adapter and operational ownership
+// exist, so preferences can never claim a message was sent elsewhere.
 // --------------------------------------------------------------------------
 
-const DIRECT_ALWAYS: ChannelPrefs = {
-  in_app_enabled: true,
-  discord_enabled: true,
-  email_enabled: true,
-};
-
-const BROADCAST_IN_APP: ChannelPrefs = {
-  in_app_enabled: true,
-  discord_enabled: false,
-  email_enabled: false,
-};
-
-const OFF: ChannelPrefs = {
-  in_app_enabled: false,
-  discord_enabled: false,
-  email_enabled: false,
-};
+const ON: ChannelPrefs = { in_app_enabled: true };
+const OFF: ChannelPrefs = { in_app_enabled: false };
 
 type DefaultsMatrix = Partial<Record<NotificationEventType, ChannelPrefs>>;
 
 const WRITER_DEFAULTS: DefaultsMatrix = {
-  new_claimable: BROADCAST_IN_APP,
-  claim_resolved: DIRECT_ALWAYS,
-  sent_to_polishing: DIRECT_ALWAYS,
-  mention: DIRECT_ALWAYS,
-  entry_scheduled: BROADCAST_IN_APP,
-  entry_published: BROADCAST_IN_APP,
-  priority_flagged: BROADCAST_IN_APP,
+  new_claimable: ON,
+  claim_resolved: ON,
+  sent_to_polishing: ON,
+  mention: ON,
+  entry_scheduled: ON,
+  entry_published: ON,
+  priority_flagged: ON,
 };
 
 const EDITOR_DEFAULTS: DefaultsMatrix = {
   ...WRITER_DEFAULTS,
-  content_submitted: BROADCAST_IN_APP,
-  claim_requested: BROADCAST_IN_APP,
-  deadline_approaching: BROADCAST_IN_APP,
+  content_submitted: ON,
+  claim_requested: ON,
+  deadline_approaching: ON,
 };
 
 const GRAPHICS_DEFAULTS: DefaultsMatrix = {
-  graphic_requested: DIRECT_ALWAYS,
-  graphic_flagged: DIRECT_ALWAYS,
-  mention: DIRECT_ALWAYS,
+  graphic_requested: ON,
+  graphic_flagged: ON,
+  mention: ON,
 };
 
 const MANAGER_DEFAULTS: DefaultsMatrix = {
   ...EDITOR_DEFAULTS,
-  claim_requested: DIRECT_ALWAYS, // managers need to resolve these
-  archive_requested: DIRECT_ALWAYS,
-  unclaimed_slot: BROADCAST_IN_APP,
+  claim_requested: ON,
+  archive_requested: ON,
+  unclaimed_slot: ON,
 };
 
 const ADMIN_DEFAULTS: DefaultsMatrix = {
-  new_claimable: BROADCAST_IN_APP,
-  claim_requested: DIRECT_ALWAYS,
-  claim_resolved: BROADCAST_IN_APP,
-  content_submitted: BROADCAST_IN_APP,
-  sent_to_polishing: BROADCAST_IN_APP,
-  graphic_requested: BROADCAST_IN_APP,
-  graphic_submitted: BROADCAST_IN_APP,
-  graphic_flagged: BROADCAST_IN_APP,
-  deadline_approaching: BROADCAST_IN_APP,
-  entry_scheduled: BROADCAST_IN_APP,
-  entry_published: BROADCAST_IN_APP,
-  mention: DIRECT_ALWAYS,
-  archive_requested: DIRECT_ALWAYS,
-  unclaimed_slot: BROADCAST_IN_APP,
-  priority_flagged: DIRECT_ALWAYS,
+  new_claimable: ON,
+  claim_requested: ON,
+  claim_resolved: ON,
+  content_submitted: ON,
+  sent_to_polishing: ON,
+  graphic_requested: ON,
+  graphic_submitted: ON,
+  graphic_flagged: ON,
+  deadline_approaching: ON,
+  entry_scheduled: ON,
+  entry_published: ON,
+  mention: ON,
+  archive_requested: ON,
+  unclaimed_slot: ON,
+  priority_flagged: ON,
 };
 
 const ROLE_DEFAULTS: Record<AppRole, DefaultsMatrix> = {
@@ -144,8 +124,7 @@ const FLOOR_IN_APP: Partial<Record<NotificationEventType, true>> = {
 
 /**
  * Merge the defaults for every role a user holds.
- * "Any role says ON" → that channel is ON. This means elevated roles
- * always strictly add capabilities.
+ * "Any role says ON" means the in-app event is enabled.
  *
  * A floor is applied at the end: direct-targeted events always have
  * in_app_enabled = true regardless of whether any role explicitly enabled
@@ -170,8 +149,6 @@ export function buildDefaultPreferences(
       if (!rolePref) continue;
       merged[type] = {
         in_app_enabled: merged[type].in_app_enabled || rolePref.in_app_enabled,
-        discord_enabled: merged[type].discord_enabled || rolePref.discord_enabled,
-        email_enabled: merged[type].email_enabled || rolePref.email_enabled,
       };
     }
   }

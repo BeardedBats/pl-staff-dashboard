@@ -14,8 +14,8 @@ import type { AppRole, AppSite, CurrentUser } from "@/lib/auth/current-user";
  *   - how to phrase the title + body
  *
  * Callers elsewhere (comments, claims, status-transitions, graphics) just
- * invoke the appropriate trigger and move on. All delivery / preference
- * resolution / channel dispatch lives underneath.
+ * invoke the appropriate trigger and move on. In-app preference resolution
+ * and durable dispatch live underneath.
  *
  * All triggers are best-effort — they never throw or block the transition
  * that fired them. Delivery errors get logged and the caller proceeds.
@@ -174,7 +174,6 @@ export async function triggerGraphicRequested(
         type: "graphic_requested",
         title: `New graphic request: "${requestTitle}"`,
         body: `For "${entryTitle}". ${actor.display_name} is asking.`,
-        actionPath: "/graphics",
       },
     );
   } catch (err) {
@@ -229,7 +228,6 @@ export async function triggerGraphicFlagged(
         type: "graphic_flagged",
         title: `Graphic "${requestTitle}" was flagged`,
         body: `${actor.display_name} on "${entryTitle}": ${reason.slice(0, 200)}`,
-        actionPath: "/graphics",
       },
     );
   } catch (err) {

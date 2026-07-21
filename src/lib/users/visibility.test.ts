@@ -41,7 +41,6 @@ function target(id: string, site: AppSite): StaffUserSummary {
     can_publish: true,
     onboarding_completed: false,
     auto_approve_drafts: true,
-    discord_id: "private-discord-id",
     last_wp_sync: null,
     created_at: "2026-07-21T00:00:00.000Z",
     roles: ["writer"],
@@ -58,7 +57,6 @@ describe("staff HTTP visibility", () => {
       viewer("outsider", [{ role: "writer", site: "pl" }]),
     );
     expect(result).not.toHaveProperty("email");
-    expect(result).not.toHaveProperty("discord_id");
     expect(result).not.toHaveProperty("timezone");
     expect(result).not.toHaveProperty("can_publish");
   });

@@ -3,13 +3,13 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET search_path = public, extensions;
 
-SELECT plan(41);
+SELECT plan(40);
 
-INSERT INTO users (id, wp_user_id, wp_site, email, display_name, discord_id)
+INSERT INTO users (id, wp_user_id, wp_site, email, display_name)
 VALUES
-  ('10000000-0000-0000-0000-000000000001', 101, 'pl', 'owner@example.test', 'Owner', '111111'),
-  ('10000000-0000-0000-0000-000000000002', 102, 'pl', 'second@example.test', 'Second', '222222'),
-  ('10000000-0000-0000-0000-000000000003', 103, 'qb', NULL, 'Placeholder', NULL);
+  ('10000000-0000-0000-0000-000000000001', 101, 'pl', 'owner@example.test', 'Owner'),
+  ('10000000-0000-0000-0000-000000000002', 102, 'pl', 'second@example.test', 'Second'),
+  ('10000000-0000-0000-0000-000000000003', 103, 'qb', NULL, 'Placeholder');
 
 SELECT throws_ok(
   $$INSERT INTO users (wp_user_id, wp_site, email, display_name) VALUES (104, 'pl', 'UPPER@example.test', 'Upper')$$,
@@ -22,10 +22,6 @@ SELECT throws_ok(
 SELECT throws_ok(
   $$INSERT INTO users (wp_user_id, wp_site, email, display_name) VALUES (101, 'pl', 'identity@example.test', 'Duplicate identity')$$,
   '23505', NULL, 'WordPress identity is unique per site'
-);
-SELECT throws_ok(
-  $$UPDATE users SET discord_id = '111111' WHERE id = '10000000-0000-0000-0000-000000000002'$$,
-  '23505', NULL, 'Discord identity is unique'
 );
 SELECT lives_ok(
   $$INSERT INTO users (wp_user_id, wp_site, email, display_name) VALUES (106, 'qb', NULL, 'Null email')$$,

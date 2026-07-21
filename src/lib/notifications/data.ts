@@ -2,12 +2,6 @@ import "server-only";
 
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { env } from "@/lib/env";
-import {
-  formatDiscordBody,
-  sendDiscordDM,
-  sendEmail,
-} from "./delivery";
 import {
   buildDefaultPreferences,
   NOTIFICATION_EVENT_TYPES,
@@ -28,8 +22,6 @@ export type NotificationRow = {
   title: string;
   body: string | null;
   is_read: boolean;
-  discord_sent: boolean;
-  email_sent: boolean;
   created_at: string;
 };
 
@@ -37,8 +29,6 @@ export type NotificationPreferenceRow = {
   id: string;
   user_id: string;
   event_type: NotificationEventType;
-  discord_enabled: boolean;
-  email_enabled: boolean;
   in_app_enabled: boolean;
 };
 
@@ -52,7 +42,6 @@ type DispatchInput = {
   type: NotificationEventType;
   title: string;
   body: string | null;
-  actionPath?: string;
   dedupeKey?: string;
 };
 
@@ -64,11 +53,7 @@ export type DispatchResult = { ok: true; deduplicated: boolean } | { ok: false }
  * Steps:
  *   1. Load the user's preference row for this event type (fall back to
  *      the role-based default if no explicit row exists).
- *   2. If in_app is enabled, insert a row into `notifications`.
- *   3. If discord is enabled AND we have their discord_id, call the
- *      Discord stub.
- *   4. If email is enabled AND we have their email, call the Resend stub.
- *   5. Flip the discord_sent / email_sent flags on the row as applicable.
+ *   2. If in-app delivery is enabled, insert a row into `notifications`.
  *
  * Never throws — delivery failures are logged and silently absorbed. The
  * caller continues with the rest of its work.
@@ -78,10 +63,10 @@ export async function dispatchNotification(
 ): Promise<DispatchResult> {
   const supabase = getSupabaseAdmin();
 
-  // 1. Load the recipient's profile + prefs.
+  // 1. Confirm the recipient exists and load their role-based preference.
   const { data: user } = await supabase
     .from("users")
-    .select("id, email, display_name, discord_id")
+    .select("id")
     .eq("id", input.userId)
     .maybeSingle();
   if (!user) return { ok: false };
@@ -93,85 +78,34 @@ export async function dispatchNotification(
   const roles = ((roleRows ?? []) as Array<{ role: AppRole }>).map((r) => r.role);
 
   const prefs = await resolvePreferencesForUser(input.userId, roles, input.type);
-  if (!prefs.in_app_enabled && !prefs.discord_enabled && !prefs.email_enabled) {
+  if (!prefs.in_app_enabled) {
     return { ok: true, deduplicated: false };
   }
 
-  // 2. In-app insert.
-  let notificationId: string | null = null;
-  if (prefs.in_app_enabled) {
-    const payload = {
-      user_id: input.userId,
-      entry_id: input.entryId,
-      type: input.type,
-      title: input.title,
-      body: input.body,
-      is_read: false,
-      dedupe_key: input.dedupeKey ?? null,
-    };
-    const { data: inserted, error: insertError } = input.dedupeKey
-      ? await supabase
-          .from("notifications")
-          .upsert(payload, {
-            onConflict: "user_id,dedupe_key",
-            ignoreDuplicates: true,
-          })
-          .select("id")
-          .maybeSingle()
-      : await supabase.from("notifications").insert(payload).select("id").single();
-    if (insertError) return { ok: false };
-    if (input.dedupeKey && !inserted) {
-      return { ok: true, deduplicated: true };
-    }
-    notificationId = (inserted?.id as string | null) ?? null;
-  }
-
-  const actionUrl = buildActionUrl(input.entryId, input.actionPath);
-
-  // 3. Discord DM.
-  let discordSent = false;
-  if (prefs.discord_enabled && user.discord_id) {
-    const result = await sendDiscordDM({
-      recipientDiscordId: user.discord_id as string,
-      recipientName: user.display_name as string,
-      title: input.title,
-      body: formatDiscordBody(input.title, input.body, actionUrl),
-      actionUrl,
-    });
-    discordSent = result.ok;
-  }
-
-  // 4. Email.
-  let emailSent = false;
-  if (prefs.email_enabled && user.email) {
-    const result = await sendEmail({
-      recipientEmail: user.email as string,
-      recipientName: user.display_name as string,
-      subject: input.title,
-      bodyMarkdown: input.body ?? input.title,
-      actionUrl,
-    });
-    emailSent = result.ok;
-  }
-
-  // 5. Flip flags on the row we inserted (if any).
-  if (notificationId && (discordSent || emailSent)) {
-    await supabase
-      .from("notifications")
-      .update({
-        discord_sent: discordSent,
-        email_sent: emailSent,
-      })
-      .eq("id", notificationId);
+  const payload = {
+    user_id: input.userId,
+    entry_id: input.entryId,
+    type: input.type,
+    title: input.title,
+    body: input.body,
+    is_read: false,
+    dedupe_key: input.dedupeKey ?? null,
+  };
+  const { data: inserted, error: insertError } = input.dedupeKey
+    ? await supabase
+        .from("notifications")
+        .upsert(payload, {
+          onConflict: "user_id,dedupe_key",
+          ignoreDuplicates: true,
+        })
+        .select("id")
+        .maybeSingle()
+    : await supabase.from("notifications").insert(payload).select("id").single();
+  if (insertError) return { ok: false };
+  if (input.dedupeKey && !inserted) {
+    return { ok: true, deduplicated: true };
   }
   return { ok: true, deduplicated: false };
-}
-
-function buildActionUrl(entryId: string | null, actionPath?: string): string {
-  const base = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
-  if (actionPath) return `${base}${actionPath}`;
-  if (entryId) return `${base}/content?entry=${entryId}`;
-  return `${base}/home`;
 }
 
 /**
@@ -207,7 +141,7 @@ export async function resolvePreferencesForUser(
 
   const { data: row } = await supabase
     .from("notification_preferences")
-    .select("in_app_enabled, discord_enabled, email_enabled")
+    .select("in_app_enabled")
     .eq("user_id", userId)
     .eq("event_type", eventType)
     .maybeSingle();
@@ -215,8 +149,6 @@ export async function resolvePreferencesForUser(
   if (row) {
     return {
       in_app_enabled: Boolean(row.in_app_enabled),
-      discord_enabled: Boolean(row.discord_enabled),
-      email_enabled: Boolean(row.email_enabled),
     };
   }
 
@@ -245,7 +177,7 @@ export async function listNotificationsForUser(
   let query = supabase
     .from("notifications")
     .select(
-      "id, user_id, entry_id, type, title, body, is_read, discord_sent, email_sent, created_at",
+      "id, user_id, entry_id, type, title, body, is_read, created_at",
     )
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
@@ -310,20 +242,16 @@ export async function getPreferencesForUser(
   const supabase = getSupabaseAdmin();
   const { data } = await supabase
     .from("notification_preferences")
-    .select("event_type, in_app_enabled, discord_enabled, email_enabled")
+    .select("event_type, in_app_enabled")
     .eq("user_id", userId);
 
   const stored = new Map<string, ChannelPrefs>();
   for (const row of (data ?? []) as Array<{
     event_type: string;
     in_app_enabled: boolean;
-    discord_enabled: boolean;
-    email_enabled: boolean;
   }>) {
     stored.set(row.event_type, {
       in_app_enabled: Boolean(row.in_app_enabled),
-      discord_enabled: Boolean(row.discord_enabled),
-      email_enabled: Boolean(row.email_enabled),
     });
   }
 
@@ -343,19 +271,15 @@ export const updatePreferencesSchema = z.object({
     z.object({
       event_type: z.enum(NOTIFICATION_EVENT_TYPES),
       in_app_enabled: z.boolean(),
-      discord_enabled: z.boolean(),
-      email_enabled: z.boolean(),
-    }),
+    }).strict(),
   ),
-});
+}).strict();
 
 export async function setPreferencesForUser(
   userId: string,
   prefs: Array<{
     event_type: NotificationEventType;
     in_app_enabled: boolean;
-    discord_enabled: boolean;
-    email_enabled: boolean;
   }>,
 ): Promise<boolean> {
   const supabase = getSupabaseAdmin();
@@ -374,8 +298,6 @@ export async function setPreferencesForUser(
     user_id: userId,
     event_type: p.event_type,
     in_app_enabled: p.in_app_enabled,
-    discord_enabled: p.discord_enabled,
-    email_enabled: p.email_enabled,
   }));
 
   const { error } = await supabase

@@ -34,7 +34,6 @@ export function sanitizeUserForViewer(
   return {
     ...directoryFields,
     email: target.email,
-    discord_id: target.discord_id,
     timezone: target.timezone,
     theme: target.theme,
     can_publish: target.can_publish,

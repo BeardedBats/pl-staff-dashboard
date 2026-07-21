@@ -24,7 +24,7 @@ type RouteContext = { params: Promise<{ id: string }> };
  *
  * Field visibility depends on the viewer:
  *   - Everyone sees display_name, avatar, bio, roles, teams, socials.
- *   - Only the user themselves + Admin+ sees email, discord_id, timezone,
+ *   - Only the user themselves + Admin+ sees email, timezone,
  *     notification/auto-approve preferences, sensitive flags.
  */
 export async function GET(_request: Request, context: RouteContext) {
