@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import type { TablesInsert, TablesUpdate } from "@/types/database";
 
 // --------------------------------------------------------------------------
 // Types
@@ -25,8 +26,8 @@ export type SavedViewRecord = {
 
 export const createViewSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  filters: z.record(z.string(), z.unknown()).optional().default({}),
-  sort: z.record(z.string(), z.unknown()).optional().default({}),
+  filters: z.record(z.string(), z.json()).optional().default({}),
+  sort: z.record(z.string(), z.json()).optional().default({}),
   columns: z.array(z.string()).optional().default([]),
   grouping: z.string().nullable().optional(),
   is_default: z.boolean().optional().default(false),
@@ -92,17 +93,19 @@ export async function createView(
       .eq("is_default", true);
   }
 
+  const payload: TablesInsert<"saved_table_views"> = {
+    user_id: userId,
+    name: input.name,
+    filters: input.filters,
+    sort: input.sort,
+    columns: input.columns,
+    grouping: input.grouping ?? null,
+    is_default: input.is_default,
+  };
+
   const { data, error } = await supabase
     .from("saved_table_views")
-    .insert({
-      user_id: userId,
-      name: input.name,
-      filters: input.filters,
-      sort: input.sort,
-      columns: input.columns,
-      grouping: input.grouping ?? null,
-      is_default: input.is_default,
-    })
+    .insert(payload)
     .select("id")
     .single();
 
@@ -125,9 +128,10 @@ export async function updateView(
       .eq("is_default", true);
   }
 
+  const updates: TablesUpdate<"saved_table_views"> = input;
   const { error } = await supabase
     .from("saved_table_views")
-    .update(input)
+    .update(updates)
     .eq("id", id)
     .eq("user_id", userId);
 

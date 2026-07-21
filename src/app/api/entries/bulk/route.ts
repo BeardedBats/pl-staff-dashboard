@@ -9,6 +9,7 @@ import {
 } from "@/lib/auth/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
+import type { TablesUpdate } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
   const supabase = getSupabaseAdmin();
 
   // Build the update payload and audit annotations up front.
-  let updatePayload: Record<string, unknown>;
+  let updatePayload: TablesUpdate<"entries">;
   let auditAction: "archive" | "field_edit";
   let auditField: string;
   let auditOld: string;
