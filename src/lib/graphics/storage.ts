@@ -29,6 +29,11 @@ export const ALLOWED_MIME_TYPES = new Set([
   "image/gif",
 ]);
 
+export function normalizeSignedUrlTtl(ttl: number): number {
+  if (!Number.isFinite(ttl)) return SIGNED_URL_TTL_SECONDS;
+  return Math.min(SIGNED_URL_TTL_SECONDS, Math.max(1, Math.floor(ttl)));
+}
+
 // --------------------------------------------------------------------------
 // Validation
 // --------------------------------------------------------------------------
@@ -97,12 +102,6 @@ export function buildStoragePath(entryId: string, fileName: string): string {
 
 export type UploadedFile = {
   storagePath: string;
-  /**
-   * Signed URL valid for SIGNED_URL_TTL_SECONDS. The bucket is private,
-   * so this URL is the only way to read the object — and it expires.
-   * Read-paths should always regenerate, not trust persisted URLs.
-   */
-  signedUrl: string;
   fileName: string;
   fileSize: number;
   mimeType: string;
@@ -110,7 +109,7 @@ export type UploadedFile = {
 
 /**
  * Upload a file buffer to the `graphics` bucket.
- * Returns the storage path + resolved public URL.
+ * Returns durable storage metadata. Authorized read paths sign on demand.
  */
 export async function uploadGraphicFile(
   entryId: string,
@@ -139,20 +138,10 @@ export async function uploadGraphicFile(
     return { ok: false, error: "Storage upload failed" };
   }
 
-  // Return a signed URL so the upload response can preview immediately.
-  const { data: signed, error: signError } = await supabase.storage
-    .from(GRAPHICS_BUCKET)
-    .createSignedUrl(storagePath, SIGNED_URL_TTL_SECONDS);
-
-  if (signError || !signed) {
-    return { ok: false, error: "Failed to create a graphic preview URL" };
-  }
-
   return {
     ok: true,
     file: {
       storagePath,
-      signedUrl: signed.signedUrl,
       fileName: cleanName,
       fileSize: data.byteLength,
       mimeType,
@@ -177,7 +166,7 @@ export async function getSignedGraphicUrl(
   const supabase = getSupabaseAdmin();
   const { data } = await supabase.storage
     .from(GRAPHICS_BUCKET)
-    .createSignedUrl(storagePath, ttl);
+    .createSignedUrl(storagePath, normalizeSignedUrlTtl(ttl));
   return data?.signedUrl ?? null;
 }
 
@@ -196,7 +185,7 @@ export async function getSignedGraphicUrls(
   const supabase = getSupabaseAdmin();
   const { data } = await supabase.storage
     .from(GRAPHICS_BUCKET)
-    .createSignedUrls(valid, ttl);
+    .createSignedUrls(valid, normalizeSignedUrlTtl(ttl));
 
   if (!data) return out;
   for (const entry of data) {
