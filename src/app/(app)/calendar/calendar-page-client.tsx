@@ -31,9 +31,9 @@ type CalendarPageClientProps = {
  * against each tier background.
  */
 const TIER_COLOR: Record<string, { bg: string; text: string }> = {
-  S: { bg: "var(--amber)", text: "#13152A" },
-  A: { bg: "var(--cyan)", text: "#13152A" },
-  B: { bg: "var(--violet)", text: "#13152A" },
+  S: { bg: "var(--amber)", text: "var(--plpd-on-bright)" },
+  A: { bg: "var(--cyan)", text: "var(--plpd-on-bright)" },
+  B: { bg: "var(--violet)", text: "var(--plpd-on-bright)" },
   C: { bg: "var(--surface-4)", text: "var(--text-cell)" },
 };
 

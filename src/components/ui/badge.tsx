@@ -15,7 +15,7 @@ const badgeVariants = cva(
         neutral: "border-border bg-surface-3 text-text-team",
         outline: "border-border bg-transparent text-text-team",
         // gray / zero — writer identity, "none"/"needed" empty states
-        zero: "border-[rgba(164,170,202,0.35)] bg-[rgba(164,170,202,0.10)] text-text-zero",
+        zero: "border-[var(--plpd-border-zero)] bg-[var(--plpd-fill-zero)] text-text-zero",
         // brand
         cyan: "border-cyan/50 bg-cyan/10 text-cyan",
         cyanHeader: "border-cyan-header/50 bg-cyan-header/10 text-cyan-header",

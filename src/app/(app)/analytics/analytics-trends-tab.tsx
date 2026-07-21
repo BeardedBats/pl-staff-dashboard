@@ -386,15 +386,17 @@ function DayOfWeekHeatmap({ heat }: { heat: DayOfWeekHeatPoint[] | null }) {
   );
 
   // Helper: interpolate cyan opacity by relative intensity
-  function cellStyle(pv: number): React.CSSProperties {
+  function cellStyle(
+    pv: number,
+  ): React.CSSProperties & { "--plpd-heat-opacity"?: string } {
     if (pv === 0 || maxPv === 0) {
-      return { backgroundColor: "var(--color-surface-3)" };
+      return {};
     }
     const t = pv / maxPv;
     // Min 0.1 so non-zero cells are visibly different from zero
     const opacity = 0.1 + t * 0.9;
     return {
-      backgroundColor: `rgba(85, 232, 255, ${opacity.toFixed(3)})`,
+      "--plpd-heat-opacity": opacity.toFixed(3),
       color: t > 0.6 ? "var(--color-surface-1)" : "var(--color-text-team)",
     };
   }
@@ -431,7 +433,8 @@ function DayOfWeekHeatmap({ heat }: { heat: DayOfWeekHeatPoint[] | null }) {
                   return (
                     <div
                       key={dow}
-                      className="flex h-7 items-center justify-center rounded text-[10px] tabular-nums"
+                      className="plpd-heat-cell flex h-7 items-center justify-center rounded text-[10px] tabular-nums"
+                      data-has-value={pv > 0 && maxPv > 0}
                       style={cellStyle(pv)}
                       title={`${DOW_LABELS[dow]}: ${pv.toLocaleString()} pageviews`}
                     >

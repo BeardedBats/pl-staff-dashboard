@@ -49,10 +49,10 @@ export function OnboardingTour({ enabled }: Props) {
       options={{
         // Hardcoded because Joyride renders in a portal outside .dark —
         // CSS vars won't resolve. See globals.css for portal overrides.
-        primaryColor: "#55e8ff",
-        backgroundColor: "#181A2C",
-        textColor: "#d4dae6",
-        overlayColor: "rgba(15, 20, 32, 0.75)",
+        primaryColor: "var(--cyan)",
+        backgroundColor: "var(--surface-2)",
+        textColor: "var(--text-cell)",
+        overlayColor: "var(--plpd-joyride-overlay)",
         zIndex: 10000,
         showProgress: true,
         skipBeacon: true,

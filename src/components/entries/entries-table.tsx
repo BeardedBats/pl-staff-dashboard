@@ -587,7 +587,7 @@ export function EntriesTable({
       ) : (
         <div
           ref={tableContainerRef}
-          className="max-h-[70vh] overflow-auto rounded-[10px] border border-border-table bg-transparent shadow-[0_0_0_1px_rgba(7,9,18,0.3),0_18px_30px_rgba(0,0,0,0.28)]"
+          className="plpd-panel-frame max-h-[70vh] overflow-auto rounded-[10px] border border-border-table bg-transparent"
         >
           {/* font-data → Work Sans for table DATA; badges keep DM Sans */}
           <table className="w-full font-data text-sm">
@@ -669,12 +669,12 @@ export function EntriesTable({
                         className={cn(
                           // PLPD translucent zebra (mesh breathes through) + hover lift.
                           // Row-state variants use dedicated fills, NEVER opacity.
-                          "cursor-pointer transition-colors hover:bg-[rgba(85,232,255,0.06)]",
+                          "cursor-pointer transition-colors hover:bg-[var(--plpd-fill-row-hover)]",
                           idx % 2 === 0 ? "bg-row-a" : "bg-row-b",
-                          isExpanded && "bg-[rgba(85,232,255,0.06)]",
+                          isExpanded && "bg-[var(--plpd-fill-row-hover)]",
                           entry.content_status === "writer_needed" &&
-                            "bg-[rgba(255,194,119,0.08)]",
-                          row.getIsSelected() && "bg-[rgba(85,232,255,0.1)]",
+                            "bg-[var(--plpd-fill-row-priority)]",
+                          row.getIsSelected() && "bg-[var(--plpd-fill-row-selected)]",
                         )}
                         onClick={() =>
                           setExpandedId(isExpanded ? null : row.id)

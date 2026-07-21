@@ -183,7 +183,7 @@ export function Header({
                         "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
                         active
                           ? "plpd-nav-active text-white"
-                          : "text-text-nav hover:bg-[rgba(255,255,255,0.04)] hover:text-text-cell",
+                          : "plpd-hover-surface text-text-nav hover:text-text-cell",
                       )}
                     >
                       <Icon className={cn("h-4 w-4 shrink-0", active && "text-white")} />

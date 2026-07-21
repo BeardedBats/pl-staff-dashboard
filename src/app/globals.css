@@ -70,6 +70,135 @@
   --cyan-dim: #55e8ff18;
   --amber-dim: #ffc27718;
 
+  /* ---- PLPD COMPOSITION TOKENS ------------------------------
+     Exact reusable values extracted from the authority file. These name the
+     guide's layout, type, gradient, shadow, interaction, and state roles so
+     components never have to restate source literals. Application-only roles
+     in this section are explicitly labeled derived. */
+  --plpd-white: #fff;
+  --plpd-on-bright: #13152A;
+  --plpd-text-meta: rgba(192, 196, 216, 0.72);
+  --plpd-text-nav-icon: rgba(203, 215, 253, 0.6);
+
+  --plpd-fill-nav-hover: rgba(255, 255, 255, 0.04);
+  --plpd-fill-row-hover: rgba(85, 232, 255, 0.06);
+  --plpd-fill-row-best: rgba(85, 232, 255, 0.05);
+  --plpd-fill-row-il: rgba(28, 20, 38, 0.32);
+  --plpd-text-row-il-position: rgba(255, 140, 140, 0.75);
+  --plpd-fill-panel: rgba(33, 36, 58, 0.35);
+  --plpd-fill-state: rgba(33, 36, 58, 0.4);
+  --plpd-fill-code: rgba(15, 17, 32, 0.6);
+  --plpd-border-input-focus: rgba(157, 244, 255, 0.35);
+  --plpd-scrollbar: rgba(85, 232, 255, 0.15);
+
+  /* Derived dashboard interaction roles; not PLPD source claims. */
+  --plpd-fill-row-selected: rgba(85, 232, 255, 0.1);
+  --plpd-fill-row-priority: rgba(255, 194, 119, 0.08);
+  --plpd-fill-zero: rgba(164, 170, 202, 0.1);
+  --plpd-border-zero: rgba(164, 170, 202, 0.35);
+  --plpd-scrollbar-hover: rgba(85, 232, 255, 0.28);
+  --plpd-joyride-overlay: rgba(19, 21, 42, 0.78);
+
+  --plpd-gradient-sidebar: linear-gradient(
+    90deg,
+    rgba(137, 138, 148, 0.05) 0%,
+    rgba(129, 131, 141, 0.05) 100%
+  );
+  --plpd-gradient-action-blue: linear-gradient(149.7deg, #245297 0%, #0a2e63 100%);
+  --plpd-gradient-action-amber: linear-gradient(149.7deg, #975100 0%, #cd8532 100%);
+  --plpd-gradient-nav-active: linear-gradient(152.3deg, #975100 0%, #cd8532 100%);
+  --plpd-gradient-dropdown: linear-gradient(144.79deg, #245297 0%, #0a2e63 100%);
+  --plpd-gradient-dropdown-menu: linear-gradient(
+    118.49deg,
+    rgba(36, 82, 151, 0.6) 0%,
+    rgba(10, 46, 99, 0.6) 100%
+  );
+  --plpd-gradient-highlight: linear-gradient(154.81deg, #4071ba 0%, #204b8c 100%);
+  --plpd-gradient-white-fade: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.15),
+    rgba(255, 255, 255, 0.05)
+  );
+
+  --plpd-shadow-sidebar: 4px 0 5px rgba(0, 0, 0, 0.1), inset -1px 0 0 var(--border-sidebar);
+  --plpd-shadow-action: 0 0 0 1px rgba(0, 80, 100, 0.4), 0 6px 20px rgba(0, 0, 0, 0.36);
+  --plpd-shadow-dropdown: 0 6px 20px rgba(0, 0, 0, 0.36);
+  --plpd-shadow-dropdown-menu: 0 0 0 1px rgba(0, 80, 100, 0.4), 0 6px 20px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  --plpd-shadow-nav-active: 0 0 25px rgba(242, 178, 75, 0.3), 0 6px 20px rgba(0, 0, 0, 0.36);
+  --plpd-shadow-tab-active: 0 0 14px rgba(255, 194, 119, 0.42);
+  --plpd-shadow-panel: 0 0 0 1px rgba(7, 9, 18, 0.3), 0 18px 30px rgba(0, 0, 0, 0.28);
+  --plpd-shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.45);
+  --plpd-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  --plpd-shadow-inset-soft: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --plpd-shadow-panel-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  /* Canonical sizing and spacing roles. */
+  --plpd-sidebar-width: 320px;
+  --plpd-content-padding-top: 20px;
+  --plpd-content-padding-inline: 28px;
+  --plpd-content-padding-bottom: 64px;
+  --plpd-header-padding-top: 24px;
+  --plpd-nav-height: 44px;
+  --plpd-control-height: 36px;
+  --plpd-table-header-height: 34.5px;
+  --plpd-table-row-height: 62px;
+  --plpd-radius-scrollbar: 3px;
+  --plpd-scrollbar-size: 6px;
+  --plpd-radius-inline: 5px;
+  --plpd-radius-chip: 6px;
+  --plpd-radius-control: 8px;
+  --plpd-radius-pitch: 9px;
+  --plpd-radius-panel: 10px;
+  --plpd-radius-card: 12px;
+  --plpd-radius-pill: 999px;
+
+  /* Canonical typography roles. */
+  --plpd-type-page-title: 36px;
+  --plpd-type-section-title: 24px;
+  --plpd-type-wordmark: 19px;
+  --plpd-type-tab: 17px;
+  --plpd-type-data: 16px;
+  --plpd-type-body: 14px;
+  --plpd-type-chip: 10px;
+  --plpd-leading-page-title: 36px;
+  --plpd-leading-body: 1.5;
+  --plpd-leading-prose: 1.6;
+  --plpd-weight-regular: 400;
+  --plpd-weight-medium: 500;
+  --plpd-weight-semibold: 600;
+  --plpd-weight-bold: 700;
+  --plpd-weight-hero: 800;
+  --plpd-weight-section: 900;
+  --plpd-tracking-wordmark: 0.3px;
+  --plpd-tracking-meta: 0.32px;
+  --plpd-tracking-tab: 0.34px;
+  --plpd-tracking-nav: 0.64px;
+  --plpd-tracking-section-label: 1.8px;
+  --plpd-tracking-eyebrow: 2.4px;
+  --plpd-tracking-chip: 0.05em;
+
+  --plpd-duration-hover: 150ms;
+  --plpd-duration-row: 120ms;
+  --plpd-cyan-rgb: 85 232 255;
+  --plpd-mesh-image: url("data:image/svg+xml,%3Csvg%20width%3D%222364%22%20height%3D%222589%22%20viewBox%3D%220%200%202364%202589%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22base%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%222364%22%20y2%3D%222589%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23171A2B%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2248%25%22%20stop-color%3D%22%2321243A%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23181B2C%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r1%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%28425.52%20207.12%29%20scale%281702.08%201190.94%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23BED7FF%22%20stop-opacity%3D%220.085%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2252%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r2%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%281796.64%20466.02%29%20scale%281371.12%20984.82%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2378A5EB%22%20stop-opacity%3D%220.055%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2254%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r3%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%28472.8%202278.32%29%20scale%281654.8%201346.28%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2391B9F5%22%20stop-opacity%3D%220.06%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2256%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r4%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%282080.32%202122.98%29%20scale%281087.44%201605.18%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23D2E4FF%22%20stop-opacity%3D%220.052%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3ClinearGradient%20id%3D%22l1%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%222364%22%20y2%3D%222589%22%0A%20%20%20%20%20%20gradientUnits%3D%22userSpaceOnUse%22%20gradientTransform%3D%22rotate%28-17%201182%201294.5%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23FFFFFF%22%20stop-opacity%3D%220.045%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2218%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2238%25%22%20stop-color%3D%22%2387AFF0%22%20stop-opacity%3D%220.052%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2261%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23D2E4FF%22%20stop-opacity%3D%220.04%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%0A%20%20%20%20%3ClinearGradient%20id%3D%22l2%22%20x1%3D%220%22%20y1%3D%222589%22%20x2%3D%222364%22%20y2%3D%220%22%0A%20%20%20%20%20%20gradientUnits%3D%22userSpaceOnUse%22%20gradientTransform%3D%22rotate%289%201182%201294.5%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2228%25%22%20stop-color%3D%22%236E91D7%22%20stop-opacity%3D%220.045%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2249%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2273%25%22%20stop-color%3D%22%23E6F0FF%22%20stop-opacity%3D%220.032%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%3C/defs%3E%0A%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23base%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23l2%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23l1%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r4%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r3%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r2%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r1%29%22/%3E%0A%3C/svg%3E%0A");
+
+  /* Derived operational palettes, centralized but not source-canonical. */
+  --plpd-light-canvas: #f6f7fb;
+  --plpd-light-canvas-end: #eef0f7;
+  --plpd-light-table-header: #dfe4f0;
+  --plpd-gradient-light-canvas: linear-gradient(
+    180deg,
+    var(--plpd-light-canvas),
+    var(--plpd-light-canvas-end)
+  );
+  --plpd-print-background: #ffffff;
+  --plpd-print-foreground: #0f172a;
+  --plpd-print-border: #e2e6ed;
+  --plpd-print-muted: #475569;
+  --plpd-print-zero: #64748b;
+  --plpd-print-cyan: #0891b2;
+  --plpd-print-amber: #d97706;
+
   /* ---- shadcn/ui CSS-var remap → PLPD values (dark) --------- */
   --background: var(--surface-1);
   --foreground: var(--text-cell);
@@ -153,6 +282,26 @@
   --cyan-dim: #55e8ff22;
   --amber-dim: #ffc27726;
 
+  /* Derived light-mode role overrides. PLPD itself defines dark mode only. */
+  --plpd-text-meta: #525a78;
+  --plpd-text-nav-icon: rgba(43, 51, 80, 0.62);
+  --plpd-fill-nav-hover: rgba(20, 40, 80, 0.06);
+  --plpd-fill-row-hover: rgba(0, 103, 122, 0.08);
+  --plpd-fill-row-best: rgba(0, 103, 122, 0.06);
+  --plpd-fill-row-selected: rgba(0, 103, 122, 0.12);
+  --plpd-fill-row-priority: rgba(122, 67, 0, 0.08);
+  --plpd-fill-row-il: rgba(166, 27, 43, 0.06);
+  --plpd-text-row-il-position: #a61b2b;
+  --plpd-fill-panel: rgba(238, 241, 246, 0.88);
+  --plpd-fill-state: rgba(238, 241, 246, 0.92);
+  --plpd-fill-code: rgba(238, 241, 246, 0.92);
+  --plpd-fill-zero: rgba(82, 90, 120, 0.1);
+  --plpd-border-zero: rgba(82, 90, 120, 0.35);
+  --plpd-border-input-focus: rgba(0, 97, 111, 0.45);
+  --plpd-scrollbar: rgba(0, 103, 122, 0.2);
+  --plpd-scrollbar-hover: rgba(0, 103, 122, 0.34);
+  --plpd-joyride-overlay: rgba(0, 0, 0, 0.4);
+
   /* shadcn remap (light) */
   --background: var(--surface-1);
   --foreground: var(--text-cell);
@@ -225,6 +374,13 @@
   --color-row-a: var(--row-a);
   --color-row-b: var(--row-b);
   --color-row-bn: var(--row-bn);
+  --color-plpd-nav-hover: var(--plpd-fill-nav-hover);
+  --color-plpd-row-hover: var(--plpd-fill-row-hover);
+  --color-plpd-row-best: var(--plpd-fill-row-best);
+  --color-plpd-row-selected: var(--plpd-fill-row-selected);
+  --color-plpd-row-priority: var(--plpd-fill-row-priority);
+  --color-plpd-row-il: var(--plpd-fill-row-il);
+  --color-plpd-panel: var(--plpd-fill-panel);
 
   /* shadcn aliases (so `bg-card`, `text-foreground`, etc. all work) */
   --color-background: var(--background);
@@ -253,12 +409,45 @@
   --font-data: var(--font-work-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
+  /* Source typography roles. P3.3 applies these across application chrome. */
+  --text-plpd-page-title: var(--plpd-type-page-title);
+  --text-plpd-page-title--line-height: var(--plpd-leading-page-title);
+  --text-plpd-section-title: var(--plpd-type-section-title);
+  --text-plpd-wordmark: var(--plpd-type-wordmark);
+  --text-plpd-tab: var(--plpd-type-tab);
+  --text-plpd-data: var(--plpd-type-data);
+  --text-plpd-body: var(--plpd-type-body);
+  --text-plpd-chip: var(--plpd-type-chip);
+
+  /* Source layout roles. */
+  --spacing-plpd-sidebar: var(--plpd-sidebar-width);
+  --spacing-plpd-content-top: var(--plpd-content-padding-top);
+  --spacing-plpd-content-inline: var(--plpd-content-padding-inline);
+  --spacing-plpd-content-bottom: var(--plpd-content-padding-bottom);
+  --spacing-plpd-header-top: var(--plpd-header-padding-top);
+  --spacing-plpd-nav-height: var(--plpd-nav-height);
+  --spacing-plpd-control-height: var(--plpd-control-height);
+  --spacing-plpd-table-header: var(--plpd-table-header-height);
+  --spacing-plpd-table-row: var(--plpd-table-row-height);
+
   /* Radii — PLPD: 8px buttons/nav/inputs, 10px panels, 12px cards.
      Chips override to 6px locally. */
   --radius-sm: 0.5rem;    /* 8px — buttons / inputs / nav */
   --radius-md: 0.5rem;    /* 8px */
   --radius-lg: 0.625rem;  /* 10px — panels */
   --radius-xl: 0.75rem;   /* 12px — cards / modals */
+  --radius-plpd-inline: var(--plpd-radius-inline);
+  --radius-plpd-chip: var(--plpd-radius-chip);
+  --radius-plpd-control: var(--plpd-radius-control);
+  --radius-plpd-pitch: var(--plpd-radius-pitch);
+  --radius-plpd-panel: var(--plpd-radius-panel);
+  --radius-plpd-card: var(--plpd-radius-card);
+
+  /* Source shadows. */
+  --shadow-plpd-action: var(--plpd-shadow-action);
+  --shadow-plpd-dropdown: var(--plpd-shadow-dropdown);
+  --shadow-plpd-panel: var(--plpd-shadow-panel);
+  --shadow-plpd-card: var(--plpd-shadow-card);
 }
 
 /* ===========================================================
@@ -284,7 +473,7 @@ html {
    PLPD_Style_Guide_6-21-26.html. Do not regenerate or approximate. */
 body {
   background-color: var(--surface-1);
-  background-image: url("data:image/svg+xml,%3Csvg%20width%3D%222364%22%20height%3D%222589%22%20viewBox%3D%220%200%202364%202589%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22base%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%222364%22%20y2%3D%222589%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23171A2B%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2248%25%22%20stop-color%3D%22%2321243A%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23181B2C%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r1%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%28425.52%20207.12%29%20scale%281702.08%201190.94%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23BED7FF%22%20stop-opacity%3D%220.085%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2252%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r2%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%281796.64%20466.02%29%20scale%281371.12%20984.82%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2378A5EB%22%20stop-opacity%3D%220.055%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2254%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r3%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%28472.8%202278.32%29%20scale%281654.8%201346.28%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2391B9F5%22%20stop-opacity%3D%220.06%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2256%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r4%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%282080.32%202122.98%29%20scale%281087.44%201605.18%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23D2E4FF%22%20stop-opacity%3D%220.052%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3ClinearGradient%20id%3D%22l1%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%222364%22%20y2%3D%222589%22%0A%20%20%20%20%20%20gradientUnits%3D%22userSpaceOnUse%22%20gradientTransform%3D%22rotate%28-17%201182%201294.5%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23FFFFFF%22%20stop-opacity%3D%220.045%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2218%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2238%25%22%20stop-color%3D%22%2387AFF0%22%20stop-opacity%3D%220.052%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2261%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23D2E4FF%22%20stop-opacity%3D%220.04%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%0A%20%20%20%20%3ClinearGradient%20id%3D%22l2%22%20x1%3D%220%22%20y1%3D%222589%22%20x2%3D%222364%22%20y2%3D%220%22%0A%20%20%20%20%20%20gradientUnits%3D%22userSpaceOnUse%22%20gradientTransform%3D%22rotate%289%201182%201294.5%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2228%25%22%20stop-color%3D%22%236E91D7%22%20stop-opacity%3D%220.045%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2249%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2273%25%22%20stop-color%3D%22%23E6F0FF%22%20stop-opacity%3D%220.032%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%3C/defs%3E%0A%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23base%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23l2%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23l1%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r4%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r3%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r2%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r1%29%22/%3E%0A%3C/svg%3E%0A");
+  background-image: var(--plpd-mesh-image);
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
@@ -301,8 +490,8 @@ body {
 
 /* Light mode drops the mesh entirely for a clean flat gradient (Q3). */
 .light body {
-  background-color: #f6f7fb;
-  background-image: linear-gradient(180deg, #f6f7fb, #eef0f7);
+  background-color: var(--plpd-light-canvas);
+  background-image: var(--plpd-gradient-light-canvas);
   background-attachment: fixed;
 }
 
@@ -341,18 +530,18 @@ code, kbd, pre, samp {
 
 /* Scrollbar styling — translucent cyan, PLPD */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: var(--plpd-scrollbar-size);
+  height: var(--plpd-scrollbar-size);
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(85, 232, 255, 0.15);
-  border-radius: 5px;
+  background: var(--plpd-scrollbar);
+  border-radius: var(--plpd-radius-scrollbar);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(85, 232, 255, 0.28);
+  background: var(--plpd-scrollbar-hover);
 }
 
 /* Disable tap highlight on mobile */
@@ -371,19 +560,13 @@ code, kbd, pre, samp {
   background: transparent;
   position: relative;
   isolation: isolate;
-  box-shadow:
-    4px 0 5px rgba(0, 0, 0, 0.1),
-    inset -1px 0 0 var(--border-sidebar);
+  box-shadow: var(--plpd-shadow-sidebar);
 }
 .plpd-sidebar::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(137, 138, 148, 0.05) 0%,
-    rgba(129, 131, 141, 0.05) 100%
-  );
+  background: var(--plpd-gradient-sidebar);
   pointer-events: none;
   z-index: 0;
 }
@@ -398,11 +581,9 @@ code, kbd, pre, samp {
 
 /* Active sidebar nav — 152.3° amber gradient pill with warm glow */
 .plpd-nav-active {
-  background: linear-gradient(152.3deg, #975100 0%, #cd8532 100%);
-  box-shadow:
-    0 0 25px rgba(242, 178, 75, 0.3),
-    0 6px 20px rgba(0, 0, 0, 0.36);
-  color: #fff;
+  background: var(--plpd-gradient-nav-active);
+  box-shadow: var(--plpd-shadow-nav-active);
+  color: var(--plpd-white);
   position: relative;
 }
 .plpd-nav-active::after {
@@ -411,7 +592,7 @@ code, kbd, pre, samp {
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: var(--plpd-shadow-inset);
 }
 
 /* Active tab — amber 700 + 6px overhanging glow underline (never cyan) */
@@ -428,8 +609,8 @@ code, kbd, pre, samp {
   right: -5px;
   height: 6px;
   background: var(--amber);
-  border-radius: 999px 999px 0 0;
-  box-shadow: 0 0 14px rgba(255, 194, 119, 0.42);
+  border-radius: var(--plpd-radius-pill) var(--plpd-radius-pill) 0 0;
+  box-shadow: var(--plpd-shadow-tab-active);
 }
 
 /* Import-construction buttons — the 4-layer PLPD primary:
@@ -442,16 +623,14 @@ code, kbd, pre, samp {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  color: #fff;
+  color: var(--plpd-white);
   border: none;
-  background: linear-gradient(149.7deg, #245297 0%, #0a2e63 100%);
-  box-shadow:
-    0 0 0 1px rgba(0, 80, 100, 0.4),
-    0 6px 20px rgba(0, 0, 0, 0.36);
-  transition: filter 0.15s;
+  background: var(--plpd-gradient-action-blue);
+  box-shadow: var(--plpd-shadow-action);
+  transition: filter var(--plpd-duration-hover);
 }
 .plpd-btn-cta {
-  background: linear-gradient(149.7deg, #975100 0%, #cd8532 100%);
+  background: var(--plpd-gradient-action-amber);
 }
 .plpd-btn-import::before,
 .plpd-btn-cta::before {
@@ -461,11 +640,7 @@ code, kbd, pre, samp {
   border-radius: inherit;
   pointer-events: none;
   z-index: -1;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.15),
-    rgba(255, 255, 255, 0.05)
-  );
+  background: var(--plpd-gradient-white-fade);
 }
 .plpd-btn-import::after,
 .plpd-btn-cta::after {
@@ -475,19 +650,78 @@ code, kbd, pre, samp {
   border-radius: inherit;
   pointer-events: none;
   z-index: -1;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: var(--plpd-shadow-inset);
 }
 .plpd-btn-import:hover,
 .plpd-btn-cta:hover {
   filter: brightness(1.15);
 }
 
+/* Token-backed interaction helpers. P3.2 owns their component composition;
+   P3.1 keeps every visual literal in the registry above. */
+.plpd-hover-surface:hover {
+  background: var(--plpd-fill-nav-hover);
+}
+
+.plpd-panel-frame {
+  box-shadow: var(--plpd-shadow-panel);
+}
+
+.plpd-dropdown-trigger {
+  background: var(--plpd-gradient-dropdown);
+  box-shadow: var(--plpd-shadow-dropdown), var(--plpd-shadow-inset);
+}
+
+.plpd-dropdown-menu {
+  background: var(--plpd-gradient-dropdown-menu);
+  box-shadow: var(--plpd-shadow-dropdown-menu);
+}
+
+.plpd-menu-highlight:focus {
+  background: var(--plpd-gradient-highlight);
+  color: var(--plpd-white);
+}
+
+.plpd-input-control {
+  box-shadow: var(--plpd-shadow-inset-soft);
+}
+
+.plpd-input-control:focus-visible {
+  border-color: var(--plpd-border-input-focus);
+}
+
+.plpd-heat-cell {
+  background-color: var(--surface-3);
+}
+
+.plpd-heat-cell[data-has-value="true"] {
+  background-color: rgb(var(--plpd-cyan-rgb) / var(--plpd-heat-opacity));
+}
+
+.plpd-tab-trigger[data-state="active"] {
+  position: relative;
+  color: var(--amber);
+  font-weight: var(--plpd-weight-bold);
+}
+
+.plpd-tab-trigger[data-state="active"]::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: -5px;
+  right: -5px;
+  height: 6px;
+  background: var(--amber);
+  border-radius: var(--plpd-radius-pill) var(--plpd-radius-pill) 0 0;
+  box-shadow: var(--plpd-shadow-tab-active);
+}
+
 /* Table header band — 34.5px #2E3658, Work Sans 600 16px cyan-header */
 .plpd-thead {
-  background: #2E3658;
+  background: var(--surface-5);
 }
 .light .plpd-thead {
-  background: #dfe4f0;
+  background: var(--plpd-light-table-header);
 }
 
 /* ===========================================================
@@ -498,22 +732,22 @@ code, kbd, pre, samp {
 @media print {
   :root,
   .dark {
-    --background: #ffffff;
-    --foreground: #0f172a;
-    --card: #ffffff;
-    --card-foreground: #0f172a;
-    --border: #e2e6ed;
-    --text-cell: #0f172a;
-    --text-team: #475569;
-    --text-zero: #64748b;
-    --cyan: #0891b2;
-    --amber: #d97706;
+    --background: var(--plpd-print-background);
+    --foreground: var(--plpd-print-foreground);
+    --card: var(--plpd-print-background);
+    --card-foreground: var(--plpd-print-foreground);
+    --border: var(--plpd-print-border);
+    --text-cell: var(--plpd-print-foreground);
+    --text-team: var(--plpd-print-muted);
+    --text-zero: var(--plpd-print-zero);
+    --cyan: var(--plpd-print-cyan);
+    --amber: var(--plpd-print-amber);
   }
 
   body {
-    background: #ffffff !important;
+    background: var(--plpd-print-background) !important;
     background-image: none !important;
-    color: #0f172a !important;
+    color: var(--plpd-print-foreground) !important;
   }
 
   aside,
@@ -558,19 +792,19 @@ code, kbd, pre, samp {
    =========================================================== */
 
 #react-joyride-portal {
-  --joyride-bg: #181A2C;
-  --joyride-text: #f0f1f5;
-  --joyride-muted: rgba(180, 187, 215, 0.82);
-  --joyride-primary: #55e8ff;
-  --joyride-overlay: rgba(19, 21, 42, 0.78);
+  --joyride-bg: var(--surface-2);
+  --joyride-text: var(--text-cell);
+  --joyride-muted: var(--text-team);
+  --joyride-primary: var(--cyan);
+  --joyride-overlay: var(--plpd-joyride-overlay);
 }
 
 .light #react-joyride-portal {
-  --joyride-bg: #ffffff;
-  --joyride-text: #1a1f33;
-  --joyride-muted: #475569;
-  --joyride-primary: #55e8ff;
-  --joyride-overlay: rgba(0, 0, 0, 0.4);
+  --joyride-bg: var(--surface-1);
+  --joyride-text: var(--text-cell);
+  --joyride-muted: var(--text-team);
+  --joyride-primary: var(--cyan);
+  --joyride-overlay: var(--plpd-joyride-overlay);
 }
 
 #react-joyride-portal .__floater {
@@ -579,9 +813,9 @@ code, kbd, pre, samp {
 
 #react-joyride-portal [data-test-id="button-primary"] {
   background-color: var(--joyride-primary) !important;
-  color: #13152A !important;
-  border-radius: 8px !important;
-  font-weight: 700 !important;
+  color: var(--plpd-on-bright) !important;
+  border-radius: var(--plpd-radius-control) !important;
+  font-weight: var(--plpd-weight-bold) !important;
 }
 
 #react-joyride-portal [data-test-id="button-skip"] {

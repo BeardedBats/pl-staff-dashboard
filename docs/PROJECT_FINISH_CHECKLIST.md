@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 3 — PLPD design-system foundation
-- Current action: P3.1 — Convert the guide's canonical visual language into centralized application tokens.
-- Branch: `codex/production-readiness-p2-12`
-- Stack base: `75817ed` (green draft PR #28, based on green draft PRs #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P3.2 — Implement reusable PLPD primitives from the verified token foundation.
+- Branch: `codex/production-readiness-p3-1`
+- Stack base: `9f8133c` (green draft PR #29, based on green draft PRs #28, #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -73,7 +73,7 @@ Gate: a clean checkout can prove correctness in CI, and production failures are 
 
 ## Phase 3 — PLPD design-system foundation
 
-- [ ] P3.1 Convert the guide's canonical colors, typography, spacing, gradients, shadows, borders, mesh, and semantic styles into centralized application tokens.
+- [x] P3.1 Convert the guide's canonical colors, typography, spacing, gradients, shadows, borders, mesh, and semantic styles into centralized application tokens.
 - [ ] P3.2 Implement reusable PLPD primitives for navigation, headers, tabs, buttons, fields, dropdowns, cards, chips, tables, pagination, alerts, dialogs, drawers, loading states, empty states, errors, and gated values.
 - [ ] P3.3 Apply Work Sans to data and DM Sans to application chrome as defined by the guide.
 - [ ] P3.4 Preserve the subtle-glass-over-mesh doctrine without opaque panels or heavy frosted glass.
@@ -471,6 +471,17 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - An independent Chromium inspection verified the login page has meaningful content, labeled inputs, a visible primary action, no framework error overlay, and the expected anonymous `/home` redirect. Automated axe checks are explicitly treated as a regression floor; keyboard, screen-reader, zoom/reflow, and assistive-technology review remain part of later design-system and final acceptance work.
 - Final local gate: runbook contract; ESLint; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 54 Vitest files / 251 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all eight role/anonymous Chromium journeys; and all 12 production-quality checks pass.
 - Clean GitHub run [29872890551](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29872890551) independently passed Application, Database, Dependencies, all eight Browser journeys, all 12 quality checks, and the retained quality-evidence upload; Vercel passed and draft PR #29 is merge-clean.
+
+### 2026-07-21 — P3.1 verified PLPD token foundation
+
+- Read the complete 985-line visual authority at `C:\Users\Nick\Downloads\PLPD Style Guide 6-21-26.html`, including CSS, examples, states, Never List, and validation checklist. The reviewed file's SHA-256 is `DB7CDC395BD380FECA6DBFA0D687D7AB577BF9B9D80D79CF96388A64E804C98B`; the durable token documentation records its version and precedence.
+- Centralized exact dark-mode colors, text ramps, borders, row states, semantic/value colors, the complete mesh data URI, gradient angles/stops, shadow stacks, shell/control/table spacing, radius scale, typography sizes/weights/tracking, and transition timings in the leading registry of `src/app/globals.css`. Tailwind exposes the same color, type, spacing, radius, and shadow roles.
+- The boundary is explicit: contrast-safe text, light mode, print, onboarding overlay, selection, and priority roles are derived dashboard extensions, not source claims. The guide's stand-in pitch palette and loading-bars example were deliberately not promoted to canonical tokens.
+- Removed visual color, RGBA, gradient, and shadow literals from TSX consumers. Existing navigation, buttons, fields, selects, menus, tabs, table interactions, onboarding, calendar tiers, and analytics heatmaps now consume variables or token-backed helpers. A four-test contract pins canonical source values, mesh and gradient/shadow construction, typography weights, source hash/documentation, and the no-literals consumer rule.
+- During the final gate, npm newly reported the high-severity `GHSA-f88m-g3jw-g9cj` advisory against Next.js's optional `sharp@0.34.5`. The lockfile now overrides only Next.js's Sharp edge to patched `0.35.3` while preserving Next.js `16.2.11`; a dependency contract prevents either value from regressing. A clean lockfile install, zero-vulnerability audit, real resize/PNG smoke test, production build, and Linux CI are required evidence for the override.
+- Production-build quality remains green after tokenization: all eight dark/light axe scenarios, keyboard focus order, and three performance profiles pass. Latest lab measurements are login FCP/LCP 100 ms and 268,044 encoded bytes; writer content FCP/LCP 144 ms, CLS 0.0596, and 405,543 encoded bytes; admin settings FCP/LCP 252 ms and 389,137 encoded bytes; all TBT values are zero and all budgets pass.
+- Independent dark/light Chromium captures confirmed the exact dark mesh resolves through its token, light mode removes it for the derived flat canvas, source/derived computed variables resolve correctly, both layouts have no horizontal overflow, and the login surface remains visually intact.
+- Final local gate after the Sharp override: clean `npm ci`; zero-vulnerability audit; native Sharp 0.35.3/libvips 8.18.3 resize-and-PNG smoke test; runbook contract; ESLint; TypeScript; actionlint 1.7.12; Next.js 16.2.11 production build; 56 Vitest files / 256 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all eight role/anonymous Chromium journeys; and all 12 production-quality checks pass.
 
 ## Phase 0 prioritized defect and risk inventory
 
