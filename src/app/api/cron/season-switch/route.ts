@@ -53,21 +53,11 @@ export async function POST(request: Request) {
 
   if (inRange) {
     if (!inRange.is_active) {
-      const { error } = await supabase
-        .from("season_modes")
-        .update({ is_active: true })
-        .eq("id", inRange.id);
-      if (!error) switched++;
-    }
-    for (const other of modes) {
-      if (other.id === inRange.id) continue;
-      if (!other.auto_switch_start) continue;
-      if (!other.is_active) continue;
-      const { error } = await supabase
-        .from("season_modes")
-        .update({ is_active: false })
-        .eq("id", other.id);
-      if (!error) switched++;
+      const { data: activated, error } = await supabase.rpc(
+        "activate_season_mode",
+        { p_mode_id: inRange.id },
+      );
+      if (!error && activated) switched++;
     }
     activeName = inRange.name;
   } else {

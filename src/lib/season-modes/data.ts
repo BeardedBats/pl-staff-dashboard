@@ -20,18 +20,29 @@ export type SeasonModeRecord = {
 // Schemas
 // --------------------------------------------------------------------------
 
-export const updateSeasonModeSchema = z.object({
-  auto_switch_start: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD")
-    .nullable()
-    .optional(),
-  auto_switch_end: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD")
-    .nullable()
-    .optional(),
-});
+export const updateSeasonModeSchema = z
+  .object({
+    auto_switch_start: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD")
+      .nullable()
+      .optional(),
+    auto_switch_end: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD")
+      .nullable()
+      .optional(),
+  })
+  .refine(
+    (value) =>
+      !value.auto_switch_start ||
+      !value.auto_switch_end ||
+      value.auto_switch_start <= value.auto_switch_end,
+    {
+      message: "Start date must be on or before end date",
+      path: ["auto_switch_end"],
+    },
+  );
 
 // --------------------------------------------------------------------------
 // Queries
@@ -67,20 +78,14 @@ export async function activateSeasonMode(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = getSupabaseAdmin();
 
-  // Clear the current active flag on every row, then set it on this one.
-  // Do it as two updates — Postgres doesn't have a native "set exactly
-  // one row to active" primitive and a transaction here is overkill.
-  await supabase
-    .from("season_modes")
-    .update({ is_active: false })
-    .eq("is_active", true);
+  const { data: activated, error } = await supabase.rpc(
+    "activate_season_mode",
+    { p_mode_id: id },
+  );
 
-  const { error } = await supabase
-    .from("season_modes")
-    .update({ is_active: true })
-    .eq("id", id);
-
-  if (error) return { ok: false, error: "Failed to activate season mode" };
+  if (error || !activated) {
+    return { ok: false, error: "Failed to activate season mode" };
+  }
   return { ok: true };
 }
 
