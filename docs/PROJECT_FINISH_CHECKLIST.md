@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.8/P1.9/P1.12/P1.13/P1.15 — Apply verified migrations when DDL access arrives; package P1.15 and complete P1.16
-- Branch: `codex/production-readiness-p1-15`
-- Stack base: `fb6f526` (green draft PR #15, based on green draft PRs #14, #13, #12, #11, #10, and #9).
+- Current action: P1.8/P1.9/P1.12/P1.13/P1.15 — Apply verified migrations when DDL access arrives; package P1.16 and continue P2.1
+- Branch: `codex/production-readiness-p1-16`
+- Stack base: `d345e0f` (green draft PR #16, based on green draft PRs #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -47,10 +47,12 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability. — GREEN DRAFT PR #13; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
 - [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries. — GREEN DRAFT PR #14; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
 - [ ] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities. — GREEN DRAFT PR #15; STACKED RELEASE PENDING P1.8–P1.13
-- [ ] P1.15 Either implement unfinished notification/settings behavior or remove misleading UI, types, tables, and code paths. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
-- [ ] P1.16 Add regression tests for every repaired security or integrity defect.
+- [ ] P1.15 Either implement unfinished notification/settings behavior or remove misleading UI, types, tables, and code paths. — GREEN DRAFT PR #16; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
+- [ ] P1.16 Add regression tests for every repaired security or integrity defect. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8–P1.15
 
 Gate: no known high-severity authorization, session, secret, RLS, cron, or data-integrity defect remains.
+
+Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUMENTED SUPABASE DDL ACCESS FOR MIGRATIONS 0013–0017.**
 
 ## Phase 2 — Test system, CI, observability, and operational safety
 
@@ -357,6 +359,13 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - The supported notification system is now explicitly in-app only. Removed the external toggles, profile identifier, environment contract, SDK stubs, external delivery flags, misleading UI labels, and unused action-path plumbing; the preferences API strictly rejects legacy external-channel fields.
 - Migration `0017_remove_unsupported_notification_channels.sql` removes the dormant user identifier, external preference columns, and false delivery-status columns. Generated database types match the reduced schema, and five pgTAP assertions prevent those fields from returning.
 - Final local P1.15 gate: cold reset through `0017`; 124 pgTAP probes; 19 Vitest files / 100 tests; zero audit findings; database-type drift, ESLint, TypeScript, and the Next.js production build pass.
+
+### 2026-07-21 — P1.16 Phase 1 regression-coverage gate
+
+- Added `docs/PHASE1_REGRESSION_MATRIX.md`, mapping every Phase 1 repair to its durable application, database, generated-type, audit, or workflow check and distinguishing live probes from automated regressions.
+- The authorization inventory now has executable drift protection: all 106 exported API method/path pairs must appear in `docs/AUTHORIZATION_MATRIX.md`. The matrix was brought current for Vercel GET cron handlers and transactional bulk create.
+- Closed the last stated authorization test gap with a data-layer negative regression proving a same-site outsider cannot create a graphic request and is rejected before any database access. Confirmed cross-entry comment parents were already enforced more strongly by a composite foreign key and hostile pgTAP insert; corrected the stale matrix note.
+- Final Phase 1 local gate: cold reset through `0017`; 124 pgTAP probes; database lint clean; 21 Vitest files / 102 tests; generated database-type drift clean; zero audit findings; ESLint, TypeScript, and the Next.js 16.2.11 production build pass.
 
 ## Phase 0 prioritized defect and risk inventory
 
