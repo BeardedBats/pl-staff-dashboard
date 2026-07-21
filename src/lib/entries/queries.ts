@@ -2,6 +2,7 @@ import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { AppRole, AppSite } from "@/lib/auth/current-user";
+import { getSignedGraphicUrls } from "@/lib/graphics/storage";
 
 // --------------------------------------------------------------------------
 // Shared shapes
@@ -632,29 +633,37 @@ async function loadFullGraphicRequests(entryId: string) {
   const { data } = await getSupabaseAdmin()
     .from("graphic_requests")
     .select(
-      "id, title, description, urgency_date, graphic_status, claimed_by, file_url, flag_reason, created_at",
+      "id, title, description, urgency_date, graphic_status, claimed_by, storage_path, flag_reason, created_at",
     )
     .eq("entry_id", entryId)
     .order("created_at", { ascending: true });
 
-  return ((data ?? []) as Array<{
+  const rows = (data ?? []) as Array<{
     id: string;
     title: string;
     description: string | null;
     urgency_date: string | null;
     graphic_status: GraphicStatus;
     claimed_by: string | null;
-    file_url: string | null;
+    storage_path: string | null;
     flag_reason: string | null;
     created_at: string;
-  }>).map((g) => ({
+  }>;
+
+  const signedUrls = await getSignedGraphicUrls(
+    rows
+      .map((row) => row.storage_path)
+      .filter((path): path is string => Boolean(path)),
+  );
+
+  return rows.map((g) => ({
     id: g.id,
     title: g.title,
     description: g.description,
     urgency_date: g.urgency_date,
     graphic_status: g.graphic_status,
     claimed_by: g.claimed_by,
-    file_url: g.file_url,
+    file_url: g.storage_path ? (signedUrls.get(g.storage_path) ?? null) : null,
     flag_reason: g.flag_reason,
     created_at: g.created_at,
   }));

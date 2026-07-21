@@ -1,0 +1,202 @@
+# Pitcher List Staff Content Dashboard — Production Readiness
+
+Last updated: 2026-07-21
+
+## Recovery state
+
+- Current phase: Phase 0 — Preserve, synchronize, and establish the truth
+- Current action: P0.9 — Inspect live production and preview applications
+- Branch: `codex/production-readiness`
+- HEAD: `a2af3ef64912c0b0064e5129b3486cf1d67ccf3e`
+- Upstream baseline: `origin/main` at the same commit after `git fetch --prune origin`
+- Deployment: production is healthy at `a2af3ef`; GitHub deployment `5143781090` completed successfully on 2026-06-21. A separate unmerged documentation PR has a 2026-07-21 preview and is excluded from this project baseline.
+- Known blockers: none
+- Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
+- Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
+
+## Phase 0 — Preserve, synchronize, and establish the truth
+
+- [x] P0.1 Confirm the actual repository root, remotes, current branch, HEAD, upstream, and nested-folder topology.
+- [x] P0.2 Inspect the dirty worktree and preserve all user-created changes without overwriting, deleting, or accidentally committing secrets.
+- [x] P0.3 Fetch GitHub and safely reconcile the local checkout with the authoritative remote history.
+- [x] P0.4 Create an appropriate `codex/` working branch and establish checkpoint practices.
+- [x] P0.5 Inventory application routes, APIs, database migrations, background jobs, cron jobs, roles, permissions, integrations, and deployments.
+- [x] P0.6 Inventory required environment variables and secret locations without displaying secret values.
+- [ ] P0.7 Identify plaintext or exposed credentials, rotate them when service access permits, move them into managed secret storage, and prevent recurrence. — IN PROGRESS
+- [x] P0.8 Install dependencies reproducibly and capture baseline lint, type-check, build, audit, and runtime results.
+- [ ] P0.9 Inspect the live production and preview applications, including role-specific navigation and API behavior. — IN PROGRESS
+- [ ] P0.10 Inspect the live database, RLS policies, storage buckets, Vercel settings, cron configuration, and connected service state when credentials permit. — IN PROGRESS
+- [x] P0.11 Create the durable checklist with evidence from the verified baseline.
+- [ ] P0.12 Produce a prioritized defect and risk inventory mapped to later phase items, then continue directly into Phase 1.
+
+Gate: the user's work is preserved, local and remote history are understood, secrets are not exposed, the baseline is reproducible, and every later action is grounded in actual evidence.
+
+## Phase 1 — Security, correctness, and data integrity
+
+- [ ] P1.1 Repair refresh-token rotation, replay protection, concurrent refresh behavior, revocation, expiry, logout, and session invalidation.
+- [ ] P1.2 Ensure access-token requests validate the current server-side session state where required.
+- [ ] P1.3 Audit every API route and server action against an explicit role-and-resource authorization matrix.
+- [ ] P1.4 Fix graphics, editorial, analytics, administration, and synchronization authorization gaps.
+- [ ] P1.5 Reconcile navigation visibility with backend permissions so users never see inaccessible areas or gain access through hidden routes.
+- [ ] P1.6 Standardize request and response validation using shared schemas and safe, user-facing error handling.
+- [ ] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow.
+- [ ] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants.
+- [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops.
+- [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules.
+- [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization.
+- [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability.
+- [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries.
+- [ ] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities.
+- [ ] P1.15 Either implement unfinished notification/settings behavior or remove misleading UI, types, tables, and code paths.
+- [ ] P1.16 Add regression tests for every repaired security or integrity defect.
+
+Gate: no known high-severity authorization, session, secret, RLS, cron, or data-integrity defect remains.
+
+## Phase 2 — Test system, CI, observability, and operational safety
+
+- [ ] P2.1 Establish a practical unit, integration, database, API, and browser-test architecture.
+- [ ] P2.2 Test authentication, session rotation, role permissions, membership boundaries, and negative authorization cases.
+- [ ] P2.3 Test WordPress synchronization, webhooks, scheduled reconciliation, conflict handling, retries, and idempotency.
+- [ ] P2.4 Test editorial claims, assignments, state transitions, bulk actions, deadlines, and concurrent operations.
+- [ ] P2.5 Test graphics submission, review, versioning, authorization, and storage behavior.
+- [ ] P2.6 Test cron jobs with the same method and headers used by Vercel.
+- [ ] P2.7 Add representative Raptive importer tests with multi-sheet fixtures, duplicates, malformed rows, interruptions, and large files.
+- [ ] P2.8 Add role-based end-to-end journeys for managers, writers, editors, graphics staff, and administrators.
+- [ ] P2.9 Add GitHub Actions for install, lint, type checking, tests, build, migration checks, dependency checks, and browser tests where appropriate.
+- [ ] P2.10 Add structured logs, safe error reporting, cron freshness, integration health, import-job visibility, and actionable alerts.
+- [ ] P2.11 Add backup, migration, rollback, incident, secret-rotation, and deployment runbooks.
+- [ ] P2.12 Establish measurable performance and accessibility baselines.
+
+Gate: a clean checkout can prove correctness in CI, and production failures are detectable and diagnosable without reading raw infrastructure logs.
+
+## Phase 3 — PLPD design-system foundation
+
+- [ ] P3.1 Convert the guide's canonical colors, typography, spacing, gradients, shadows, borders, mesh, and semantic styles into centralized application tokens.
+- [ ] P3.2 Implement reusable PLPD primitives for navigation, headers, tabs, buttons, fields, dropdowns, cards, chips, tables, pagination, alerts, dialogs, drawers, loading states, empty states, errors, and gated values.
+- [ ] P3.3 Apply Work Sans to data and DM Sans to application chrome as defined by the guide.
+- [ ] P3.4 Preserve the subtle-glass-over-mesh doctrine without opaque panels or heavy frosted glass.
+- [ ] P3.5 Implement all required component states: default, hover, active, loading, error, empty, and gated.
+- [ ] P3.6 Ensure gated data is withheld on the server rather than sent to the client and visually blurred.
+- [ ] P3.7 Bring tables, numeric alignment, zero styling, row fills, hover behavior, pagination, and data colors into exact guide compliance.
+- [ ] P3.8 Remove Never List violations.
+- [ ] P3.9 Create responsive desktop, tablet, and mobile behavior without inventing new brand colors or visual language.
+- [ ] P3.10 Add automated accessibility checks and keyboard/focus verification.
+- [ ] P3.11 Establish screenshot or visual-regression coverage for shared primitives and representative pages.
+
+Gate: new feature work can be built entirely from verified PLPD primitives.
+
+## Phase 4 — Role-focused workflow and usability
+
+- [ ] P4.1 Create a useful Today home screen.
+- [ ] P4.2 Add global search and fast filtering.
+- [ ] P4.3 Present plain-language status and a recommended next action.
+- [ ] P4.4 Add role-based onboarding and setup checklists.
+- [ ] P4.5 Cover loading, empty, partial, stale, success, and error states.
+- [ ] P4.6 Build a manager control center.
+- [ ] P4.7 Add useful saved views and presets.
+- [ ] P4.8 Add a concise weekly operational digest.
+- [ ] P4.9 Add safe bulk actions.
+- [ ] P4.10 Build a focused My Work view.
+- [ ] P4.11 Make availability and capacity visible without employee surveillance.
+- [ ] P4.12 Present polishing requests as actionable feedback.
+- [ ] P4.13 Add risk-first editor queues, SLA indicators, bulk actions, and saved queues.
+- [ ] P4.14 Add polishing-reason templates and a readiness panel.
+- [ ] P4.15 Preserve editorial handoff and state-transition history.
+- [ ] P4.16 Capture complete graphics-request requirements.
+- [ ] P4.17 Add asset versioning and Submit, Approve, and Request Changes states.
+- [ ] P4.18 Add an asset library with usage and featured-image status.
+- [ ] P4.19 Restrict graphics users to relevant information and actions.
+- [ ] P4.20 Implement real supported notification delivery or remove unsupported choices.
+- [ ] P4.21 Add digests, quiet hours, timezone delivery, retry status, and delivery health.
+- [ ] P4.22 Add an understandable system-health page.
+
+Gate: each role can complete primary work with minimal instruction, and managers can identify risks and decisions without raw tables.
+
+## Phase 5 — WordPress and SEO
+
+- [ ] P5.1 Verify actual WordPress authentication, REST, content types, taxonomy, author, media, status, and Yoast capabilities.
+- [ ] P5.2 Combine webhooks with scheduled reconciliation.
+- [ ] P5.3 Add idempotency, retries, conflict detection, staleness, and manual recovery.
+- [ ] P5.4 Add preview/edit links and revision/synchronization status.
+- [ ] P5.5 Add prepublication validation.
+- [ ] P5.6 Add safe dashboard/WordPress conflict resolution.
+- [ ] P5.7 Add evergreen-refresh identification where supported.
+- [ ] P5.8 Implement the best maintainable title-generator integration.
+- [ ] P5.9 Embed title generation/scoring without duplicate data entry.
+- [ ] P5.10 Preserve explanations, SERP preview, suffix calculation, and copy/apply actions.
+- [ ] P5.11 Test scoring, pixels, ranking, and regressions.
+- [ ] P5.12 Determine supported Yoast read/write values and analysis.
+- [ ] P5.13 Separate Yoast-reported results from Pitcher List analysis.
+- [ ] P5.14 Analyze focus-keyphrase placement.
+- [ ] P5.15 Analyze length, distribution, stuffing, structure, voice, transitions, and readability.
+- [ ] P5.16 Provide prioritized, specific recommendations.
+- [ ] P5.17 Allow permissioned analysis, approval, and supported WordPress write-back.
+- [ ] P5.18 Require intentional before/after approval before overwrites.
+- [ ] P5.19 Test SEO analysis, permissions, write-back, conflicts, and recovery.
+
+Gate: staff can optimize articles, understand recommendations, and safely sync supported fields with WordPress.
+
+## Phase 6 — Raptive-ready data system
+
+- [ ] P6.1 Confirm workbook formats, sheet roles, columns, dates, timezones, aggregation, and dedupe keys.
+- [ ] P6.2 Design normalized, indexed aggregate, URL-performance, job, checkpoint, hash, and live-sync tables.
+- [ ] P6.3 Build rollback-capable, large-table-safe migrations.
+- [ ] P6.4 Build direct-to-private-storage upload with validation, progress, cancellation, and retry.
+- [ ] P6.5 Build resumable, chunked, checkpointed, restart-safe processing.
+- [ ] P6.6 Process every required sheet.
+- [ ] P6.7 Add reconciliation totals, rejected rows, sample inspection, and completion state.
+- [ ] P6.8 Load-test realistic generated fixtures.
+- [ ] P6.9 Build a typed live adapter with test, enable, disable, backfill, retry, rate limit, and health behavior.
+- [ ] P6.10 Keep API credentials only in managed secret storage.
+- [ ] P6.11 Share canonical normalization and deduplication across historical and live ingestion.
+- [ ] P6.12 Expose role-appropriate analytics without leaking restricted financial data.
+- [ ] P6.13 Provide a stable authenticated daily aggregate contract to the finance application.
+- [ ] P6.14 Build a nontechnical administrator setup and health flow.
+- [ ] P6.15 Test partial/repeated/overlapping/malformed imports and connector failure/replay cases.
+
+Gate: realistic fixtures and mocked live responses pass; only Nick's real files and live authorization remain.
+
+## Phase 7 — Full-system verification, deployment, and Raptive handoff
+
+- [ ] P7.1 Run the full clean-checkout quality and security gate.
+- [ ] P7.2 Run role browser journeys against a production-like deployment.
+- [ ] P7.3 Visually inspect every route at desktop, tablet, and mobile widths.
+- [ ] P7.4 Verify keyboard, focus, contrast, labels, reduced motion, and error announcements.
+- [ ] P7.5 Verify WordPress synchronization and SEO on non-destructive real content.
+- [ ] P7.6 Verify cron execution, retries, logs, health, and alerting.
+- [ ] P7.7 Verify migrations, backups, rollback, secrets, and incident runbooks.
+- [ ] P7.8 Remove obsolete code, dead dependencies, misleading UI, diagnostics, and safe-to-remove stale planning artifacts.
+- [ ] P7.9 Align setup, architecture, operations, deployment, and user documentation.
+- [ ] P7.10 Deploy through the normal workflow and confirm production commit/version.
+- [ ] P7.11 Present Nick with only the two Raptive input actions.
+- [ ] P7.12 Validate the real historical import after upload.
+- [ ] P7.13 Validate live Raptive sync, dedupe, totals, health, permissions, and finance aggregates.
+- [ ] P7.14 Run final regression and production smoke suites.
+- [ ] P7.15 Produce the final evidence-linked checklist and residual-risk record.
+
+Gate: the release is deployed and verified; real Raptive data is validated; every completion has concrete evidence.
+
+## Excluded features
+
+Do not implement internal-link suggestions, WordPress editorial-comment bridging, publication receipts, or the specified brief-template feature.
+
+## Evidence log
+
+### 2026-07-21 — P0 baseline
+
+- P0.1: `git rev-parse --show-toplevel` resolved this repository; only one `.git` directory exists under the outer workspace.
+- P0.2: `git status --short --branch`, `git diff -- CLAUDE.md`, and SHA-256 fingerprints recorded the preserved dirty state. Secret values were never read.
+- P0.3: `git fetch --prune origin`; previous local `main` was 0 ahead / 1 behind. `origin/main` is `a2af3ef`.
+- P0.4: `git switch -c codex/production-readiness origin/main`; branch starts at `a2af3ef` and user work remains present.
+- P0.5: Next build enumerated 14 UI routes and 72 API routes; 8 cron schedules are declared in `vercel.json`; 11 baseline SQL migrations exist through `0011_analytics_overview_rpc.sql`; roles are writer, editor, graphics, manager, admin, EIC, and operations. Source integrations are Supabase, Pitcher List WordPress, optional QB List WordPress, GA4, Raptive workbook ingestion, Discord, Resend, GitHub, and Vercel.
+- P0.6: required key names were inventoried from `.env.example`, `.env.local`, source references, and Git ignore rules without reading or emitting values. `.env.local` is ignored; only `.env.example` is tracked. Git history contains no tracked secret-like path beyond `.env.example`.
+- P0.8: `npm ci`, `npm run lint`, `npx tsc --noEmit`, and `npm run build` passed. `npm audit --omit=dev` failed with 9 production vulnerabilities (3 high, 6 moderate); full install reported 12 total (5 high). This is a captured red baseline, not a clean gate.
+- P0.9 partial: production `/` redirects to `/login`; the login form renders and requires WordPress application credentials. The standalone SEO title tool was exercised through generation and scoring. Its verified 100-point rubric is keyword 25, pixel/length 20, specificity 15, list framing 10, CTR phrases 15, and format/readability 15. Generated templates can duplicate phrases and must not be copied blindly.
+- P0.10 partial: server-role read-only probes confirmed all 29 expected tables are reachable and populated according to current use. The live `graphics` bucket is `public: true`; a no-credential object read returned HTTP 200. Migration `0008` was therefore not reflected in live state. Pitcher List WordPress identity, types, categories, and post reads returned HTTP 200; the configured account can edit, publish, and upload. Yoast exposes rendered JSON and focus-keyword/title/meta-description keys. QB WordPress is not configured locally. Vercel project-management access is unavailable: the connected account returned no teams and the local CLI token is invalid.
+
+### 2026-07-21 — Private graphics hotfix in progress
+
+- Source audit found `loadFullGraphicRequests` returned a persisted, expiring signed URL while other graphics reads generated fresh signed URLs.
+- `src/lib/entries/queries.ts` now batch-signs `storage_path` values for entry details.
+- `supabase/migrations/0012_reassert_private_graphics_bucket.sql` idempotently sets the exact `graphics` bucket to private and includes the one-line rollback.
+- Post-change `npm run lint`, `npx tsc --noEmit`, and `npm run build` all pass. Live state has not been changed yet; preview/deployment verification comes first.
