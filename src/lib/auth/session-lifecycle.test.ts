@@ -79,6 +79,58 @@ function makeRepository(initial: Stored | null, readBarrier?: () => Promise<void
 }
 
 describe("refresh-session rotation", () => {
+  it("returns invalid without issuing or revoking when the session is absent", async () => {
+    const store = makeRepository(null);
+    const issueNext = () => {
+      throw new Error("must not issue");
+    };
+
+    const result = await rotateRefreshSession({
+      repository: store.repository,
+      sessionId: "missing-session",
+      userId: "user-1",
+      refreshTokenHash: "refresh-old",
+      now: new Date("2026-07-21T12:00:00.000Z"),
+      issueNext,
+    });
+
+    expect(result.status).toBe("invalid");
+    expect(store.revocations()).toBe(0);
+  });
+
+  it("atomically replaces both hashes on a valid single rotation", async () => {
+    const store = makeRepository({
+      id: "session-1",
+      userId: "user-1",
+      accessHash: "access-old",
+      refreshHash: "refresh-old",
+      expiresAt: new Date("2026-07-28T12:00:00.000Z"),
+    });
+    const nextExpiry = new Date("2026-07-29T12:00:00.000Z");
+
+    const result = await rotateRefreshSession({
+      repository: store.repository,
+      sessionId: "session-1",
+      userId: "user-1",
+      refreshTokenHash: "refresh-old",
+      now: new Date("2026-07-21T12:00:00.000Z"),
+      issueNext: () => ({
+        pair: "next-pair",
+        accessTokenHash: "access-next",
+        refreshTokenHash: "refresh-next",
+        refreshExpiresAt: nextExpiry,
+      }),
+    });
+
+    expect(result).toEqual({ status: "rotated", pair: "next-pair" });
+    expect(store.snapshot()).toMatchObject({
+      accessHash: "access-next",
+      refreshHash: "refresh-next",
+      expiresAt: nextExpiry,
+    });
+    expect(store.revocations()).toBe(0);
+  });
+
   it("allows only one concurrent use and revokes the family on replay", async () => {
     let reads = 0;
     let releaseReads!: () => void;

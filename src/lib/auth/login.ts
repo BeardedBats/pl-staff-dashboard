@@ -5,7 +5,9 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { normalizeEmail } from "@/lib/identity/normalization";
 import { buildWpProfileUpdate } from "@/lib/users/wp-profile";
 import {
+  isStaffWpUser,
   validateWpAnywhere,
+  wpRoleToDashboardRole,
   type WpSiteKey,
   type WpUser,
 } from "@/lib/auth/wordpress";
@@ -77,6 +79,14 @@ export async function performLogin(
   }
 
   const { site: wpSite, user: wpUser } = wpResult;
+  if (!isStaffWpUser(wpUser.wp_roles)) {
+    return {
+      ok: false,
+      status: 403,
+      error: "Your WordPress account does not have an eligible staff role.",
+    };
+  }
+
   const supabase = getSupabaseAdmin();
 
   const dbUser = await upsertUserFromWp(wpSite, wpUser);
@@ -216,13 +226,7 @@ async function upsertUserFromWp(
   //    are assigned manually later; new logins always start as 'writer' unless
   //    their WP role is something more elevated. This is conservative on
   //    purpose — escalation happens in Admin settings.
-  const wpRoles = wp.wp_roles;
-  const dashboardRole: "writer" | "editor" | "admin" =
-    wpRoles.includes("administrator")
-      ? "admin"
-      : wpRoles.some((r) => r === "editor" || r === "author")
-        ? "editor"
-        : "writer";
+  const dashboardRole = wpRoleToDashboardRole(wp.wp_roles);
 
   await supabase.from("user_roles").insert({
     user_id: created.id as string,
