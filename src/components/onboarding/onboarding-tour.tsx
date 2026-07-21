@@ -106,8 +106,8 @@ const STEPS: Step[] = [
   {
     target: '[data-tour="nav-settings"]',
     placement: "right",
-    title: "Settings & Discord",
+    title: "Settings",
     content:
-      "Set your Discord ID in Settings → Profile so the dashboard can DM you. You can also tune notification preferences to control what hits your inbox.",
+      "Update your profile and timezone, then tune which events appear in your in-app notification inbox.",
   },
 ];
