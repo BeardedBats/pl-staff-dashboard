@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, MapPin, AtSign, Hash } from "lucide-react";
 import {
   getCurrentUser,
-  isAdminPlus,
 } from "@/lib/auth/current-user";
+import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { getUserById } from "@/lib/users/queries";
 import { UserAvatar } from "@/components/users/user-avatar";
 import { RoleBadgeGroup } from "@/components/users/role-badge";
@@ -39,7 +39,8 @@ export default async function StaffMemberPage({
   if (!viewer) return null;
 
   const isSelf = viewer.id === target.id;
-  const isPrivileged = isSelf || isAdminPlus(viewer);
+  const isPrivileged =
+    isSelf || isAdminPlusForScope(viewer, target.wp_site);
 
   return (
     <div className="space-y-6">
@@ -139,11 +140,13 @@ export default async function StaffMemberPage({
                   href={`mailto:${target.email}`}
                 />
               ) : null}
-              <DetailRow
-                icon={<MapPin className="h-3.5 w-3.5" />}
-                label="Timezone"
-                value={target.timezone}
-              />
+              {isPrivileged ? (
+                <DetailRow
+                  icon={<MapPin className="h-3.5 w-3.5" />}
+                  label="Timezone"
+                  value={target.timezone}
+                />
+              ) : null}
             </CardContent>
           </Card>
 

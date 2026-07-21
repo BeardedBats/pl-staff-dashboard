@@ -2,9 +2,12 @@ import { redirect } from "next/navigation";
 import {
   canViewAnalytics,
   getCurrentUser,
-  isAdminPlus,
   isOperations,
 } from "@/lib/auth/current-user";
+import {
+  authorizedSiteScope,
+  isAdminPlusForScope,
+} from "@/lib/auth/authorization";
 import { getUserById, listUsers } from "@/lib/users/queries";
 import { listTeams } from "@/lib/teams/data";
 import { listTiers } from "@/lib/entries/queries";
@@ -47,12 +50,20 @@ export default async function SettingsPage({
   const myProfile = await getUserById(viewer.id);
   if (!myProfile) redirect("/login");
 
-  const adminAccess = isAdminPlus(viewer);
+  const adminScope = authorizedSiteScope(viewer, "admin", "eic", "operations");
+  const adminAccess = adminScope !== null;
+  const globalAdminAccess = isAdminPlusForScope(viewer, "both");
+  const allowedAdminSites: Array<"pl" | "qb"> =
+    adminScope === "both"
+      ? ["pl", "qb"]
+      : adminScope
+        ? [adminScope]
+        : [];
   const analyticsAccess = canViewAnalytics(viewer);
   const params = await searchParams;
 
   // Fetch admin data in parallel if the viewer has access.
-  const [staffList, teams, tiers, templates, seasonModes, syncStatus, checklistItems] =
+  const [rawStaffList, rawTeams, tiers, rawTemplates, seasonModes] =
     adminAccess
       ? await Promise.all([
           listUsers({ limit: 200 }),
@@ -60,8 +71,6 @@ export default async function SettingsPage({
           listTiers(),
           listTemplates(),
           listSeasonModes(),
-          loadSyncStatus(),
-          listChecklistItems(),
         ])
       : [
           { users: [], totalCount: 0 },
@@ -69,9 +78,26 @@ export default async function SettingsPage({
           [],
           [],
           [],
-          { pl: null, qb: null },
-          [],
         ];
+
+  const staffUsers = rawStaffList.users.filter(
+    (user) =>
+      isAdminPlusForScope(viewer, user.wp_site) &&
+      user.role_rows.every((row) =>
+        isAdminPlusForScope(viewer, row.site),
+      ),
+  );
+  const staffList = { users: staffUsers, totalCount: staffUsers.length };
+  const teams = rawTeams.filter((team) =>
+    isAdminPlusForScope(viewer, team.site),
+  );
+  const templates = rawTemplates.filter((template) =>
+    isAdminPlusForScope(viewer, template.site),
+  );
+
+  const [syncStatus, checklistItems] = globalAdminAccess
+    ? await Promise.all([loadSyncStatus(), listChecklistItems()])
+    : [{ pl: null, qb: null }, []];
 
   // Analytics panel — only fetched for EIC/Operations viewers
   const [ga4Status, raptiveUploads] = analyticsAccess
@@ -83,7 +109,10 @@ export default async function SettingsPage({
 
   const validTabs = ["profile", "notifications"];
   if (adminAccess) {
-    validTabs.push("users", "teams", "templates", "season", "sync", "checklists");
+    validTabs.push("users", "teams", "templates");
+  }
+  if (globalAdminAccess) {
+    validTabs.push("season", "sync", "checklists");
   }
   if (analyticsAccess) {
     validTabs.push("analytics");
@@ -110,6 +139,10 @@ export default async function SettingsPage({
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="teams">Teams</TabsTrigger>
               <TabsTrigger value="templates">Templates</TabsTrigger>
+            </>
+          ) : null}
+          {globalAdminAccess ? (
+            <>
               <TabsTrigger value="season">Season</TabsTrigger>
               <TabsTrigger value="sync">Sync</TabsTrigger>
               <TabsTrigger value="checklists">Checklists</TabsTrigger>
@@ -134,10 +167,15 @@ export default async function SettingsPage({
               <AdminUsersPanel
                 initialUsers={staffList.users}
                 totalCount={staffList.totalCount}
+                allowedSites={allowedAdminSites}
               />
             </TabsContent>
             <TabsContent value="teams">
-              <AdminTeamsPanel initialTeams={teams} allUsers={staffList.users} />
+              <AdminTeamsPanel
+                initialTeams={teams}
+                allUsers={staffList.users}
+                allowedSites={allowedAdminSites}
+              />
             </TabsContent>
             <TabsContent value="templates">
               <AdminTemplatesPanel
@@ -145,8 +183,14 @@ export default async function SettingsPage({
                 seasonModes={seasonModes}
                 tiers={tiers}
                 assignableUsers={staffList.users}
+                allowedSites={allowedAdminSites}
+                canRunGenerator={globalAdminAccess}
               />
             </TabsContent>
+          </>
+        ) : null}
+        {globalAdminAccess ? (
+          <>
             <TabsContent value="season">
               <AdminSeasonPanel initialModes={seasonModes} />
             </TabsContent>

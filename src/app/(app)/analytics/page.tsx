@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { canViewAnalytics, getCurrentUser, isOperations } from "@/lib/auth/current-user";
+import { getCurrentUser, isOperations } from "@/lib/auth/current-user";
+import { authorizedSiteScope } from "@/lib/auth/authorization";
 import { listCategories, listTiers } from "@/lib/entries/queries";
 import { listUsers } from "@/lib/users/queries";
 import { AnalyticsPageClient } from "./analytics-page-client";
@@ -11,9 +12,12 @@ export const metadata = {
 export default async function AnalyticsPage() {
   const viewer = await getCurrentUser();
   if (!viewer) redirect("/login");
-  if (!canViewAnalytics(viewer)) {
+  const analyticsScope = authorizedSiteScope(viewer, "eic", "operations");
+  if (!analyticsScope) {
     redirect("/home");
   }
+  const allowedSites: Array<"pl" | "qb"> =
+    analyticsScope === "both" ? ["pl", "qb"] : [analyticsScope];
 
   // Preload tiers, categories, and the writer/editor pool in parallel.
   // ~200 staff fits comfortably in memory; no need for a debounced server search.
@@ -26,8 +30,12 @@ export default async function AnalyticsPage() {
   // Only show people who could plausibly be authors (writer / editor / contributor roles).
   const authorCandidates = staff.users
     .filter((u) =>
-      u.roles.some((r) =>
-        ["writer", "editor", "manager", "admin", "eic", "operations"].includes(r),
+      u.role_rows.some(
+        (row) =>
+          ["writer", "editor", "manager", "admin", "eic", "operations"].includes(
+            row.role,
+          ) &&
+          (row.site === "both" || allowedSites.includes(row.site)),
       ),
     )
     .map((u) => ({ id: u.id, display_name: u.display_name }));
@@ -49,6 +57,7 @@ export default async function AnalyticsPage() {
         categories={categories}
         authorCandidates={authorCandidates}
         isOperations={isOperations(viewer)}
+        allowedSites={allowedSites}
       />
     </div>
   );

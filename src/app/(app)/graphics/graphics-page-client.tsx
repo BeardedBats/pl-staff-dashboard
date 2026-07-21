@@ -21,7 +21,6 @@ import type { AppSite } from "@/lib/auth/current-user";
 
 type GraphicsPageClientProps = {
   initialRequests: GraphicRequestRecord[];
-  currentUserId: string;
 };
 
 type ViewMode = "table" | "kanban";
@@ -30,7 +29,6 @@ const ALL = "__all__";
 
 export function GraphicsPageClient({
   initialRequests,
-  currentUserId,
 }: GraphicsPageClientProps) {
   const [requests, setRequests] = React.useState(initialRequests);
   const [view, setView] = React.useState<ViewMode>("table");
@@ -187,13 +185,11 @@ export function GraphicsPageClient({
       ) : view === "table" ? (
         <TableView
           requests={filtered}
-          currentUserId={currentUserId}
           onChanged={refresh}
         />
       ) : (
         <GraphicsKanban
           requests={filtered}
-          currentUserId={currentUserId}
           onChanged={refresh}
         />
       )}
@@ -209,11 +205,9 @@ export function GraphicsPageClient({
 
 function TableView({
   requests,
-  currentUserId,
   onChanged,
 }: {
   requests: GraphicRequestRecord[];
-  currentUserId: string;
   onChanged: () => void;
 }) {
   return (
@@ -222,7 +216,6 @@ function TableView({
         <GraphicRequestCard
           key={r.id}
           request={r}
-          currentUserId={currentUserId}
           showEntryLink
           onChanged={onChanged}
         />

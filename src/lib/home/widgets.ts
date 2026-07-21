@@ -284,25 +284,28 @@ export type HomeGraphicCard = {
 
 /** Open graphic requests — "needed" or "flagged" (returned for revision). */
 export async function getOpenGraphicRequests(
+  userSite: AppSite,
   limit = 10,
 ): Promise<HomeGraphicCard[]> {
   const supabase = getSupabaseAdmin();
-  const { data } = await supabase
+  let query = supabase
     .from("graphic_requests")
     .select(
-      "id, title, created_at, status, entry_id, entries!inner(title), claimed_by",
+      "id, title, created_at, graphic_status, entry_id, entries!inner(title, site), claimed_by",
     )
-    .in("status", ["needed", "flagged"])
+    .in("graphic_status", ["needed", "flagged"])
     .order("created_at", { ascending: true })
     .limit(limit);
+  if (userSite !== "both") query = query.eq("entries.site", userSite);
+  const { data } = await query;
 
   const rows = (data ?? []) as unknown as Array<{
     id: string;
     title: string;
     created_at: string;
-    status: GraphicStatus;
+    graphic_status: GraphicStatus;
     entry_id: string;
-    entries: { title: string };
+    entries: { title: string; site: AppSite };
     claimed_by: string | null;
   }>;
 
@@ -311,7 +314,7 @@ export async function getOpenGraphicRequests(
     title: r.title,
     entry_id: r.entry_id,
     entry_title: r.entries.title,
-    graphic_status: r.status,
+    graphic_status: r.graphic_status,
     claimed_by_name: null,
     created_at: r.created_at,
   }));
@@ -455,7 +458,7 @@ export type WpSyncHealth = {
   qb: string | null;
 };
 
-export async function getWpSyncHealth(): Promise<WpSyncHealth> {
+export async function getWpSyncHealth(userSite: AppSite): Promise<WpSyncHealth> {
   const supabase = getSupabaseAdmin();
   const { data } = await supabase
     .from("global_settings")
@@ -466,13 +469,13 @@ export async function getWpSyncHealth(): Promise<WpSyncHealth> {
   const pl = rows.find((r) => r.key === "wp_last_sync_pl")?.value;
   const qb = rows.find((r) => r.key === "wp_last_sync_qb")?.value;
   return {
-    pl: typeof pl === "string" ? pl : null,
-    qb: typeof qb === "string" ? qb : null,
+    pl: userSite !== "qb" && typeof pl === "string" ? pl : null,
+    qb: userSite !== "pl" && typeof qb === "string" ? qb : null,
   };
 }
 
 /** 7-day pageview + revenue totals across both sources. */
-export async function getAnalyticsMini(): Promise<{
+export async function getAnalyticsMini(userSite: AppSite): Promise<{
   pageviews: number;
   revenue: number;
   daily: Array<{ date: string; pageviews: number; revenue: number }>;
@@ -484,18 +487,21 @@ export async function getAnalyticsMini(): Promise<{
   from.setDate(from.getDate() - 6);
   const fromIso = from.toISOString().slice(0, 10);
 
-  const [ga4Res, raptiveRes] = await Promise.all([
-    supabase
+  let ga4Query = supabase
       .from("article_analytics")
-      .select("date, pageviews")
+      .select("date, pageviews, entries!inner(site)")
       .gte("date", fromIso)
-      .lte("date", to),
-    supabase
+      .lte("date", to);
+  let raptiveQuery = supabase
       .from("raptive_revenue")
-      .select("date, earnings, pageviews")
+      .select("date, earnings, pageviews, entries!inner(site)")
       .gte("date", fromIso)
-      .lte("date", to),
-  ]);
+      .lte("date", to);
+  if (userSite !== "both") {
+    ga4Query = ga4Query.eq("entries.site", userSite);
+    raptiveQuery = raptiveQuery.eq("entries.site", userSite);
+  }
+  const [ga4Res, raptiveRes] = await Promise.all([ga4Query, raptiveQuery]);
 
   const daily = new Map<
     string,

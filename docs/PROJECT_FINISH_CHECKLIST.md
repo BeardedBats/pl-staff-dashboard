@@ -5,11 +5,11 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.4 — Repair authorization gaps with centralized site/resource policies
+- Current action: P1.5 — Reconcile navigation and server page access with backend policies
 - Branch: `codex/production-readiness`
-- HEAD: `61524b1f1f7d5e4c9be5fa81add54512219684ae`
-- Upstream baseline: `origin/main` at the same merge commit after PR #4.
-- Deployment: production deployment `5540163108` completed successfully from `61524b1` on 2026-07-21. A separate unmerged documentation PR has a preview and is excluded from this project baseline.
+- HEAD: `c0d853036a4ecf7fc73d389fef78898b4659d480`
+- Upstream baseline: `origin/main` at the same merge commit after PR #5.
+- Deployment: production deployment `5540561744` completed successfully from `c0d8530` on 2026-07-21. A separate unmerged documentation PR has a preview and is excluded from this project baseline.
 - Known blockers: Vercel project-management access is unavailable; Supabase management CLI access is unavailable; no safe dashboard test-user session is available for live role navigation. These do not block local security implementation and are deferred until their dependent live gates.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
@@ -36,8 +36,8 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [x] P1.1 Repair refresh-token rotation, replay protection, concurrent refresh behavior, revocation, expiry, logout, and session invalidation.
 - [x] P1.2 Ensure access-token requests validate the current server-side session state where required.
 - [x] P1.3 Audit every API route and server action against an explicit role-and-resource authorization matrix.
-- [ ] P1.4 Fix graphics, editorial, analytics, administration, and synchronization authorization gaps. — IN PROGRESS
-- [ ] P1.5 Reconcile navigation visibility with backend permissions so users never see inaccessible areas or gain access through hidden routes.
+- [x] P1.4 Fix graphics, editorial, analytics, administration, and synchronization authorization gaps.
+- [ ] P1.5 Reconcile navigation visibility with backend permissions so users never see inaccessible areas or gain access through hidden routes. — IN PROGRESS
 - [ ] P1.6 Standardize request and response validation using shared schemas and safe, user-facing error handling.
 - [ ] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow.
 - [ ] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants.
@@ -233,6 +233,23 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - The audit uncovered and closed AUTH-09 during implementation: direct draft child routes now apply the author-or-site-Admin+ visibility rule.
 - Analytics API and CSV queries now force a one-site EIC/Operations user to that site, reject an explicitly unauthorized site, and treat full PL+QB coverage as an intentional unfiltered query.
 - Local gate: 5 Vitest files / 18 tests passed; lint passed; sequential TypeScript passed; Next.js production build passed with all expected routes.
+
+### 2026-07-21 — P1.4 authorization repair production gate
+
+- Commit `6e9c09f` passed the Vercel preview; PR #5 merged as `c0d8530`; production deployment `5540561744` completed successfully.
+- A disposable production probe created only temporary users, site roles, sessions, entries, and graphics and removed them in `finally` cleanup.
+- Verified results: PL graphics could claim PL work (200) but not QB work (400); a QB outsider could not patch a PL entry (403), while its PL participant could (200); a non-writer could not claim a writer slot (400).
+- Draft detail was hidden from an outsider (404) and available to its author (200). Another staff member's private API fields were withheld while the viewer's own private fields remained present.
+- A PL-only admin was denied global checklist settings (403). A PL-only EIC was denied QB analytics (403) and allowed PL analytics (200).
+- The corrected graphics-list check verified that a QB writer saw exactly their own QB request and not the unrelated PL request. No cleanup errors occurred.
+
+### 2026-07-21 — P1.5 interface authorization local gate
+
+- Server pages now derive concrete PL/QB scopes from role rows for home widgets, editing queues, staff private fields, analytics filters, settings data, and content bulk-selection capabilities.
+- Entry-detail, graphics-card, graphics-drag, archive-restoration, and bulk-entry controls now use site/resource permissions that match their API routes instead of flattened roles or state alone.
+- One-site administrators and analytics viewers are only offered permitted sites. Global season, sync, checklist, and recurring-generator controls require authority over both sites.
+- The user editor preserves duplicate per-site role grants instead of collapsing them when a global administrator saves an unrelated change.
+- Local gate: 5 Vitest files / 19 tests passed; lint passed; sequential TypeScript passed; Next.js production build passed with all expected routes. Preview, production deployment, and disposable-session UI/API probes remain before P1.5 completion.
 
 ## Phase 0 prioritized defect and risk inventory
 

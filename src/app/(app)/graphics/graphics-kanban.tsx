@@ -25,7 +25,6 @@ import type { GraphicStatus } from "@/lib/entries/queries";
 
 type GraphicsKanbanProps = {
   requests: GraphicRequestRecord[];
-  currentUserId: string;
   onChanged: () => void;
 };
 
@@ -58,7 +57,6 @@ const COLUMNS: Array<{
  */
 export function GraphicsKanban({
   requests,
-  currentUserId,
   onChanged,
 }: GraphicsKanbanProps) {
   const sensors = useSensors(
@@ -112,6 +110,11 @@ export function GraphicsKanban({
       );
       return;
     }
+    const allowed =
+      (action === "claim" && activeReq.permissions.claim) ||
+      (action === "unclaim" && activeReq.permissions.unclaim) ||
+      (action === "unflag" && activeReq.permissions.unflag);
+    if (!allowed) return;
 
     try {
       const res = await fetch(`/api/graphic-requests/${activeReq.id}`, {
@@ -152,7 +155,6 @@ export function GraphicsKanban({
               hint={col.hint}
               badge={col.badge}
               requests={byStatus[col.status]}
-              currentUserId={currentUserId}
               onChanged={onChanged}
             />
           ))}
@@ -163,7 +165,6 @@ export function GraphicsKanban({
             <div className="opacity-90 shadow-xl">
               <GraphicRequestCard
                 request={activeRequest}
-                currentUserId={currentUserId}
                 compact
               />
             </div>
@@ -190,7 +191,6 @@ function KanbanColumn({
   hint,
   badge,
   requests,
-  currentUserId,
   onChanged,
 }: {
   status: GraphicStatus;
@@ -198,7 +198,6 @@ function KanbanColumn({
   hint: string;
   badge: "outline" | "cyan" | "success" | "danger";
   requests: GraphicRequestRecord[];
-  currentUserId: string;
   onChanged: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
@@ -233,7 +232,6 @@ function KanbanColumn({
               <SortableCard
                 key={r.id}
                 request={r}
-                currentUserId={currentUserId}
                 onChanged={onChanged}
               />
             ))
@@ -250,13 +248,15 @@ function KanbanColumn({
 
 function SortableCard({
   request,
-  currentUserId,
   onChanged,
 }: {
   request: GraphicRequestRecord;
-  currentUserId: string;
   onChanged: () => void;
 }) {
+  const canDrag =
+    (request.graphic_status === "needed" && request.permissions.claim) ||
+    (request.graphic_status === "claimed" && request.permissions.unclaim) ||
+    (request.graphic_status === "flagged" && request.permissions.unflag);
   const {
     attributes,
     listeners,
@@ -264,7 +264,7 @@ function SortableCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: request.id });
+  } = useSortable({ id: request.id, disabled: !canDrag });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -276,7 +276,6 @@ function SortableCard({
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <GraphicRequestCard
         request={request}
-        currentUserId={currentUserId}
         compact
         onChanged={onChanged}
       />

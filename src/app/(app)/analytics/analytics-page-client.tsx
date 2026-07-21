@@ -28,7 +28,9 @@ export type AnalyticsFilterState = {
 
 export type AuthorCandidate = { id: string; display_name: string };
 
-function defaultFilters(): AnalyticsFilterState {
+function defaultFilters(
+  allowedSites: Array<"pl" | "qb">,
+): AnalyticsFilterState {
   const now = new Date();
   const to = now.toISOString().slice(0, 10);
   const from = new Date(now);
@@ -36,7 +38,7 @@ function defaultFilters(): AnalyticsFilterState {
   return {
     dateFrom: from.toISOString().slice(0, 10),
     dateTo: to,
-    site: "all",
+    site: allowedSites.length === 2 ? "all" : (allowedSites[0] ?? "all"),
     tierId: "",
     categoryId: "",
     authorId: "",
@@ -59,6 +61,7 @@ type Props = {
   categories: EntryCategory[];
   authorCandidates: AuthorCandidate[];
   isOperations: boolean;
+  allowedSites: Array<"pl" | "qb">;
 };
 
 export function AnalyticsPageClient({
@@ -66,9 +69,10 @@ export function AnalyticsPageClient({
   categories,
   authorCandidates,
   isOperations,
+  allowedSites,
 }: Props) {
   const [filters, setFilters] = React.useState<AnalyticsFilterState>(() =>
-    defaultFilters(),
+    defaultFilters(allowedSites),
   );
   const [raptiveOpen, setRaptiveOpen] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState("overview");
@@ -82,6 +86,7 @@ export function AnalyticsPageClient({
           tiers={tiers}
           categories={categories}
           authorCandidates={authorCandidates}
+          allowedSites={allowedSites}
           value={filters}
           onChange={setFilters}
         />

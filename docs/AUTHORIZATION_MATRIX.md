@@ -35,15 +35,15 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 
 | Finding | Local repair | Verification state |
 |---|---|---|
-| AUTH-01 | Site-aware role/scope helpers now bind entry, graphics, claim, archive, editorial, analytics filters, team, template, user-administration, global-settings, historical-sync, and manual cron authority to the resource site. | 18 focused tests, TypeScript, lint, and production build pass; production probe pending. |
-| AUTH-02 | Graphics list/detail signing is viewer-filtered; create, claim, unclaim, flag, unflag, edit, delete, upload, and WordPress submit use action-specific participant/role/assignment policies. Entry detail no longer signs graphics for unrelated staff. | Focused policy tests and build pass; production probe pending. |
-| AUTH-03 | Entry metadata mutation now requires an entry participant or site Manager+. | Focused policy tests and build pass; production probe pending. |
-| AUTH-04 | Staff-list and staff-detail HTTP responses share one field projection; private fields are limited to self or Admin+ for the target site. | Projection tests and build pass; production probe pending. |
-| AUTH-05 | Writer claims require writer or Manager+ authority for the entry site. | Focused policy tests and build pass; production probe pending. |
-| AUTH-06 | Graphics creation now requires parent-entry participation or site Manager+. | Focused policy tests and build pass; production probe pending. |
+| AUTH-01 | Site-aware role/scope helpers now bind entry, graphics, claim, archive, editorial, analytics filters, team, template, user-administration, global-settings, historical-sync, and manual cron authority to the resource site. | Production verified in deployment `5540561744`. |
+| AUTH-02 | Graphics list/detail signing is viewer-filtered; create, claim, unclaim, flag, unflag, edit, delete, upload, and WordPress submit use action-specific participant/role/assignment policies. Entry detail no longer signs graphics for unrelated staff. | Production list/claim boundaries verified. |
+| AUTH-03 | Entry metadata mutation now requires an entry participant or site Manager+. | Production participant/outsider responses verified. |
+| AUTH-04 | Staff-list and staff-detail HTTP responses share one field projection; private fields are limited to self or Admin+ for the target site. | Production self/other projections verified. |
+| AUTH-05 | Writer claims require writer or Manager+ authority for the entry site. | Production non-writer denial verified. |
+| AUTH-06 | Graphics creation now requires parent-entry participation or site Manager+. | Focused policy tests and production build pass; negative route integration remains in P1.16. |
 | AUTH-07 | Reply creation rejects a parent comment from another entry. | TypeScript, lint, and build pass; route integration coverage remains in P1.16. |
 | AUTH-08 | Deliberately deferred to P1.12 so transport, secret auth, idempotency, overlap, and Vercel-shaped tests close together. | Open. |
-| AUTH-09 | Central entry visibility now hides drafts from everyone except creator/author and site Admin+ across direct detail and child-resource routes. | Focused draft tests and build pass; production probe pending. |
+| AUTH-09 | Central entry visibility now hides drafts from everyone except creator/author and site Admin+ across direct detail and child-resource routes. | Production author/outsider detail responses verified. |
 
 ## Route matrix
 

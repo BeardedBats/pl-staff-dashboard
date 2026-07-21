@@ -1,9 +1,5 @@
-import {
-  canViewAnalytics,
-  getCurrentUser,
-  hasRole,
-  isManagerPlus,
-} from "@/lib/auth/current-user";
+import { getCurrentUser, hasRole } from "@/lib/auth/current-user";
+import { authorizedSiteScope } from "@/lib/auth/authorization";
 import { listPendingClaims } from "@/lib/claims/data";
 import { listPendingArchiveRequests } from "@/lib/archive-requests/data";
 import {
@@ -20,10 +16,6 @@ import {
   getStaleEntries,
   getUnclaimedWriterSlots,
   getWpSyncHealth,
-  isEicOrOps,
-  isEditorRole,
-  isGraphicsRole,
-  isWriterRole,
 } from "@/lib/home/widgets";
 import { ManagerInbox } from "./manager-inbox";
 import {
@@ -56,11 +48,45 @@ export default async function HomePage() {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const writerFit = isWriterRole(user.roles);
-  const editorFit = isEditorRole(user.roles);
-  const graphicsFit = isGraphicsRole(user.roles);
-  const eicFit = isEicOrOps(user.roles);
-  const managerFit = isManagerPlus(user);
+  const writerScope = authorizedSiteScope(
+    user,
+    "writer",
+    "editor",
+    "manager",
+    "admin",
+    "eic",
+    "operations",
+  );
+  const editorScope = authorizedSiteScope(
+    user,
+    "editor",
+    "manager",
+    "admin",
+    "eic",
+    "operations",
+  );
+  const writerClaimScope = authorizedSiteScope(
+    user,
+    "writer",
+    "manager",
+    "admin",
+    "eic",
+    "operations",
+  );
+  const graphicsScope = authorizedSiteScope(user, "graphics");
+  const eicScope = authorizedSiteScope(user, "eic", "operations");
+  const managerScope = authorizedSiteScope(
+    user,
+    "manager",
+    "admin",
+    "eic",
+    "operations",
+  );
+  const writerFit = Boolean(writerScope);
+  const editorFit = Boolean(editorScope);
+  const graphicsFit = Boolean(graphicsScope);
+  const eicFit = Boolean(eicScope);
+  const managerFit = Boolean(managerScope);
   // Writers don't see "unclaimed" slots if they have nothing but graphics,
   // and we want to avoid bombarding eic/ops with too many empty cards.
   const pureWriter =
@@ -89,15 +115,17 @@ export default async function HomePage() {
     writerFit ? getMySubmittedInFlight(user.id) : Promise.resolve([]),
     writerFit ? getMyUpcomingDeadlines(user.id) : Promise.resolve([]),
     writerFit ? getMyDraftsToApprove(user.id) : Promise.resolve([]),
-    writerFit ? getUnclaimedWriterSlots(user.wp_site) : Promise.resolve([]),
-    editorFit ? getEditorQueuePreview(user.wp_site) : Promise.resolve([]),
+    writerClaimScope
+      ? getUnclaimedWriterSlots(writerClaimScope)
+      : Promise.resolve([]),
+    editorScope ? getEditorQueuePreview(editorScope) : Promise.resolve([]),
     editorFit ? getMyActiveEdits(user.id) : Promise.resolve([]),
-    graphicsFit || eicFit ? getOpenGraphicRequests() : Promise.resolve([]),
+    graphicsScope ? getOpenGraphicRequests(graphicsScope) : Promise.resolve([]),
     graphicsFit ? getMyActiveGraphics(user.id) : Promise.resolve([]),
-    eicFit ? getPipelineHealth(user.wp_site) : Promise.resolve(null),
-    eicFit ? getWpSyncHealth() : Promise.resolve(null),
-    canViewAnalytics(user) ? getAnalyticsMini() : Promise.resolve(null),
-    eicFit ? getStaleEntries(user.wp_site) : Promise.resolve([]),
+    eicScope ? getPipelineHealth(eicScope) : Promise.resolve(null),
+    eicScope ? getWpSyncHealth(eicScope) : Promise.resolve(null),
+    eicScope ? getAnalyticsMini(eicScope) : Promise.resolve(null),
+    eicScope ? getStaleEntries(eicScope) : Promise.resolve([]),
     managerFit ? listPendingClaims(user) : Promise.resolve([]),
     managerFit ? listPendingArchiveRequests(user) : Promise.resolve([]),
   ]);
@@ -176,7 +204,7 @@ export default async function HomePage() {
       ) : null}
 
       {/* Multi-role writer sees unclaimed + stale at the bottom */}
-      {!pureWriter && writerFit ? (
+      {!pureWriter && writerClaimScope ? (
         <div className="grid gap-4 md:grid-cols-2">
           <UnclaimedSlotsWidget entries={unclaimedSlots} />
           {eicFit ? <StaleEntriesWidget entries={stale} /> : null}

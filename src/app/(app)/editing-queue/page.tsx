@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ClipboardEdit } from "lucide-react";
-import { getCurrentUser, hasRole } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { authorizedSiteScope } from "@/lib/auth/authorization";
 import { listEntries } from "@/lib/entries/queries";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -22,14 +23,21 @@ export default async function EditingQueuePage() {
   if (!viewer) redirect("/login");
 
   // Gate: editor / manager / admin / eic / operations only.
-  if (
-    !hasRole(viewer, "editor", "manager", "admin", "eic", "operations")
-  ) {
+  const editorScope = authorizedSiteScope(
+    viewer,
+    "editor",
+    "manager",
+    "admin",
+    "eic",
+    "operations",
+  );
+  if (!editorScope) {
     redirect("/home");
   }
 
   const { entries } = await listEntries({
     editorStatusIn: ["ready_for_edit", "edited"],
+    site: editorScope,
     sortBy: "publish_date",
     sortDir: "asc",
     limit: 200,

@@ -51,6 +51,7 @@ import { GraphicRequestCard } from "@/components/graphics/graphic-request-card";
 import { CommentThread } from "@/components/comments/comment-thread";
 import type { EntryDetail } from "@/lib/entries/queries";
 import type { GraphicRequestRecord } from "@/lib/graphics/data";
+import type { AppRole, AppSite } from "@/lib/auth/current-user";
 
 type EntryDetailPanelProps = {
   entryId: string;
@@ -79,7 +80,8 @@ export function EntryDetailPanel({
   >([]);
   const [me, setMe] = React.useState<{
     id: string;
-    roles: string[];
+    roles: AppRole[];
+    role_rows: Array<{ role: AppRole; site: AppSite }>;
     can_publish: boolean;
   } | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -120,6 +122,7 @@ export function EntryDetailPanel({
           setMe({
             id: meRes.user.id,
             roles: meRes.user.roles ?? [],
+            role_rows: meRes.user.role_rows ?? [],
             can_publish: Boolean(meRes.user.can_publish),
           });
         }
@@ -245,15 +248,40 @@ export function EntryDetailPanel({
   }
 
   // Compute which actions the viewer can take.
-  const isEditorLike =
-    me?.roles.some((r) =>
-      ["editor", "manager", "admin", "eic", "operations"].includes(r),
+  const hasSiteRole = (...roles: AppRole[]) =>
+    me?.role_rows.some(
+      (row) =>
+        roles.includes(row.role) &&
+        (row.site === "both" || row.site === entry.site),
     ) ?? false;
-  const isAdminLike =
-    me?.roles.some((r) => ["admin", "eic", "operations"].includes(r)) ??
-    false;
+  const isEditorLike = hasSiteRole(
+    "editor",
+    "manager",
+    "admin",
+    "eic",
+    "operations",
+  );
+  const isAdminLike = hasSiteRole("admin", "eic", "operations");
+  const canViewAnalytics = hasSiteRole("eic", "operations");
   const isAuthor = entry.authors.some((a) => a.user_id === me?.id);
-  const canEditChecklist = isAuthor || isEditorLike || isAdminLike;
+  const isAssignedEditor = entry.editors.some((e) => e.user_id === me?.id);
+  const isParticipant =
+    entry.created_by === me?.id || isAuthor || isAssignedEditor;
+  const isManagerLike = hasSiteRole(
+    "manager",
+    "admin",
+    "eic",
+    "operations",
+  );
+  const canEditChecklist = isAuthor || isAssignedEditor || isAdminLike;
+  const canClaimWriter = hasSiteRole(
+    "writer",
+    "manager",
+    "admin",
+    "eic",
+    "operations",
+  );
+  const canCreateGraphic = isParticipant || isManagerLike;
   const missingRequired = entry.checklist.filter(
     (c) => c.is_required && !c.is_completed,
   );
@@ -286,7 +314,7 @@ export function EntryDetailPanel({
 
       {/* Action bar */}
       <div className="mt-4 flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-3/40 p-3">
-        {isClaimableContent ? (
+        {isClaimableContent && canClaimWriter ? (
           <Button
             size="sm"
             onClick={handleClaim}
@@ -407,7 +435,7 @@ export function EntryDetailPanel({
             <History className="mr-1 h-3 w-3" />
             Audit
           </TabsTrigger>
-          {isAdminLike ? (
+          {canViewAnalytics ? (
             <TabsTrigger value="analytics">
               <BarChart3 className="mr-1 h-3 w-3" />
               Analytics
@@ -419,13 +447,14 @@ export function EntryDetailPanel({
           <PipelineTab
             entry={entry}
             graphicRequests={graphicRequests}
-            currentUserId={me?.id ?? ""}
             canEditChecklist={canEditChecklist}
             onGraphicsChanged={() => {
               void reload();
               onChanged();
             }}
-            onCreateGraphic={() => setCreateGraphicOpen(true)}
+            onCreateGraphic={
+              canCreateGraphic ? () => setCreateGraphicOpen(true) : undefined
+            }
             onChecklistToggle={async (itemId, nextCompleted) => {
               const res = await fetch(
                 `/api/entries/${entryId}/checklist/${itemId}`,
@@ -447,9 +476,7 @@ export function EntryDetailPanel({
             entryId={entryId}
             currentUserId={me?.id ?? ""}
             isAdmin={
-              me?.roles.some((r) =>
-                ["admin", "eic", "operations"].includes(r),
-              ) ?? false
+              isAdminLike
             }
           />
         </TabsContent>
@@ -457,7 +484,7 @@ export function EntryDetailPanel({
         <TabsContent value="audit">
           <AuditTab entryId={entryId} />
         </TabsContent>
-        {isAdminLike ? (
+        {canViewAnalytics ? (
           <TabsContent value="analytics">
             <EntryAnalyticsMini entryId={entryId} />
           </TabsContent>
@@ -579,7 +606,6 @@ function EntryTopBar({
 function PipelineTab({
   entry,
   graphicRequests,
-  currentUserId,
   canEditChecklist,
   onGraphicsChanged,
   onCreateGraphic,
@@ -587,10 +613,9 @@ function PipelineTab({
 }: {
   entry: EntryDetail;
   graphicRequests: GraphicRequestRecord[];
-  currentUserId: string;
   canEditChecklist: boolean;
   onGraphicsChanged: () => void;
-  onCreateGraphic: () => void;
+  onCreateGraphic?: () => void;
   onChecklistToggle: (itemId: string, nextCompleted: boolean) => Promise<void>;
 }) {
   return (
@@ -754,10 +779,12 @@ function PipelineTab({
               <ImageIcon className="h-3 w-3" />
               Graphics ({graphicRequests.length})
             </h4>
-            <Button size="sm" variant="outline" onClick={onCreateGraphic}>
-              <ImageIcon className="h-3 w-3" />
-              Request
-            </Button>
+            {onCreateGraphic ? (
+              <Button size="sm" variant="outline" onClick={onCreateGraphic}>
+                <ImageIcon className="h-3 w-3" />
+                Request
+              </Button>
+            ) : null}
           </div>
           {graphicRequests.length === 0 ? (
             <p className="rounded-md border border-dashed border-border bg-card/50 p-3 text-center text-xs italic text-text-zero">
@@ -769,7 +796,6 @@ function PipelineTab({
                 <GraphicRequestCard
                   key={g.id}
                   request={g}
-                  currentUserId={currentUserId}
                   onChanged={onGraphicsChanged}
                 />
               ))}

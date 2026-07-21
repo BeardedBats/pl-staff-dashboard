@@ -36,7 +36,6 @@ import type { GraphicRequestRecord } from "@/lib/graphics/data";
 
 type GraphicRequestCardProps = {
   request: GraphicRequestRecord;
-  currentUserId: string;
   /** Compact variant for the kanban board — smaller card, no quick actions. */
   compact?: boolean;
   /** When true, show a link to the parent entry. */
@@ -47,7 +46,6 @@ type GraphicRequestCardProps = {
 
 export function GraphicRequestCard({
   request,
-  currentUserId,
   compact = false,
   showEntryLink = false,
   onChanged,
@@ -160,19 +158,26 @@ export function GraphicRequestCard({
     );
   }
 
-  const canClaim = request.graphic_status === "needed";
+  const canClaim =
+    request.permissions.claim && request.graphic_status === "needed";
   const canUnclaim =
-    request.graphic_status === "claimed" && request.claimed_by === currentUserId;
+    request.graphic_status === "claimed" &&
+    request.permissions.unclaim;
   const canUpload =
-    request.graphic_status !== "submitted";
+    request.permissions.upload && request.graphic_status !== "submitted";
   const canSubmit =
-    request.graphic_status === "claimed" && Boolean(request.file_url);
+    request.permissions.submit &&
+    request.graphic_status === "claimed" &&
+    Boolean(request.file_url);
   const canFlag =
-    request.graphic_status === "claimed" ||
-    request.graphic_status === "submitted";
-  const canUnflag = request.graphic_status === "flagged";
+    request.permissions.flag &&
+    (request.graphic_status === "claimed" ||
+      request.graphic_status === "submitted");
+  const canUnflag =
+    request.permissions.unflag && request.graphic_status === "flagged";
   const canDelete =
-    request.created_by === currentUserId && request.graphic_status !== "submitted";
+    request.graphic_status !== "submitted" &&
+    request.permissions.delete;
 
   return (
     <>

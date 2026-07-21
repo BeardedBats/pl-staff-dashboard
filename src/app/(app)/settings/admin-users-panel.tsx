@@ -39,11 +39,13 @@ import { EditUserDialog } from "./edit-user-dialog";
 type AdminUsersPanelProps = {
   initialUsers: StaffUserSummary[];
   totalCount: number;
+  allowedSites: Array<"pl" | "qb">;
 };
 
 export function AdminUsersPanel({
   initialUsers,
   totalCount,
+  allowedSites,
 }: AdminUsersPanelProps) {
   const router = useRouter();
   const [users, setUsers] = React.useState(initialUsers);
@@ -104,6 +106,7 @@ export function AdminUsersPanel({
             setImportOpen(false);
             router.refresh();
           }}
+          allowedSites={allowedSites}
         />
       </CardHeader>
       <CardContent className="space-y-4">
@@ -218,6 +221,7 @@ export function AdminUsersPanel({
             setEditingUserId(null);
             router.refresh();
           }}
+          allowedSites={allowedSites}
         />
       ) : null}
     </Card>
@@ -232,18 +236,23 @@ function ImportUserDialog({
   open,
   onOpenChange,
   onImported,
+  allowedSites,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImported: () => void;
+  allowedSites: Array<"pl" | "qb">;
 }) {
-  const [site, setSite] = React.useState<"pl" | "qb">("pl");
+  const [site, setSite] = React.useState<"pl" | "qb">(
+    allowedSites[0] ?? "pl",
+  );
   const [identifier, setIdentifier] = React.useState("");
   const [importing, setImporting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
 
   function reset() {
+    setSite(allowedSites[0] ?? "pl");
     setIdentifier("");
     setError(null);
     setSuccess(null);
@@ -325,8 +334,12 @@ function ImportUserDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pl">Pitcher List</SelectItem>
-                <SelectItem value="qb">QB List</SelectItem>
+                {allowedSites.includes("pl") ? (
+                  <SelectItem value="pl">Pitcher List</SelectItem>
+                ) : null}
+                {allowedSites.includes("qb") ? (
+                  <SelectItem value="qb">QB List</SelectItem>
+                ) : null}
               </SelectContent>
             </Select>
           </div>
