@@ -10,6 +10,7 @@ import {
 export const dynamic = "force-dynamic";
 // Reasonable ceiling: Raptive sheets for ~6 months are typically under 5MB
 export const maxDuration = 60;
+export const MAX_RAPTIVE_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 /**
  * POST /api/raptive/upload
@@ -43,6 +44,15 @@ export async function POST(request: Request) {
   if (!(file instanceof File)) {
     return errorResponse(400, "Missing file field");
   }
+  if (mode !== "preview" && mode !== "commit") {
+    return errorResponse(400, "Mode must be preview or commit");
+  }
+  if (file.size === 0 || file.size > MAX_RAPTIVE_UPLOAD_BYTES) {
+    return errorResponse(413, "Workbook must be between 1 byte and 10 MB");
+  }
+  if (!file.name.toLowerCase().endsWith(".xlsx")) {
+    return errorResponse(400, "Upload an XLSX workbook");
+  }
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const parsed = parseRaptiveWorkbook(buffer);
@@ -59,6 +69,10 @@ export async function POST(request: Request) {
     matchedCount: matchResult.matchedCount,
     unmatchedCount: matchResult.unmatchedCount,
     sampleUnmatched: matchResult.sampleUnmatched,
+    dataSheetCount: parsed.dataSheetCount,
+    duplicateCount: parsed.duplicateCount,
+    rejectedCount: parsed.rejectedCount,
+    sampleRejected: parsed.sampleRejected,
     // Never leak all rows back — only summary stats
     totalEarnings: parsed.rows.reduce(
       (acc, r) => acc + (Number(r.earnings) || 0),
@@ -69,11 +83,17 @@ export async function POST(request: Request) {
   if (mode !== "commit") {
     return NextResponse.json({ ok: true, preview });
   }
+  if (parsed.rejectedCount > 0) {
+    return errorResponse(
+      409,
+      "Resolve rejected workbook rows before committing the import",
+    );
+  }
 
   const commitResult = await commitRaptiveRows(
     matchResult.matched,
     parsed.dateRange,
-    file.name,
+    file.name.split(/[\\/]/).pop()?.slice(0, 255) || "raptive-upload.xlsx",
     viewer.id,
   );
   if (!commitResult.ok) {

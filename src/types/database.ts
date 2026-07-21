@@ -1526,6 +1526,16 @@ export type Database = {
           run_id: string
         }[]
       }
+      commit_raptive_import: {
+        Args: {
+          p_date_range_end: string
+          p_date_range_start: string
+          p_file_name: string
+          p_rows: Json
+          p_uploaded_by: string
+        }
+        Returns: number
+      }
       complete_graphic_submission: {
         Args: {
           p_actor_id: string

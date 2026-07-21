@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.7 — Add representative Raptive importer tests while preserving the Supabase DDL release block.
-- Branch: `codex/production-readiness-p2-6`
-- Stack base: `b344541` (green draft PR #22, based on green draft PRs #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P2.8 — Add role-based end-to-end journeys while preserving the Supabase DDL release block.
+- Branch: `codex/production-readiness-p2-7`
+- Stack base: `fa4ef36` (green draft PR #23, based on green draft PRs #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -62,7 +62,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 - [x] P2.4 Test editorial claims, assignments, state transitions, bulk actions, deadlines, and concurrent operations.
 - [x] P2.5 Test graphics submission, review, versioning, authorization, and storage behavior.
 - [x] P2.6 Test cron jobs with the same method and headers used by Vercel.
-- [ ] P2.7 Add representative Raptive importer tests with multi-sheet fixtures, duplicates, malformed rows, interruptions, and large files.
+- [x] P2.7 Add representative Raptive importer tests with multi-sheet fixtures, duplicates, malformed rows, interruptions, and large files.
 - [ ] P2.8 Add role-based end-to-end journeys for managers, writers, editors, graphics staff, and administrators.
 - [ ] P2.9 Add GitHub Actions for install, lint, type checking, tests, build, migration checks, dependency checks, and browser tests where appropriate.
 - [ ] P2.10 Add structured logs, safe error reporting, cron freshness, integration health, import-job visibility, and actionable alerts.
@@ -416,6 +416,15 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - The audit found one execution-control failure defect: a transport rejection while finishing a successful task fell into the task-exception handler and attempted to finish the same run again as failed. Claim and finish transports now fail closed with safe 503 responses, task failures are isolated from ledger failures, and each claimed run gets at most one finish attempt per invocation.
 - Final gate: 44 Vitest files / 222 tests; coverage increased to 18.25% statements, 15.58% branches, 21.12% functions, and 19.06% lines. All 257 pgTAP assertions, generated database-type drift, zero-vulnerability audit, ESLint, TypeScript, the Next.js 16.2.11 production build, and three Chromium anonymous-boundary tests pass.
 
+### 2026-07-21 — P2.7 transactional Raptive importer gate
+
+- Added genuine generated XLSX fixtures covering metadata sheets, shifted headers, multiple data sheets, alternate Raptive column labels, Excel dates, US and ISO dates, currency strings, corrupt files, non-data workbooks, and 20,000 data rows. Every sheet with the required Date, Page URL, and Earnings columns is parsed; unsupported or malformed rows are counted with sheet and Excel-row diagnostics instead of silently becoming zero or disappearing.
+- Date plus canonical hostless path is the import identity. Exact duplicates collapse with a visible count, while conflicting duplicates fail the workbook rather than choosing a silent winner. This synthetic contract does not assert that PL and QB can never share a path; Nick's real workbook remains required in P6.1/P7 to verify actual sheet roles, URL domains, timezone, aggregation, and deduplication semantics.
+- The upload boundary now accepts XLSX only, validates the ZIP signature, rejects empty or over-10-MB files, bounds the filename, and exposes parsed-sheet, duplicate, and rejected-row summaries. Preview remains available for malformed workbooks, but commit is blocked until every rejected row is resolved.
+- Migration `0020_transactional_raptive_import.sql` replaces the delete-plus-chunk sequence with one service-role-only database transaction. Range deletion, every revenue insert, and upload history either all commit or all roll back. A late-row constraint failure is proven to restore the old range, leave no partial new rows, and write no false-success history; interrupted RPC transport returns one safe failure.
+- Final gate: 46 Vitest files / 232 tests; coverage increased to 21.12% statements, 18.9% branches, 23.07% functions, and 21.97% lines. All 268 pgTAP assertions, generated database-type drift, database lint, zero-vulnerability audit, ESLint, TypeScript, the Next.js 16.2.11 production build, and three Chromium anonymous-boundary tests pass.
+- Residual production architecture is explicit: the request still buffers one bounded 10-MB workbook and has a 60-second execution ceiling; there is no durable import job, checkpoint, resumable upload, or restart model. P6 remains responsible for the real-file contract and a durable production ingestion architecture where its measured size/runtime requires one.
+
 ## Phase 0 prioritized defect and risk inventory
 
 1. **High — session lifecycle (P1.1, P1.2, P1.16):** refresh rotation reads then unconditionally updates, so concurrent reuse can succeed; access-token resolution does not verify the sessions row or token hash; logout relies on a valid access token and can leave a refresh session alive.
@@ -423,7 +432,7 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 3. **High — scheduled jobs do not match Vercel (P1.12, P2.6):** all eight configured cron handlers export POST while Vercel invokes configured cron paths with GET, so scheduled execution receives 405.
 4. **High — dependency vulnerabilities (P1.14):** production audit reports 3 high and 6 moderate vulnerabilities across Next.js, Discord/Undici/WebSocket, PostCSS, Resend/Svix/UUID chains.
 5. **High — no automated proof (P2.1–P2.9):** P2.1 closed the missing architecture and test-discovery portion with executable unit, integration, API, component, database, coverage, and browser lanes. GitHub Actions enforcement remains open for P2.9.
-6. **High — Raptive architecture is not production-safe (P2.7, P6.1–P6.15):** the route buffers the entire workbook in a 60-second request, parses only `SheetNames[0]`, deletes a whole date range before non-transactional chunk inserts, and has no durable job/checkpoint/restart model.
+6. **High — Raptive production ingestion remains incomplete (P6.1–P6.15):** P2.7 now parses every qualifying sheet, rejects malformed/conflicting rows, bounds uploads to 10 MB, and commits range replacement atomically. The route still buffers the workbook inside a 60-second request and has no durable job/checkpoint/restart model; the real Raptive workbook contract and measured runtime remain unverified until Nick's final input.
 7. **Medium — profile overrides are inconsistent (P1.11):** scheduled profile sync honors `display_name_override`, but login, manual import, and manual resync overwrite the name without honoring the flag.
 8. **Medium — database typing is placeholder-only (P1.7):** every table, view, function, enum, and composite resolves through `any`, so current TypeScript success does not prove schema compatibility.
 9. **Medium — bulk work is not atomic (P1.9):** bulk create fires up to 25 independent client requests; bulk update writes entries and audit rows in separate operations, allowing partial audit/data state.
