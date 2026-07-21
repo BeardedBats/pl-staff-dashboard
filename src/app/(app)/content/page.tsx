@@ -1,5 +1,6 @@
 import { listTiers, listCategories } from "@/lib/entries/queries";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { authorizedSiteScope } from "@/lib/auth/authorization";
 import { listViewsForUser } from "@/lib/views/data";
 import { ContentPageClient } from "./content-page-client";
 
@@ -10,6 +11,19 @@ export const metadata = {
 export default async function ContentPage() {
   const viewer = await getCurrentUser();
   if (!viewer) return null;
+  const managerScope = authorizedSiteScope(
+    viewer,
+    "manager",
+    "admin",
+    "eic",
+    "operations",
+  );
+  const manageableSites: Array<"pl" | "qb"> =
+    managerScope === "both"
+      ? ["pl", "qb"]
+      : managerScope
+        ? [managerScope]
+        : [];
 
   const [tiers, categories, views] = await Promise.all([
     listTiers(),
@@ -32,6 +46,7 @@ export default async function ContentPage() {
         tiers={tiers}
         categories={categories}
         initialViews={views}
+        manageableSites={manageableSites}
       />
     </div>
   );

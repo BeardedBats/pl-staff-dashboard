@@ -19,6 +19,7 @@ type Props = {
   tiers: EntryTier[];
   categories: EntryCategory[];
   authorCandidates: AuthorCandidate[];
+  allowedSites: Array<"pl" | "qb">;
   value: AnalyticsFilterState;
   onChange: (next: AnalyticsFilterState) => void;
 };
@@ -27,6 +28,7 @@ export function AnalyticsFiltersBar({
   tiers,
   categories,
   authorCandidates,
+  allowedSites,
   value,
   onChange,
 }: Props) {
@@ -167,9 +169,15 @@ export function AnalyticsFiltersBar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All sites</SelectItem>
-            <SelectItem value="pl">Pitcher List</SelectItem>
-            <SelectItem value="qb">QB List</SelectItem>
+            {allowedSites.length === 2 ? (
+              <SelectItem value="all">All sites</SelectItem>
+            ) : null}
+            {allowedSites.includes("pl") ? (
+              <SelectItem value="pl">Pitcher List</SelectItem>
+            ) : null}
+            {allowedSites.includes("qb") ? (
+              <SelectItem value="qb">QB List</SelectItem>
+            ) : null}
           </SelectContent>
         </Select>
       </div>

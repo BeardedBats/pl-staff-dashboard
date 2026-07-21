@@ -38,6 +38,7 @@ type Props = {
   seasonModes: SeasonModeRecord[];
   tiers: EntryTier[];
   assignableUsers: StaffUserSummary[];
+  allowedSites: Array<"pl" | "qb">;
   onSaved: () => void;
 };
 
@@ -60,12 +61,13 @@ export function TemplateDialog({
   seasonModes,
   tiers,
   assignableUsers,
+  allowedSites,
   onSaved,
 }: Props) {
   const isEdit = Boolean(template);
 
   const [titlePattern, setTitlePattern] = React.useState("");
-  const [site, setSite] = React.useState<AppSite>("pl");
+  const [site, setSite] = React.useState<AppSite>(allowedSites[0] ?? "pl");
   const [tierId, setTierId] = React.useState("");
   const [seasonModeId, setSeasonModeId] = React.useState("");
   const [assignedUserId, setAssignedUserId] = React.useState("");
@@ -114,7 +116,7 @@ export function TemplateDialog({
       }
     } else {
       setTitlePattern("");
-      setSite("pl");
+      setSite(allowedSites[0] ?? "pl");
       setTierId(tiers.find((t) => t.name === "A")?.id ?? tiers[0]?.id ?? "");
       setSeasonModeId(
         seasonModes.find((s) => s.is_active)?.id ?? seasonModes[0]?.id ?? "",
@@ -127,7 +129,7 @@ export function TemplateDialog({
       setDailyDays(["mon", "tue", "wed", "thu", "fri"]);
     }
     setError(null);
-  }, [open, template, tiers, seasonModes]);
+  }, [open, template, tiers, seasonModes, allowedSites]);
 
   function buildScheduleRule(): unknown {
     switch (frequency) {
@@ -254,8 +256,12 @@ export function TemplateDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pl">Pitcher List</SelectItem>
-                  <SelectItem value="qb">QB List</SelectItem>
+                  {allowedSites.includes("pl") ? (
+                    <SelectItem value="pl">Pitcher List</SelectItem>
+                  ) : null}
+                  {allowedSites.includes("qb") ? (
+                    <SelectItem value="qb">QB List</SelectItem>
+                  ) : null}
                 </SelectContent>
               </Select>
             </div>

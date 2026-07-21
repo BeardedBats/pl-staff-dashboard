@@ -128,6 +128,7 @@ type EntriesTableProps = {
   initialViews: SavedViewRecord[];
   onCreateClick: () => void;
   onBulkCreateClick?: () => void;
+  manageableSites: Array<"pl" | "qb">;
 };
 
 export function EntriesTable({
@@ -135,6 +136,7 @@ export function EntriesTable({
   initialViews,
   onCreateClick,
   onBulkCreateClick,
+  manageableSites,
 }: EntriesTableProps) {
   const router = useRouter();
   const [filters, setFilters] = React.useState<EntriesFilterState>(DEFAULT_FILTERS);
@@ -235,7 +237,8 @@ export function EntriesTable({
     state: { columnVisibility: visibility, rowSelection },
     onColumnVisibilityChange: setVisibility,
     onRowSelectionChange: setRowSelection,
-    enableRowSelection: true,
+    enableRowSelection: (row) =>
+      manageableSites.includes(row.original.site as "pl" | "qb"),
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
   });
@@ -644,6 +647,7 @@ export function EntriesTable({
                         >
                           <Checkbox
                             checked={row.getIsSelected()}
+                            disabled={!row.getCanSelect()}
                             onCheckedChange={(checked) =>
                               row.toggleSelected(Boolean(checked))
                             }

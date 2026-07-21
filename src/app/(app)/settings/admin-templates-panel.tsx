@@ -34,6 +34,8 @@ type Props = {
   seasonModes: SeasonModeRecord[];
   tiers: EntryTier[];
   assignableUsers: StaffUserSummary[];
+  allowedSites: Array<"pl" | "qb">;
+  canRunGenerator: boolean;
 };
 
 export function AdminTemplatesPanel({
@@ -41,6 +43,8 @@ export function AdminTemplatesPanel({
   seasonModes,
   tiers,
   assignableUsers,
+  allowedSites,
+  canRunGenerator,
 }: Props) {
   const router = useRouter();
   const [templates, setTemplates] = React.useState(initialTemplates);
@@ -55,7 +59,11 @@ export function AdminTemplatesPanel({
     const data = (await res.json()) as {
       templates: RecurringTemplateRecord[];
     };
-    setTemplates(data.templates ?? []);
+    setTemplates(
+      (data.templates ?? []).filter((template) =>
+        allowedSites.includes(template.site as "pl" | "qb"),
+      ),
+    );
     router.refresh();
   }
 
@@ -131,20 +139,22 @@ export function AdminTemplatesPanel({
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={runGeneratorNow}
-            disabled={busy === "__runner__"}
-            title="Run the generator now for the next 14 days"
-          >
-            {busy === "__runner__" ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Play className="h-3.5 w-3.5" />
-            )}
-            Run generator
-          </Button>
+          {canRunGenerator ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={runGeneratorNow}
+              disabled={busy === "__runner__"}
+              title="Run the generator now for the next 14 days"
+            >
+              {busy === "__runner__" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Play className="h-3.5 w-3.5" />
+              )}
+              Run generator
+            </Button>
+          ) : null}
           <Button
             size="sm"
             onClick={() => {
@@ -303,6 +313,7 @@ export function AdminTemplatesPanel({
         seasonModes={seasonModes}
         tiers={tiers}
         assignableUsers={assignableUsers}
+        allowedSites={allowedSites}
         onSaved={() => {
           setDialogOpen(false);
           setEditingTemplate(null);

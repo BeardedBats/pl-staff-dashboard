@@ -19,6 +19,7 @@ import {
   canEditGraphicResource,
   canFlagGraphicResource,
   canUnflagGraphicResource,
+  canUploadOrSubmitGraphicResource,
   canViewGraphicResource,
   isAdminPlusForSite,
   loadEntryAuthorizationContext,
@@ -55,6 +56,18 @@ export type GraphicRequestRecord = {
   is_featured: boolean;
   created_at: string;
   updated_at: string;
+  permissions: GraphicRequestPermissions;
+};
+
+export type GraphicRequestPermissions = {
+  claim: boolean;
+  unclaim: boolean;
+  flag: boolean;
+  unflag: boolean;
+  edit: boolean;
+  delete: boolean;
+  upload: boolean;
+  submit: boolean;
 };
 
 // --------------------------------------------------------------------------
@@ -210,6 +223,7 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
   const signedMap = await getSignedGraphicUrls(paths);
 
   return authorizedRows.map((r) => {
+    const entry = authorization.get(r.entry_id)!;
     const claimer = r.claimed_by ? userMap.get(r.claimed_by) : undefined;
     const creator = r.created_by ? userMap.get(r.created_by) : undefined;
     const signedUrl = r.storage_path
@@ -241,6 +255,10 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
       is_featured: Boolean(r.is_featured),
       created_at: r.created_at,
       updated_at: r.updated_at,
+      permissions: buildGraphicPermissions(viewer, entry, {
+        createdBy: r.created_by,
+        claimedBy: r.claimed_by,
+      }),
     };
   });
 }
@@ -355,6 +373,33 @@ export async function getGraphicRequestById(
     is_featured: Boolean(row.is_featured),
     created_at: row.created_at,
     updated_at: row.updated_at,
+    permissions: buildGraphicPermissions(viewer, authorization, {
+      createdBy: row.created_by,
+      claimedBy: row.claimed_by,
+    }),
+  };
+}
+
+function buildGraphicPermissions(
+  viewer: CurrentUser,
+  entry: NonNullable<Awaited<ReturnType<typeof loadEntryAuthorizationContext>>>,
+  request: { createdBy: string | null; claimedBy: string | null },
+): GraphicRequestPermissions {
+  const siteAdmin = isAdminPlusForSite(viewer, entry.site);
+  const uploadOrSubmit = canUploadOrSubmitGraphicResource(
+    viewer,
+    entry,
+    { claimedBy: request.claimedBy },
+  );
+  return {
+    claim: canClaimGraphicResource(viewer, entry),
+    unclaim: request.claimedBy === viewer.id || siteAdmin,
+    flag: canFlagGraphicResource(viewer, entry),
+    unflag: canUnflagGraphicResource(viewer, entry),
+    edit: canEditGraphicResource(viewer, entry, request),
+    delete: request.createdBy === viewer.id || siteAdmin,
+    upload: uploadOrSubmit,
+    submit: uploadOrSubmit,
   };
 }
 

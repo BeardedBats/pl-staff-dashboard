@@ -41,11 +41,13 @@ import type { AppSite } from "@/lib/auth/current-user";
 type AdminTeamsPanelProps = {
   initialTeams: TeamSummary[];
   allUsers: StaffUserSummary[];
+  allowedSites: Array<"pl" | "qb">;
 };
 
 export function AdminTeamsPanel({
   initialTeams,
   allUsers,
+  allowedSites,
 }: AdminTeamsPanelProps) {
   const router = useRouter();
   const [teams, setTeams] = React.useState(initialTeams);
@@ -84,7 +86,13 @@ export function AdminTeamsPanel({
   async function refresh() {
     const res = await fetch("/api/teams");
     const data = (await res.json()) as { teams: TeamSummary[] };
-    setTeams(data.teams ?? []);
+    setTeams(
+      (data.teams ?? []).filter((team) =>
+        team.site === "both"
+          ? allowedSites.length === 2
+          : allowedSites.includes(team.site),
+      ),
+    );
     if (selectedTeamId) {
       const detailRes = await fetch(`/api/teams/${selectedTeamId}`);
       const detailData = (await detailRes.json()) as { team?: TeamDetail };
@@ -118,6 +126,7 @@ export function AdminTeamsPanel({
             open={createOpen}
             onOpenChange={setCreateOpen}
             allUsers={allUsers}
+            allowedSites={allowedSites}
             onCreated={(id) => {
               setCreateOpen(false);
               setSelectedTeamId(id);
@@ -406,31 +415,41 @@ function CreateTeamDialog({
   open,
   onOpenChange,
   allUsers,
+  allowedSites,
   onCreated,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   allUsers: StaffUserSummary[];
+  allowedSites: Array<"pl" | "qb">;
   onCreated: (newId: string) => void;
 }) {
   const [name, setName] = React.useState("");
   const [description, setDescription] = React.useState("");
-  const [site, setSite] = React.useState<AppSite>("pl");
+  const [site, setSite] = React.useState<AppSite>(allowedSites[0] ?? "pl");
   const [managerId, setManagerId] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   // Eligible managers: anyone with editor / manager / admin / eic / operations.
-  const eligibleManagers = allUsers.filter((u) =>
-    u.roles.some((r) =>
-      ["editor", "manager", "admin", "eic", "operations"].includes(r),
-    ),
-  );
+  const eligibleManagers = allUsers.filter((user) => {
+    const hasEligibleRole = (candidateSite: "pl" | "qb") =>
+      user.role_rows.some(
+        (row) =>
+          ["editor", "manager", "admin", "eic", "operations"].includes(
+            row.role,
+          ) &&
+          (row.site === "both" || row.site === candidateSite),
+      );
+    return site === "both"
+      ? hasEligibleRole("pl") && hasEligibleRole("qb")
+      : hasEligibleRole(site);
+  });
 
   function reset() {
     setName("");
     setDescription("");
-    setSite("pl");
+    setSite(allowedSites[0] ?? "pl");
     setManagerId("");
     setError(null);
   }
@@ -523,9 +542,15 @@ function CreateTeamDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pl">Pitcher List</SelectItem>
-                  <SelectItem value="qb">QB List</SelectItem>
-                  <SelectItem value="both">Both</SelectItem>
+                  {allowedSites.includes("pl") ? (
+                    <SelectItem value="pl">Pitcher List</SelectItem>
+                  ) : null}
+                  {allowedSites.includes("qb") ? (
+                    <SelectItem value="qb">QB List</SelectItem>
+                  ) : null}
+                  {allowedSites.length === 2 ? (
+                    <SelectItem value="both">Both</SelectItem>
+                  ) : null}
                 </SelectContent>
               </Select>
             </div>

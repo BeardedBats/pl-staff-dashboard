@@ -25,7 +25,9 @@ const PAGE_SIZE = 50;
 type SiteFilter = AppSite | "";
 
 export default function ArchivePage() {
-  const [roles, setRoles] = React.useState<AppRole[]>([]);
+  const [roleRows, setRoleRows] = React.useState<
+    Array<{ role: AppRole; site: AppSite }>
+  >([]);
   const [siteArchived, setSiteArchived] = React.useState<SiteFilter>("");
   const [siteHistorical, setSiteHistorical] = React.useState<SiteFilter>("");
   const [searchArchived, setSearchArchived] = React.useState("");
@@ -44,12 +46,22 @@ export default function ArchivePage() {
     void (async () => {
       const res = await fetch("/api/auth/me");
       if (!res.ok) return;
-      const data = (await res.json()) as { user: { roles: AppRole[] } };
-      setRoles(data.user.roles ?? []);
+      const data = (await res.json()) as {
+        user: { role_rows: Array<{ role: AppRole; site: AppSite }> };
+      };
+      setRoleRows(data.user.role_rows ?? []);
     })();
   }, []);
 
-  const canUnarchive = roles.includes("eic") || roles.includes("operations");
+  const canUnarchive = React.useCallback(
+    (site: AppSite) =>
+      roleRows.some(
+        (row) =>
+          ["manager", "admin", "eic", "operations"].includes(row.role) &&
+          (row.site === "both" || row.site === site),
+      ),
+    [roleRows],
+  );
 
   const fetchArchived = React.useCallback(async () => {
     setLoadingArchived(true);
@@ -304,7 +316,7 @@ function ArchivedTable({
 }: {
   entries: EntrySummary[];
   loading: boolean;
-  canUnarchive: boolean;
+  canUnarchive: (site: AppSite) => boolean;
   onUnarchive: (id: string) => void | Promise<void>;
   busyId: string | null;
 }) {
@@ -324,6 +336,9 @@ function ArchivedTable({
       />
     );
   }
+  const showUnarchiveColumn = entries.some((entry) =>
+    canUnarchive(entry.site),
+  );
   return (
     <div className="overflow-auto rounded-lg border border-border bg-card">
       <table className="w-full font-data text-sm">
@@ -335,7 +350,7 @@ function ArchivedTable({
             <th className="px-3 py-2">Site</th>
             <th className="px-3 py-2">Publish date</th>
             <th className="px-3 py-2">Archive reason</th>
-            {canUnarchive ? <th className="px-3 py-2" /> : null}
+            {showUnarchiveColumn ? <th className="px-3 py-2" /> : null}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -383,21 +398,23 @@ function ArchivedTable({
                   )}
                 </span>
               </td>
-              {canUnarchive ? (
+              {showUnarchiveColumn ? (
                 <td className="px-3 py-3 align-top text-right">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busyId === entry.id}
-                    onClick={() => void onUnarchive(entry.id)}
-                  >
-                    {busyId === entry.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Undo2 className="h-3 w-3" />
-                    )}
-                    Unarchive
-                  </Button>
+                  {canUnarchive(entry.site) ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === entry.id}
+                      onClick={() => void onUnarchive(entry.id)}
+                    >
+                      {busyId === entry.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Undo2 className="h-3 w-3" />
+                      )}
+                      Unarchive
+                    </Button>
+                  ) : null}
                 </td>
               ) : null}
             </tr>

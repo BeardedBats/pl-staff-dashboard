@@ -11,6 +11,7 @@ import {
   canViewGraphicResource,
   canViewEntryResource,
   isAdminPlusForScope,
+  authorizedSiteScope,
   type EntryAuthorizationContext,
 } from "./authorization";
 import type { AppRole, AppSite, CurrentUser } from "./current-user";
@@ -74,6 +75,16 @@ describe("site-aware resource authorization", () => {
         "both",
       ),
     ).toBe(false);
+  });
+
+  it("derives the concrete site scope for a role family", () => {
+    const mixed = user("mixed", [
+      { role: "editor", site: "pl" },
+      { role: "writer", site: "qb" },
+    ]);
+    expect(authorizedSiteScope(mixed, "editor", "manager")).toBe("pl");
+    expect(authorizedSiteScope(mixed, "writer")).toBe("qb");
+    expect(authorizedSiteScope(mixed, "graphics")).toBeNull();
   });
 
   it("limits entry and graphics participation to the actual resource", () => {

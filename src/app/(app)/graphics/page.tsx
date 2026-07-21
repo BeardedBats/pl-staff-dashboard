@@ -24,10 +24,7 @@ export default async function GraphicsPage() {
         </p>
       </div>
 
-      <GraphicsPageClient
-        initialRequests={requests}
-        currentUserId={viewer.id}
-      />
+      <GraphicsPageClient initialRequests={requests} />
     </div>
   );
 }

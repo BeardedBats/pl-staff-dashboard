@@ -42,6 +42,7 @@ type EditUserDialogProps = {
   open: boolean;
   onClose: () => void;
   onSaved: (updated: StaffUserSummary) => void;
+  allowedSites: Array<"pl" | "qb">;
 };
 
 export function EditUserDialog({
@@ -49,6 +50,7 @@ export function EditUserDialog({
   open,
   onClose,
   onSaved,
+  allowedSites,
 }: EditUserDialogProps) {
   const initialRoleRows = user.role_rows;
   const initialPrimaryTeamId = user.primary_team?.team_id ?? null;
@@ -121,15 +123,9 @@ export function EditUserDialog({
     // existing site assignment (so we don't accidentally rewrite per-site
     // rows admins set up via the dedicated /roles endpoint). Newly-added
     // roles inherit the user's current wp_site.
-    const existingByRole = new Map(
-      initialRoleRows.map((r) => [r.role, r] as const),
-    );
-    const rolesPayload = Array.from(selectedRoles).map((role) => {
-      const existing = existingByRole.get(role);
-      return {
-        role,
-        site: existing?.site ?? wpSite,
-      };
+    const rolesPayload = Array.from(selectedRoles).flatMap((role) => {
+      const existing = initialRoleRows.filter((row) => row.role === role);
+      return existing.length > 0 ? existing : [{ role, site: wpSite }];
     });
 
     const body: Record<string, unknown> = {
@@ -224,9 +220,15 @@ export function EditUserDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pl">Pitcher List</SelectItem>
-                <SelectItem value="qb">QB List</SelectItem>
-                <SelectItem value="both">Both</SelectItem>
+                {allowedSites.includes("pl") ? (
+                  <SelectItem value="pl">Pitcher List</SelectItem>
+                ) : null}
+                {allowedSites.includes("qb") ? (
+                  <SelectItem value="qb">QB List</SelectItem>
+                ) : null}
+                {allowedSites.length === 2 ? (
+                  <SelectItem value="both">Both</SelectItem>
+                ) : null}
               </SelectContent>
             </Select>
           </div>
@@ -262,14 +264,20 @@ export function EditUserDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">No primary team</SelectItem>
-                {teamOptions.map((t) => (
+                {teamOptions
+                  .filter((t) =>
+                    t.site === "both"
+                      ? allowedSites.length === 2
+                      : allowedSites.includes(t.site),
+                  )
+                  .map((t) => (
                   <SelectItem key={t.id} value={t.id}>
                     {t.name}{" "}
                     <span className="ml-1 text-[10px] text-text-zero">
                       ({t.site.toUpperCase()})
                     </span>
                   </SelectItem>
-                ))}
+                  ))}
               </SelectContent>
             </Select>
             {teams === null && !teamsError ? (

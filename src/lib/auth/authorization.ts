@@ -54,6 +54,18 @@ export function hasAnyRoleForSite(
   return hasRoleForSite(user, site, ...ALL_ROLES);
 }
 
+export function authorizedSiteScope(
+  user: CurrentUser,
+  ...roles: AppRole[]
+): AppSite | null {
+  const pl = hasRoleForSite(user, "pl", ...roles);
+  const qb = hasRoleForSite(user, "qb", ...roles);
+  if (pl && qb) return "both";
+  if (pl) return "pl";
+  if (qb) return "qb";
+  return null;
+}
+
 export function isAdminPlusForSite(
   user: CurrentUser,
   site: ResourceSite,
