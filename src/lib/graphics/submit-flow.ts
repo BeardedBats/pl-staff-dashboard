@@ -7,6 +7,10 @@ import { downloadGraphicBytes } from "./storage";
 import { uploadMediaToWp, setFeaturedMedia } from "./wp-media";
 import type { CurrentUser } from "@/lib/auth/current-user";
 import type { WpSiteKey } from "@/lib/auth/wordpress";
+import {
+  canUploadOrSubmitGraphicResource,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 
 /**
  * Submit a graphic request — the terminal "this is the final image" action.
@@ -44,12 +48,27 @@ export async function submitGraphicRequest(
   const { data: req } = await supabase
     .from("graphic_requests")
     .select(
-      "id, entry_id, title, graphic_status, storage_path, file_name, mime_type, wp_media_id",
+      "id, entry_id, title, graphic_status, claimed_by, storage_path, file_name, mime_type, wp_media_id",
     )
     .eq("id", requestId)
     .maybeSingle();
 
   if (!req) return { ok: false, error: "Request not found" };
+
+  const authorization = await loadEntryAuthorizationContext(
+    req.entry_id as string,
+  );
+  if (
+    !authorization ||
+    !canUploadOrSubmitGraphicResource(viewer, authorization, {
+      claimedBy: req.claimed_by as string | null,
+    })
+  ) {
+    return {
+      ok: false,
+      error: "Only the assigned graphics worker can submit this request",
+    };
+  }
 
   if (req.graphic_status === "submitted") {
     return { ok: false, error: "Already submitted" };

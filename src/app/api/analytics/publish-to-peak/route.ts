@@ -5,6 +5,7 @@ import {
   getPublishToPeakCurve,
 } from "@/lib/analytics/queries";
 import { parseAnalyticsFilters } from "@/lib/analytics/filters";
+import { authorizeAnalyticsFilters } from "@/lib/analytics/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -33,9 +34,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
+  const filters = authorizeAnalyticsFilters(viewer, parsed.filters);
+  if (!filters) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const [curve, heat] = await Promise.all([
-    getPublishToPeakCurve(parsed.filters),
-    getDayOfWeekHeatmap(parsed.filters),
+    getPublishToPeakCurve(filters),
+    getDayOfWeekHeatmap(filters),
   ]);
 
   return NextResponse.json({ curve, heat });

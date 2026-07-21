@@ -6,6 +6,10 @@ import {
   setChecklistItemCompleted,
 } from "@/lib/checklist/data";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
+import {
+  canViewEntryResource,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +35,10 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const { id: entryId, itemId } = await context.params;
+  const authorization = await loadEntryAuthorizationContext(entryId);
+  if (!authorization || !canViewEntryResource(viewer, authorization)) {
+    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+  }
 
   let body: unknown;
   try {
@@ -44,7 +52,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Validation failed" }, { status: 400 });
   }
 
-  const allowed = await canUserEditChecklist(entryId, viewer.id, viewer.roles);
+  const allowed = await canUserEditChecklist(entryId, viewer);
   if (!allowed) {
     return NextResponse.json(
       {

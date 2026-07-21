@@ -9,6 +9,10 @@ import {
   uploadGraphicFile,
 } from "@/lib/graphics/storage";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
+import {
+  canUploadOrSubmitGraphicResource,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 
 // Larger body limit for file uploads — Next.js 16 raises these via fetch
 // handler defaults, but we pin the runtime to Node.js just in case.
@@ -34,9 +38,22 @@ export async function POST(request: Request, context: RouteContext) {
 
   const { id } = await context.params;
 
-  const existing = await getGraphicRequestById(id);
+  const existing = await getGraphicRequestById(viewer, id);
   if (!existing) {
     return NextResponse.json({ error: "Request not found" }, { status: 404 });
+  }
+
+  const authorization = await loadEntryAuthorizationContext(existing.entry_id);
+  if (
+    !authorization ||
+    !canUploadOrSubmitGraphicResource(viewer, authorization, {
+      claimedBy: existing.claimed_by,
+    })
+  ) {
+    return NextResponse.json(
+      { error: "Only the assigned graphics worker can upload this file" },
+      { status: 403 },
+    );
   }
 
   if (existing.graphic_status === "submitted") {
@@ -118,6 +135,6 @@ export async function POST(request: Request, context: RouteContext) {
     `uploaded: ${upload.file.fileName} (${Math.round(upload.file.fileSize / 1024)} KB)`,
   );
 
-  const fresh = await getGraphicRequestById(id);
+  const fresh = await getGraphicRequestById(viewer, id);
   return NextResponse.json({ request: fresh });
 }

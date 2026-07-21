@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import {
   deleteChecklistItem,
   updateChecklistItem,
@@ -16,7 +17,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isAdminPlus(viewer)) {
+  if (!isAdminPlusForScope(viewer, "both")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -50,7 +51,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isAdminPlus(viewer)) {
+  if (!isAdminPlusForScope(viewer, "both")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

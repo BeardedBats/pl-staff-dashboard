@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import {
   setUserRoles,
   roleAssignmentSchema,
@@ -25,11 +26,14 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  if (!isAdminPlus(viewer)) {
+  const { id } = await context.params;
+  const target = await getUserById(id);
+  if (!target) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+  if (!isAdminPlusForScope(viewer, target.wp_site)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-
-  const { id } = await context.params;
 
   let body: unknown;
   try {
@@ -43,6 +47,16 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json(
       { error: "Validation failed", issues: parsed.error.issues },
       { status: 400 },
+    );
+  }
+  if (
+    parsed.data.roles.some(
+      (assignment) => !isAdminPlusForScope(viewer, assignment.site),
+    )
+  ) {
+    return NextResponse.json(
+      { error: "Forbidden: role assignment exceeds your site authority" },
+      { status: 403 },
     );
   }
 

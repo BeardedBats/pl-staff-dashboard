@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdminPlusForSite } from "@/lib/auth/authorization";
 import {
   deleteTemplate,
   getTemplateById,
@@ -29,11 +30,14 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isAdminPlus(viewer)) {
+  const { id } = await context.params;
+  const existing = await getTemplateById(id);
+  if (!existing) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (!isAdminPlusForSite(viewer, existing.site as "pl" | "qb")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-
-  const { id } = await context.params;
 
   let body: unknown;
   try {
@@ -49,6 +53,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       { status: 400 },
     );
   }
+  if (
+    parsed.data.site &&
+    !isAdminPlusForSite(viewer, parsed.data.site)
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const result = await updateTemplate(id, parsed.data);
   if (!result.ok) {
@@ -62,10 +72,14 @@ export async function DELETE(_request: Request, context: RouteContext) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isAdminPlus(viewer)) {
+  const { id } = await context.params;
+  const existing = await getTemplateById(id);
+  if (!existing) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (!isAdminPlusForSite(viewer, existing.site as "pl" | "qb")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  const { id } = await context.params;
   const ok = await deleteTemplate(id);
   if (!ok) {
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });

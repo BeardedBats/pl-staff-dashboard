@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { refreshWpStatusForEntry } from "@/lib/entries/wp-post";
+import {
+  canViewEntryResource,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +26,10 @@ export async function POST(_request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
+  const authorization = await loadEntryAuthorizationContext(id);
+  if (!authorization || !canViewEntryResource(viewer, authorization)) {
+    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+  }
   const result = await refreshWpStatusForEntry(id, viewer.id);
 
   if (!result.ok) {

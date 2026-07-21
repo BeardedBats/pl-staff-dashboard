@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  canViewEntryResource,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +23,10 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
+  const authorization = await loadEntryAuthorizationContext(id);
+  if (!authorization || !canViewEntryResource(viewer, authorization)) {
+    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+  }
   const supabase = getSupabaseAdmin();
 
   const { data } = await supabase

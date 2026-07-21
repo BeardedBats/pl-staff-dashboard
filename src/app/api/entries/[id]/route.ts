@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getEntryById } from "@/lib/entries/queries";
 import { updateEntry, updateEntrySchema } from "@/lib/entries/mutations";
+import {
+  canEditEntryResource,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +19,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
-  const entry = await getEntryById(id);
+  const entry = await getEntryById(viewer, id);
   if (!entry) {
     return NextResponse.json({ error: "Entry not found" }, { status: 404 });
   }
@@ -30,6 +34,13 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
+  const authorization = await loadEntryAuthorizationContext(id);
+  if (!authorization) {
+    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+  }
+  if (!canEditEntryResource(viewer, authorization)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   let body: unknown;
   try {
@@ -51,6 +62,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 
-  const updated = await getEntryById(id);
+  const updated = await getEntryById(viewer, id);
   return NextResponse.json({ entry: updated });
 }

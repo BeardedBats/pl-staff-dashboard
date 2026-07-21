@@ -2,6 +2,11 @@ import "server-only";
 
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import type { CurrentUser } from "@/lib/auth/current-user";
+import {
+  canEditChecklistResource,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 
 // --------------------------------------------------------------------------
 // Types
@@ -204,34 +209,10 @@ export async function findMissingRequiredItems(
  */
 export async function canUserEditChecklist(
   entryId: string,
-  userId: string,
-  userRoles: string[],
+  viewer: CurrentUser,
 ): Promise<boolean> {
-  if (
-    userRoles.some((r) =>
-      ["admin", "eic", "operations"].includes(r),
-    )
-  ) {
-    return true;
-  }
-
-  const supabase = getSupabaseAdmin();
-
-  const { data: authorRow } = await supabase
-    .from("entry_authors")
-    .select("id")
-    .eq("entry_id", entryId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (authorRow) return true;
-
-  const { data: editorRow } = await supabase
-    .from("entry_editors")
-    .select("id")
-    .eq("entry_id", entryId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (editorRow) return true;
-
-  return false;
+  const authorization = await loadEntryAuthorizationContext(entryId);
+  return authorization
+    ? canEditChecklistResource(viewer, authorization)
+    : false;
 }

@@ -5,6 +5,10 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { CurrentUser } from "@/lib/auth/current-user";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
 import { triggerArchiveRequested } from "@/lib/notifications/trigger";
+import {
+  isManagerPlusForSite,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 
 export type ArchiveRequestRecord = {
   id: string;
@@ -79,7 +83,7 @@ export async function listPendingArchiveRequests(
     .from("archive_requests")
     .select(
       "id, entry_id, requested_by, reason, status, resolved_by, created_at, resolved_at, " +
-        "entries!inner(title), " +
+        "entries!inner(title, site), " +
         "users!archive_requests_requested_by_fkey(display_name, avatar_url)",
     )
     .eq("status", "pending")
@@ -94,9 +98,11 @@ export async function listPendingArchiveRequests(
     resolved_by: string | null;
     created_at: string;
     resolved_at: string | null;
-    entries: { title: string };
+    entries: { title: string; site: "pl" | "qb" };
     users?: { display_name: string; avatar_url: string | null } | null;
-  }>).map((row) => ({
+  }>)
+    .filter((row) => isManagerPlusForSite(viewer, row.entries.site))
+    .map((row) => ({
     id: row.id,
     entry_id: row.entry_id,
     requested_by: row.requested_by,
@@ -108,7 +114,7 @@ export async function listPendingArchiveRequests(
     entry_title: row.entries.title,
     requester_name: row.users?.display_name ?? "Unknown",
     requester_avatar: row.users?.avatar_url ?? null,
-  }));
+    }));
 }
 
 export async function approveArchiveRequest(
@@ -128,6 +134,12 @@ export async function approveArchiveRequest(
   if (!request) return { ok: false, error: "Request not found" };
   if (request.status !== "pending") {
     return { ok: false, error: `Already ${request.status}` };
+  }
+  const authorization = await loadEntryAuthorizationContext(
+    request.entry_id as string,
+  );
+  if (!authorization || !isManagerPlusForSite(approver, authorization.site)) {
+    return { ok: false, error: "Only managers for this site can approve" };
   }
 
   await supabase
@@ -177,6 +189,12 @@ export async function denyArchiveRequest(
   if (!request) return { ok: false, error: "Request not found" };
   if (request.status !== "pending") {
     return { ok: false, error: `Already ${request.status}` };
+  }
+  const authorization = await loadEntryAuthorizationContext(
+    request.entry_id as string,
+  );
+  if (!authorization || !isManagerPlusForSite(approver, authorization.site)) {
+    return { ok: false, error: "Only managers for this site can deny" };
   }
 
   await supabase

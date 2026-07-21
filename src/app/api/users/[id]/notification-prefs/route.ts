@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdminPlusForScope } from "@/lib/auth/authorization";
+import { getUserById } from "@/lib/users/queries";
 import {
   getPreferencesForUser,
   setPreferencesForUser,
@@ -24,8 +26,11 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const { id } = await context.params;
-  if (viewer.id !== id && !isAdminPlus(viewer)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (viewer.id !== id) {
+    const target = await getUserById(id);
+    if (!target || !isAdminPlusForScope(viewer, target.wp_site)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   const { data: roleRows } = await getSupabaseAdmin()
@@ -51,8 +56,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const { id } = await context.params;
-  if (viewer.id !== id && !isAdminPlus(viewer)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (viewer.id !== id) {
+    const target = await getUserById(id);
+    if (!target || !isAdminPlusForScope(viewer, target.wp_site)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   let body: unknown;

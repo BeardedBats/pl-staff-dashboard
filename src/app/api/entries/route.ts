@@ -8,6 +8,7 @@ import {
 } from "@/lib/entries/queries";
 import { createEntry, createEntrySchema } from "@/lib/entries/mutations";
 import type { AppSite } from "@/lib/auth/current-user";
+import { hasAnyRoleForSite } from "@/lib/auth/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -136,6 +137,12 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Validation failed", issues: parsed.error.issues },
       { status: 400 },
+    );
+  }
+  if (!hasAnyRoleForSite(viewer, parsed.data.site)) {
+    return NextResponse.json(
+      { error: "You do not have access to create entries for this site" },
+      { status: 403 },
     );
   }
 

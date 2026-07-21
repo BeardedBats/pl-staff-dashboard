@@ -1,8 +1,13 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import type { AppRole, AppSite } from "@/lib/auth/current-user";
+import type { AppRole, AppSite, CurrentUser } from "@/lib/auth/current-user";
 import { getSignedGraphicUrls } from "@/lib/graphics/storage";
+import {
+  canViewGraphicResource,
+  canViewEntryResource,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 
 // --------------------------------------------------------------------------
 // Shared shapes
@@ -309,7 +314,10 @@ export type EntryDetail = EntrySummary & {
   }>;
 };
 
-export async function getEntryById(id: string): Promise<EntryDetail | null> {
+export async function getEntryById(
+  viewer: CurrentUser,
+  id: string,
+): Promise<EntryDetail | null> {
   const supabase = getSupabaseAdmin();
 
   const { data: row, error } = await supabase
@@ -321,6 +329,11 @@ export async function getEntryById(id: string): Promise<EntryDetail | null> {
     .maybeSingle();
 
   if (error || !row) return null;
+
+  const entryAuthorization = await loadEntryAuthorizationContext(id);
+  if (!entryAuthorization || !canViewEntryResource(viewer, entryAuthorization)) {
+    return null;
+  }
 
   const [
     tierMap,
@@ -343,7 +356,7 @@ export async function getEntryById(id: string): Promise<EntryDetail | null> {
     loadChecklistCounts([id]),
     loadCreator(row.created_by as string),
     loadChecklist(id),
-    loadFullGraphicRequests(id),
+    loadFullGraphicRequests(viewer, id),
   ]);
 
   const summary = buildEntrySummary(row, {
@@ -629,7 +642,11 @@ async function loadChecklist(entryId: string) {
   }));
 }
 
-async function loadFullGraphicRequests(entryId: string) {
+async function loadFullGraphicRequests(viewer: CurrentUser, entryId: string) {
+  const authorization = await loadEntryAuthorizationContext(entryId);
+  if (!authorization || !canViewGraphicResource(viewer, authorization)) {
+    return [];
+  }
   const { data } = await getSupabaseAdmin()
     .from("graphic_requests")
     .select(

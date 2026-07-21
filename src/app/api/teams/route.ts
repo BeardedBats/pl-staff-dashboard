@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { listTeams, createTeam, createTeamSchema } from "@/lib/teams/data";
 import type { AppSite } from "@/lib/auth/current-user";
 
@@ -33,10 +34,6 @@ export async function POST(request: Request) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isAdminPlus(viewer)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -50,6 +47,9 @@ export async function POST(request: Request) {
       { error: "Validation failed", issues: parsed.error.issues },
       { status: 400 },
     );
+  }
+  if (!isAdminPlusForScope(viewer, parsed.data.site)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const result = await createTeam(parsed.data);

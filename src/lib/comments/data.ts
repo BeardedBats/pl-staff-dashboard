@@ -7,6 +7,10 @@ import { appendRecentActivity } from "@/lib/entries/recent-activity";
 import { triggerMention } from "@/lib/notifications/trigger";
 import { resolveMentions } from "./mention-parser";
 import type { CurrentUser } from "@/lib/auth/current-user";
+import {
+  isAdminPlusForSite,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 
 // --------------------------------------------------------------------------
 // Types
@@ -134,6 +138,17 @@ export async function createComment(
   } = {},
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const supabase = getSupabaseAdmin();
+
+  if (input.parent_id) {
+    const { data: parent } = await supabase
+      .from("comments")
+      .select("id, entry_id")
+      .eq("id", input.parent_id)
+      .maybeSingle();
+    if (!parent || parent.entry_id !== entryId) {
+      return { ok: false, error: "Reply parent must belong to this entry" };
+    }
+  }
 
   // Parse @mentions before insert so we can store them atomically.
   const resolvedMentions = await resolveMentions(input.body);
@@ -266,13 +281,6 @@ export async function deleteComment(
   viewer: CurrentUser,
   commentId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (
-    !viewer.roles.some((r) =>
-      ["admin", "eic", "operations"].includes(r),
-    )
-  ) {
-    return { ok: false, error: "Only admin+ can delete comments" };
-  }
   const supabase = getSupabaseAdmin();
 
   const { data: existing } = await supabase
@@ -281,6 +289,13 @@ export async function deleteComment(
     .eq("id", commentId)
     .maybeSingle();
   if (!existing) return { ok: false, error: "Comment not found" };
+
+  const authorization = await loadEntryAuthorizationContext(
+    existing.entry_id as string,
+  );
+  if (!authorization || !isAdminPlusForSite(viewer, authorization.site)) {
+    return { ok: false, error: "Only admin+ for this site can delete comments" };
+  }
 
   const { error } = await supabase
     .from("comments")

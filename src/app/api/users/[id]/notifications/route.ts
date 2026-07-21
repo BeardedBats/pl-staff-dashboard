@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdminPlusForScope } from "@/lib/auth/authorization";
+import { getUserById } from "@/lib/users/queries";
 import {
   listNotificationsForUser,
   markAllRead,
@@ -34,8 +36,11 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
-  if (viewer.id !== id && !isAdminPlus(viewer)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (viewer.id !== id) {
+    const target = await getUserById(id);
+    if (!target || !isAdminPlusForScope(viewer, target.wp_site)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   const url = new URL(request.url);
@@ -79,8 +84,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
-  if (viewer.id !== id && !isAdminPlus(viewer)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (viewer.id !== id) {
+    const target = await getUserById(id);
+    if (!target || !isAdminPlusForScope(viewer, target.wp_site)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   let body: unknown;

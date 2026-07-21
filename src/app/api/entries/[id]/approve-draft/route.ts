@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  isAdminPlusForSite,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
 
@@ -37,20 +41,15 @@ export async function POST(_request: Request, context: RouteContext) {
     return NextResponse.json({ ok: true, alreadyApproved: true });
   }
 
-  // Check if viewer is author or admin.
-  const isAuthor = entry.created_by === viewer.id;
-  if (!isAuthor && !isAdminPlus(viewer)) {
-    // Check entry_authors too — the writer might not be the creator in
-    // edge cases where the sync assigned a different author.
-    const { data: authorRow } = await supabase
-      .from("entry_authors")
-      .select("id")
-      .eq("entry_id", id)
-      .eq("user_id", viewer.id)
-      .maybeSingle();
-    if (!authorRow) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+  const authorization = await loadEntryAuthorizationContext(id);
+  const isAuthor =
+    entry.created_by === viewer.id ||
+    Boolean(authorization?.authorIds.has(viewer.id));
+  const isSiteAdmin = authorization
+    ? isAdminPlusForSite(viewer, authorization.site)
+    : false;
+  if (!isAuthor && !isSiteAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { error } = await supabase

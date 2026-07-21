@@ -24,7 +24,7 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const { id } = await context.params;
-  const request = await getGraphicRequestById(id);
+  const request = await getGraphicRequestById(viewer, id);
   if (!request) {
     return NextResponse.json({ error: "Request not found" }, { status: 404 });
   }
@@ -108,7 +108,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
-  const fresh = await getGraphicRequestById(id);
+  const fresh = await getGraphicRequestById(viewer, id);
   return NextResponse.json({ request: fresh });
 }
 

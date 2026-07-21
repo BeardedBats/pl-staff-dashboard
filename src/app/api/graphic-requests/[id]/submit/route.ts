@@ -29,7 +29,7 @@ export async function POST(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: result.error }, { status: 502 });
   }
 
-  const fresh = await getGraphicRequestById(id);
+  const fresh = await getGraphicRequestById(viewer, id);
   return NextResponse.json({
     request: fresh,
     wp_media_id: result.wp_media_id,

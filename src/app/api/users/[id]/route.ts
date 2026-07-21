@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import {
   getCurrentUser,
-  isAdminPlus,
-  type CurrentUser,
 } from "@/lib/auth/current-user";
-import { getUserById, type StaffUserSummary } from "@/lib/users/queries";
+import { isAdminPlusForScope } from "@/lib/auth/authorization";
+import { getUserById } from "@/lib/users/queries";
+import { sanitizeUserForViewer } from "@/lib/users/visibility";
+import { getTeamById } from "@/lib/teams/data";
 import {
   ADMIN_ONLY_PROFILE_FIELDS,
   setUserPrimaryTeam,
@@ -37,7 +38,7 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ user: sanitizeUser(target, viewer) });
+  return NextResponse.json({ user: sanitizeUserForViewer(target, viewer) });
 }
 
 /**
@@ -63,8 +64,12 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
+  const targetBefore = await getUserById(id);
+  if (!targetBefore) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
   const isSelf = viewer.id === id;
-  const isAdmin = isAdminPlus(viewer);
+  const isAdmin = isAdminPlusForScope(viewer, targetBefore.wp_site);
   if (!isSelf && !isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -95,6 +100,34 @@ export async function PATCH(request: Request, context: RouteContext) {
       { status: 403 },
     );
   }
+  if (
+    input.roles?.some(
+      (assignment) => !isAdminPlusForScope(viewer, assignment.site),
+    )
+  ) {
+    return NextResponse.json(
+      { error: "Forbidden: role assignment exceeds your site authority" },
+      { status: 403 },
+    );
+  }
+  if (
+    input.wp_site !== undefined &&
+    !isAdminPlusForScope(viewer, input.wp_site)
+  ) {
+    return NextResponse.json(
+      { error: "Forbidden: site change exceeds your authority" },
+      { status: 403 },
+    );
+  }
+  if (input.team_id) {
+    const team = await getTeamById(input.team_id);
+    if (!team || !isAdminPlusForScope(viewer, team.site)) {
+      return NextResponse.json(
+        { error: "Forbidden: team assignment exceeds your site authority" },
+        { status: 403 },
+      );
+    }
+  }
 
   const ok = await updateUserProfile(id, input);
   if (!ok) {
@@ -116,46 +149,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const updated = await getUserById(id);
-  return NextResponse.json({ user: updated ? sanitizeUser(updated, viewer) : null });
-}
-
-// --------------------------------------------------------------------------
-// Helpers
-// --------------------------------------------------------------------------
-
-function sanitizeUser(target: StaffUserSummary, viewer: CurrentUser) {
-  const isSelf = target.id === viewer.id;
-  const isPrivileged = isSelf || isAdminPlus(viewer);
-
-  const publicFields = {
-    id: target.id,
-    wp_user_id: target.wp_user_id,
-    wp_site: target.wp_site,
-    display_name: target.display_name,
-    avatar_url: target.avatar_url,
-    bio: target.bio,
-    twitter_handle: target.twitter_handle,
-    bluesky_handle: target.bluesky_handle,
-    timezone: target.timezone,
-    roles: target.roles,
-    role_rows: target.role_rows,
-    teams: target.teams,
-    primary_team: target.primary_team,
-    created_at: target.created_at,
-    last_wp_sync: target.last_wp_sync,
-  };
-
-  if (!isPrivileged) {
-    return publicFields;
-  }
-
-  return {
-    ...publicFields,
-    email: target.email,
-    discord_id: target.discord_id,
-    theme: target.theme,
-    can_publish: target.can_publish,
-    onboarding_completed: target.onboarding_completed,
-    auto_approve_drafts: target.auto_approve_drafts,
-  };
+  return NextResponse.json({
+    user: updated ? sanitizeUserForViewer(updated, viewer) : null,
+  });
 }
