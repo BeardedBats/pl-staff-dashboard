@@ -2,22 +2,32 @@ import { NextResponse } from "next/server";
 import {
   clearAuthCookies,
   readAccessTokenFromCookies,
+  readRefreshTokenFromCookies,
   verifyAccessToken,
+  verifyRefreshToken,
 } from "@/lib/auth/session";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { sessionRepository } from "@/lib/auth/session-repository";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  // Best-effort session row deletion. Cookie clearing is what actually
-  // logs the user out.
-  const token = await readAccessTokenFromCookies();
-  const payload = token ? verifyAccessToken(token) : null;
+  const [accessToken, refreshToken] = await Promise.all([
+    readAccessTokenFromCookies(),
+    readRefreshTokenFromCookies(),
+  ]);
+  const payloads = [
+    accessToken ? verifyAccessToken(accessToken) : null,
+    refreshToken ? verifyRefreshToken(refreshToken) : null,
+  ].filter((payload) => payload?.sid && payload.sub);
 
-  if (payload?.sid) {
-    const supabase = getSupabaseAdmin();
-    await supabase.from("sessions").delete().eq("id", payload.sid);
-  }
+  const sessions = new Map(
+    payloads.map((payload) => [payload!.sid, payload!] as const),
+  );
+  await Promise.allSettled(
+    Array.from(sessions.values()).map((payload) =>
+      sessionRepository.revoke(payload.sid, payload.sub),
+    ),
+  );
 
   await clearAuthCookies();
 

@@ -33,7 +33,7 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 
 ## Phase 1 — Security, correctness, and data integrity
 
-- [ ] P1.1 Repair refresh-token rotation, replay protection, concurrent refresh behavior, revocation, expiry, logout, and session invalidation.
+- [ ] P1.1 Repair refresh-token rotation, replay protection, concurrent refresh behavior, revocation, expiry, logout, and session invalidation. — IN PROGRESS
 - [ ] P1.2 Ensure access-token requests validate the current server-side session state where required.
 - [ ] P1.3 Audit every API route and server action against an explicit role-and-resource authorization matrix.
 - [ ] P1.4 Fix graphics, editorial, analytics, administration, and synchronization authorization gaps.
@@ -223,3 +223,14 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 10. **Medium — environment drift and access gaps (P0.7, P0.9, P1.13, P2.11):** committed migrations did not guarantee live bucket state, current RLS catalog state cannot be queried with available access, Vercel settings/env cannot be audited through the current token, and plaintext outer-workspace credential copies cannot be safely rotated yet.
 
 Phase 0 implementation gate: **PASS WITH ACCESS-GATED DEFERMENTS.** Source, Git, deployment, environment names, database surface, WordPress capability, storage behavior, and reproducible build baseline are established. P0.7 and the role-specific part of P0.9 stay visibly blocked and must close before the final Phase 7 gate.
+
+### 2026-07-21 — P1.1 session lifecycle implementation
+
+- Added unique JWT IDs and pinned HS256 verification so repeated issuance for one user/session in the same second still creates distinct credentials.
+- Added a session repository with an atomic refresh-hash compare-and-swap, token-family revocation on simultaneous or later replay, live access-hash/session validation, and scoped revocation.
+- Login now inserts one final token family under a pre-generated session ID; no placeholder session/hash window remains.
+- Logout checks both signed cookies, so an expired/missing access token cannot leave a valid refresh session behind.
+- Added Vitest 4.1.10 and 5 tests covering unique issuance, deterministic concurrent reuse, later replay, expiry, and access revocation.
+- A temporary-row live Supabase probe produced exactly 1 compare-and-swap winner and 1 loser, with no errors; the row was deleted in `finally`.
+- Current local gate: 2 test files / 5 tests pass; lint passes; production build passes; TypeScript passes when run after the build. A parallel build/type-check attempt caused a transient `.next/types/routes.js` generation collision and is not treated as a product failure.
+- Remaining before P1.1/P1.2 completion: preview, production deployment, and synthetic-session live HTTP probes for access invalidation, concurrent refresh, and refresh-backed logout.

@@ -1,0 +1,9 @@
+process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+process.env.JWT_SECRET = "test-access-secret-at-least-32-characters";
+process.env.JWT_REFRESH_SECRET = "test-refresh-secret-at-least-32-characters";
+process.env.WP_PL_URL = "https://example.com";
+process.env.WP_PL_USERNAME = "test-user";
+process.env.WP_PL_APP_PASSWORD = "test-application-password";
+process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+process.env.CRON_SECRET = "test-cron-secret-at-least-16-characters";

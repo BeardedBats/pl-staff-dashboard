@@ -51,7 +51,12 @@ function signWithKind(
   return jwt.sign(
     { sub: userId, sid: sessionId, kind },
     secret,
-    { expiresIn, issuer: "pl-staff-dashboard" },
+    {
+      algorithm: "HS256",
+      expiresIn,
+      issuer: "pl-staff-dashboard",
+      jwtid: crypto.randomUUID(),
+    },
   );
 }
 
@@ -76,6 +81,7 @@ export function createTokenPair(userId: string, sessionId: string): TokenPair {
 export function verifyAccessToken(token: string): SessionTokenPayload | null {
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET, {
+      algorithms: ["HS256"],
       issuer: "pl-staff-dashboard",
     }) as SessionTokenPayload;
     if (decoded.kind !== "access") return null;
@@ -89,6 +95,7 @@ export function verifyAccessToken(token: string): SessionTokenPayload | null {
 export function verifyRefreshToken(token: string): SessionTokenPayload | null {
   try {
     const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET, {
+      algorithms: ["HS256"],
       issuer: "pl-staff-dashboard",
     }) as SessionTokenPayload;
     if (decoded.kind !== "refresh") return null;
