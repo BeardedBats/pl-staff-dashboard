@@ -865,6 +865,59 @@ export type Database = {
           },
         ]
       }
+      import_runs: {
+        Row: {
+          date_range_end: string | null
+          date_range_start: string | null
+          error_code: string | null
+          file_name: string
+          finished_at: string | null
+          id: string
+          import_type: string
+          requested_by: string | null
+          rows_processed: number | null
+          started_at: string
+          status: string
+          summary: Json
+        }
+        Insert: {
+          date_range_end?: string | null
+          date_range_start?: string | null
+          error_code?: string | null
+          file_name: string
+          finished_at?: string | null
+          id?: string
+          import_type: string
+          requested_by?: string | null
+          rows_processed?: number | null
+          started_at?: string
+          status?: string
+          summary?: Json
+        }
+        Update: {
+          date_range_end?: string | null
+          date_range_start?: string | null
+          error_code?: string | null
+          file_name?: string
+          finished_at?: string | null
+          id?: string
+          import_type?: string
+          requested_by?: string | null
+          rows_processed?: number | null
+          started_at?: string
+          status?: string
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_runs_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           event_type: string
@@ -945,6 +998,54 @@ export type Database = {
           },
         ]
       }
+      operational_alerts: {
+        Row: {
+          component: string
+          error_code: string
+          event_name: string
+          fingerprint: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          metadata: Json
+          occurrence_count: number
+          remediation: string
+          resolved_at: string | null
+          severity: string
+          summary: string
+        }
+        Insert: {
+          component: string
+          error_code: string
+          event_name: string
+          fingerprint: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          metadata?: Json
+          occurrence_count?: number
+          remediation: string
+          resolved_at?: string | null
+          severity: string
+          summary: string
+        }
+        Update: {
+          component?: string
+          error_code?: string
+          event_name?: string
+          fingerprint?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          metadata?: Json
+          occurrence_count?: number
+          remediation?: string
+          resolved_at?: string | null
+          severity?: string
+          summary?: string
+        }
+        Relationships: []
+      }
       raptive_revenue: {
         Row: {
           date: string
@@ -999,6 +1100,7 @@ export type Database = {
           date_range_start: string
           file_name: string
           id: string
+          import_run_id: string | null
           rows_imported: number
           uploaded_by: string
         }
@@ -1008,6 +1110,7 @@ export type Database = {
           date_range_start: string
           file_name: string
           id?: string
+          import_run_id?: string | null
           rows_imported?: number
           uploaded_by: string
         }
@@ -1017,10 +1120,18 @@ export type Database = {
           date_range_start?: string
           file_name?: string
           id?: string
+          import_run_id?: string | null
           rows_imported?: number
           uploaded_by?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "raptive_uploads_import_run_id_fkey"
+            columns: ["import_run_id"]
+            isOneToOne: true
+            referencedRelation: "import_runs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "raptive_uploads_uploaded_by_fkey"
             columns: ["uploaded_by"]
@@ -1497,6 +1608,14 @@ export type Database = {
           leased_storage_path: string
         }[]
       }
+      begin_import_run: {
+        Args: {
+          p_file_name: string
+          p_import_type: string
+          p_requested_by: string
+        }
+        Returns: string
+      }
       bulk_create_entries: {
         Args: { p_actor_id: string; p_entries: Json }
         Returns: {
@@ -1531,7 +1650,9 @@ export type Database = {
           p_date_range_end: string
           p_date_range_start: string
           p_file_name: string
+          p_import_run_id: string
           p_rows: Json
+          p_summary: Json
           p_uploaded_by: string
         }
         Returns: number
@@ -1567,6 +1688,16 @@ export type Database = {
         Args: {
           p_error_code?: string
           p_run_id: string
+          p_succeeded: boolean
+          p_summary?: Json
+        }
+        Returns: boolean
+      }
+      finish_import_run: {
+        Args: {
+          p_error_code?: string
+          p_import_run_id: string
+          p_rows_processed?: number
           p_succeeded: boolean
           p_summary?: Json
         }
@@ -1621,8 +1752,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_operational_alert: {
+        Args: {
+          p_component: string
+          p_error_code: string
+          p_event_name: string
+          p_fingerprint: string
+          p_metadata?: Json
+          p_remediation: string
+          p_severity: string
+          p_summary: string
+        }
+        Returns: string
+      }
       release_graphic_submission: {
         Args: { p_request_id: string; p_submission_token: string }
+        Returns: boolean
+      }
+      resolve_operational_alert: {
+        Args: { p_fingerprint: string }
         Returns: boolean
       }
       resolve_writer_claim: {

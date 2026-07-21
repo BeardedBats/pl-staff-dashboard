@@ -3,6 +3,10 @@ import "server-only";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { Json } from "@/types/database";
+import {
+  emitStructuredLog,
+  safeErrorCode,
+} from "@/lib/observability/structured-log";
 
 const entryIdsSchema = z
   .array(z.uuid())
@@ -78,7 +82,12 @@ export async function bulkUpdateEntries(
 
   if (!error) return { ok: true, updated: data ?? 0 };
 
-  console.error("Transactional bulk entry update failed", { code: error.code });
+  emitStructuredLog({
+    level: "error",
+    component: "entries",
+    event: "entries.bulk_update_failed",
+    errorCode: safeErrorCode(error, "database"),
+  });
   if (
     error.code === "P0001" &&
     error.message === "completed_checklist_blocks_tier_change"

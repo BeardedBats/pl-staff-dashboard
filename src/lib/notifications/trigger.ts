@@ -6,6 +6,24 @@ import {
   dispatchNotificationBulk,
 } from "./data";
 import type { AppRole, AppSite, CurrentUser } from "@/lib/auth/current-user";
+import { recordOperationalAlert } from "@/lib/observability/alerts";
+import { safeErrorCode } from "@/lib/observability/structured-log";
+
+async function reportNotificationFailure(
+  event: string,
+  error: unknown,
+): Promise<void> {
+  await recordOperationalAlert({
+    fingerprint: `notifications:${event}`,
+    severity: "warning",
+    component: "notifications",
+    eventName: `notifications.${event}`,
+    errorCode: safeErrorCode(error, "delivery_failed"),
+    summary: "A dashboard notification could not be delivered.",
+    remediation:
+      "Review the notification trigger and database connectivity, then retry the originating workflow if needed.",
+  });
+}
 
 /**
  * High-level notification triggers. Each function knows:
@@ -43,7 +61,7 @@ export async function triggerMention(
       body: commentBody.slice(0, 240),
     });
   } catch (err) {
-    console.error("[notifications] triggerMention failed:", err);
+    await reportNotificationFailure("mention_failed", err);
   }
 }
 
@@ -69,7 +87,7 @@ export async function triggerClaimRequested(
       },
     );
   } catch (err) {
-    console.error("[notifications] triggerClaimRequested failed:", err);
+    await reportNotificationFailure("claim_requested_failed", err);
   }
 }
 
@@ -95,7 +113,7 @@ export async function triggerClaimResolved(
         : `You can try claiming a different entry or contact ${actor.display_name}.`,
     });
   } catch (err) {
-    console.error("[notifications] triggerClaimResolved failed:", err);
+    await reportNotificationFailure("claim_resolved_failed", err);
   }
 }
 
@@ -127,7 +145,7 @@ export async function triggerContentSubmitted(
       },
     );
   } catch (err) {
-    console.error("[notifications] triggerContentSubmitted failed:", err);
+    await reportNotificationFailure("content_submitted_failed", err);
   }
 }
 
@@ -150,7 +168,7 @@ export async function triggerSentToPolishing(
       },
     );
   } catch (err) {
-    console.error("[notifications] triggerSentToPolishing failed:", err);
+    await reportNotificationFailure("sent_to_polishing_failed", err);
   }
 }
 
@@ -177,7 +195,7 @@ export async function triggerGraphicRequested(
       },
     );
   } catch (err) {
-    console.error("[notifications] triggerGraphicRequested failed:", err);
+    await reportNotificationFailure("graphic_requested_failed", err);
   }
 }
 
@@ -204,7 +222,7 @@ export async function triggerGraphicSubmitted(
       },
     );
   } catch (err) {
-    console.error("[notifications] triggerGraphicSubmitted failed:", err);
+    await reportNotificationFailure("graphic_submitted_failed", err);
   }
 }
 
@@ -231,7 +249,7 @@ export async function triggerGraphicFlagged(
       },
     );
   } catch (err) {
-    console.error("[notifications] triggerGraphicFlagged failed:", err);
+    await reportNotificationFailure("graphic_flagged_failed", err);
   }
 }
 
@@ -257,7 +275,7 @@ export async function triggerArchiveRequested(
       },
     );
   } catch (err) {
-    console.error("[notifications] triggerArchiveRequested failed:", err);
+    await reportNotificationFailure("archive_requested_failed", err);
   }
 }
 
@@ -279,7 +297,7 @@ export async function triggerEntryScheduled(
       body: `${site.toUpperCase()} picked it up — expect it to publish at the scheduled time.`,
     });
   } catch (err) {
-    console.error("[notifications] triggerEntryScheduled failed:", err);
+    await reportNotificationFailure("entry_scheduled_failed", err);
   }
 }
 
@@ -296,7 +314,7 @@ export async function triggerEntryPublished(
       body: `The article is now published on the site.`,
     });
   } catch (err) {
-    console.error("[notifications] triggerEntryPublished failed:", err);
+    await reportNotificationFailure("entry_published_failed", err);
   }
 }
 

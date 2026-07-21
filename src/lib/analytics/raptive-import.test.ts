@@ -171,20 +171,34 @@ describe("Raptive import commit", () => {
 
     await expect(
       commitRaptiveRows(
+        "run-1",
         [row],
         { start: "2026-07-01", end: "2026-07-01" },
         "fixture.xlsx",
         "operator-1",
+        {
+          matchedCount: 0,
+          unmatchedCount: 1,
+          dataSheetCount: 1,
+          duplicateCount: 0,
+        },
       ),
     ).resolves.toEqual({ ok: true, inserted: 1 });
 
     expect(mocks.rpc).toHaveBeenCalledOnce();
     expect(mocks.rpc).toHaveBeenCalledWith("commit_raptive_import", {
+      p_import_run_id: "run-1",
       p_rows: [row],
       p_date_range_start: "2026-07-01",
       p_date_range_end: "2026-07-01",
       p_file_name: "fixture.xlsx",
       p_uploaded_by: "operator-1",
+      p_summary: {
+        matched_count: 0,
+        unmatched_count: 1,
+        data_sheet_count: 1,
+        duplicate_count: 0,
+      },
     });
     expect(mocks.from).not.toHaveBeenCalled();
   });
@@ -194,6 +208,7 @@ describe("Raptive import commit", () => {
 
     await expect(
       commitRaptiveRows(
+        "run-1",
         [
           {
             date: "2026-07-01",
@@ -209,6 +224,12 @@ describe("Raptive import commit", () => {
         { start: "2026-07-01", end: "2026-07-01" },
         "fixture.xlsx",
         "operator-1",
+        {
+          matchedCount: 0,
+          unmatchedCount: 1,
+          dataSheetCount: 1,
+          duplicateCount: 0,
+        },
       ),
     ).resolves.toEqual({ ok: false, error: "Failed to commit Raptive import" });
   });

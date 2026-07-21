@@ -53,9 +53,19 @@ function loadEnv(): z.infer<typeof envSchema> {
   const parsed = envSchema.safeParse(process.env);
 
   if (!parsed.success) {
-    const tree = z.treeifyError(parsed.error);
-    console.error("❌ Invalid environment variables:");
-    console.error(JSON.stringify(tree, null, 2));
+    const fields = Array.from(
+      new Set(parsed.error.issues.map((issue) => issue.path.join("."))),
+    );
+    console.error(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: "error",
+        component: "configuration",
+        event: "environment.invalid",
+        error_code: "validation_failed",
+        fields,
+      }),
+    );
     throw new Error(
       "Environment validation failed. Check .env.local against .env.example.",
     );

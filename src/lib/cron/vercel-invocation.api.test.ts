@@ -25,6 +25,7 @@ import {
 import { GET as seasonSwitch } from "@/app/api/cron/season-switch/route";
 import { GET as unclaimedAlerts } from "@/app/api/cron/unclaimed-alerts/route";
 import { GET as wpSync } from "@/app/api/cron/wp-sync/route";
+import { CRON_JOBS } from "@/lib/cron/jobs";
 
 type VercelConfig = { crons: Array<{ path: string; schedule: string }> };
 type CronHandler = (request: Request) => Promise<Response>;
@@ -39,43 +40,35 @@ const routes: Record<
 > = {
   "/api/cron/category-sync": {
     handler: categorySync,
-    name: "category-sync",
-    intervalSeconds: 7 * 24 * 60 * 60,
+    ...CRON_JOBS["category-sync"].execution,
   },
   "/api/cron/deadline-reminders": {
     handler: deadlineReminders,
-    name: "deadline-reminders",
-    intervalSeconds: 60 * 60,
+    ...CRON_JOBS["deadline-reminders"].execution,
   },
   "/api/cron/ga4-sync": {
     handler: ga4Sync,
-    name: "ga4-sync",
-    intervalSeconds: 24 * 60 * 60,
+    ...CRON_JOBS["ga4-sync"].execution,
   },
   "/api/cron/profile-sync": {
     handler: profileSync,
-    name: "profile-sync",
-    intervalSeconds: 6 * 60 * 60,
+    ...CRON_JOBS["profile-sync"].execution,
   },
   "/api/cron/recurring-generate": {
     handler: recurringGenerate,
-    name: "recurring-generate",
-    intervalSeconds: 24 * 60 * 60,
+    ...CRON_JOBS["recurring-generate"].execution,
   },
   "/api/cron/season-switch": {
     handler: seasonSwitch,
-    name: "season-switch",
-    intervalSeconds: 24 * 60 * 60,
+    ...CRON_JOBS["season-switch"].execution,
   },
   "/api/cron/unclaimed-alerts": {
     handler: unclaimedAlerts,
-    name: "unclaimed-alerts",
-    intervalSeconds: 3 * 60 * 60,
+    ...CRON_JOBS["unclaimed-alerts"].execution,
   },
   "/api/cron/wp-sync": {
     handler: wpSync,
-    name: "wp-sync",
-    intervalSeconds: 5 * 60,
+    ...CRON_JOBS["wp-sync"].execution,
   },
 };
 
@@ -104,6 +97,14 @@ describe("Vercel-shaped cron invocations", () => {
     expect(Object.keys(routes).sort()).toEqual(
       config.crons.map((cron) => cron.path).sort(),
     );
+  });
+
+  it("keeps the health registry synchronized with the deployed paths and schedules", () => {
+    expect(
+      Object.values(CRON_JOBS)
+        .map(({ path: pathname, schedule }) => ({ path: pathname, schedule }))
+        .sort((a, b) => a.path.localeCompare(b.path)),
+    ).toEqual([...config.crons].sort((a, b) => a.path.localeCompare(b.path)));
   });
 
   it("keeps every committed schedule within Vercel's supported syntax", () => {

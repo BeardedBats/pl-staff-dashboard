@@ -1,7 +1,7 @@
 # API authorization matrix
 
 Audited: 2026-07-21  
-Scope: all 107 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
+Scope: all 108 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
 Status vocabulary: **OK** was enforced at the audit baseline; **GAP** was a baseline defect; **P1.12** marked the then-broken Vercel cron method contract. The closure table below is authoritative for post-audit repair state, and an automated parity test now rejects undocumented handlers.
 
 ## Policy vocabulary
@@ -126,6 +126,7 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | POST | `/api/settings/checklist-items` | Admin+ | `isAdminPlus` | OK |
 | PATCH | `/api/settings/checklist-items/[id]` | Admin+ | `isAdminPlus` | OK |
 | DELETE | `/api/settings/checklist-items/[id]` | Admin+ | `isAdminPlus` | OK |
+| GET | `/api/settings/operational-health` | Admin+ with both-site authority | `isAdminPlusForScope(viewer, "both")` | OK |
 | GET | `/api/settings/wp-sync-status` | Admin+ | `isAdminPlus` | OK |
 | GET | `/api/teams` | Session; staff directory data | `getCurrentUser` | OK |
 | POST | `/api/teams` | Admin+ | `isAdminPlus` | OK |

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
 import { executeCronJob } from "@/lib/cron/execution";
+import { CRON_JOBS } from "@/lib/cron/jobs";
 import { syncWpProfiles } from "@/lib/wp-sync/profiles";
 
 export const runtime = "nodejs";
@@ -19,10 +20,7 @@ async function handle(request: Request) {
     return errorResponse(401, authorized.error);
   }
 
-  return executeCronJob(authorized.source, {
-    name: "profile-sync",
-    intervalSeconds: 6 * 60 * 60,
-  }, async () => {
+  return executeCronJob(authorized.source, CRON_JOBS["profile-sync"].execution, async () => {
     const report = await syncWpProfiles();
     if (report.errors.length > 0) {
       return errorResponse(502, "WordPress profile sync incomplete");

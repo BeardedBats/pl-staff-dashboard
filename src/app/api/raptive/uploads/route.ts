@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { canViewAnalytics, getCurrentUser } from "@/lib/auth/current-user";
-import { listRaptiveUploads } from "@/lib/analytics/raptive";
+import {
+  listRaptiveImportRuns,
+  listRaptiveUploads,
+} from "@/lib/analytics/raptive";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +18,9 @@ export async function GET() {
     return errorResponse(403, "Forbidden");
   }
 
-  const uploads = await listRaptiveUploads();
-  return NextResponse.json({ uploads });
+  const [uploads, runs] = await Promise.all([
+    listRaptiveUploads(),
+    listRaptiveImportRuns(),
+  ]);
+  return NextResponse.json({ uploads, runs });
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
 import { executeCronJob } from "@/lib/cron/execution";
+import { CRON_JOBS } from "@/lib/cron/jobs";
 import { syncGa4 } from "@/lib/analytics/ga4";
 
 export const runtime = "nodejs";
@@ -23,10 +24,7 @@ async function handle(request: Request) {
     return errorResponse(401, authorized.error);
   }
 
-  return executeCronJob(authorized.source, {
-    name: "ga4-sync",
-    intervalSeconds: 24 * 60 * 60,
-  }, async () => {
+  return executeCronJob(authorized.source, CRON_JOBS["ga4-sync"].execution, async () => {
     const result = await syncGa4();
     if (!result.ok) {
       if (result.reason === "not_configured" || result.reason === "not_connected") {

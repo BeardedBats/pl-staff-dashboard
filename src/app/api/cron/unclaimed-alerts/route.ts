@@ -4,6 +4,7 @@ import { authorizeCronRequest } from "@/lib/cron/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchNotification } from "@/lib/notifications/data";
 import { executeCronJob } from "@/lib/cron/execution";
+import { CRON_JOBS } from "@/lib/cron/jobs";
 import { recipientsForSite } from "@/lib/cron/recipients";
 
 export const runtime = "nodejs";
@@ -25,10 +26,7 @@ async function handle(request: Request) {
     return errorResponse(401, authorized.error);
   }
 
-  return executeCronJob(authorized.source, {
-    name: "unclaimed-alerts",
-    intervalSeconds: 3 * 60 * 60,
-  }, async () => {
+  return executeCronJob(authorized.source, CRON_JOBS["unclaimed-alerts"].execution, async () => {
 
   const supabase = getSupabaseAdmin();
 

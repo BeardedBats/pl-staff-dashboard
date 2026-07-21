@@ -20,12 +20,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { OperationalHealthSnapshot } from "@/lib/observability/health";
+import { OperationalHealthPanel } from "./operational-health-panel";
 
 type Props = {
   initialLastSync: {
     pl: string | null;
     qb: string | null;
   };
+  initialHealth: OperationalHealthSnapshot;
   /** Operations-only — gates the historical import section. */
   canRunHistoricalImport?: boolean;
 };
@@ -86,6 +89,7 @@ const initialState: SyncState = { running: false, result: null, error: null };
 
 export function AdminSyncPanel({
   initialLastSync,
+  initialHealth,
   canRunHistoricalImport = false,
 }: Props) {
   const [posts, setPosts] = React.useState<SyncState>(initialState);
@@ -128,6 +132,8 @@ export function AdminSyncPanel({
 
   return (
     <div className="space-y-6">
+      <OperationalHealthPanel initialHealth={initialHealth} />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">

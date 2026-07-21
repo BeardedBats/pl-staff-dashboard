@@ -5,12 +5,12 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.10 — Add observable, safe, actionable production-failure signals.
-- Branch: `codex/production-readiness-p2-9`
-- Stack base: `a6d3c42` (green draft PR #25, based on green draft PRs #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P2.11 — Add recovery and operating runbooks.
+- Branch: `codex/production-readiness-p2-10`
+- Stack base: `88d26fb` (green draft PR #26, based on green draft PRs #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blockers: production application of the stacked migrations through `0021` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
+- Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -52,7 +52,7 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 
 Gate: no known high-severity authorization, session, secret, RLS, cron, or data-integrity defect remains.
 
-Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUMENTED SUPABASE DDL ACCESS FOR THE STACKED MIGRATIONS 0013–0021.**
+Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUMENTED SUPABASE DDL ACCESS FOR THE STACKED MIGRATIONS 0013–0022.**
 
 ## Phase 2 — Test system, CI, observability, and operational safety
 
@@ -65,7 +65,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 - [x] P2.7 Add representative Raptive importer tests with multi-sheet fixtures, duplicates, malformed rows, interruptions, and large files.
 - [x] P2.8 Add role-based end-to-end journeys for managers, writers, editors, graphics staff, and administrators.
 - [x] P2.9 Add GitHub Actions for install, lint, type checking, tests, build, migration checks, dependency checks, and browser tests where appropriate.
-- [ ] P2.10 Add structured logs, safe error reporting, cron freshness, integration health, import-job visibility, and actionable alerts.
+- [x] P2.10 Add structured logs, safe error reporting, cron freshness, integration health, import-job visibility, and actionable alerts.
 - [ ] P2.11 Add backup, migration, rollback, incident, secret-rotation, and deployment runbooks.
 - [ ] P2.12 Establish measurable performance and accessibility baselines.
 
@@ -441,6 +441,15 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - The first clean Browser runner proved a CI-only lifecycle defect: public-ECR throttling and first-pull time consumed Playwright's 120-second Next-server window before tests began. Moving Supabase startup into its own workflow step fixed the boundary. Corrected run [29864580610](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29864580610) passed Application, Database, Dependencies, and all eight Browser journeys; Vercel also passed and draft PR #26 is merge-clean.
 - Local verification independently passed actionlint 1.7.12, a clean locked install, zero-vulnerability audit, ESLint, TypeScript, the production build, 232 Vitest tests, 274 pgTAP assertions, generated-type drift, warning-failing database lint, and eight Chromium journeys. Browser teardown left zero synthetic users/entries, no auth-state directory, and no port-3100 listener.
 - GitHub returned 403 for both branch-protection and repository-ruleset APIs because the repository is private on the current account plan. The complete checks therefore run and report on every pull request and `main` push but cannot be configured as merge-required until the repository becomes public or the plan is upgraded; this platform limitation is documented without treating the checks as hard merge prevention.
+
+### 2026-07-21 — P2.10 safe operational-observability gate
+
+- Added one structured JSON logging boundary with stable component/event/error-code fields, correlation IDs for failures, bounded attributes, dangerous-key removal, and value redaction. Application, analytics, entry, cron, import, and notification failure paths no longer emit raw exception objects or messages; invalid environment startup logs only failed field names.
+- Migration `0022_operational_observability.sql` adds forced-RLS, service-only `operational_alerts` and `import_runs` tables plus narrow RPCs. Alerts deduplicate by stable fingerprint, preserve first/last occurrence and count, carry only safe summaries/remediation, and resolve after recovery. All client roles remain revoked.
+- Every configured cron now shares one canonical registry for path, Vercel schedule, durable execution name, freshness window, and remediation. Failed, stuck, missing, and stale runs are differentiated; task/control failures create durable alerts and successful recovery resolves them.
+- Raptive commit attempts now begin before matching, finish atomically with the range replacement and upload row, and recover a success whose HTTP response was lost by checking the durable run. Settings > Analytics exposes running, failed, and successful attempts with safe codes instead of showing only successful uploads.
+- Settings > Sync now gives both-site Admin+ viewers a refreshable system-health surface for all eight jobs, PL/QB WordPress freshness, GA4 configuration/sync health, Raptive import health, and active alerts with concrete remediation. The endpoint rejects anonymous and one-site viewers; its failure response exposes only a correlation ID.
+- Final local gate: 52 Vitest files / 249 tests with V8 coverage, 10 database files / 306 pgTAP assertions, generated database-type drift, warning-failing database lint, zero-vulnerability audit, ESLint, TypeScript, Next.js 16.2.11 production build, and all eight Chromium journeys pass. The administrator journey visibly loads the health surface and receives HTTP 200 from an authenticated refresh.
 
 ## Phase 0 prioritized defect and risk inventory
 

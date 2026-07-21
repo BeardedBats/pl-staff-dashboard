@@ -25,23 +25,29 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Ga4Status } from "@/lib/analytics/ga4";
-import type { RaptiveUploadHistoryRow } from "@/lib/analytics/raptive";
+import type {
+  RaptiveImportRunRow,
+  RaptiveUploadHistoryRow,
+} from "@/lib/analytics/raptive";
 
 type Props = {
   initialGa4Status: Ga4Status;
   initialUploads: RaptiveUploadHistoryRow[];
+  initialImportRuns: RaptiveImportRunRow[];
   canConnectGa4: boolean;
 };
 
 export function AdminAnalyticsPanel({
   initialGa4Status,
   initialUploads,
+  initialImportRuns,
   canConnectGa4,
 }: Props) {
   const searchParams = useSearchParams();
   const ga4Flag = searchParams.get("ga4");
   const [status, setStatus] = React.useState(initialGa4Status);
   const [uploads, setUploads] = React.useState(initialUploads);
+  const [importRuns, setImportRuns] = React.useState(initialImportRuns);
   const [busy, setBusy] = React.useState<string | null>(null);
   const [flash, setFlash] = React.useState<
     { kind: "success" | "error"; message: string } | null
@@ -74,8 +80,12 @@ export function AdminAnalyticsPanel({
   async function refreshUploads() {
     try {
       const res = await fetch("/api/raptive/uploads");
-      const data = (await res.json()) as { uploads?: RaptiveUploadHistoryRow[] };
+      const data = (await res.json()) as {
+        uploads?: RaptiveUploadHistoryRow[];
+        runs?: RaptiveImportRunRow[];
+      };
       if (data.uploads) setUploads(data.uploads);
+      if (data.runs) setImportRuns(data.runs);
     } catch {
       // ignore
     }
@@ -284,6 +294,85 @@ export function AdminAnalyticsPanel({
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              Raptive import attempts
+            </CardTitle>
+            <CardDescription>
+              Durable visibility for running, successful, and failed workbook
+              imports, including safely coded failures.
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refreshUploads()}
+          >
+            <RefreshCcw className="h-3.5 w-3.5" />
+            Refresh
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          {importRuns.length === 0 ? (
+            <div className="p-4">
+              <EmptyState
+                icon={<History className="h-5 w-5" />}
+                title="No import attempts yet"
+                description="A commit attempt appears here before rows are changed, so interrupted and failed imports remain visible."
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-card text-[10px] uppercase tracking-wide text-text-zero">
+                  <tr className="border-b border-border">
+                    <th className="px-3 py-2 text-left">File</th>
+                    <th className="px-3 py-2 text-left">Status</th>
+                    <th className="px-3 py-2 text-left">Range</th>
+                    <th className="px-3 py-2 text-right">Rows</th>
+                    <th className="px-3 py-2 text-left">Requested by</th>
+                    <th className="px-3 py-2 text-left">Started</th>
+                    <th className="px-3 py-2 text-left">Error code</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importRuns.map((run) => (
+                    <tr key={run.id} className="border-b border-border/50">
+                      <td className="px-3 py-2 font-medium text-text-cell">
+                        {run.file_name}
+                      </td>
+                      <td className="px-3 py-2">
+                        <ImportStatus status={run.status} />
+                      </td>
+                      <td className="px-3 py-2 text-[11px] text-text-team">
+                        {run.date_range_start && run.date_range_end
+                          ? `${run.date_range_start} → ${run.date_range_end}`
+                          : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {run.rows_processed?.toLocaleString() ?? "—"}
+                      </td>
+                      <td className="px-3 py-2 text-text-team">
+                        {run.requester_name ?? "Unknown"}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-[11px] text-text-zero">
+                        {new Date(run.started_at).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-[10px] text-text-zero">
+                        {run.error_code ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
               <Link2 className="h-4 w-4" />
               Raptive upload history
             </CardTitle>
@@ -349,6 +438,24 @@ export function AdminAnalyticsPanel({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function ImportStatus({
+  status,
+}: {
+  status: RaptiveImportRunRow["status"];
+}) {
+  const className =
+    status === "succeeded"
+      ? "border-cyan/40 text-cyan"
+      : status === "running"
+        ? "border-blue-400/40 text-blue-300"
+        : "border-destructive/40 text-destructive";
+  return (
+    <Badge variant="outline" className={className}>
+      {status}
+    </Badge>
   );
 }
 

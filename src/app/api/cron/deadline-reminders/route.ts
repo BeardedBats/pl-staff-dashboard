@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchNotification } from "@/lib/notifications/data";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
 import { executeCronJob } from "@/lib/cron/execution";
+import { CRON_JOBS } from "@/lib/cron/jobs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,10 +24,7 @@ async function handle(request: Request) {
     return errorResponse(401, authorized.error);
   }
 
-  return executeCronJob(authorized.source, {
-    name: "deadline-reminders",
-    intervalSeconds: 60 * 60,
-  }, async () => {
+  return executeCronJob(authorized.source, CRON_JOBS["deadline-reminders"].execution, async () => {
 
   const supabase = getSupabaseAdmin();
 
