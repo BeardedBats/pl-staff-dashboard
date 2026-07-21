@@ -16,7 +16,7 @@ type SeasonModeRow = {
 };
 
 /**
- * POST /api/cron/season-switch
+ * GET (Vercel) / POST (manual) /api/cron/season-switch
  *
  * Evaluates each season_mode row against today's UTC date and flips
  * `is_active` so the mode whose `[auto_switch_start, auto_switch_end]`

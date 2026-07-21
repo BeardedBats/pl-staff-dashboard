@@ -145,3 +145,11 @@ REVOKE ALL ON FUNCTION public.claim_cron_run(TEXT, TEXT, TEXT, INTEGER) FROM PUB
 REVOKE ALL ON FUNCTION public.finish_cron_run(UUID, BOOLEAN, JSONB, TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_cron_run(TEXT, TEXT, TEXT, INTEGER) TO service_role;
 GRANT EXECUTE ON FUNCTION public.finish_cron_run(UUID, BOOLEAN, JSONB, TEXT) TO service_role;
+
+ALTER TABLE public.notifications
+  ADD COLUMN dedupe_key TEXT CHECK (
+    dedupe_key IS NULL OR length(dedupe_key) BETWEEN 1 AND 200
+  );
+
+ALTER TABLE public.notifications
+  ADD CONSTRAINT notifications_user_dedupe_unique UNIQUE (user_id, dedupe_key);

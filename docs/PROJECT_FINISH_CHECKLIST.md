@@ -5,7 +5,7 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.8/P1.9 — Apply verified migrations when DDL access arrives; complete P1.12 cron safety after method/auth sub-gate
+- Current action: P1.8/P1.9/P1.12 — Apply verified migrations when DDL access arrives; package P1.12 and continue P1.13
 - Branch: `codex/production-readiness-p1-12`
 - Stack base: `c152289` (green draft PR #12, based on green draft PRs #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
@@ -44,7 +44,7 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
 - [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules. — GREEN DRAFT PR #11; STACKED RELEASE PENDING P1.8/P1.9
 - [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8–P1.10
-- [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability. — METHOD/AUTH AND EXECUTION-CONTROL SUB-GATES PASSED; CHANNEL DELIVERY IDEMPOTENCY IN PROGRESS
+- [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
 - [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries.
 - [ ] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities.
 - [ ] P1.15 Either implement unfinished notification/settings behavior or remove misleading UI, types, tables, and code paths.
@@ -333,7 +333,8 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Every configured job now claims before running and persists its safe JSON outcome, HTTP failure class, timestamps, source, attempt, and lease state. Claim or finish failures return a safe 503 instead of silently running without control or reporting success without an audit row.
 - Cold migration reset applied `0001`–`0015`. The database suite passes 102 pgTAP probes, including 22 new privilege, state, duplicate, overlap, retry, exhausted-attempt, expired-lease, and hostile-input assertions. Generated types include the ledger and both RPCs.
 - A two-connection filesystem-independent probe held the first claim transaction open; the second claimant blocked and then returned `overlap`. Application regressions cover unavailable control, duplicate/overlap/exhaustion no-ops, success/failure persistence, finish failure, and exception redaction.
-- P1.12 remains open only for retry-safe channel-level notification deduplication. Route-level overlap and duplicate execution are now controlled, but a future real email/Discord adapter must not repeat a channel that succeeded before another channel or the function failed.
+- Reminder jobs now use database-enforced per-recipient keys instead of check-then-insert races. A partial unclaimed-alert attempt can retry missing managers without suppressing them, and site-only managers no longer receive the other site's alerts. Unique-key behavior, null-key compatibility, hostile keys, caller wiring, and PL/QB/both recipient selection are covered.
+- Final P1.12 gate: cold reset through `0015`; 105 pgTAP probes; real two-connection overlap probe; generated-type drift and database lint clean; 17 Vitest files / 88 tests; ESLint, TypeScript, and production build pass. Actual email/Discord delivery remains intentionally outside this claim because those adapters are still stubs tracked by P1.15.
 
 ## Phase 0 prioritized defect and risk inventory
 

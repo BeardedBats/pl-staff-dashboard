@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/cron/recurring-generate
+ * GET (Vercel) / POST (manual) /api/cron/recurring-generate
  *
  * Runs the recurring entry generator. Two ways in:
  *   1. Vercel Cron: header `Authorization: Bearer $CRON_SECRET`

@@ -53,7 +53,10 @@ type DispatchInput = {
   title: string;
   body: string | null;
   actionPath?: string;
+  dedupeKey?: string;
 };
+
+export type DispatchResult = { ok: true; deduplicated: boolean } | { ok: false };
 
 /**
  * Dispatch a notification to one user.
@@ -72,7 +75,7 @@ type DispatchInput = {
  */
 export async function dispatchNotification(
   input: DispatchInput,
-): Promise<void> {
+): Promise<DispatchResult> {
   const supabase = getSupabaseAdmin();
 
   // 1. Load the recipient's profile + prefs.
@@ -81,7 +84,7 @@ export async function dispatchNotification(
     .select("id, email, display_name, discord_id")
     .eq("id", input.userId)
     .maybeSingle();
-  if (!user) return;
+  if (!user) return { ok: false };
 
   const { data: roleRows } = await supabase
     .from("user_roles")
@@ -91,24 +94,35 @@ export async function dispatchNotification(
 
   const prefs = await resolvePreferencesForUser(input.userId, roles, input.type);
   if (!prefs.in_app_enabled && !prefs.discord_enabled && !prefs.email_enabled) {
-    return;
+    return { ok: true, deduplicated: false };
   }
 
   // 2. In-app insert.
   let notificationId: string | null = null;
   if (prefs.in_app_enabled) {
-    const { data: inserted } = await supabase
-      .from("notifications")
-      .insert({
-        user_id: input.userId,
-        entry_id: input.entryId,
-        type: input.type,
-        title: input.title,
-        body: input.body,
-        is_read: false,
-      })
-      .select("id")
-      .single();
+    const payload = {
+      user_id: input.userId,
+      entry_id: input.entryId,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      is_read: false,
+      dedupe_key: input.dedupeKey ?? null,
+    };
+    const { data: inserted, error: insertError } = input.dedupeKey
+      ? await supabase
+          .from("notifications")
+          .upsert(payload, {
+            onConflict: "user_id,dedupe_key",
+            ignoreDuplicates: true,
+          })
+          .select("id")
+          .maybeSingle()
+      : await supabase.from("notifications").insert(payload).select("id").single();
+    if (insertError) return { ok: false };
+    if (input.dedupeKey && !inserted) {
+      return { ok: true, deduplicated: true };
+    }
     notificationId = (inserted?.id as string | null) ?? null;
   }
 
@@ -150,6 +164,7 @@ export async function dispatchNotification(
       })
       .eq("id", notificationId);
   }
+  return { ok: true, deduplicated: false };
 }
 
 function buildActionUrl(entryId: string | null, actionPath?: string): string {
@@ -166,10 +181,10 @@ function buildActionUrl(entryId: string | null, actionPath?: string): string {
 export async function dispatchNotificationBulk(
   userIds: string[],
   base: Omit<DispatchInput, "userId">,
-): Promise<void> {
+): Promise<DispatchResult[]> {
   // Dedupe.
   const uniqueIds = Array.from(new Set(userIds));
-  await Promise.all(
+  return Promise.all(
     uniqueIds.map((userId) => dispatchNotification({ ...base, userId })),
   );
 }

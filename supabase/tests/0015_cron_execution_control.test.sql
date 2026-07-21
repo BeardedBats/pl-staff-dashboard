@@ -3,7 +3,7 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET search_path = public, extensions;
 
-SELECT plan(22);
+SELECT plan(25);
 
 SELECT ok(NOT has_table_privilege('anon', 'public.cron_runs', 'SELECT'), 'anon cannot read cron runs');
 SELECT ok(NOT has_table_privilege('authenticated', 'public.cron_runs', 'SELECT'), 'authenticated cannot read cron runs');
@@ -39,6 +39,26 @@ SELECT is((SELECT attempt FROM claim_cron_run('expired-job', 'window-1', 'vercel
 
 SELECT throws_ok($$SELECT * FROM claim_cron_run('BAD JOB', 'key', 'vercel', 900)$$, '22023', NULL, 'invalid job name is rejected');
 SELECT throws_ok($$SELECT * FROM claim_cron_run('valid-job', '', 'vercel', 900)$$, '22023', NULL, 'empty run key is rejected');
+
+INSERT INTO users (id, wp_user_id, wp_site, email, display_name)
+VALUES ('15000000-0000-0000-0000-000000000001', 1501, 'pl', 'cron-dedupe@example.test', 'Cron Dedupe');
+INSERT INTO notifications (user_id, type, title, dedupe_key)
+VALUES ('15000000-0000-0000-0000-000000000001', 'deadline_approaching', 'First', 'deadline:entry:date');
+SELECT throws_ok(
+  $$INSERT INTO notifications (user_id, type, title, dedupe_key)
+    VALUES ('15000000-0000-0000-0000-000000000001', 'deadline_approaching', 'Duplicate', 'deadline:entry:date')$$,
+  '23505', NULL, 'per-recipient delivery key is unique'
+);
+INSERT INTO notifications (user_id, type, title, dedupe_key)
+VALUES
+  ('15000000-0000-0000-0000-000000000001', 'mention', 'No key one', NULL),
+  ('15000000-0000-0000-0000-000000000001', 'mention', 'No key two', NULL);
+SELECT is((SELECT count(*)::integer FROM notifications WHERE dedupe_key IS NULL AND user_id = '15000000-0000-0000-0000-000000000001'), 2, 'non-deduplicated notifications remain repeatable');
+SELECT throws_ok(
+  $$INSERT INTO notifications (user_id, type, title, dedupe_key)
+    VALUES ('15000000-0000-0000-0000-000000000001', 'mention', 'Bad key', '')$$,
+  '23514', NULL, 'empty delivery key is rejected'
+);
 
 SELECT * FROM finish();
 ROLLBACK;

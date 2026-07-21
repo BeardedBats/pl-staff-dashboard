@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/cron/profile-sync
+ * GET (Vercel) / POST (manual) /api/cron/profile-sync
  *
  * Refreshes display_name / bio / avatar_url on every dashboard user from
  * their WP profile. Runs every 6 hours or manually.

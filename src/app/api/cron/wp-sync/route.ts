@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/cron/wp-sync
+ * GET (Vercel) / POST (manual) /api/cron/wp-sync
  *
  * Polls WordPress for posts modified since the last sync and reconciles
  * them with the dashboard's `entries` table. Picks up new drafts that

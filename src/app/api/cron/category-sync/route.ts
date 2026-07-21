@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/cron/category-sync
+ * GET (Vercel) / POST (manual) /api/cron/category-sync
  *
  * Pull WP categories from both sites and reconcile with the dashboard's
  * `categories` table. Rarely changes, so the cron runs weekly; admins

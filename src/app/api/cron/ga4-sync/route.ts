@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * POST /api/cron/ga4-sync
+ * GET (Vercel) / POST (manual) /api/cron/ga4-sync
  *
  * Nightly at 03:00 local — pulls yesterday's pagePath + date report and
  * upserts into `article_analytics`. Authorised via CRON_SECRET or by an
