@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pitcher List Staff Content Dashboard
 
-## Getting Started
+Internal Next.js 16 application for Pitcher List and QB List editorial work,
+graphics, staff administration, WordPress synchronization, notifications, and
+analytics. PostgreSQL, RLS, Storage, and durable operational state live in
+Supabase; Vercel hosts the application and eight scheduled jobs.
 
-First, run the development server:
+## Local development
 
-```bash
+Requirements: Node.js 20+, npm, Docker Desktop, and the Supabase CLI installed
+through this repository's locked dependencies.
+
+```powershell
+npm ci
+Copy-Item .env.example .env.local
+# Populate .env.local without committing or printing secret values.
+npm run db:start
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`. Stop the local stack with `npm run db:stop`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Quality gate
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```powershell
+npm run lint
+npm run typecheck
+npm run test:coverage
+npm run build
+npm run test:database
+npm run db:types:check
+npm run db:lint
+npm run test:browser
+npm audit --audit-level=low
+```
 
-## Learn More
+Test placement and CI behavior are documented in
+[docs/TEST_ARCHITECTURE.md](docs/TEST_ARCHITECTURE.md).
 
-To learn more about Next.js, take a look at the following resources:
+## Production operations
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Do not deploy from generic Vercel instructions. Database migrations and Vercel
+deployments are separate release steps, and the current application stack
+requires the database to be migrated first.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Start with [docs/runbooks/README.md](docs/runbooks/README.md), then use the
+linked backup, migration, deployment, incident, and secret-rotation procedures.
+The read-only readiness report is:
 
-## Deploy on Vercel
+```powershell
+npm run ops:preflight:production
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Project progress and verified evidence live in
+[docs/PROJECT_FINISH_CHECKLIST.md](docs/PROJECT_FINISH_CHECKLIST.md).

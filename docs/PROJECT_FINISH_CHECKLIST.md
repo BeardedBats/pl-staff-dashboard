@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.11 — Add recovery and operating runbooks.
-- Branch: `codex/production-readiness-p2-10`
-- Stack base: `88d26fb` (green draft PR #26, based on green draft PRs #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P2.12 — Establish measurable performance and accessibility baselines.
+- Branch: `codex/production-readiness-p2-11`
+- Stack base: `2931faf` (green draft PR #27, based on green draft PRs #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -66,7 +66,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 - [x] P2.8 Add role-based end-to-end journeys for managers, writers, editors, graphics staff, and administrators.
 - [x] P2.9 Add GitHub Actions for install, lint, type checking, tests, build, migration checks, dependency checks, and browser tests where appropriate.
 - [x] P2.10 Add structured logs, safe error reporting, cron freshness, integration health, import-job visibility, and actionable alerts.
-- [ ] P2.11 Add backup, migration, rollback, incident, secret-rotation, and deployment runbooks.
+- [x] P2.11 Add backup, migration, rollback, incident, secret-rotation, and deployment runbooks.
 - [ ] P2.12 Establish measurable performance and accessibility baselines.
 
 Gate: a clean checkout can prove correctness in CI, and production failures are detectable and diagnosable without reading raw infrastructure logs.
@@ -451,6 +451,15 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Settings > Sync now gives both-site Admin+ viewers a refreshable system-health surface for all eight jobs, PL/QB WordPress freshness, GA4 configuration/sync health, Raptive import health, and active alerts with concrete remediation. The endpoint rejects anonymous and one-site viewers; its failure response exposes only a correlation ID.
 - Final local gate: 52 Vitest files / 249 tests with V8 coverage, 10 database files / 306 pgTAP assertions, generated database-type drift, warning-failing database lint, zero-vulnerability audit, ESLint, TypeScript, Next.js 16.2.11 production build, and all eight Chromium journeys pass. The administrator journey visibly loads the health surface and receives HTTP 200 from an authenticated refresh.
 - Clean GitHub run [29866594243](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29866594243) independently passed Application, Database, Dependencies, and all eight Browser journeys; Vercel passed and draft PR #27 is merge-clean.
+
+### 2026-07-21 — P2.11 recovery and operating-runbook gate
+
+- Added executable backup/restore, migration/rollback, deployment, incident-response, and secret-rotation runbooks plus one index that defines ownership, release ordering, stop conditions, verification, and retained evidence. The root README now points operators to the project-specific gate instead of generic create-next-app deployment advice.
+- Added a read-only operations preflight that reports Git state, the contiguous `0001`–`0022` migration chain, required runbooks, CLI versions, managed backup availability, release credentials, Vercel linkage/authentication, and production-login reachability without printing secrets. `--require-release-access` fails closed unless the tracked worktree is clean and database/Vercel release authority is present.
+- Live management-plane inventory found eight completed physical backups, latest `2026-07-21T04:06:20.088Z`, with PITR disabled. Production login returned HTTP 200. Database migration credentials and Vercel management authority remain absent, so the release preflight correctly blocks instead of implying deploy readiness.
+- Rehearsed Supabase's split logical backup and atomic restore against disposable local database `pl_restore_drill_p211`. The data dump excludes platform-managed vector tables, and the restore uses one stop-on-error transaction plus `SET session_replication_role = replica`, resolving the circular graphics/comment foreign-key warning. The restored database matched all 33 public tables and 23 public functions, retained a private `graphics` bucket, and passed all 306 pgTAP assertions. Only Supabase-managed `auth.schema_migrations` and `storage.migrations` histories were intentionally not copied. The disposable database was removed after verification; ignored SHA-256-addressed dump artifacts remain local.
+- Added a contract test and CI runbook verifier covering all six documents, all 15 `.env.example` keys, the migration chain, and required backup/migration/storage/Vercel/test commands. GitHub artifact uploads now use `actions/upload-artifact@v7`, closing the Node 20 runner warning from P2.10.
+- Final local gate: runbook contract; ESLint; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 53 Vitest files / 250 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; and all eight Chromium journeys pass. Browser teardown left no reported failures.
 
 ## Phase 0 prioritized defect and risk inventory
 
