@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
@@ -51,31 +52,16 @@ type BulkBody = z.infer<typeof bulkSchema>;
 export async function POST(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = bulkSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, bulkSchema);
+  if (!parsed.ok) return parsed.response;
 
   const input: BulkBody = parsed.data;
   const uniqueEntryIds = Array.from(new Set(input.entry_ids));
   const authorization = await loadEntryAuthorizationContexts(uniqueEntryIds);
   if (authorization.size !== uniqueEntryIds.length) {
-    return NextResponse.json(
-      { error: "One or more entries were not found" },
-      { status: 404 },
-    );
+    return errorResponse(404, "One or more entries were not found");
   }
   if (
     Array.from(authorization.values()).some(
@@ -84,9 +70,9 @@ export async function POST(request: Request) {
         !isManagerPlusForSite(viewer, entry.site),
     )
   ) {
-    return NextResponse.json(
-      { error: "Manager+ access is required for every affected entry site" },
-      { status: 403 },
+    return errorResponse(
+      403,
+      "Manager+ access is required for every affected entry site",
     );
   }
   const supabase = getSupabaseAdmin();
@@ -138,10 +124,8 @@ export async function POST(request: Request) {
     .in("id", input.entry_ids);
 
   if (error) {
-    return NextResponse.json(
-      { error: `Bulk update failed: ${error.message}` },
-      { status: 500 },
-    );
+    console.error("Bulk entry update failed", { code: error.code });
+    return errorResponse(500, "Bulk update failed");
   }
 
   // Audit each row individually so the trail matches per-entry history

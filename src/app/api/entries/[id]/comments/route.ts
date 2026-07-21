@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   canViewEntryResource,
@@ -23,12 +24,12 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   const { id } = await context.params;
   const authorization = await loadEntryAuthorizationContext(id);
   if (!authorization || !canViewEntryResource(viewer, authorization)) {
-    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    return errorResponse(404, "Entry not found");
   }
   const comments = await listCommentsForEntry(id);
   return NextResponse.json({ comments });
@@ -44,32 +45,20 @@ export async function GET(_request: Request, context: RouteContext) {
 export async function POST(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   const { id } = await context.params;
   const authorization = await loadEntryAuthorizationContext(id);
   if (!authorization || !canViewEntryResource(viewer, authorization)) {
-    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    return errorResponse(404, "Entry not found");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = createCommentSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, createCommentSchema);
+  if (!parsed.ok) return parsed.response;
 
   const result = await createComment(viewer, id, parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return errorResponse(500, result.error);
   }
 
   return NextResponse.json({ id: result.id });

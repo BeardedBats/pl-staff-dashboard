@@ -52,6 +52,7 @@ import { CommentThread } from "@/components/comments/comment-thread";
 import type { EntryDetail } from "@/lib/entries/queries";
 import type { GraphicRequestRecord } from "@/lib/graphics/data";
 import type { AppRole, AppSite } from "@/lib/auth/current-user";
+import { readApiError } from "@/lib/api/client";
 
 type EntryDetailPanelProps = {
   entryId: string;
@@ -144,9 +145,8 @@ export function EntryDetailPanel({
     setActionError(null);
     try {
       const res = await fn();
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setActionError(data.error ?? "Action failed");
+        setActionError(await readApiError(res, "Action failed"));
         return false;
       }
       await reload();

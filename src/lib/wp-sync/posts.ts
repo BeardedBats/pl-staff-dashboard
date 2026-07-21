@@ -242,10 +242,10 @@ export async function syncWpPostsForSite(
         cache: "no-store",
       },
     );
-  } catch (err) {
+  } catch {
     report.errors.push({
       wpPostId: 0,
-      message: err instanceof Error ? err.message : "Network error",
+      message: "Could not reach WordPress",
     });
     return report;
   }
@@ -261,10 +261,10 @@ export async function syncWpPostsForSite(
   let posts: WpPost[];
   try {
     posts = (await response.json()) as WpPost[];
-  } catch (err) {
+  } catch {
     report.errors.push({
       wpPostId: 0,
-      message: err instanceof Error ? err.message : "Invalid JSON",
+      message: "WordPress returned an invalid response",
     });
     return report;
   }
@@ -365,7 +365,7 @@ export async function syncWpPostsForSite(
       if (insertError || !inserted) {
         report.errors.push({
           wpPostId: post.id,
-          message: `Insert failed: ${insertError?.message ?? "unknown"}`,
+          message: "Failed to create dashboard entry",
         });
         continue;
       }
@@ -391,10 +391,10 @@ export async function syncWpPostsForSite(
       });
 
       report.draftedEntriesCreated++;
-    } catch (err) {
+    } catch {
       report.errors.push({
         wpPostId: post.id,
-        message: err instanceof Error ? err.message : "Unknown error",
+        message: "Failed to process WordPress post",
       });
     }
   }
@@ -402,12 +402,10 @@ export async function syncWpPostsForSite(
   // Update the watermark to the time we started the fetch.
   try {
     await writeLastSyncIso(site, syncStartedAt);
-  } catch (err) {
+  } catch {
     report.errors.push({
       wpPostId: 0,
-      message: `Failed to update watermark: ${
-        err instanceof Error ? err.message : "unknown"
-      }`,
+      message: "Failed to update the WordPress sync watermark",
     });
   }
 

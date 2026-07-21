@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import {
   clearAuthCookies,
   createTokenPair,
@@ -24,13 +25,13 @@ export const dynamic = "force-dynamic";
 export async function POST() {
   const refreshToken = await readRefreshTokenFromCookies();
   if (!refreshToken) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const payload = verifyRefreshToken(refreshToken);
   if (!payload || !payload.sub || !payload.sid) {
     await clearAuthCookies();
-    return NextResponse.json({ error: "Invalid refresh token" }, { status: 401 });
+    return errorResponse(401, "Invalid refresh token");
   }
 
   const refreshHash = hashToken(refreshToken);
@@ -54,10 +55,7 @@ export async function POST() {
 
   if (result.status !== "rotated") {
     await clearAuthCookies();
-    return NextResponse.json(
-      { error: "Refresh credential is no longer valid" },
-      { status: 401 },
-    );
+    return errorResponse(401, "Refresh credential is no longer valid");
   }
 
   await setAuthCookies(result.pair);

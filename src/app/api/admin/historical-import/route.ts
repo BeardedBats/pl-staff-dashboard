@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { getCurrentUser, isOperations } from "@/lib/auth/current-user";
@@ -225,10 +226,8 @@ async function importSite(
           cache: "no-store",
         },
       );
-    } catch (err) {
-      report.errors.push(
-        `Page ${page} network error: ${err instanceof Error ? err.message : "unknown"}`,
-      );
+    } catch {
+      report.errors.push(`Page ${page} could not be fetched from WordPress`);
       break;
     }
 
@@ -238,18 +237,17 @@ async function importSite(
         hitEndOfData = true;
         break;
       }
-      const text = await response.text().catch(() => "");
-      report.errors.push(`Page ${page} returned ${response.status}: ${text.slice(0, 200)}`);
+      report.errors.push(
+        `Page ${page} returned WordPress status ${response.status}`,
+      );
       break;
     }
 
     let posts: WpHistoricalPost[];
     try {
       posts = (await response.json()) as WpHistoricalPost[];
-    } catch (err) {
-      report.errors.push(
-        `Page ${page} invalid JSON: ${err instanceof Error ? err.message : "unknown"}`,
-      );
+    } catch {
+      report.errors.push(`Page ${page} returned an invalid WordPress response`);
       break;
     }
 
@@ -265,10 +263,8 @@ async function importSite(
       for (const post of posts) {
         try {
           await importOnePost(site, post, defaultTierId, systemUserId, report);
-        } catch (err) {
-          report.errors.push(
-            `Post ${post.id} failed: ${err instanceof Error ? err.message : "unknown"}`,
-          );
+        } catch {
+          report.errors.push(`Post ${post.id} could not be imported`);
         }
       }
     }
@@ -405,29 +401,14 @@ async function importOnePost(
 export async function POST(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isOperations(viewer)) {
-    return NextResponse.json(
-      { error: "Only Operations can run the historical import" },
-      { status: 403 },
-    );
+    return errorResponse(403, "Only Operations can run the historical import");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.ok) return parsed.response;
 
   const {
     site: requestedSite,
@@ -438,9 +419,9 @@ export async function POST(request: Request) {
 
   const systemUserId = await findSystemUserId();
   if (!systemUserId) {
-    return NextResponse.json(
-      { error: "No admin user found to attribute imported entries to." },
-      { status: 500 },
+    return errorResponse(
+      500,
+      "No admin user found to attribute imported entries to.",
     );
   }
 
@@ -453,9 +434,9 @@ export async function POST(request: Request) {
     return [requestedSite];
   })();
   if (sites.some((site) => !hasRoleForSite(viewer, site, "operations"))) {
-    return NextResponse.json(
-      { error: "Operations access is required for every requested site" },
-      { status: 403 },
+    return errorResponse(
+      403,
+      "Operations access is required for every requested site",
     );
   }
 

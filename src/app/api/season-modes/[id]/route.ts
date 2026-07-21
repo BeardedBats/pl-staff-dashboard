@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import {
@@ -14,32 +15,20 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function PATCH(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isAdminPlusForScope(viewer, "both")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
   const { id } = await context.params;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = updateSeasonModeSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, updateSeasonModeSchema);
+  if (!parsed.ok) return parsed.response;
 
   const ok = await updateSeasonMode(id, parsed.data);
   if (!ok) {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return errorResponse(500, "Update failed");
   }
   return NextResponse.json({ ok: true });
 }

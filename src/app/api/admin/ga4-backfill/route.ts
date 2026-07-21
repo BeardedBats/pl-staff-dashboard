@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { z } from "zod";
 import { addMonths, endOfMonth, format, parseISO, startOfMonth } from "date-fns";
 import { getCurrentUser, isOperations } from "@/lib/auth/current-user";
@@ -61,36 +62,18 @@ function generateMonthlyWindows(
 export async function POST(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isOperations(viewer)) {
-    return NextResponse.json(
-      { error: "Only Operations can run GA4 backfill" },
-      { status: 403 },
-    );
+    return errorResponse(403, "Only Operations can run GA4 backfill");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.ok) return parsed.response;
 
   const { date_from, date_to } = parsed.data;
   if (date_from > date_to) {
-    return NextResponse.json(
-      { error: "date_from must be on or before date_to" },
-      { status: 400 },
-    );
+    return errorResponse(400, "date_from must be on or before date_to");
   }
 
   const monthlyWindows = generateMonthlyWindows(date_from, date_to);
@@ -114,6 +97,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "GA4 not connected. Connect via Settings → Analytics first.",
+          code: "BAD_REQUEST",
           reason: result.reason,
         },
         { status: 400 },

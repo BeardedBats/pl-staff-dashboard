@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { getCurrentUser, isOperations } from "@/lib/auth/current-user";
 import {
   commitRaptiveRows,
@@ -24,35 +25,29 @@ export const maxDuration = 60;
 export async function POST(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isOperations(viewer)) {
-    return NextResponse.json(
-      { error: "Only Operations can upload Raptive data" },
-      { status: 403 },
-    );
+    return errorResponse(403, "Only Operations can upload Raptive data");
   }
 
   let form: FormData;
   try {
     form = await request.formData();
   } catch {
-    return NextResponse.json(
-      { error: "Expected multipart/form-data" },
-      { status: 400 },
-    );
+    return errorResponse(400, "Expected multipart/form-data");
   }
 
   const file = form.get("file");
   const mode = String(form.get("mode") ?? "preview");
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Missing file field" }, { status: 400 });
+    return errorResponse(400, "Missing file field");
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const parsed = parseRaptiveWorkbook(buffer);
   if (!parsed.ok) {
-    return NextResponse.json({ error: parsed.error }, { status: 400 });
+    return errorResponse(400, parsed.error);
   }
 
   const matchResult = await matchRaptiveRowsToEntries(parsed.rows);
@@ -82,7 +77,7 @@ export async function POST(request: Request) {
     viewer.id,
   );
   if (!commitResult.ok) {
-    return NextResponse.json({ error: commitResult.error }, { status: 500 });
+    return errorResponse(500, commitResult.error);
   }
 
   return NextResponse.json({

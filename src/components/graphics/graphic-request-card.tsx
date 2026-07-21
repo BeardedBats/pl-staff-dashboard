@@ -33,6 +33,7 @@ import {
 import { UserAvatar } from "@/components/users/user-avatar";
 import { GraphicStatusBadge } from "@/components/entries/status-badges";
 import type { GraphicRequestRecord } from "@/lib/graphics/data";
+import { readApiError } from "@/lib/api/client";
 
 type GraphicRequestCardProps = {
   request: GraphicRequestRecord;
@@ -63,9 +64,8 @@ export function GraphicRequestCard({
     setError(null);
     try {
       const res = await fn();
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Action failed");
+        setError(await readApiError(res, "Action failed"));
         return false;
       }
       onChanged?.();
@@ -108,9 +108,8 @@ export function GraphicRequestCard({
         `/api/graphic-requests/${request.id}/upload`,
         { method: "POST", body: formData },
       );
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Upload failed");
+        setError(await readApiError(res, "Upload failed"));
       } else {
         onChanged?.();
       }

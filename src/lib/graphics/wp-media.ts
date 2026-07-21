@@ -81,18 +81,17 @@ export async function uploadMediaToWp(
       body: params.bytes,
       cache: "no-store",
     });
-  } catch (err) {
+  } catch {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Network error",
+      error: "Could not reach WordPress. Try again in a moment.",
     };
   }
 
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
     return {
       ok: false,
-      error: `WP media upload failed (${response.status}): ${text.slice(0, 250)}`,
+      error: `WordPress media upload failed (${response.status})`,
     };
   }
 
@@ -139,18 +138,17 @@ export async function setFeaturedMedia(
       body: JSON.stringify({ featured_media: mediaId }),
       cache: "no-store",
     });
-  } catch (err) {
+  } catch {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Network error",
+      error: "Could not reach WordPress. Try again in a moment.",
     };
   }
 
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
     return {
       ok: false,
-      error: `WP featured image set failed (${response.status}): ${text.slice(0, 250)}`,
+      error: `WordPress featured-image update failed (${response.status})`,
     };
   }
 

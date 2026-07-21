@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { refreshWpStatusForEntry } from "@/lib/entries/wp-post";
 import {
@@ -22,18 +23,18 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function POST(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   const authorization = await loadEntryAuthorizationContext(id);
   if (!authorization || !canViewEntryResource(viewer, authorization)) {
-    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    return errorResponse(404, "Entry not found");
   }
   const result = await refreshWpStatusForEntry(id, viewer.id);
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 502 });
+    return errorResponse(502, result.error);
   }
 
   return NextResponse.json({

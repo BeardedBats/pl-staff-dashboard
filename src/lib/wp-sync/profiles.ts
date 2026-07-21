@@ -154,15 +154,15 @@ export async function syncWpProfiles(): Promise<ProfileSyncReport> {
         .eq("id", user.id);
 
       if (updateError) {
-        report.errors.push({ userId: user.id, message: updateError.message });
+        report.errors.push({ userId: user.id, message: "Failed to update user profile" });
         continue;
       }
 
       report.usersUpdated++;
-    } catch (err) {
+    } catch {
       report.errors.push({
         userId: user.id,
-        message: err instanceof Error ? err.message : "Unknown error",
+        message: "Failed to process user profile",
       });
     }
   }

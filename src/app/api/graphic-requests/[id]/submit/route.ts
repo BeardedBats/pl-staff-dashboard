@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getGraphicRequestById } from "@/lib/graphics/data";
 import { submitGraphicRequest } from "@/lib/graphics/submit-flow";
@@ -19,14 +20,14 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function POST(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
 
   const result = await submitGraphicRequest(viewer, id);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 502 });
+    return errorResponse(502, result.error);
   }
 
   const fresh = await getGraphicRequestById(viewer, id);

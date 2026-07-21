@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  errorResponse,
+  parseJsonBody,
+  parseSearchParams,
+} from "@/lib/api/http";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminPlusForScope } from "@/lib/auth/authorization";
@@ -11,7 +16,6 @@ import {
 } from "@/lib/notifications/data";
 import {
   NOTIFICATION_EVENT_TYPES,
-  type NotificationEventType,
 } from "@/lib/notifications/defaults";
 
 export const dynamic = "force-dynamic";
@@ -32,35 +36,36 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   if (viewer.id !== id) {
     const target = await getUserById(id);
     if (!target || !isAdminPlusForScope(viewer, target.wp_site)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return errorResponse(403, "Forbidden");
     }
   }
 
-  const url = new URL(request.url);
-  const typeParam = url.searchParams.get("type");
-  const type =
-    typeParam && NOTIFICATION_EVENT_TYPES.includes(typeParam as NotificationEventType)
-      ? (typeParam as NotificationEventType)
-      : undefined;
-
-  const limit = Math.min(
-    Math.max(Number(url.searchParams.get("limit") ?? "50") || 50, 1),
-    200,
+  const parsed = parseSearchParams(
+    request,
+    z.object({
+      type: z.enum(NOTIFICATION_EVENT_TYPES).optional(),
+      onlyUnread: z
+        .enum(["true", "false"])
+        .transform((value) => value === "true")
+        .default(false),
+      limit: z.coerce.number().int().min(1).max(200).default(50),
+      offset: z.coerce.number().int().min(0).default(0),
+    }),
   );
-  const offset = Math.max(Number(url.searchParams.get("offset") ?? "0") || 0, 0);
+  if (!parsed.ok) return parsed.response;
 
   const result = await listNotificationsForUser(id, {
-    onlyUnread: url.searchParams.get("onlyUnread") === "true",
-    type,
-    limit,
-    offset,
+    onlyUnread: parsed.data.onlyUnread,
+    type: parsed.data.type,
+    limit: parsed.data.limit,
+    offset: parsed.data.offset,
   });
 
   return NextResponse.json(result);
@@ -80,45 +85,33 @@ const patchBodySchema = z.union([
 export async function PATCH(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   if (viewer.id !== id) {
     const target = await getUserById(id);
     if (!target || !isAdminPlusForScope(viewer, target.wp_site)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return errorResponse(403, "Forbidden");
     }
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = patchBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, patchBodySchema);
+  if (!parsed.ok) return parsed.response;
 
   if ("action" in parsed.data && parsed.data.action === "mark_all_read") {
     const ok = await markAllRead(id);
     return ok
       ? NextResponse.json({ ok: true })
-      : NextResponse.json({ error: "Failed" }, { status: 500 });
+      : errorResponse(500, "Failed to update notifications");
   }
 
   if ("ids" in parsed.data) {
     const ok = await setReadStatus(id, parsed.data.ids, parsed.data.is_read);
     return ok
       ? NextResponse.json({ ok: true })
-      : NextResponse.json({ error: "Failed" }, { status: 500 });
+      : errorResponse(500, "Failed to update notifications");
   }
 
-  return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+  return errorResponse(400, "Unknown action");
 }

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { errorResponse, parseSearchParams } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { listCategories } from "@/lib/entries/queries";
-import type { AppSite } from "@/lib/auth/current-user";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +18,14 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
-  const url = new URL(request.url);
-  const site = url.searchParams.get("site") as AppSite | null;
-  const categories = await listCategories(
-    site && ["pl", "qb", "both"].includes(site) ? site : undefined,
+  const parsed = parseSearchParams(
+    request,
+    z.object({ site: z.enum(["pl", "qb", "both"]).optional() }),
   );
+  if (!parsed.ok) return parsed.response;
+  const categories = await listCategories(parsed.data.site);
   return NextResponse.json({ categories });
 }

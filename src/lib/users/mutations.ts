@@ -239,6 +239,7 @@ import {
   isStaffWpUser,
   type WpUser,
   type WpSiteKey,
+  type WpAdminError,
 } from "@/lib/auth/wordpress";
 
 /**
@@ -263,7 +264,7 @@ export async function importWpUser(
   }
 
   if (!wpResult.ok) {
-    return { ok: false, error: wpResult.error.message };
+    return { ok: false, error: publicWpAdminError(wpResult.error) };
   }
 
   const wpUser: WpUser = wpResult.value;
@@ -357,7 +358,7 @@ export async function resyncUserFromWp(
 
   const wpResult = await fetchWpUserById(preferredSite, user.wp_user_id as number);
   if (!wpResult.ok) {
-    return { ok: false, error: wpResult.error.message };
+    return { ok: false, error: publicWpAdminError(wpResult.error) };
   }
 
   const wp = wpResult.value;
@@ -373,4 +374,17 @@ export async function resyncUserFromWp(
 
   if (error) return { ok: false, error: "DB update failed" };
   return { ok: true };
+}
+
+function publicWpAdminError(error: WpAdminError): string {
+  switch (error.kind) {
+    case "not_configured":
+      return "WordPress is not configured for this site";
+    case "not_found":
+      return "WordPress user not found";
+    case "network":
+      return "Could not reach WordPress. Try again in a moment.";
+    case "unexpected":
+      return `WordPress request failed (${error.status})`;
+  }
 }

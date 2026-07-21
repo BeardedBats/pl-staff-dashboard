@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
@@ -33,14 +34,14 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function POST(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
 
   const existing = await getGraphicRequestById(viewer, id);
   if (!existing) {
-    return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    return errorResponse(404, "Request not found");
   }
 
   const authorization = await loadEntryAuthorizationContext(existing.entry_id);
@@ -50,19 +51,16 @@ export async function POST(request: Request, context: RouteContext) {
       claimedBy: existing.claimed_by,
     })
   ) {
-    return NextResponse.json(
-      { error: "Only the assigned graphics worker can upload this file" },
-      { status: 403 },
+    return errorResponse(
+      403,
+      "Only the assigned graphics worker can upload this file",
     );
   }
 
   if (existing.graphic_status === "submitted") {
-    return NextResponse.json(
-      {
-        error:
-          "This graphic is already submitted. Unflag or create a new request.",
-      },
-      { status: 400 },
+    return errorResponse(
+      400,
+      "This graphic is already submitted. Unflag or create a new request.",
     );
   }
 
@@ -70,18 +68,12 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     formData = await request.formData();
   } catch {
-    return NextResponse.json(
-      { error: "Expected multipart form data" },
-      { status: 400 },
-    );
+    return errorResponse(400, "Expected multipart form data");
   }
 
   const file = formData.get("file");
   if (!file || !(file instanceof File)) {
-    return NextResponse.json(
-      { error: "No file field in upload" },
-      { status: 400 },
-    );
+    return errorResponse(400, "No file field in upload");
   }
 
   const bytes = await file.arrayBuffer();
@@ -93,7 +85,7 @@ export async function POST(request: Request, context: RouteContext) {
     bytes,
   );
   if (!upload.ok) {
-    return NextResponse.json({ error: upload.error }, { status: 400 });
+    return errorResponse(400, upload.error);
   }
 
   // Delete the previous file if one existed.
@@ -120,10 +112,7 @@ export async function POST(request: Request, context: RouteContext) {
     .eq("id", id);
 
   if (error) {
-    return NextResponse.json(
-      { error: "Failed to record upload in DB" },
-      { status: 500 },
-    );
+    return errorResponse(500, "Failed to record upload");
   }
 
   await writeAuditRow(

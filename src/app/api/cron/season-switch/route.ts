@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
@@ -24,7 +25,7 @@ type SeasonModeRow = {
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
   const supabase = getSupabaseAdmin();

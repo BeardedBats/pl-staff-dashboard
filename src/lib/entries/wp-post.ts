@@ -109,16 +109,15 @@ export async function createWpDraftForEntry(
       body: JSON.stringify(payload),
       cache: "no-store",
     });
-  } catch (err) {
+  } catch {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Network error contacting WP",
+      error: "Could not reach WordPress. Try again in a moment.",
     };
   }
 
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    return { ok: false, error: `WP returned ${response.status}: ${text.slice(0, 200)}` };
+    return { ok: false, error: `WordPress request failed (${response.status})` };
   }
 
   const data = (await response.json()) as {
@@ -199,10 +198,10 @@ export async function refreshWpStatusForEntry(
         cache: "no-store",
       },
     );
-  } catch (err) {
+  } catch {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Network error",
+      error: "Could not reach WordPress. Try again in a moment.",
     };
   }
 

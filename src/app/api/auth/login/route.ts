@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse, parseJsonBody } from "@/lib/api/http";
 import { z } from "zod";
 import { performLogin } from "@/lib/auth/login";
 
@@ -10,28 +11,13 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
-
-  const parsed = loginSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Missing username or password" },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, loginSchema);
+  if (!parsed.ok) return parsed.response;
 
   const result = await performLogin(parsed.data.username, parsed.data.password);
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return errorResponse(result.status, result.error);
   }
 
   return NextResponse.json({ user: result.user });

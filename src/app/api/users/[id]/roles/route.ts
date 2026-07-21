@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminPlusForScope } from "@/lib/auth/authorization";
@@ -23,46 +24,34 @@ const bodySchema = z.object({
 export async function PATCH(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   const target = await getUserById(id);
   if (!target) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+    return errorResponse(404, "User not found");
   }
   if (!isAdminPlusForScope(viewer, target.wp_site)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.ok) return parsed.response;
   if (
     parsed.data.roles.some(
       (assignment) => !isAdminPlusForScope(viewer, assignment.site),
     )
   ) {
-    return NextResponse.json(
-      { error: "Forbidden: role assignment exceeds your site authority" },
-      { status: 403 },
+    return errorResponse(
+      403,
+      "Forbidden: role assignment exceeds your site authority",
     );
   }
 
   const result = await setUserRoles(id, parsed.data.roles);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return errorResponse(500, result.error);
   }
 
   const updated = await getUserById(id);

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { env } from "@/lib/env";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminPlusForScope } from "@/lib/auth/authorization";
@@ -23,14 +24,14 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const authorized = await authorize(request);
   if (!authorized.ok) {
-    return NextResponse.json({ error: authorized.error }, { status: 401 });
+    return errorResponse(401, authorized.error);
   }
 
   const systemUserId = await findSystemUserId();
   if (!systemUserId) {
-    return NextResponse.json(
-      { error: "No admin user found to attribute system actions to." },
-      { status: 500 },
+    return errorResponse(
+      500,
+      "No admin user found to attribute system actions to.",
     );
   }
 

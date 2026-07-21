@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { getCurrentUser, isOperations } from "@/lib/auth/current-user";
 import { buildAuthorizeUrl, isGa4Configured } from "@/lib/analytics/ga4";
 
@@ -13,21 +14,15 @@ export const dynamic = "force-dynamic";
 export async function POST() {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isOperations(viewer)) {
-    return NextResponse.json(
-      { error: "Only Operations can connect GA4" },
-      { status: 403 },
-    );
+    return errorResponse(403, "Only Operations can connect GA4");
   }
   if (!isGa4Configured()) {
-    return NextResponse.json(
-      {
-        error:
-          "GA4 is not configured. Set GA4_CLIENT_ID, GA4_CLIENT_SECRET, and GA4_PROPERTY_ID in your environment.",
-      },
-      { status: 500 },
+    return errorResponse(
+      500,
+      "GA4 is not configured. Set the required GA4 environment variables.",
     );
   }
 

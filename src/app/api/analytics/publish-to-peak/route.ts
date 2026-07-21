@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { canViewAnalytics, getCurrentUser } from "@/lib/auth/current-user";
 import {
   getDayOfWeekHeatmap,
@@ -22,21 +23,21 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!canViewAnalytics(viewer)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
   const { searchParams } = new URL(request.url);
   const parsed = parseAnalyticsFilters(searchParams);
   if (!parsed.ok) {
-    return NextResponse.json({ error: parsed.error }, { status: 400 });
+    return errorResponse(400, parsed.error);
   }
 
   const filters = authorizeAnalyticsFilters(viewer, parsed.filters);
   if (!filters) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
   const [curve, heat] = await Promise.all([

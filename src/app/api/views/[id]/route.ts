@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   deleteView,
@@ -15,33 +16,21 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function PATCH(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   const existing = await getViewById(id, viewer.id);
   if (!existing) {
-    return NextResponse.json({ error: "View not found" }, { status: 404 });
+    return errorResponse(404, "View not found");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = updateViewSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, updateViewSchema);
+  if (!parsed.ok) return parsed.response;
 
   const result = await updateView(id, viewer.id, parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return errorResponse(500, result.error);
   }
   return NextResponse.json({ ok: true });
 }
@@ -50,18 +39,18 @@ export async function PATCH(request: Request, context: RouteContext) {
 export async function DELETE(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   const existing = await getViewById(id, viewer.id);
   if (!existing) {
-    return NextResponse.json({ error: "View not found" }, { status: 404 });
+    return errorResponse(404, "View not found");
   }
 
   const ok = await deleteView(id, viewer.id);
   if (!ok) {
-    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+    return errorResponse(500, "Delete failed");
   }
   return NextResponse.json({ ok: true });
 }

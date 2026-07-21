@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { getCurrentUser, isOperations } from "@/lib/auth/current-user";
 import { syncGa4 } from "@/lib/analytics/ga4";
 
@@ -19,31 +20,23 @@ const bodySchema = z.object({
 export async function POST(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isOperations(viewer)) {
-    return NextResponse.json(
-      { error: "Only Operations can run GA4 sync" },
-      { status: 403 },
-    );
+    return errorResponse(403, "Only Operations can run GA4 sync");
   }
 
-  let body: unknown = {};
-  try {
-    body = await request.json();
-  } catch {
-    // No body is fine — default window
-  }
-
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, bodySchema, { allowEmpty: true });
+  if (!parsed.ok) return parsed.response;
 
   const result = await syncGa4(parsed.data.dateFrom, parsed.data.dateTo);
   if (!result.ok) {
     return NextResponse.json(
-      { error: result.error, reason: result.reason ?? null },
+      {
+        error: result.error,
+        code: "INTERNAL_ERROR",
+        reason: result.reason ?? null,
+      },
       { status: 500 },
     );
   }
