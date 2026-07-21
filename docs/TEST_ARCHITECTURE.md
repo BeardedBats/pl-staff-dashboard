@@ -69,7 +69,9 @@ and local services; no production secret is required.
   audit at the low-severity threshold.
 - **Browser:** locked install, Chromium plus its Linux dependencies, and every
   anonymous and role-based journey against an owned Next/Supabase environment.
-  Traces and screenshots are retained for seven days when the lane fails.
+  Supabase starts before Playwright's Next-server timeout begins and always
+  stops afterward. Traces and screenshots are retained for seven days when the
+  lane fails.
 
 Concurrent runs for the same pull request or branch cancel superseded work. The
 workflow has read-only repository permissions. The current private repository

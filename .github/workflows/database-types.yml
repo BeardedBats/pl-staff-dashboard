@@ -110,6 +110,8 @@ jobs:
         run: npm ci
       - name: Install Chromium and operating-system dependencies
         run: npx playwright install --with-deps chromium
+      - name: Start local database stack before the web-server timeout
+        run: npm run db:start
       - name: Run anonymous and role-based journeys
         run: npm run test:browser
       - name: Upload browser failure evidence
@@ -120,3 +122,6 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7
+      - name: Stop local database stack
+        if: ${{ always() }}
+        run: npm run db:stop
