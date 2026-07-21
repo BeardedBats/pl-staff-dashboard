@@ -5,12 +5,12 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.8 — Add role-based end-to-end journeys while preserving the Supabase DDL release block.
-- Branch: `codex/production-readiness-p2-7`
-- Stack base: `fa4ef36` (green draft PR #23, based on green draft PRs #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P2.9 — Add complete GitHub Actions enforcement while preserving the Supabase DDL release block.
+- Branch: `codex/production-readiness-p2-8`
+- Stack base: `1883eab` (green draft PR #24, based on green draft PRs #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
+- Known blockers: production application of the stacked migrations through `0021` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -52,7 +52,7 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 
 Gate: no known high-severity authorization, session, secret, RLS, cron, or data-integrity defect remains.
 
-Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUMENTED SUPABASE DDL ACCESS FOR MIGRATIONS 0013–0017.**
+Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUMENTED SUPABASE DDL ACCESS FOR THE STACKED MIGRATIONS 0013–0021.**
 
 ## Phase 2 — Test system, CI, observability, and operational safety
 
@@ -63,7 +63,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 - [x] P2.5 Test graphics submission, review, versioning, authorization, and storage behavior.
 - [x] P2.6 Test cron jobs with the same method and headers used by Vercel.
 - [x] P2.7 Add representative Raptive importer tests with multi-sheet fixtures, duplicates, malformed rows, interruptions, and large files.
-- [ ] P2.8 Add role-based end-to-end journeys for managers, writers, editors, graphics staff, and administrators.
+- [x] P2.8 Add role-based end-to-end journeys for managers, writers, editors, graphics staff, and administrators.
 - [ ] P2.9 Add GitHub Actions for install, lint, type checking, tests, build, migration checks, dependency checks, and browser tests where appropriate.
 - [ ] P2.10 Add structured logs, safe error reporting, cron freshness, integration health, import-job visibility, and actionable alerts.
 - [ ] P2.11 Add backup, migration, rollback, incident, secret-rotation, and deployment runbooks.
@@ -425,13 +425,21 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Final gate: 46 Vitest files / 232 tests; coverage increased to 21.12% statements, 18.9% branches, 23.07% functions, and 21.97% lines. All 268 pgTAP assertions, generated database-type drift, database lint, zero-vulnerability audit, ESLint, TypeScript, the Next.js 16.2.11 production build, and three Chromium anonymous-boundary tests pass.
 - Residual production architecture is explicit: the request still buffers one bounded 10-MB workbook and has a 60-second execution ceiling; there is no durable import job, checkpoint, resumable upload, or restart model. P6 remains responsible for the real-file contract and a durable production ingestion architecture where its measured size/runtime requires one.
 
+### 2026-07-21 — P2.8 database-backed role-journey gate
+
+- Replaced the anonymous-only browser boundary with isolated, real local role sessions. The harness reuses an existing Supabase stack or owns its start/stop lifecycle, extracts only the local development service key, seeds five synthetic actors and independent workflow records, and removes every actor, session, entry, claim, notification, and graphic fixture after the run. External-base-URL runs skip all mutating role fixtures.
+- Five parallel Chromium journeys now prove user-visible work at the real Next/API/database boundaries: a writer submits assigned content and is redirected away from the editing queue; a manager approves a pending writer claim; an editor claims and completes an edit; graphics staff claims an open request without upload/WordPress effects; and a both-site administrator reaches global administration while revenue Analytics remains withheld from the admin role.
+- The journeys exposed a broken deep-link contract: Home, My Tasks, Editing Queue, and graphics surfaces linked to `/content?entry=...`, but Content ignored the query parameter. Next 16's promise-based `searchParams` page prop now seeds the expanded detail state, including a standalone authorized detail panel when the target is outside the current 100-row table page.
+- The first cold PostgREST-backed run exposed a release-blocking privilege defect. Migration `0016` revoked client roles correctly but never granted ordinary table privileges to `service_role`; bypassing RLS does not bypass SQL grants, so the server-only client could not read even `tiers`. Migration `0021_restore_service_role_table_access.sql` grants current and future public tables/sequences only to service_role while anon/authenticated stay revoked and forced RLS stays intact. A real local PostgREST probe succeeds after cold reset.
+- Final gate: 46 Vitest files / 232 tests; coverage remains 21.12% statements, 18.9% branches, 23.07% functions, and 21.97% lines. All 274 pgTAP assertions, generated database-type drift, database lint, zero-vulnerability audit, ESLint, TypeScript, the Next.js 16.2.11 production build, and eight Chromium tests pass. An independent live browser inspection confirmed meaningful login content and no framework error overlay.
+
 ## Phase 0 prioritized defect and risk inventory
 
 1. **High — session lifecycle (P1.1, P1.2, P1.16):** refresh rotation reads then unconditionally updates, so concurrent reuse can succeed; access-token resolution does not verify the sessions row or token hash; logout relies on a valid access token and can leave a refresh session alive.
 2. **High — graphics authorization (P1.3, P1.4, P1.13, P1.16):** authenticated users can list/fetch all requests; upload and submit paths verify existence/state but not role, assignment, entry membership, or ownership; several mutations lack resource authorization.
 3. **High — scheduled jobs do not match Vercel (P1.12, P2.6):** all eight configured cron handlers export POST while Vercel invokes configured cron paths with GET, so scheduled execution receives 405.
 4. **High — dependency vulnerabilities (P1.14):** production audit reports 3 high and 6 moderate vulnerabilities across Next.js, Discord/Undici/WebSocket, PostCSS, Resend/Svix/UUID chains.
-5. **High — no automated proof (P2.1–P2.9):** P2.1 closed the missing architecture and test-discovery portion with executable unit, integration, API, component, database, coverage, and browser lanes. GitHub Actions enforcement remains open for P2.9.
+5. **High — CI enforcement is incomplete (P2.9):** P2.1–P2.8 now provide executable unit, integration, API, component, database, coverage, anonymous-browser, and five-role browser proof. GitHub Actions does not yet enforce every lane; that release-control gap remains open for P2.9.
 6. **High — Raptive production ingestion remains incomplete (P6.1–P6.15):** P2.7 now parses every qualifying sheet, rejects malformed/conflicting rows, bounds uploads to 10 MB, and commits range replacement atomically. The route still buffers the workbook inside a 60-second request and has no durable job/checkpoint/restart model; the real Raptive workbook contract and measured runtime remain unverified until Nick's final input.
 7. **Medium — profile overrides are inconsistent (P1.11):** scheduled profile sync honors `display_name_override`, but login, manual import, and manual resync overwrite the name without honoring the flag.
 8. **Medium — database typing is placeholder-only (P1.7):** every table, view, function, enum, and composite resolves through `any`, so current TypeScript success does not prove schema compatibility.

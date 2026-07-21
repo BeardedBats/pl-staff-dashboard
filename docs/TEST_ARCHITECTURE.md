@@ -30,9 +30,12 @@ V8 coverage and writes text, JSON, and HTML reports under `coverage/`.
 - Database tests are transactional pgTAP files. The database runner starts and
   stops the local Supabase stack only when it owns that stack, so an existing
   developer instance is preserved.
-- Browser tests use synthetic environment values and must not contact production
-  services. The default suite exercises unauthenticated surfaces; authenticated
-  role journeys will use dedicated test fixtures in P2.8.
+- Browser tests must not contact production services. The local server reuses an
+  already-running Supabase stack or starts and later stops one it owns. Global
+  setup creates short-lived signed sessions and isolated writer, manager,
+  editor, graphics, and administrator records; teardown removes them. The role
+  suite performs real application and database mutations while WordPress,
+  storage, email, Discord, and analytics integrations remain synthetic or idle.
 
 ## Local workflow
 
@@ -47,4 +50,5 @@ V8 coverage and writes text, JSON, and HTML reports under `coverage/`.
 
 Set `PLAYWRIGHT_BASE_URL` to test an explicitly selected deployed environment.
 When it is unset, Playwright owns a local Next development server on port 3100.
-Do not point browser tests at production if they mutate state.
+Authenticated role journeys are skipped when an external base URL is selected;
+do not point mutating browser tests at production.
