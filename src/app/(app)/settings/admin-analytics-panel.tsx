@@ -322,7 +322,7 @@ export function AdminAnalyticsPanel({
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full font-data text-sm">
                 <thead className="bg-card text-[10px] uppercase tracking-wide text-text-zero">
                   <tr className="border-b border-border">
                     <th className="px-3 py-2 text-left">File</th>
@@ -357,8 +357,8 @@ export function AdminAnalyticsPanel({
                       <td className="whitespace-nowrap px-3 py-2 text-[11px] text-text-zero">
                         {new Date(run.started_at).toLocaleString()}
                       </td>
-                      <td className="px-3 py-2 font-mono text-[10px] text-text-zero">
-                        {run.error_code ?? "—"}
+                      <td className="px-3 py-2 text-[10px] text-text-zero">
+                        <code className="font-mono">{run.error_code ?? "—"}</code>
                       </td>
                     </tr>
                   ))}
@@ -401,7 +401,7 @@ export function AdminAnalyticsPanel({
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full font-data text-sm">
                 <thead className="bg-card text-[10px] uppercase tracking-wide text-text-zero">
                   <tr className="border-b border-border">
                     <th className="px-3 py-2 text-left">File</th>
@@ -547,7 +547,7 @@ function Ga4BackfillSection({
       </p>
       <div className="grid grid-cols-2 gap-3 text-xs">
         <label className="space-y-1">
-          <span className="block font-mono text-[10px] uppercase tracking-wider text-text-zero">
+          <span className="block font-sans text-[10px] uppercase tracking-wider text-text-zero">
             From
           </span>
           <div className="flex items-center gap-1 rounded-sm border border-border bg-surface-2 px-2 py-1">
@@ -561,7 +561,7 @@ function Ga4BackfillSection({
           </div>
         </label>
         <label className="space-y-1">
-          <span className="block font-mono text-[10px] uppercase tracking-wider text-text-zero">
+          <span className="block font-sans text-[10px] uppercase tracking-wider text-text-zero">
             To
           </span>
           <div className="flex items-center gap-1 rounded-sm border border-border bg-surface-2 px-2 py-1">

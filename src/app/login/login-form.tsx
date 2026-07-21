@@ -77,7 +77,7 @@ export function LoginForm() {
             <p className="text-xs text-text-zero">
               Not your regular WordPress password. Create one under
               {" "}
-              <span className="font-mono text-text-team">
+              <span className="font-sans text-text-team">
                 Users → Profile → Application Passwords
               </span>{" "}
               in WordPress admin.

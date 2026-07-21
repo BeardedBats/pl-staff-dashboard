@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 3 — PLPD design-system foundation
-- Current action: P3.3 — Apply the verified Work Sans data / DM Sans chrome typography boundary.
-- Branch: `codex/production-readiness-p3-2`
-- Stack base: `b080335` (green draft PR #30, based on green draft PRs #29, #28, #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P3.4 — Preserve the subtle-glass-over-mesh doctrine without opaque panels or heavy frosted glass.
+- Branch: `codex/production-readiness-p3-3`
+- Stack base: `77dfdbf` (green draft PR #31, based on green draft PRs #30, #29, #28, #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -75,7 +75,7 @@ Gate: a clean checkout can prove correctness in CI, and production failures are 
 
 - [x] P3.1 Convert the guide's canonical colors, typography, spacing, gradients, shadows, borders, mesh, and semantic styles into centralized application tokens.
 - [x] P3.2 Implement reusable PLPD primitives for navigation, headers, tabs, buttons, fields, dropdowns, cards, chips, tables, pagination, alerts, dialogs, drawers, loading states, empty states, errors, and gated values.
-- [ ] P3.3 Apply Work Sans to data and DM Sans to application chrome as defined by the guide.
+- [x] P3.3 Apply Work Sans to data and DM Sans to application chrome as defined by the guide.
 - [ ] P3.4 Preserve the subtle-glass-over-mesh doctrine without opaque panels or heavy frosted glass.
 - [ ] P3.5 Implement all required component states: default, hover, active, loading, error, empty, and gated.
 - [ ] P3.6 Ensure gated data is withheld on the server rather than sent to the client and visually blurred.
@@ -494,7 +494,17 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Production-mode verification passes all eight role/anonymous browser journeys and all 12 accessibility/performance checks. Latest lab measurements are login FCP/LCP 72 ms and 268,836 encoded bytes; writer content FCP/LCP 124 ms, CLS 0.0536, and 407,684 encoded bytes; admin settings FCP/LCP 212 ms and 391,341 encoded bytes; all TBT values are zero and all budgets pass.
 - Independent Chromium inspection confirmed the Users tab resolves to exact amber with a 6px underline, cards resolve to the translucent state surface, the 256px mobile drawer exposes the current Home link and one overlay, close restores the page, desktop/mobile have no horizontal overflow, and neither surface emitted a console or page error.
 - Final local gate: diff hygiene; runbook contract; ESLint; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 58 Vitest files / 263 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all eight role/anonymous Chromium journeys; and all 12 production-quality checks pass.
-- Clean GitHub run [29876384121](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29876384121) independently passed Application, Database, Dependencies, all eight Browser journeys, all 12 quality checks, and the retained quality-evidence upload on Linux. The Vercel preview passed, and draft PR #31 was merge-clean and mergeable at the tested head `39e16db`.
+- Clean exact-head GitHub run [29876712365](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29876712365) independently passed Application, Database, Dependencies, all eight Browser journeys, all 12 quality checks, and the retained quality-evidence upload on Linux. The Vercel preview passed, and draft PR #31 was merge-clean and mergeable at the tested head `77dfdbf`.
+
+### 2026-07-21 — P3.3 verified typography boundary
+
+- Reverified the complete visual authority at its recorded SHA-256. The runtime boundary now follows its ruling directly: DM Sans is the default application-chrome family; Work Sans owns tables, stat values, charts, wordmarks, form and dropdown data, pagination, and data-bearing site/tier/team/category pills; monospace is limited to literal `code` elements.
+- Removed the legacy use of monospace as a small-label or metadata style across navigation, home, tasks, entry detail, calendar, analytics, graphics, notifications, staff, and settings. Every literal table now establishes Work Sans at its root, and standalone tabular numerals and chart containers explicitly inherit the data family.
+- Corrected shared primitive boundaries: buttons, badges, page headers, dialogs, and drawers use DM Sans chrome; cards, input/select/dropdown values, tables, and pagination use Work Sans where the guide specifies data constructions. Named `plpd-section-title` and `plpd-hero-numeral` helpers are the only paths above the normal 700 weight cap.
+- Added a seven-test recursive typography contract that rejects non-code monospace, DM Sans literal tables, unclassified standalone numerals/charts, and data-bearing pills without Work Sans. It also pins both loaded font variables, representative primitive assignments, the source hash documentation, and the 900/800 exception roles.
+- Added two production-Chromium checks that wait for the font loader and assert computed families on anonymous chrome, the wordmark, the sign-in action, authenticated page chrome, form values, the users table, and a data pill. Their retained screenshots were visually inspected: desktop settings and mobile login have intact hierarchy, no clipping, and no horizontal overflow.
+- Production-mode quality remains green across eight dark/light WCAG A/AA scenarios, keyboard focus order, three performance profiles, and the two typography checks. Latest lab measurements are login FCP/LCP 96 ms and 268,878 encoded bytes; writer content FCP/LCP 128 ms, CLS 0.0536, and 407,728 encoded bytes; admin settings FCP/LCP 184 ms and 391,424 encoded bytes; all TBT values are zero and all budgets pass.
+- Final local gate: diff hygiene; runbook contract; ESLint; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 59 Vitest files / 270 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all eight role/anonymous Chromium journeys; and all 14 production-quality checks pass.
 
 ## Phase 0 prioritized defect and risk inventory
 

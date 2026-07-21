@@ -128,7 +128,7 @@ export function Header({
             ) : null}
           </SheetContent>
         </Sheet>
-        <span className="hidden font-mono text-[10px] font-semibold uppercase tracking-wider text-text-zero md:inline">
+        <span className="hidden font-sans text-[10px] font-semibold uppercase tracking-wider text-text-zero md:inline">
           Staff Dashboard
         </span>
       </div>
@@ -161,7 +161,7 @@ export function Header({
               <p className="text-sm font-medium text-foreground">{displayName}</p>
               <p className="text-xs text-text-zero">{email}</p>
               {roles.length > 0 ? (
-                <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-text-zero">
+                <p className="mt-1 font-data text-[10px] uppercase tracking-wider text-text-zero">
                   {roles.join(" · ")}
                 </p>
               ) : null}

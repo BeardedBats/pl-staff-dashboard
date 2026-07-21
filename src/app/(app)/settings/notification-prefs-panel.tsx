@@ -114,17 +114,17 @@ export function NotificationPrefsPanel({ userId }: Props) {
         <CardContent className="space-y-6">
           {EVENT_TYPE_GROUPS.map((group) => (
             <section key={group.label}>
-              <h3 className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-text-zero">
+              <h3 className="mb-2 font-sans text-[10px] font-semibold uppercase tracking-wider text-text-zero">
                 {group.label}
               </h3>
               <div className="overflow-hidden rounded-md border border-border">
-                <table className="w-full text-sm">
+                <table className="w-full font-data text-sm">
                   <thead className="bg-surface-3">
                     <tr>
-                      <th className="w-full px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+                      <th className="w-full px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-text-zero">
                         Event
                       </th>
-                      <th className="px-3 py-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+                      <th className="px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-text-zero">
                         <Bell className="mx-auto h-3 w-3" />
                         <span className="sr-only">In-app</span>
                       </th>

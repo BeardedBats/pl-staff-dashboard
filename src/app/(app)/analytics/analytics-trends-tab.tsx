@@ -132,7 +132,7 @@ export function AnalyticsTrendsTab({ query }: Props) {
         </CardHeader>
         <CardContent>
           {hasDaily ? (
-            <div className="h-64 w-full">
+            <div className="h-64 w-full font-data">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={overview.daily}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -197,7 +197,7 @@ export function AnalyticsTrendsTab({ query }: Props) {
         </CardHeader>
         <CardContent>
           {hasTier ? (
-            <div className="h-64 w-full">
+            <div className="h-64 w-full font-data">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={tierData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -236,7 +236,7 @@ export function AnalyticsTrendsTab({ query }: Props) {
         </CardHeader>
         <CardContent>
           {hasTier ? (
-            <div className="h-64 w-full">
+            <div className="h-64 w-full font-data">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={tierData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -308,7 +308,7 @@ function PublishToPeakChart({ curve }: { curve: PublishToPeakPoint[] | null }) {
     );
   }
   return (
-    <div className="h-72 w-full">
+    <div className="h-72 w-full font-data">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={curve}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -405,7 +405,7 @@ function DayOfWeekHeatmap({ heat }: { heat: DayOfWeekHeatPoint[] | null }) {
     <div className="overflow-x-auto">
       <div className="min-w-[480px]">
         {/* Header row */}
-        <div className="grid grid-cols-[80px_repeat(7,_minmax(0,_1fr))] gap-1 text-[10px] font-mono uppercase tracking-wide text-text-zero">
+        <div className="grid grid-cols-[80px_repeat(7,_minmax(0,_1fr))] gap-1 font-data text-[10px] uppercase tracking-wide text-text-zero">
           <div />
           {DOW_LABELS.map((d) => (
             <div key={d} className="px-1 py-0.5 text-center">
@@ -433,7 +433,7 @@ function DayOfWeekHeatmap({ heat }: { heat: DayOfWeekHeatPoint[] | null }) {
                   return (
                     <div
                       key={dow}
-                      className="plpd-heat-cell flex h-7 items-center justify-center rounded text-[10px] tabular-nums"
+                      className="plpd-heat-cell flex h-7 items-center justify-center rounded font-data text-[10px] tabular-nums"
                       data-has-value={pv > 0 && maxPv > 0}
                       style={cellStyle(pv)}
                       title={`${DOW_LABELS[dow]}: ${pv.toLocaleString()} pageviews`}

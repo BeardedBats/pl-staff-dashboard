@@ -208,7 +208,7 @@ function NotificationListRow({
             {notification.body}
           </p>
         ) : null}
-        <p className="mt-1 font-mono text-[10px] text-text-zero">
+        <p className="mt-1 font-data text-[10px] text-text-zero">
           {formatDate(notification.created_at, {
             dateStyle: "medium",
             timeStyle: "short",

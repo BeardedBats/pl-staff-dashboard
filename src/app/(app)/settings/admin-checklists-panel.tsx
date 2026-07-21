@@ -180,7 +180,7 @@ export function AdminChecklistsPanel({ initialItems, tiers: initialTiers }: Prop
                 key={item.id}
                 className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2"
               >
-                <span className="font-mono text-[10px] text-text-zero">
+                <span className="font-data text-[10px] text-text-zero">
                   #{item.sort_order}
                 </span>
                 <span className="flex-1 text-sm text-text-cell">
@@ -340,10 +340,10 @@ function TiersCard({
                 key={tier.id}
                 className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2"
               >
-                <span className="font-mono text-[10px] text-text-zero">
+                <span className="font-data text-[10px] text-text-zero">
                   #{tier.sort_order}
                 </span>
-                <Badge variant="outline">{tier.name}</Badge>
+                <Badge variant="outline" className="font-data">{tier.name}</Badge>
                 <span className="flex-1 text-sm text-text-cell">
                   {tier.label}
                 </span>

@@ -56,10 +56,10 @@ export function EntryList({
                 ) : null}
                 {e.title}
               </span>
-              <Badge variant="outline" className="text-[9px]">
+              <Badge variant="outline" className="font-data text-[9px]">
                 {e.site.toUpperCase()}
               </Badge>
-              <span className="hidden shrink-0 text-[10px] text-text-zero sm:inline">
+              <span className="hidden shrink-0 font-data text-[10px] text-text-zero sm:inline">
                 {e.tier_name}
               </span>
               {pub ? (

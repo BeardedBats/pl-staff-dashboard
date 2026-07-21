@@ -81,7 +81,7 @@ export default async function MyTasksPage() {
           {/* Writing */}
           <section>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+              <h2 className="flex items-center gap-2 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
                 <Pencil className="h-3 w-3" />
                 Your writing ({writing.entries.length})
               </h2>
@@ -106,7 +106,7 @@ export default async function MyTasksPage() {
           {/* Editing */}
           <section>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+              <h2 className="flex items-center gap-2 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
                 <ClipboardEdit className="h-3 w-3" />
                 Your editing ({editing.entries.length})
               </h2>
@@ -207,15 +207,15 @@ function TaskRow({
             </h3>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <Badge variant="outline">{entry.tier.name}</Badge>
-            <Badge variant="outline">{entry.site.toUpperCase()}</Badge>
+            <Badge variant="outline" className="font-data">{entry.tier.name}</Badge>
+            <Badge variant="outline" className="font-data">{entry.site.toUpperCase()}</Badge>
             {showEditorStatus ? (
               <EditorStatusBadge status={entry.editor_status} />
             ) : (
               <ContentStatusBadge status={entry.content_status} />
             )}
             {entry.checklist_total > 0 ? (
-              <span className="font-mono text-[10px] text-text-zero">
+              <span className="font-data text-[10px] text-text-zero">
                 {entry.checklist_completed}/{entry.checklist_total} checklist
               </span>
             ) : null}
@@ -245,11 +245,11 @@ function TaskRow({
             <span className="text-xs italic text-text-zero">No date</span>
           )}
           {overdue ? (
-            <div className="mt-0.5 font-mono text-[9px] uppercase text-destructive">
+            <div className="mt-0.5 font-sans text-[9px] uppercase text-destructive">
               overdue
             </div>
           ) : dueSoon ? (
-            <div className="mt-0.5 font-mono text-[9px] uppercase text-amber">
+            <div className="mt-0.5 font-sans text-[9px] uppercase text-amber">
               &lt;24h
             </div>
           ) : null}
@@ -280,15 +280,15 @@ function DeadlineItem({
           <span className="truncate text-xs font-medium text-text-cell">
             {entry.title}
           </span>
-          <Badge variant="outline">{entry.tier.name}</Badge>
+          <Badge variant="outline" className="font-data">{entry.tier.name}</Badge>
         </div>
         <div
           className={
             overdue
-              ? "mt-0.5 font-mono text-[10px] uppercase text-destructive"
+              ? "mt-0.5 font-sans text-[10px] uppercase text-destructive"
               : dueSoon
-                ? "mt-0.5 font-mono text-[10px] uppercase text-amber"
-                : "mt-0.5 font-mono text-[10px] text-text-zero"
+                ? "mt-0.5 font-sans text-[10px] uppercase text-amber"
+                : "mt-0.5 font-sans text-[10px] text-text-zero"
           }
         >
           {formatDate(entry.publish_date, {

@@ -108,11 +108,11 @@ export function AnalyticsArticlesTab({ query }: Props) {
               </div>
               <div className="text-[10px] text-text-zero mt-0.5">{r.authors}</div>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="outline" className="font-data text-[10px]">
                   {r.site.toUpperCase()}
                 </Badge>
                 {r.tier_name && (
-                  <span className="text-[10px] text-text-team">{r.tier_name}</span>
+                  <span className="font-data text-[10px] text-text-team">{r.tier_name}</span>
                 )}
                 {r.publish_date && (
                   <span className="text-[10px] text-text-zero">
@@ -124,25 +124,25 @@ export function AnalyticsArticlesTab({ query }: Props) {
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
               <div className="flex justify-between">
                 <span className="text-text-zero">Pageviews</span>
-                <span className="tabular-nums text-text-cell">
+                <span className="font-data tabular-nums text-text-cell">
                   {r.pageviews.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-zero">Sessions</span>
-                <span className="tabular-nums text-text-cell">
+                <span className="font-data tabular-nums text-text-cell">
                   {r.sessions.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-zero">Revenue</span>
-                <span className="tabular-nums font-medium text-amber">
+                <span className="font-data tabular-nums font-medium text-amber">
                   ${r.earnings.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-zero">Page RPM</span>
-                <span className="tabular-nums text-text-team">
+                <span className="font-data tabular-nums text-text-team">
                   ${r.page_rpm.toFixed(2)}
                 </span>
               </div>
@@ -153,7 +153,7 @@ export function AnalyticsArticlesTab({ query }: Props) {
           <span className="text-text-zero">
             {rows.length} article{rows.length === 1 ? "" : "s"}
           </span>
-          <span className="tabular-nums text-amber">${totalEarnings.toFixed(2)}</span>
+          <span className="font-data tabular-nums text-amber">${totalEarnings.toFixed(2)}</span>
         </div>
       </div>
     );
@@ -213,7 +213,7 @@ export function AnalyticsArticlesTab({ query }: Props) {
                     <div className="text-[10px] text-text-zero">{r.authors}</div>
                   </td>
                   <td className="px-3 py-2">
-                    <Badge variant="outline" className="text-[10px]">
+                    <Badge variant="outline" className="font-data text-[10px]">
                       {r.site.toUpperCase()}
                     </Badge>
                   </td>

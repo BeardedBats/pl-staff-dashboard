@@ -381,10 +381,10 @@ function ArchivedTable({
                 )}
               </td>
               <td className="px-3 py-3 align-top">
-                <Badge variant="outline">{entry.tier.name}</Badge>
+                <Badge variant="outline" className="font-data">{entry.tier.name}</Badge>
               </td>
               <td className="px-3 py-3 align-top">
-                <Badge variant="outline">{entry.site.toUpperCase()}</Badge>
+                <Badge variant="outline" className="font-data">{entry.site.toUpperCase()}</Badge>
               </td>
               <td className="px-3 py-3 align-top text-xs text-text-team">
                 {entry.publish_date
@@ -489,7 +489,7 @@ function HistoricalTable({
                 )}
               </td>
               <td className="px-3 py-3 align-top">
-                <Badge variant="outline">{entry.site.toUpperCase()}</Badge>
+                <Badge variant="outline" className="font-data">{entry.site.toUpperCase()}</Badge>
               </td>
               <td className="px-3 py-3 align-top text-xs text-text-team">
                 {entry.publish_date

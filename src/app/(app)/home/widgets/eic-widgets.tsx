@@ -94,7 +94,7 @@ export function PipelineHealthWidget({ health }: { health: PipelineHealth }) {
             <div className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-3 py-2 text-xs">
               <span className={r.color}>{r.icon}</span>
               <span className="flex-1 text-text-team">{r.label}</span>
-              <span className="font-semibold tabular-nums text-text-cell">
+              <span className="font-data font-semibold tabular-nums text-text-cell">
                 {r.count}
               </span>
             </div>
@@ -120,7 +120,7 @@ export function PipelineHealthWidget({ health }: { health: PipelineHealth }) {
               <span className="flex-1">
                 {health.gateBlocked} edited but not scheduled
               </span>
-              <span className="font-semibold tabular-nums">
+              <span className="font-data font-semibold tabular-nums">
                 {health.gateBlocked}
               </span>
             </Link>
@@ -217,7 +217,7 @@ export function AnalyticsMiniWidget({ data }: { data: MiniAnalytics }) {
                   <Eye className="h-3 w-3" />
                   Pageviews
                 </div>
-                <div className="text-lg font-semibold tabular-nums text-text-cell">
+                <div className="font-data text-lg font-semibold tabular-nums text-text-cell">
                   {data.pageviews.toLocaleString()}
                 </div>
               </CardContent>
@@ -228,13 +228,13 @@ export function AnalyticsMiniWidget({ data }: { data: MiniAnalytics }) {
                   <DollarSign className="h-3 w-3" />
                   Revenue
                 </div>
-                <div className="text-lg font-semibold tabular-nums text-amber">
+                <div className="font-data text-lg font-semibold tabular-nums text-amber">
                   ${data.revenue.toFixed(2)}
                 </div>
               </CardContent>
             </Card>
           </div>
-          <div className="h-16 w-full">
+          <div className="h-16 w-full font-data">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.daily}>
                 <Line

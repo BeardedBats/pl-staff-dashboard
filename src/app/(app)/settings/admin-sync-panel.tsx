@@ -451,7 +451,7 @@ function HistoricalImportSection() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-text-zero">
+          <p className="font-sans text-[10px] uppercase tracking-wider text-text-zero">
             Site
           </p>
           <div className="flex flex-col gap-1.5 text-sm">
@@ -584,22 +584,22 @@ function ImportResults({
       )}
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-text-team">
         <dt>Posts found</dt>
-        <dd className="tabular-nums text-text-cell">{totals.postsFound}</dd>
+        <dd className="font-data tabular-nums text-text-cell">{totals.postsFound}</dd>
         <dt>Posts imported</dt>
-        <dd className="tabular-nums text-text-cell">{totals.postsImported}</dd>
+        <dd className="font-data tabular-nums text-text-cell">{totals.postsImported}</dd>
         <dt>Posts skipped (already imported)</dt>
-        <dd className="tabular-nums text-text-cell">{totals.postsSkipped}</dd>
+        <dd className="font-data tabular-nums text-text-cell">{totals.postsSkipped}</dd>
         <dt>Authors matched</dt>
-        <dd className="tabular-nums text-text-cell">{totals.authorsMatched}</dd>
+        <dd className="font-data tabular-nums text-text-cell">{totals.authorsMatched}</dd>
         <dt>Authors unmatched</dt>
-        <dd className="tabular-nums text-text-cell">{totals.authorsUnmatched}</dd>
+        <dd className="font-data tabular-nums text-text-cell">{totals.authorsUnmatched}</dd>
         <dt>Categories matched</dt>
-        <dd className="tabular-nums text-text-cell">{totals.categoriesMatched}</dd>
+        <dd className="font-data tabular-nums text-text-cell">{totals.categoriesMatched}</dd>
       </dl>
 
       {reports.length > 1 ? (
         <div className="space-y-1 border-t border-cyan/20 pt-2">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-text-zero">
+          <p className="font-sans text-[10px] uppercase tracking-wider text-text-zero">
             By site
           </p>
           {reports.map((r) => (
@@ -627,7 +627,7 @@ function ImportResults({
 
       {totals.errors.length > 0 ? (
         <details className="border-t border-cyan/20 pt-2">
-          <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-wider text-amber">
+          <summary className="cursor-pointer font-sans text-[10px] uppercase tracking-wider text-amber">
             {totals.errors.length} error{totals.errors.length === 1 ? "" : "s"}
           </summary>
           <ul className="mt-1 space-y-0.5 text-amber">
@@ -655,7 +655,7 @@ function LastSyncRow({
 }) {
   return (
     <div className="rounded-md border border-border bg-surface-3/30 p-3">
-      <p className="font-mono text-[10px] uppercase tracking-wider text-text-zero">
+      <p className="font-sans text-[10px] uppercase tracking-wider text-text-zero">
         Last {site} sync
       </p>
       <p className="mt-1 text-sm text-text-cell">

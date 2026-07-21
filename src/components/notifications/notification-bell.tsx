@@ -97,7 +97,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
           {unreadCount > 0 ? (
             <span
               className={cn(
-                "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan px-1 font-mono text-[9px] font-bold text-surface-1",
+                "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan px-1 font-sans text-[9px] font-bold text-surface-1",
               )}
             >
               {unreadCount > 99 ? "99+" : unreadCount}

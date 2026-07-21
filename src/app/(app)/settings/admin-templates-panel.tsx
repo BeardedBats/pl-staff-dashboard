@@ -194,28 +194,28 @@ export function AdminTemplatesPanel({
           />
         ) : (
           <div className="overflow-hidden rounded-md border border-border">
-            <table className="w-full text-sm">
+            <table className="w-full font-data text-sm">
               <thead className="bg-surface-3">
                 <tr>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+                  <th className="px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Title pattern
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+                  <th className="px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Schedule
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+                  <th className="px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Tier
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+                  <th className="px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Season
                   </th>
-                  <th className="px-3 py-2 text-left font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+                  <th className="px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Assignee
                   </th>
-                  <th className="px-3 py-2 text-center font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+                  <th className="px-3 py-2 text-center text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Active
                   </th>
-                  <th className="px-3 py-2 text-right font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+                  <th className="px-3 py-2 text-right text-[10px] font-medium uppercase tracking-wider text-text-zero">
                     Actions
                   </th>
                 </tr>
@@ -228,19 +228,19 @@ export function AdminTemplatesPanel({
                         {t.title_pattern}
                       </div>
                       <div className="mt-0.5 flex items-center gap-1">
-                        <Badge variant="outline">{t.site.toUpperCase()}</Badge>
+                        <Badge variant="outline" className="font-data">{t.site.toUpperCase()}</Badge>
                       </div>
                     </td>
                     <td className="px-3 py-2 text-xs text-text-team">
                       {t.schedule_description}
                       {t.default_publish_time ? (
-                        <span className="ml-1 font-mono text-text-zero">
+                        <span className="ml-1 font-data text-text-zero">
                           @ {t.default_publish_time.slice(0, 5)}
                         </span>
                       ) : null}
                     </td>
                     <td className="px-3 py-2">
-                      <Badge variant="outline">{t.tier_name}</Badge>
+                      <Badge variant="outline" className="font-data">{t.tier_name}</Badge>
                     </td>
                     <td className="px-3 py-2 text-xs text-text-team">
                       {t.season_mode_name}

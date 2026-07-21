@@ -120,7 +120,7 @@ export function OperationalHealthPanel({ initialHealth }: Props) {
                     </span>
                     <LevelBadge level={alert.severity} />
                   </div>
-                  <p className="font-mono text-[10px] text-text-zero">
+                  <p className="font-data text-[10px] text-text-zero">
                     {alert.component} · {alert.errorCode} · seen{" "}
                     {alert.occurrenceCount.toLocaleString()} time
                     {alert.occurrenceCount === 1 ? "" : "s"}
@@ -165,7 +165,7 @@ export function OperationalHealthPanel({ initialHealth }: Props) {
         <section className="space-y-2" aria-label="Scheduled job health">
           <h3 className="text-sm font-medium text-text-cell">Scheduled jobs</h3>
           <div className="overflow-x-auto rounded-md border border-border">
-            <table className="w-full text-xs">
+            <table className="w-full font-data text-xs">
               <thead className="bg-card text-[10px] uppercase tracking-wide text-text-zero">
                 <tr className="border-b border-border">
                   <th className="px-3 py-2 text-left">Job</th>

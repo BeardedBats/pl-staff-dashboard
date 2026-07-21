@@ -118,8 +118,8 @@ export function AdminUsersPanel({
         />
 
         <div className="overflow-hidden rounded-md border border-border">
-          <table className="w-full divide-y divide-border text-sm">
-            <thead className="bg-surface-3 font-mono text-xs uppercase tracking-wider text-text-zero">
+          <table className="w-full divide-y divide-border font-data text-sm">
+            <thead className="bg-surface-3 text-xs uppercase tracking-wider text-text-zero">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">User</th>
                 <th className="px-3 py-2 text-left font-medium">Roles</th>
@@ -147,7 +147,7 @@ export function AdminUsersPanel({
                         <p className="truncate font-medium text-text-cell">
                           {user.display_name}
                         </p>
-                        <p className="truncate font-mono text-[10px] text-text-zero">
+                        <p className="truncate font-data text-[10px] text-text-zero">
                           {user.email ?? (
                             <span className="italic">pending first login</span>
                           )}
@@ -159,7 +159,7 @@ export function AdminUsersPanel({
                     <RoleBadgeGroup roles={user.roles} />
                   </td>
                   <td className="px-3 py-2">
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="font-data">
                       {user.wp_site === "both"
                         ? "PL+QB"
                         : user.wp_site.toUpperCase()}

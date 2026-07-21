@@ -531,6 +531,21 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.01em;
 }
 
+/* The only two guide-approved weights above 700. Consumers use these named
+   roles instead of introducing free-form heavy weights. */
+.plpd-section-title {
+  color: var(--cyan);
+  font-family: var(--font-sans);
+  font-size: var(--plpd-type-section-title);
+  font-weight: var(--plpd-weight-section);
+  line-height: 1.2;
+}
+
+.plpd-hero-numeral {
+  font-family: var(--font-data);
+  font-weight: var(--plpd-weight-hero);
+}
+
 code, kbd, pre, samp {
   font-family: var(--font-mono);
 }

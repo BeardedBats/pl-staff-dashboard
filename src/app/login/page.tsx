@@ -24,7 +24,7 @@ export default async function LoginPage() {
       <div className="relative w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="mb-2 inline-flex items-center justify-center rounded-lg border border-border bg-card/80 px-5 py-2.5 shadow-lg ring-1 ring-white/[0.05] backdrop-blur-sm">
-            <span className="font-mono text-lg font-bold uppercase tracking-wider text-cyan">
+            <span className="font-data text-lg font-bold uppercase tracking-wider text-cyan">
               Pitcher List
             </span>
           </div>

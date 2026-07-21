@@ -150,20 +150,20 @@ export function GraphicsPageClient({
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="text-text-zero">Summary:</span>
         <Badge variant="outline">
-          Needed <span className="ml-1 font-mono tabular-nums">{statusCounts.needed}</span>
+          Needed <span className="ml-1 font-data tabular-nums">{statusCounts.needed}</span>
         </Badge>
         <Badge variant="cyan">
-          Claimed <span className="ml-1 font-mono tabular-nums">{statusCounts.claimed}</span>
+          Claimed <span className="ml-1 font-data tabular-nums">{statusCounts.claimed}</span>
         </Badge>
         <Badge variant="success">
           Submitted{" "}
-          <span className="ml-1 font-mono tabular-nums">
+          <span className="ml-1 font-data tabular-nums">
             {statusCounts.submitted}
           </span>
         </Badge>
         <Badge variant="danger">
           Flagged{" "}
-          <span className="ml-1 font-mono tabular-nums">{statusCounts.flagged}</span>
+          <span className="ml-1 font-data tabular-nums">{statusCounts.flagged}</span>
         </Badge>
       </div>
 
