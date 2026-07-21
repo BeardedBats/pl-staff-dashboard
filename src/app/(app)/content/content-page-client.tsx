@@ -35,7 +35,11 @@ export function ContentPageClient({
         initialViews={initialViews}
         manageableSites={manageableSites}
         onCreateClick={() => setCreateOpen(true)}
-        onBulkCreateClick={() => setBulkCreateOpen(true)}
+        onBulkCreateClick={
+          manageableSites.length > 0
+            ? () => setBulkCreateOpen(true)
+            : undefined
+        }
       />
 
       <CreateEntryDialog
@@ -55,6 +59,7 @@ export function ContentPageClient({
         onOpenChange={setBulkCreateOpen}
         tiers={tiers}
         categories={categories}
+        manageableSites={manageableSites}
         onCreated={() => {
           setRefreshKey((k) => k + 1);
           router.refresh();

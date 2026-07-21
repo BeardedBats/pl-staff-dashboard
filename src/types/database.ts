@@ -1371,6 +1371,22 @@ export type Database = {
     }
     Functions: {
       activate_season_mode: { Args: { p_mode_id: string }; Returns: boolean }
+      bulk_create_entries: {
+        Args: { p_actor_id: string; p_entries: Json }
+        Returns: {
+          entry_id: string
+          request_index: number
+        }[]
+      }
+      bulk_update_entries: {
+        Args: {
+          p_action: string
+          p_actor_id: string
+          p_entry_ids: string[]
+          p_payload?: Json
+        }
+        Returns: number
+      }
       get_analytics_overview: {
         Args: {
           p_author_id?: string

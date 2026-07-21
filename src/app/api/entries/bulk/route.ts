@@ -1,41 +1,17 @@
 import { NextResponse } from "next/server";
 import { parseJsonBody, errorResponse } from "@/lib/api/http";
-import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   canViewEntryResource,
   isManagerPlusForSite,
   loadEntryAuthorizationContexts,
 } from "@/lib/auth/authorization";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { writeAuditRow } from "@/lib/entries/status-transitions";
-import type { TablesUpdate } from "@/types/database";
+import {
+  bulkEntryUpdateSchema,
+  bulkUpdateEntries,
+} from "@/lib/entries/bulk-mutations";
 
 export const dynamic = "force-dynamic";
-
-const bulkSchema = z.discriminatedUnion("action", [
-  z.object({
-    action: z.literal("archive"),
-    entry_ids: z.array(z.string().uuid()).min(1).max(200),
-    reason: z.string().trim().max(500).optional(),
-  }),
-  z.object({
-    action: z.literal("unarchive"),
-    entry_ids: z.array(z.string().uuid()).min(1).max(200),
-  }),
-  z.object({
-    action: z.literal("set_priority"),
-    entry_ids: z.array(z.string().uuid()).min(1).max(200),
-    priority: z.boolean(),
-  }),
-  z.object({
-    action: z.literal("change_tier"),
-    entry_ids: z.array(z.string().uuid()).min(1).max(200),
-    tier_id: z.string().uuid(),
-  }),
-]);
-
-type BulkBody = z.infer<typeof bulkSchema>;
 
 /**
  * POST /api/entries/bulk
@@ -55,13 +31,12 @@ export async function POST(request: Request) {
   if (!viewer) {
     return errorResponse(401, "Not authenticated");
   }
-  const parsed = await parseJsonBody(request, bulkSchema);
+  const parsed = await parseJsonBody(request, bulkEntryUpdateSchema);
   if (!parsed.ok) return parsed.response;
 
-  const input: BulkBody = parsed.data;
-  const uniqueEntryIds = Array.from(new Set(input.entry_ids));
-  const authorization = await loadEntryAuthorizationContexts(uniqueEntryIds);
-  if (authorization.size !== uniqueEntryIds.length) {
+  const input = parsed.data;
+  const authorization = await loadEntryAuthorizationContexts(input.entry_ids);
+  if (authorization.size !== input.entry_ids.length) {
     return errorResponse(404, "One or more entries were not found");
   }
   if (
@@ -76,68 +51,27 @@ export async function POST(request: Request) {
       "Manager+ access is required for every affected entry site",
     );
   }
-  const supabase = getSupabaseAdmin();
-
-  // Build the update payload and audit annotations up front.
-  let updatePayload: TablesUpdate<"entries">;
-  let auditAction: "archive" | "field_edit";
-  let auditField: string;
-  let auditOld: string;
-  let auditNew: string;
-
-  switch (input.action) {
-    case "archive":
-      updatePayload = {
-        is_archived: true,
-        archive_reason: input.reason ?? "Bulk archived",
-      };
-      auditAction = "archive";
-      auditField = "is_archived";
-      auditOld = "false";
-      auditNew = "true";
-      break;
-    case "unarchive":
-      updatePayload = { is_archived: false, archive_reason: null };
-      auditAction = "archive";
-      auditField = "is_archived";
-      auditOld = "true";
-      auditNew = "false";
-      break;
-    case "set_priority":
-      updatePayload = { priority: input.priority };
-      auditAction = "field_edit";
-      auditField = "priority";
-      auditOld = String(!input.priority);
-      auditNew = String(input.priority);
-      break;
-    case "change_tier":
-      updatePayload = { tier_id: input.tier_id };
-      auditAction = "field_edit";
-      auditField = "tier_id";
-      auditOld = "";
-      auditNew = input.tier_id;
-      break;
+  const result = await bulkUpdateEntries(viewer.id, input);
+  if (!result.ok) {
+    switch (result.kind) {
+      case "completed_checklist":
+        return errorResponse(
+          409,
+          "Tier changes are blocked when any selected entry has completed checklist work",
+        );
+      case "not_found":
+        return errorResponse(404, "One or more entries were not found");
+      case "invalid_reference":
+      case "invalid_input":
+        return errorResponse(400, "Bulk update references invalid data");
+      case "database":
+        return errorResponse(500, "Bulk update failed");
+    }
   }
-
-  const { error } = await supabase
-    .from("entries")
-    .update(updatePayload)
-    .in("id", input.entry_ids);
-
-  if (error) {
-    console.error("Bulk entry update failed", { code: error.code });
-    return errorResponse(500, "Bulk update failed");
-  }
-
-  // Audit each row individually so the trail matches per-entry history
-  await Promise.all(
-    input.entry_ids.map((id) =>
-      writeAuditRow(id, viewer.id, auditAction, auditField, auditOld, auditNew),
-    ),
-  );
 
   return NextResponse.json({
     ok: true,
-    updated: input.entry_ids.length,
+    selected: input.entry_ids.length,
+    updated: result.updated,
   });
 }

@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { appendRecentActivity } from "@/lib/entries/recent-activity";
+import type { Json } from "@/types/database";
 
 // --------------------------------------------------------------------------
 // Create entry
@@ -25,7 +25,14 @@ export const createEntrySchema = z.object({
     .default("none"),
   category_id: z.uuid().nullable().optional(),
   series_id: z.uuid().nullable().optional(),
-  assignee_user_ids: z.array(z.uuid()).optional().default([]),
+  assignee_user_ids: z
+    .array(z.uuid())
+    .max(50)
+    .refine((ids) => new Set(ids).size === ids.length, {
+      message: "Assignees must be unique",
+    })
+    .optional()
+    .default([]),
   roles_needed: z
     .array(z.enum(["writer", "editor", "graphics"]))
     .optional()
@@ -33,6 +40,22 @@ export const createEntrySchema = z.object({
 });
 
 export type CreateEntryInput = z.infer<typeof createEntrySchema>;
+
+export const bulkCreateEntriesSchema = z.object({
+  entries: z.array(createEntrySchema).min(1).max(25),
+});
+
+export type BulkCreateEntriesInput = z.infer<
+  typeof bulkCreateEntriesSchema
+>["entries"];
+
+export type CreateEntriesResult =
+  | { ok: true; entryIds: string[] }
+  | {
+      ok: false;
+      kind: "invalid_reference" | "database";
+      error: string;
+    };
 
 /**
  * Create a new entry.
@@ -49,93 +72,65 @@ export async function createEntry(
   userId: string,
   input: CreateEntryInput,
 ): Promise<{ ok: true; entryId: string } | { ok: false; error: string }> {
-  const supabase = getSupabaseAdmin();
+  const result = await createEntries(userId, [input]);
+  if (!result.ok) return result;
 
-  // 1. Insert the row.
-  const { data: entry, error } = await supabase
-    .from("entries")
-    .insert({
-      title: input.title,
-      description: input.description?.trim() || null,
-      site: input.site,
-      tier_id: input.tier_id,
-      priority: input.priority,
-      publish_date: input.publish_date ?? null,
-      publish_date_precision: input.publish_date_precision,
-      category_id: input.category_id ?? null,
-      series_id: input.series_id ?? null,
-      created_by: userId,
-    })
-    .select("id")
-    .single();
-
-  if (error || !entry) {
-    return { ok: false, error: "Failed to create entry" };
-  }
-
-  const entryId = entry.id as string;
-
-  // 2. Seed the checklist from tier defaults.
-  await seedChecklistForEntry(entryId, input.tier_id);
-
-  // 3. Attach authors if assignees provided. Writers become "claimed".
-  if (input.assignee_user_ids.length > 0) {
-    const first = input.assignee_user_ids[0];
-    const rest = input.assignee_user_ids.slice(1);
-    const authorRows = [
-      { entry_id: entryId, user_id: first, role: "primary" as const },
-      ...rest.map((uid) => ({
-        entry_id: entryId,
-        user_id: uid,
-        role: "co_author" as const,
-      })),
-    ];
-    await supabase.from("entry_authors").insert(authorRows);
-    // Flip to `claimed` since a writer was pre-assigned.
-    await supabase
-      .from("entries")
-      .update({ content_status: "claimed" })
-      .eq("id", entryId);
-  }
-
-  // 4. Audit log + recent activity cache.
-  await supabase.from("audit_log").insert({
-    entry_id: entryId,
-    user_id: userId,
-    action: "created",
-    new_value: input.title,
-  });
-
-  await appendRecentActivity(entryId, {
-    type: "created",
-    actor_id: userId,
-    actor_name: "System",
-    label: `created: ${input.title}`,
-    at: new Date().toISOString(),
-  });
-
-  return { ok: true, entryId };
+  const entryId = result.entryIds[0];
+  return entryId
+    ? { ok: true, entryId }
+    : { ok: false, error: "Failed to create entry" };
 }
 
-async function seedChecklistForEntry(
-  entryId: string,
-  tierId: string,
-): Promise<void> {
-  const supabase = getSupabaseAdmin();
-  const { data: items } = await supabase
-    .from("checklist_items")
-    .select("id")
-    .eq("tier_id", tierId);
-
-  const rows = ((items ?? []) as Array<{ id: string }>).map((item) => ({
-    entry_id: entryId,
-    checklist_item_id: item.id,
-    is_completed: false,
+/** Create one validated batch in a single database transaction. */
+export async function createEntries(
+  userId: string,
+  inputs: BulkCreateEntriesInput,
+): Promise<CreateEntriesResult> {
+  const payload = inputs.map((input) => ({
+    title: input.title,
+    description: input.description?.trim() || null,
+    site: input.site,
+    tier_id: input.tier_id,
+    priority: input.priority,
+    publish_date: input.publish_date ?? null,
+    publish_date_precision: input.publish_date_precision,
+    category_id: input.category_id ?? null,
+    series_id: input.series_id ?? null,
+    assignee_user_ids: input.assignee_user_ids,
   }));
 
-  if (rows.length > 0) {
-    await supabase.from("entry_checklist").insert(rows);
+  const { data, error } = await getSupabaseAdmin().rpc(
+    "bulk_create_entries",
+    {
+      p_actor_id: userId,
+      p_entries: payload as Json,
+    },
+  );
+
+  if (error) {
+    console.error("Transactional entry creation failed", { code: error.code });
+    if (error.code === "23503") {
+      return {
+        ok: false,
+        kind: "invalid_reference",
+        error: "A referenced tier, category, series, or assignee no longer exists",
+      };
+    }
+    return { ok: false, kind: "database", error: "Failed to create entries" };
   }
+
+  const ordered = [...(data ?? [])].sort(
+    (a, b) => a.request_index - b.request_index,
+  );
+  if (ordered.length !== inputs.length) {
+    return {
+      ok: false,
+      kind: "database",
+      error: "Failed to create every requested entry",
+    };
+  }
+
+  return { ok: true, entryIds: ordered.map((row) => row.entry_id) };
 }
 
 // --------------------------------------------------------------------------

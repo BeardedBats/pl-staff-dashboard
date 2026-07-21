@@ -25,7 +25,7 @@ import type {
   EntryTier,
   PublishDatePrecision,
 } from "@/lib/entries/queries";
-import type { AppSite } from "@/lib/auth/current-user";
+import { readApiError } from "@/lib/api/client";
 
 type Row = {
   /** Local-only id for React keys. Server generates the real UUID. */
@@ -41,6 +41,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   tiers: EntryTier[];
   categories: EntryCategory[];
+  manageableSites: Array<"pl" | "qb">;
   onCreated: (count: number) => void;
 };
 
@@ -65,18 +66,20 @@ function blankRow(): Row {
  * Bulk-create dialog. Lets admins/managers spin up a handful of entries
  * with shared site/tier/precision but per-row title + publish date.
  *
- * Server-side, we just hit POST /api/entries N times in parallel. The
- * existing route already does validation + audit, so we don't need a
- * new bulk endpoint.
+ * The server creates the entire batch, checklists, authors, and audit rows in
+ * one database transaction. A failure leaves none of the requested entries.
  */
 export function BulkCreateEntryDialog({
   open,
   onOpenChange,
   tiers,
   categories,
+  manageableSites,
   onCreated,
 }: Props) {
-  const [sharedSite, setSharedSite] = React.useState<AppSite>("pl");
+  const [sharedSite, setSharedSite] = React.useState<"pl" | "qb">(
+    manageableSites[0] ?? "pl",
+  );
   const [sharedTierId, setSharedTierId] = React.useState<string>("");
   const [sharedPrecision, setSharedPrecision] =
     React.useState<PublishDatePrecision>("none");
@@ -87,18 +90,21 @@ export function BulkCreateEntryDialog({
 
   React.useEffect(() => {
     if (open) {
-      setSharedSite("pl");
+      setSharedSite(manageableSites[0] ?? "pl");
       setSharedTierId(tiers[0]?.id ?? "");
       setSharedPrecision("none");
       setSharedCategoryId("");
       setRows([blankRow(), blankRow()]);
       setResult(null);
     }
-  }, [open, tiers]);
+  }, [manageableSites, open, tiers]);
 
   const validRows = rows.filter((r) => r.title.trim().length > 0);
   const canSubmit =
-    validRows.length > 0 && sharedTierId && !saving;
+    validRows.length > 0 &&
+    Boolean(sharedTierId) &&
+    manageableSites.includes(sharedSite) &&
+    !saving;
 
   function updateRow(uid: string, patch: Partial<Row>) {
     setRows((rs) => rs.map((r) => (r.uid === uid ? { ...r, ...patch } : r)));
@@ -140,46 +146,33 @@ export function BulkCreateEntryDialog({
       };
     });
 
-    // Fire all requests in parallel. The route is idempotent in spirit
-    // (no shared state between them), so concurrency is safe.
-    const settled = await Promise.allSettled(
-      payloads.map((p) =>
-        fetch("/api/entries", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(p),
-        }).then(async (res) => {
-          if (!res.ok) {
-            const body = (await res.json().catch(() => ({}))) as {
-              error?: string;
-            };
-            throw new Error(body.error ?? `HTTP ${res.status}`);
-          }
-          return res.json();
-        }),
-      ),
-    );
-
-    let okCount = 0;
-    let failCount = 0;
-    const errors: string[] = [];
-    settled.forEach((s, i) => {
-      if (s.status === "fulfilled") {
-        okCount += 1;
-      } else {
-        failCount += 1;
-        errors.push(
-          `Row ${i + 1} ("${payloads[i].title}"): ${
-            s.reason instanceof Error ? s.reason.message : String(s.reason)
-          }`,
+    try {
+      const response = await fetch("/api/entries/bulk-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries: payloads }),
+      });
+      if (!response.ok) {
+        const message = await readApiError(
+          response,
+          "The batch could not be created",
         );
+        setResult({ ok: 0, failed: payloads.length, errors: [message] });
+        return;
       }
-    });
 
-    setResult({ ok: okCount, failed: failCount, errors });
-    setSaving(false);
-    if (okCount > 0) {
-      onCreated(okCount);
+      const body = (await response.json()) as { created?: number };
+      const created = body.created ?? payloads.length;
+      setResult({ ok: created, failed: 0, errors: [] });
+      onCreated(created);
+    } catch {
+      setResult({
+        ok: 0,
+        failed: payloads.length,
+        errors: ["The batch could not be created. Check your connection and try again."],
+      });
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -226,14 +219,18 @@ export function BulkCreateEntryDialog({
                   <Label className="text-[10px] uppercase">Site</Label>
                   <Select
                     value={sharedSite}
-                    onValueChange={(v) => setSharedSite(v as AppSite)}
+                    onValueChange={(v) => setSharedSite(v as "pl" | "qb")}
                   >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pl">Pitcher List</SelectItem>
-                      <SelectItem value="qb">QB List</SelectItem>
+                      {manageableSites.includes("pl") ? (
+                        <SelectItem value="pl">Pitcher List</SelectItem>
+                      ) : null}
+                      {manageableSites.includes("qb") ? (
+                        <SelectItem value="qb">QB List</SelectItem>
+                      ) : null}
                     </SelectContent>
                   </Select>
                 </div>
