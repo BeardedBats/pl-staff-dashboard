@@ -44,7 +44,7 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
 - [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules. — GREEN DRAFT PR #11; STACKED RELEASE PENDING P1.8/P1.9
 - [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8–P1.10
-- [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability. — METHOD/AUTH SUB-GATE PASSED; LEASE/RUN LEDGER AND DELIVERY IDEMPOTENCY IN PROGRESS
+- [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability. — METHOD/AUTH AND EXECUTION-CONTROL SUB-GATES PASSED; CHANNEL DELIVERY IDEMPOTENCY IN PROGRESS
 - [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries.
 - [ ] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities.
 - [ ] P1.15 Either implement unfinished notification/settings behavior or remove misleading UI, types, tables, and code paths.
@@ -326,6 +326,14 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Every path in `vercel.json` now exports the same handler as `GET` for Vercel and `POST` for the existing admin UI. One shared authorization boundary accepts only the exact cron bearer secret or a current admin+ session with both-site scope.
 - A configuration-driven contract test reads every committed Vercel cron path and requires both methods plus the shared authorization call. Targeted test: 8/8 route contracts; ESLint and TypeScript pass.
 - P1.12 remains open: serverless-safe overlap leases, persisted run outcomes, bounded retry semantics, and atomic notification delivery deduplication still require implementation and hostile/concurrent verification.
+
+### 2026-07-21 — P1.12 cron execution-control sub-gate
+
+- Migration `0015_cron_execution_control.sql` adds a private, RLS-enabled run ledger plus service-role-only claim/finish functions. Claims serialize by job using a transaction advisory lock, refuse active overlap, collapse successful duplicate windows, recover expired leases, and bound a failed window to three attempts.
+- Every configured job now claims before running and persists its safe JSON outcome, HTTP failure class, timestamps, source, attempt, and lease state. Claim or finish failures return a safe 503 instead of silently running without control or reporting success without an audit row.
+- Cold migration reset applied `0001`–`0015`. The database suite passes 102 pgTAP probes, including 22 new privilege, state, duplicate, overlap, retry, exhausted-attempt, expired-lease, and hostile-input assertions. Generated types include the ledger and both RPCs.
+- A two-connection filesystem-independent probe held the first claim transaction open; the second claimant blocked and then returned `overlap`. Application regressions cover unavailable control, duplicate/overlap/exhaustion no-ops, success/failure persistence, finish failure, and exception redaction.
+- P1.12 remains open only for retry-safe channel-level notification deduplication. Route-level overlap and duplicate execution are now controlled, but a future real email/Discord adapter must not repeat a channel that succeeded before another channel or the function failed.
 
 ## Phase 0 prioritized defect and risk inventory
 

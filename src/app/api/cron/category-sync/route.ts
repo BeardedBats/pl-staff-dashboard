@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
+import { executeCronJob } from "@/lib/cron/execution";
 import { syncWpCategoriesForBothSites } from "@/lib/wp-sync/categories";
 
 export const runtime = "nodejs";
@@ -18,9 +19,13 @@ async function handle(request: Request) {
   if (!authorized.ok) {
     return errorResponse(401, authorized.error);
   }
-
-  const reports = await syncWpCategoriesForBothSites();
-  return NextResponse.json({ ok: true, reports });
+  return executeCronJob(authorized.source, {
+    name: "category-sync",
+    intervalSeconds: 7 * 24 * 60 * 60,
+  }, async () => {
+    const reports = await syncWpCategoriesForBothSites();
+    return NextResponse.json({ ok: true, reports });
+  });
 }
 
 export { handle as GET, handle as POST };

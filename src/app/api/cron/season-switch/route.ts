@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
+import { executeCronJob } from "@/lib/cron/execution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,6 +28,11 @@ async function handle(request: Request) {
   if (!authorized.ok) {
     return errorResponse(401, authorized.error);
   }
+
+  return executeCronJob(authorized.source, {
+    name: "season-switch",
+    intervalSeconds: 24 * 60 * 60,
+  }, async () => {
 
   const supabase = getSupabaseAdmin();
 
@@ -87,6 +93,7 @@ async function handle(request: Request) {
     checked: modes.length,
     switched,
     activeMode: activeName,
+  });
   });
 }
 

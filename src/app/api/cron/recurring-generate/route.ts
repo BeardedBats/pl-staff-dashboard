@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
+import { executeCronJob } from "@/lib/cron/execution";
 import { runGenerator } from "@/lib/recurring-templates/generator";
 
 export const runtime = "nodejs";
@@ -22,8 +23,13 @@ async function handle(request: Request) {
     return errorResponse(401, authorized.error);
   }
 
-  const report = await runGenerator();
-  return NextResponse.json({ ok: true, report });
+  return executeCronJob(authorized.source, {
+    name: "recurring-generate",
+    intervalSeconds: 24 * 60 * 60,
+  }, async () => {
+    const report = await runGenerator();
+    return NextResponse.json({ ok: true, report });
+  });
 }
 
 export { handle as GET, handle as POST };

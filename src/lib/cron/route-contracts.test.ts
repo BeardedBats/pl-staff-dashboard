@@ -14,5 +14,6 @@ describe("configured Vercel cron routes", () => {
     const source = fs.readFileSync(sourcePath, "utf8");
     expect(source).toMatch(/export\s*\{\s*handle as GET,\s*handle as POST\s*\}/);
     expect(source).toContain("authorizeCronRequest(request)");
+    expect(source).toContain("executeCronJob(authorized.source");
   });
 });

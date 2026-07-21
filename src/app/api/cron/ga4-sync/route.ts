@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
+import { executeCronJob } from "@/lib/cron/execution";
 import { syncGa4 } from "@/lib/analytics/ga4";
 
 export const runtime = "nodejs";
@@ -22,23 +23,28 @@ async function handle(request: Request) {
     return errorResponse(401, authorized.error);
   }
 
-  const result = await syncGa4();
-  if (!result.ok) {
-    if (result.reason === "not_configured" || result.reason === "not_connected") {
-      return NextResponse.json({
-        ok: true,
-        skipped: true,
-        reason: result.reason,
-        message: result.error,
-      });
+  return executeCronJob(authorized.source, {
+    name: "ga4-sync",
+    intervalSeconds: 24 * 60 * 60,
+  }, async () => {
+    const result = await syncGa4();
+    if (!result.ok) {
+      if (result.reason === "not_configured" || result.reason === "not_connected") {
+        return NextResponse.json({
+          ok: true,
+          skipped: true,
+          reason: result.reason,
+          message: result.error,
+        });
+      }
+      return errorResponse(500, result.error);
     }
-    return errorResponse(500, result.error);
-  }
 
-  return NextResponse.json({
-    ok: true,
-    rowsUpserted: result.rowsUpserted,
-    matchedArticles: result.matchedArticles,
+    return NextResponse.json({
+      ok: true,
+      rowsUpserted: result.rowsUpserted,
+      matchedArticles: result.matchedArticles,
+    });
   });
 }
 

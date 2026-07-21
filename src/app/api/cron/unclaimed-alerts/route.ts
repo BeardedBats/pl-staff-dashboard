@@ -3,6 +3,7 @@ import { errorResponse } from "@/lib/api/http";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchNotificationBulk } from "@/lib/notifications/data";
+import { executeCronJob } from "@/lib/cron/execution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,11 @@ async function handle(request: Request) {
   if (!authorized.ok) {
     return errorResponse(401, authorized.error);
   }
+
+  return executeCronJob(authorized.source, {
+    name: "unclaimed-alerts",
+    intervalSeconds: 3 * 60 * 60,
+  }, async () => {
 
   const supabase = getSupabaseAdmin();
 
@@ -99,6 +105,7 @@ async function handle(request: Request) {
     alerted,
     skipped,
     entries_in_window: entries.length,
+  });
   });
 }
 

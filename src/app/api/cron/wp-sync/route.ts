@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
+import { executeCronJob } from "@/lib/cron/execution";
 import { findSystemUserId } from "@/lib/recurring-templates/generator";
 import { syncWpPostsForBothSites } from "@/lib/wp-sync/posts";
 
@@ -25,16 +26,21 @@ async function handle(request: Request) {
     return errorResponse(401, authorized.error);
   }
 
-  const systemUserId = await findSystemUserId();
-  if (!systemUserId) {
-    return errorResponse(
-      500,
-      "No admin user found to attribute system actions to.",
-    );
-  }
+  return executeCronJob(authorized.source, {
+    name: "wp-sync",
+    intervalSeconds: 5 * 60,
+  }, async () => {
+    const systemUserId = await findSystemUserId();
+    if (!systemUserId) {
+      return errorResponse(
+        500,
+        "No admin user found to attribute system actions to.",
+      );
+    }
 
-  const reports = await syncWpPostsForBothSites(systemUserId);
-  return NextResponse.json({ ok: true, reports });
+    const reports = await syncWpPostsForBothSites(systemUserId);
+    return NextResponse.json({ ok: true, reports });
+  });
 }
 
 export { handle as GET, handle as POST };

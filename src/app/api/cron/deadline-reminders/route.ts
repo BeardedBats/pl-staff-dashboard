@@ -3,6 +3,7 @@ import { errorResponse } from "@/lib/api/http";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchNotification } from "@/lib/notifications/data";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
+import { executeCronJob } from "@/lib/cron/execution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,11 @@ async function handle(request: Request) {
   if (!authorized.ok) {
     return errorResponse(401, authorized.error);
   }
+
+  return executeCronJob(authorized.source, {
+    name: "deadline-reminders",
+    intervalSeconds: 60 * 60,
+  }, async () => {
 
   const supabase = getSupabaseAdmin();
 
@@ -132,6 +138,7 @@ async function handle(request: Request) {
     entriesChecked: entries.length,
     notificationsSent,
     notificationsSkipped,
+  });
   });
 }
 
