@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import type { TablesUpdate } from "@/types/database";
 import { appendRecentActivity } from "@/lib/entries/recent-activity";
 import { findMissingRequiredItems } from "@/lib/checklist/data";
 import {
@@ -423,7 +424,7 @@ export async function applyWpStateToEntry(
     nextEditor = "published";
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: TablesUpdate<"entries"> = {
     wp_status: wpStatus,
     wp_modified_at: wpState.modified ?? null,
     updated_at: new Date().toISOString(),

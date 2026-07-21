@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import type { TablesUpdate } from "@/types/database";
 import type { AppSite } from "@/lib/auth/current-user";
 
 // --------------------------------------------------------------------------
@@ -93,7 +94,7 @@ export async function updateUserProfile(
   void _roles;
   void _teamId;
 
-  const normalized: Record<string, unknown> = {
+  const normalized: TablesUpdate<"users"> = {
     ...rest,
     twitter_handle: rest.twitter_handle
       ? rest.twitter_handle.replace(/^@/, "")

@@ -2,6 +2,7 @@ import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { fetchWpUserById, type WpSiteKey } from "@/lib/auth/wordpress";
+import type { TablesUpdate } from "@/types/database";
 
 /**
  * Periodic WP profile refresh.
@@ -139,7 +140,7 @@ export async function syncWpProfiles(): Promise<ProfileSyncReport> {
         continue;
       }
 
-      const updatePayload: Record<string, unknown> = {
+      const updatePayload: TablesUpdate<"users"> = {
         bio: nextBio,
         avatar_url: nextAvatarUrl,
         last_wp_sync: new Date().toISOString(),

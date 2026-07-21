@@ -249,10 +249,10 @@ export async function getAnalyticsOverview(
   const { data, error } = await supabase.rpc("get_analytics_overview", {
     p_date_from: filters.dateFrom,
     p_date_to: filters.dateTo,
-    p_site: filters.site || null,
-    p_tier_id: filters.tierId || null,
-    p_category_id: filters.categoryId || null,
-    p_author_id: filters.authorId || null,
+    p_site: filters.site || undefined,
+    p_tier_id: filters.tierId || undefined,
+    p_category_id: filters.categoryId || undefined,
+    p_author_id: filters.authorId || undefined,
   });
   if (error)
     console.error("[analytics] get_analytics_overview rpc failed:", error.message);

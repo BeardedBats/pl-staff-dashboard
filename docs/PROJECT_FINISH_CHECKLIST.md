@@ -5,11 +5,11 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.6 — Standardize request/response validation and safe user-facing errors
+- Current action: P1.7 — Restore reliable generated database typing
 - Branch: `codex/production-readiness`
-- HEAD: `97374b6c7b599d8e1da8b1256444a5ba4c2ef7bb`
-- Upstream baseline: `origin/main` at the same merge commit after PR #6.
-- Deployment: production deployment `5540869114` completed successfully from `97374b6` on 2026-07-21.
+- HEAD: `c0deda92819aaf2269c8c41ec384d9ad97b570e1`
+- Upstream baseline: `origin/main` at the same merge commit after PR #7.
+- Deployment: Vercel production status completed successfully from `c0deda9` on 2026-07-21 (`EJnLzUVoGsWnhn4BPzZfnHWV7ZL8`).
 - Known blockers: Vercel project-management access is unavailable; Supabase management CLI access is unavailable; no safe dashboard test-user session is available for live role navigation. These do not block local security implementation and are deferred until their dependent live gates.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
@@ -38,8 +38,8 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [x] P1.3 Audit every API route and server action against an explicit role-and-resource authorization matrix.
 - [x] P1.4 Fix graphics, editorial, analytics, administration, and synchronization authorization gaps.
 - [x] P1.5 Reconcile navigation visibility with backend permissions so users never see inaccessible areas or gain access through hidden routes.
-- [ ] P1.6 Standardize request and response validation using shared schemas and safe, user-facing error handling. — IN PROGRESS
-- [ ] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow.
+- [x] P1.6 Standardize request and response validation using shared schemas and safe, user-facing error handling.
+- [ ] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow. — IN PROGRESS
 - [ ] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants.
 - [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops.
 - [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules.
@@ -266,6 +266,21 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Added bounded client-side error parsing so UI actions never render raw HTML or proxy response bodies, and sanitized WordPress, Google, storage, workbook, and database failures that cross route boundaries.
 - Added strict schemas for the entries, graphics, users, teams, categories, notifications, analytics, and mixed tier query paths; malformed filters now fail clearly instead of being silently ignored.
 - Static contract tests cover all API routes and their public helper boundaries. Local gate: 8 Vitest files / 32 tests passed; lint passed; TypeScript passed; Next.js production build passed with all expected routes.
+
+### 2026-07-21 — P1.6 API contract production gate
+
+- Commit `c21dce1` passed the Vercel preview; PR #7 merged as `c0deda9`; the Vercel production status completed successfully.
+- Live unauthenticated probes verified malformed JSON as `400 INVALID_JSON`, schema failures as `400 VALIDATION_ERROR` with field-only issues, and protected access as `401 NOT_AUTHENTICATED`.
+- A disposable PL-only Admin session verified a valid authenticated query (`200`), malformed list filters as `400 VALIDATION_ERROR`, and global settings denial as `403 FORBIDDEN`.
+- The disposable user, role, and session rows were removed in `finally` cleanup without errors.
+
+### 2026-07-21 — P1.7 generated database types local gate
+
+- Replaced the loose index-signature placeholder with official Supabase TypeScript output generated from the committed `0001`–`0012` migrations.
+- Added a pinned Supabase CLI, committed local project config, cross-platform generate/check script, and GitHub workflow that cold-starts the schema, rejects generated-type drift, and runs TypeScript.
+- Real query typing exposed and closed hidden update/RPC/JSON mismatches in bulk entries, WordPress state/profile sync, analytics, users, and saved views without adding `any` escapes.
+- A read-only OpenAPI comparison found exact parity between the migration-built schema and production: 29 definitions, matching columns, and matching RPC surface with no local-only or remote-only objects.
+- Exact cold workflow passed (`db:stop` → reduced `db:start` → `db:types:check` → `db:stop`). Local gate: 8 Vitest files / 32 tests passed; generated-type check, lint, TypeScript, and Next.js production build all passed.
 
 ## Phase 0 prioritized defect and risk inventory
 
