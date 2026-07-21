@@ -24,6 +24,9 @@ async function handle(request: Request) {
     intervalSeconds: 6 * 60 * 60,
   }, async () => {
     const report = await syncWpProfiles();
+    if (report.errors.length > 0) {
+      return errorResponse(502, "WordPress profile sync incomplete");
+    }
     return NextResponse.json({ ok: true, report });
   });
 }
