@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.4 — Expand editorial claim, assignment, state-transition, bulk, deadline, and concurrency coverage while preserving the Supabase DDL release block.
-- Branch: `codex/production-readiness-p2-3`
-- Stack base: `296033e` (green draft PR #19, based on green draft PRs #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P2.5 — Test graphics submission, review, versioning, authorization, and storage behavior while preserving the Supabase DDL release block.
+- Branch: `codex/production-readiness-p2-4`
+- Stack base: `d6651f0` (green draft PR #20, based on green draft PRs #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -59,7 +59,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 - [x] P2.1 Establish a practical unit, integration, database, API, and browser-test architecture.
 - [x] P2.2 Test authentication, session rotation, role permissions, membership boundaries, and negative authorization cases.
 - [x] P2.3 Test WordPress synchronization, webhooks, scheduled reconciliation, conflict handling, retries, and idempotency.
-- [ ] P2.4 Test editorial claims, assignments, state transitions, bulk actions, deadlines, and concurrent operations.
+- [x] P2.4 Test editorial claims, assignments, state transitions, bulk actions, deadlines, and concurrent operations.
 - [ ] P2.5 Test graphics submission, review, versioning, authorization, and storage behavior.
 - [ ] P2.6 Test cron jobs with the same method and headers used by Vercel.
 - [ ] P2.7 Add representative Raptive importer tests with multi-sheet fixtures, duplicates, malformed rows, interruptions, and large files.
@@ -389,6 +389,15 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Category reconciliation now counts only successful writes and records safe per-row create/update/refresh/deactivation failures. Post, profile, and category cron tasks return 502 on incomplete reports so the existing cron execution controller records failure instead of a false success.
 - Added coverage for multi-page aggregation, partial-page refusal, invalid/network outcomes, post-watermark retention, category no-mutation/write accounting, PL-to-QB profile fallback, missing users, local display-name conflict preservation, and cron success/failure translation.
 - Final gate: 34 Vitest files / 158 tests; coverage increased to 11.81% statements, 10.25% branches, 15.81% functions, and 12.19% lines. All 124 pgTAP assertions, zero-vulnerability audit, ESLint, TypeScript, production build, and three Chromium boundary tests pass; owned database and browser servers stop cleanly.
+
+### 2026-07-21 — P2.4 transactional editorial workflow gate
+
+- The editorial audit found read-then-write races in writer claims, approvals/denials, editor claims, and content/editor state changes. Competing requests could both pass stale preconditions, write contradictory claim/assignment state, duplicate audit effects, or report success after a uniqueness error. Non-status entry edits also read their audit before-state outside the write transaction.
+- Migration `0018_transactional_editorial_workflows.sql` moves writer-claim creation/resolution, assignment, editorial transitions, field edits, and their audit rows into service-role-only row-locking RPCs. Checklist and graphics gates are repeated inside the state transaction; one editor and one primary writer remain database-enforced. WordPress drafts, notifications, comments, and recent activity run only after the authoritative transaction commits.
+- Closed two adjacent authority/data-contract defects: self-approval now requires manager authority for the entry's exact site rather than any global manager role, and claim endpoints distinguish invalid input (400), authority failure (403), missing resources (404), concurrent state conflict (409), and database failure (500).
+- Added a publish-deadline coherence constraint plus paired Zod validation, so timestamp and precision cannot be torn. Transactional field updates serialize concurrent before-state reads and audit the committed old/new values. Single-entry tier changes now use the same completed-checklist guard and atomic checklist reseed as bulk tier changes. Existing transactional bulk-create/update pgTAP coverage remains the bulk-action proof.
+- Added deterministic two-session database concurrency coverage: worker one locks and claims an entry, worker two blocks on the same row, then re-checks committed state and fails with `entry_not_claimable`; exactly one claim remains. Claims, approvals, denials, auto-approval, writer submission/resubmission, polishing, editor claiming, graphic/checklist gates, idempotent edited state, deadlines, privileges, audits, tier reseeding, and negative races are covered by 67 new pgTAP assertions.
+- Final gate: 38 Vitest files / 178 tests; coverage increased to 14.68% statements, 12.69% branches, 18.16% functions, and 15.21% lines. All 191 pgTAP assertions, generated database-type drift, zero-vulnerability audit, ESLint, TypeScript, the Next.js 16.2.11 production build, and three Chromium anonymous-boundary tests pass.
 
 ## Phase 0 prioritized defect and risk inventory
 

@@ -3,6 +3,7 @@ import { bulkEntryUpdateSchema } from "./bulk-mutations";
 import {
   bulkCreateEntriesSchema,
   createEntrySchema,
+  updateEntrySchema,
 } from "./mutations";
 
 const entryId = "80000000-0000-4000-8000-000000000001";
@@ -44,6 +45,54 @@ describe("bulk create validation", () => {
         assignee_user_ids: [userId, userId],
       }).success,
     ).toBe(false);
+  });
+
+  it("requires a publish deadline and its precision to agree", () => {
+    expect(
+      createEntrySchema.safeParse({
+        ...createInput("Exact deadline"),
+        publish_date: "2026-08-01T12:00:00Z",
+        publish_date_precision: "exact",
+      }).success,
+    ).toBe(true);
+    expect(
+      createEntrySchema.safeParse({
+        ...createInput("No deadline"),
+        publish_date: null,
+        publish_date_precision: "none",
+      }).success,
+    ).toBe(true);
+    expect(
+      createEntrySchema.safeParse({
+        ...createInput("Contradictory deadline"),
+        publish_date: "2026-08-01T12:00:00Z",
+        publish_date_precision: "none",
+      }).success,
+    ).toBe(false);
+    expect(
+      createEntrySchema.safeParse({
+        ...createInput("Missing deadline"),
+        publish_date: null,
+        publish_date_precision: "loose_date",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("requires deadline updates to replace both fields together", () => {
+    expect(
+      updateEntrySchema.safeParse({
+        publish_date: "2026-08-02T12:00:00Z",
+      }).success,
+    ).toBe(false);
+    expect(
+      updateEntrySchema.safeParse({ publish_date_precision: "exact" }).success,
+    ).toBe(false);
+    expect(
+      updateEntrySchema.safeParse({
+        publish_date: null,
+        publish_date_precision: "none",
+      }).success,
+    ).toBe(true);
   });
 });
 

@@ -46,9 +46,21 @@ export async function PATCH(request: Request, context: RouteContext) {
   const parsed = await parseJsonBody(request, updateEntrySchema);
   if (!parsed.ok) return parsed.response;
 
-  const ok = await updateEntry(viewer.id, id, parsed.data);
-  if (!ok) {
-    return errorResponse(500, "Update failed");
+  const result = await updateEntry(viewer.id, id, parsed.data);
+  if (!result.ok) {
+    switch (result.kind) {
+      case "completed_checklist":
+        return errorResponse(
+          409,
+          "Tier changes are blocked after checklist work is completed",
+        );
+      case "not_found":
+        return errorResponse(404, "Entry not found");
+      case "invalid_reference":
+        return errorResponse(400, "Entry update references invalid data");
+      case "database":
+        return errorResponse(500, "Update failed");
+    }
   }
 
   const updated = await getEntryById(viewer, id);
