@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
-import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchNotification } from "@/lib/notifications/data";
+import { authorizeCronRequest } from "@/lib/cron/authorization";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,10 +16,10 @@ export const dynamic = "force-dynamic";
  * notifications table so a single recipient doesn't get pinged twice within
  * 24 hours for the same entry.
  */
-export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
-    return errorResponse(403, "Forbidden");
+async function handle(request: Request) {
+  const authorized = await authorizeCronRequest(request);
+  if (!authorized.ok) {
+    return errorResponse(401, authorized.error);
   }
 
   const supabase = getSupabaseAdmin();
@@ -134,3 +134,5 @@ export async function POST(request: Request) {
     notificationsSkipped,
   });
 }
+
+export { handle as GET, handle as POST };

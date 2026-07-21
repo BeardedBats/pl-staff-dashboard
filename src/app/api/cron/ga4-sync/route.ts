@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
-import { env } from "@/lib/env";
-import { getCurrentUser } from "@/lib/auth/current-user";
-import { isAdminPlusForScope } from "@/lib/auth/authorization";
+import { authorizeCronRequest } from "@/lib/cron/authorization";
 import { syncGa4 } from "@/lib/analytics/ga4";
 
 export const runtime = "nodejs";
@@ -18,8 +16,8 @@ export const maxDuration = 60;
  * admin+ session. If GA4 isn't configured yet, returns a soft success so
  * the Vercel cron log stays clean.
  */
-export async function POST(request: Request) {
-  const authorized = await authorize(request);
+async function handle(request: Request) {
+  const authorized = await authorizeCronRequest(request);
   if (!authorized.ok) {
     return errorResponse(401, authorized.error);
   }
@@ -44,16 +42,4 @@ export async function POST(request: Request) {
   });
 }
 
-async function authorize(
-  request: Request,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader === `Bearer ${env.CRON_SECRET}`) {
-    return { ok: true };
-  }
-  const viewer = await getCurrentUser();
-  if (viewer && isAdminPlusForScope(viewer, "both")) {
-    return { ok: true };
-  }
-  return { ok: false, error: "Not authorized" };
-}
+export { handle as GET, handle as POST };

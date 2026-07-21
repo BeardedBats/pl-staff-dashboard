@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
-import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { authorizeCronRequest } from "@/lib/cron/authorization";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,10 +22,10 @@ type SeasonModeRow = {
  * window contains today becomes active. Modes without auto-switch dates
  * are left alone — manual selections are preserved.
  */
-export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
-    return errorResponse(403, "Forbidden");
+async function handle(request: Request) {
+  const authorized = await authorizeCronRequest(request);
+  if (!authorized.ok) {
+    return errorResponse(401, authorized.error);
   }
 
   const supabase = getSupabaseAdmin();
@@ -89,3 +89,5 @@ export async function POST(request: Request) {
     activeMode: activeName,
   });
 }
+
+export { handle as GET, handle as POST };

@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
-import { env } from "@/lib/env";
-import { getCurrentUser } from "@/lib/auth/current-user";
-import { isAdminPlusForScope } from "@/lib/auth/authorization";
+import { authorizeCronRequest } from "@/lib/cron/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchNotificationBulk } from "@/lib/notifications/data";
 
@@ -20,8 +18,8 @@ export const dynamic = "force-dynamic";
  * we look for a prior `unclaimed_slot` notification for any user in the
  * last 24 hours; if one exists, we skip to avoid spamming.
  */
-export async function POST(request: Request) {
-  const authorized = await authorize(request);
+async function handle(request: Request) {
+  const authorized = await authorizeCronRequest(request);
   if (!authorized.ok) {
     return errorResponse(401, authorized.error);
   }
@@ -104,16 +102,4 @@ export async function POST(request: Request) {
   });
 }
 
-async function authorize(
-  request: Request,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader === `Bearer ${env.CRON_SECRET}`) {
-    return { ok: true };
-  }
-  const viewer = await getCurrentUser();
-  if (viewer && isAdminPlusForScope(viewer, "both")) {
-    return { ok: true };
-  }
-  return { ok: false, error: "Not authorized" };
-}
+export { handle as GET, handle as POST };
