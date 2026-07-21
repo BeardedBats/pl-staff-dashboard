@@ -7,7 +7,8 @@ import {
   setAuthCookies,
   verifyRefreshToken,
 } from "@/lib/auth/session";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { rotateRefreshSession } from "@/lib/auth/session-lifecycle";
+import { sessionRepository } from "@/lib/auth/session-repository";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +18,8 @@ export const dynamic = "force-dynamic";
  * Steps:
  *   1. Read the refresh cookie. If missing, 401.
  *   2. Verify the JWT signature. If invalid, 401 and clear cookies.
- *   3. Look up the sessions row by hashed refresh token. If not found, 401.
- *   4. Issue a new token pair, update the session row in-place, set cookies.
- *
- * The in-place update means an attacker who steals a refresh token can only
- * use it once — after rotation, the original hash no longer matches.
+ *   3. Compare-and-swap the stored refresh hash to a unique new token pair.
+ *   4. Revoke the token family if a concurrent/replayed credential loses.
  */
 export async function POST() {
   const refreshToken = await readRefreshTokenFromCookies();
@@ -35,42 +33,33 @@ export async function POST() {
     return NextResponse.json({ error: "Invalid refresh token" }, { status: 401 });
   }
 
-  const supabase = getSupabaseAdmin();
   const refreshHash = hashToken(refreshToken);
 
-  const { data: session, error } = await supabase
-    .from("sessions")
-    .select("id, user_id, expires_at")
-    .eq("id", payload.sid)
-    .eq("refresh_token_hash", refreshHash)
-    .maybeSingle();
+  const result = await rotateRefreshSession({
+    repository: sessionRepository,
+    sessionId: payload.sid,
+    userId: payload.sub,
+    refreshTokenHash: refreshHash,
+    now: new Date(),
+    issueNext: () => {
+      const pair = createTokenPair(payload.sub, payload.sid);
+      return {
+        pair,
+        accessTokenHash: pair.accessTokenHash,
+        refreshTokenHash: pair.refreshTokenHash,
+        refreshExpiresAt: pair.refreshExpiresAt,
+      };
+    },
+  });
 
-  if (error || !session) {
+  if (result.status !== "rotated") {
     await clearAuthCookies();
-    return NextResponse.json({ error: "Session not found" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Refresh credential is no longer valid" },
+      { status: 401 },
+    );
   }
 
-  if (new Date(session.expires_at as string).getTime() < Date.now()) {
-    await supabase.from("sessions").delete().eq("id", payload.sid);
-    await clearAuthCookies();
-    return NextResponse.json({ error: "Session expired" }, { status: 401 });
-  }
-
-  const pair = createTokenPair(payload.sub, payload.sid);
-
-  const { error: updateError } = await supabase
-    .from("sessions")
-    .update({
-      token_hash: pair.accessTokenHash,
-      refresh_token_hash: pair.refreshTokenHash,
-      expires_at: pair.refreshExpiresAt.toISOString(),
-    })
-    .eq("id", payload.sid);
-
-  if (updateError) {
-    return NextResponse.json({ error: "Failed to rotate tokens" }, { status: 500 });
-  }
-
-  await setAuthCookies(pair);
+  await setAuthCookies(result.pair);
   return NextResponse.json({ ok: true });
 }

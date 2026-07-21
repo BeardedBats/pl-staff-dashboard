@@ -1,5 +1,6 @@
 import "server-only";
 
+import crypto from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   validateWpAnywhere,
@@ -85,40 +86,25 @@ export async function performLogin(
     };
   }
 
-  // Create a session row.
-  const pair = createTokenPair(dbUser.id, "00000000-0000-0000-0000-000000000000"); // tmp — rotated below
-  const { data: session, error: sessionError } = await supabase
+  // Generate the session ID first so no placeholder token family is ever
+  // visible in the database between insert and update.
+  const sessionId = crypto.randomUUID();
+  const pair = createTokenPair(dbUser.id, sessionId);
+  const { error: sessionError } = await supabase
     .from("sessions")
     .insert({
+      id: sessionId,
       user_id: dbUser.id,
-      token_hash: pair.accessTokenHash, // placeholder, rotated right after
-      refresh_token_hash: pair.refreshTokenHash, // placeholder, rotated right after
+      token_hash: pair.accessTokenHash,
+      refresh_token_hash: pair.refreshTokenHash,
       expires_at: pair.refreshExpiresAt.toISOString(),
-    })
-    .select("id")
-    .single();
+    });
 
-  if (sessionError || !session) {
+  if (sessionError) {
     return { ok: false, status: 500, error: "Failed to create session." };
   }
 
-  // Now that we have the real session ID, re-sign with `sid` baked in.
-  const finalPair = createTokenPair(dbUser.id, session.id as string);
-
-  const { error: updateError } = await supabase
-    .from("sessions")
-    .update({
-      token_hash: finalPair.accessTokenHash,
-      refresh_token_hash: finalPair.refreshTokenHash,
-      expires_at: finalPair.refreshExpiresAt.toISOString(),
-    })
-    .eq("id", session.id as string);
-
-  if (updateError) {
-    return { ok: false, status: 500, error: "Failed to finalize session." };
-  }
-
-  await setAuthCookies(finalPair);
+  await setAuthCookies(pair);
 
   return {
     ok: true,

@@ -3,9 +3,12 @@ import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   readAccessTokenFromCookies,
+  hashToken,
   verifyAccessToken,
   type SessionTokenPayload,
 } from "@/lib/auth/session";
+import { isCurrentAccessSession } from "@/lib/auth/session-lifecycle";
+import { sessionRepository } from "@/lib/auth/session-repository";
 
 export type AppRole =
   | "writer"
@@ -52,13 +55,20 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const payload = verifyAccessToken(accessToken);
   if (!payload || !payload.sub || !payload.sid) return null;
 
+  const current = await isCurrentAccessSession(sessionRepository, {
+    sessionId: payload.sid,
+    userId: payload.sub,
+    accessTokenHash: hashToken(accessToken),
+    now: new Date(),
+  });
+  if (!current) return null;
+
   return resolveUserFromPayload(payload);
 }
 
 /**
  * Load the full CurrentUser record from the database for a verified payload.
- * Exposed so `/api/auth/refresh` can reuse it after validating the refresh
- * token.
+ * Callers must validate the token and live session before invoking it.
  */
 export async function resolveUserFromPayload(
   payload: SessionTokenPayload,

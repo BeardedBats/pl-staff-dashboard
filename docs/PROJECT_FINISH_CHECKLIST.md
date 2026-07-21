@@ -4,13 +4,13 @@ Last updated: 2026-07-21
 
 ## Recovery state
 
-- Current phase: Phase 0 — Preserve, synchronize, and establish the truth
-- Current action: P0.9 — Inspect live production and preview applications
+- Current phase: Phase 1 — Security, correctness, and data integrity
+- Current action: P1.1 — Repair token rotation and session lifecycle
 - Branch: `codex/production-readiness`
-- HEAD: `a2af3ef64912c0b0064e5129b3486cf1d67ccf3e`
-- Upstream baseline: `origin/main` at the same commit after `git fetch --prune origin`
-- Deployment: production is healthy at `a2af3ef`; GitHub deployment `5143781090` completed successfully on 2026-06-21. A separate unmerged documentation PR has a 2026-07-21 preview and is excluded from this project baseline.
-- Known blockers: none
+- HEAD: `ce1572bf851dd7e61878361271c731d3fa5e506a`
+- Upstream baseline: `origin/main` at the same merge commit after PR #3.
+- Deployment: production deployment `5539923582` completed successfully from `ce1572b` on 2026-07-21. A separate unmerged documentation PR has a preview and is excluded from this project baseline.
+- Known blockers: Vercel project-management access is unavailable; Supabase management CLI access is unavailable; no safe dashboard test-user session is available for live role navigation. These do not block local security implementation and are deferred until their dependent live gates.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -22,18 +22,18 @@ Last updated: 2026-07-21
 - [x] P0.4 Create an appropriate `codex/` working branch and establish checkpoint practices.
 - [x] P0.5 Inventory application routes, APIs, database migrations, background jobs, cron jobs, roles, permissions, integrations, and deployments.
 - [x] P0.6 Inventory required environment variables and secret locations without displaying secret values.
-- [ ] P0.7 Identify plaintext or exposed credentials, rotate them when service access permits, move them into managed secret storage, and prevent recurrence. — IN PROGRESS
+- [ ] P0.7 Identify plaintext or exposed credentials, rotate them when service access permits, move them into managed secret storage, and prevent recurrence. — BLOCKED: Vercel/Supabase management access is unavailable, so rotation cannot be completed without risking production outage. Plaintext files remain untouched and values have not been emitted.
 - [x] P0.8 Install dependencies reproducibly and capture baseline lint, type-check, build, audit, and runtime results.
-- [ ] P0.9 Inspect the live production and preview applications, including role-specific navigation and API behavior. — IN PROGRESS
-- [ ] P0.10 Inspect the live database, RLS policies, storage buckets, Vercel settings, cron configuration, and connected service state when credentials permit. — IN PROGRESS
+- [ ] P0.9 Inspect the live production and preview applications, including role-specific navigation and API behavior. — BLOCKED: public/login surfaces are verified, but there is no safe non-mutating dashboard test session for live role navigation; preview access is Vercel-protected.
+- [x] P0.10 Inspect the live database, RLS policies, storage buckets, Vercel settings, cron configuration, and connected service state when credentials permit.
 - [x] P0.11 Create the durable checklist with evidence from the verified baseline.
-- [ ] P0.12 Produce a prioritized defect and risk inventory mapped to later phase items, then continue directly into Phase 1.
+- [x] P0.12 Produce a prioritized defect and risk inventory mapped to later phase items, then continue directly into Phase 1.
 
 Gate: the user's work is preserved, local and remote history are understood, secrets are not exposed, the baseline is reproducible, and every later action is grounded in actual evidence.
 
 ## Phase 1 — Security, correctness, and data integrity
 
-- [ ] P1.1 Repair refresh-token rotation, replay protection, concurrent refresh behavior, revocation, expiry, logout, and session invalidation.
+- [ ] P1.1 Repair refresh-token rotation, replay protection, concurrent refresh behavior, revocation, expiry, logout, and session invalidation. — IN PROGRESS
 - [ ] P1.2 Ensure access-token requests validate the current server-side session state where required.
 - [ ] P1.3 Audit every API route and server action against an explicit role-and-resource authorization matrix.
 - [ ] P1.4 Fix graphics, editorial, analytics, administration, and synchronization authorization gaps.
@@ -192,11 +192,45 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - P0.6: required key names were inventoried from `.env.example`, `.env.local`, source references, and Git ignore rules without reading or emitting values. `.env.local` is ignored; only `.env.example` is tracked. Git history contains no tracked secret-like path beyond `.env.example`.
 - P0.8: `npm ci`, `npm run lint`, `npx tsc --noEmit`, and `npm run build` passed. `npm audit --omit=dev` failed with 9 production vulnerabilities (3 high, 6 moderate); full install reported 12 total (5 high). This is a captured red baseline, not a clean gate.
 - P0.9 partial: production `/` redirects to `/login`; the login form renders and requires WordPress application credentials. The standalone SEO title tool was exercised through generation and scoring. Its verified 100-point rubric is keyword 25, pixel/length 20, specificity 15, list framing 10, CTR phrases 15, and format/readability 15. Generated templates can duplicate phrases and must not be copied blindly.
-- P0.10 partial: server-role read-only probes confirmed all 29 expected tables are reachable and populated according to current use. The live `graphics` bucket is `public: true`; a no-credential object read returned HTTP 200. Migration `0008` was therefore not reflected in live state. Pitcher List WordPress identity, types, categories, and post reads returned HTTP 200; the configured account can edit, publish, and upload. Yoast exposes rendered JSON and focus-keyword/title/meta-description keys. QB WordPress is not configured locally. Vercel project-management access is unavailable: the connected account returned no teams and the local CLI token is invalid.
+- P0.10: server-role read-only probes confirmed all 29 expected tables are reachable and populated according to current use. Initial inspection found the live `graphics` bucket at `public: true`; a no-credential object read returned HTTP 200, proving migration drift. Pitcher List WordPress identity, types, categories, and post reads returned HTTP 200; the configured account can edit, publish, and upload. Yoast exposes rendered JSON and focus-keyword/title/meta-description keys. QB WordPress is not configured locally. Vercel project-management access is unavailable: the connected account returned no teams and the local CLI token is invalid.
 
 ### 2026-07-21 — Private graphics hotfix in progress
 
 - Source audit found `loadFullGraphicRequests` returned a persisted, expiring signed URL while other graphics reads generated fresh signed URLs.
 - `src/lib/entries/queries.ts` now batch-signs `storage_path` values for entry details.
 - `supabase/migrations/0012_reassert_private_graphics_bucket.sql` idempotently sets the exact `graphics` bucket to private and includes the one-line rollback.
-- Post-change `npm run lint`, `npx tsc --noEmit`, and `npm run build` all pass. Live state has not been changed yet; preview/deployment verification comes first.
+- Post-change `npm run lint`, `npx tsc --noEmit`, and `npm run build` all passed before the live change; preview, deployment, and final live verification are recorded below.
+
+### 2026-07-21 — Private graphics hotfix verified
+
+- Commit `2ba3e28` passed local lint, TypeScript, and production build; PR #3's Vercel preview build passed; PR #3 merged as `ce1572b`; production deployment `5539923582` completed successfully.
+- The bucket flip initially exposed a CDN propagation edge case and rolled back automatically. A second verified flip set the live bucket private while preserving signed reads.
+- The sole object was copied to a new private path, byte-hash verified, signed-read verified, and repointed in the database. The old origin object was deleted through the Storage API. Recovery briefly used the authenticated CDN copy after the deletion probe observed stale cache.
+- Final live gate: bucket `public: false`; current public object request HTTP 400; signed request HTTP 200; 1 database reference; 1 origin object; all references present; 0 orphan objects.
+- Supabase documents that deletion invalidates CDN entries with propagation delay. The deleted old path is no longer stored in application state, so its regional cache eviction cannot be re-probed; this remains an explicitly tracked residual until the broader P1.13 storage review.
+
+## Phase 0 prioritized defect and risk inventory
+
+1. **High — session lifecycle (P1.1, P1.2, P1.16):** refresh rotation reads then unconditionally updates, so concurrent reuse can succeed; access-token resolution does not verify the sessions row or token hash; logout relies on a valid access token and can leave a refresh session alive.
+2. **High — graphics authorization (P1.3, P1.4, P1.13, P1.16):** authenticated users can list/fetch all requests; upload and submit paths verify existence/state but not role, assignment, entry membership, or ownership; several mutations lack resource authorization.
+3. **High — scheduled jobs do not match Vercel (P1.12, P2.6):** all eight configured cron handlers export POST while Vercel invokes configured cron paths with GET, so scheduled execution receives 405.
+4. **High — dependency vulnerabilities (P1.14):** production audit reports 3 high and 6 moderate vulnerabilities across Next.js, Discord/Undici/WebSocket, PostCSS, Resend/Svix/UUID chains.
+5. **High — no automated proof (P2.1–P2.9):** there are no meaningful test scripts, no test files discovered, and no GitHub Actions workflows; only lint, TypeScript, build, and Vercel deployment checks exist.
+6. **High — Raptive architecture is not production-safe (P2.7, P6.1–P6.15):** the route buffers the entire workbook in a 60-second request, parses only `SheetNames[0]`, deletes a whole date range before non-transactional chunk inserts, and has no durable job/checkpoint/restart model.
+7. **Medium — profile overrides are inconsistent (P1.11):** scheduled profile sync honors `display_name_override`, but login, manual import, and manual resync overwrite the name without honoring the flag.
+8. **Medium — database typing is placeholder-only (P1.7):** every table, view, function, enum, and composite resolves through `any`, so current TypeScript success does not prove schema compatibility.
+9. **Medium — bulk work is not atomic (P1.9):** bulk create fires up to 25 independent client requests; bulk update writes entries and audit rows in separate operations, allowing partial audit/data state.
+10. **Medium — environment drift and access gaps (P0.7, P0.9, P1.13, P2.11):** committed migrations did not guarantee live bucket state, current RLS catalog state cannot be queried with available access, Vercel settings/env cannot be audited through the current token, and plaintext outer-workspace credential copies cannot be safely rotated yet.
+
+Phase 0 implementation gate: **PASS WITH ACCESS-GATED DEFERMENTS.** Source, Git, deployment, environment names, database surface, WordPress capability, storage behavior, and reproducible build baseline are established. P0.7 and the role-specific part of P0.9 stay visibly blocked and must close before the final Phase 7 gate.
+
+### 2026-07-21 — P1.1 session lifecycle implementation
+
+- Added unique JWT IDs and pinned HS256 verification so repeated issuance for one user/session in the same second still creates distinct credentials.
+- Added a session repository with an atomic refresh-hash compare-and-swap, token-family revocation on simultaneous or later replay, live access-hash/session validation, and scoped revocation.
+- Login now inserts one final token family under a pre-generated session ID; no placeholder session/hash window remains.
+- Logout checks both signed cookies, so an expired/missing access token cannot leave a valid refresh session behind.
+- Added Vitest 4.1.10 and 5 tests covering unique issuance, deterministic concurrent reuse, later replay, expiry, and access revocation.
+- A temporary-row live Supabase probe produced exactly 1 compare-and-swap winner and 1 loser, with no errors; the row was deleted in `finally`.
+- Current local gate: 2 test files / 5 tests pass; lint passes; production build passes; TypeScript passes when run after the build. A parallel build/type-check attempt caused a transient `.next/types/routes.js` generation collision and is not treated as a product failure.
+- Remaining before P1.1/P1.2 completion: preview, production deployment, and synthetic-session live HTTP probes for access invalidation, concurrent refresh, and refresh-backed logout.
