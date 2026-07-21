@@ -16,7 +16,7 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-surface-3/60 dark:bg-surface-3/60",
+        "plpd-state-frame animate-pulse rounded-sm border border-border-row",
         className,
       )}
       {...props}

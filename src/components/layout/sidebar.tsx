@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { NavigationItem, NavigationList } from "@/components/ui/navigation";
 import { Separator } from "@/components/ui/separator";
 import { NAV_ITEMS, isNavVisible, type NavItem } from "./nav-config";
 import type { AppRole } from "@/lib/auth/current-user";
@@ -68,7 +69,7 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
 
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto py-3">
-        <ul className="space-y-0.5 px-2">
+        <NavigationList className="px-2">
           {visibleItems.map((item) => (
             <li key={item.href}>
               <NavLink
@@ -78,7 +79,7 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
               />
             </li>
           ))}
-        </ul>
+        </NavigationList>
       </nav>
 
       <Separator />
@@ -118,21 +119,16 @@ function NavLink({
   // specific nav items ("/content" → "nav-content", "/my-tasks" → "nav-my-tasks").
   const tourId = `nav-${item.href.replace(/^\//, "")}`;
   return (
-    <Link
-      href={item.href}
-      data-tour={tourId}
-      title={collapsed ? item.label : undefined}
-      className={cn(
-        "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-150",
-        isActive
-          ? "plpd-nav-active text-white"
-          : "plpd-hover-surface text-text-nav hover:text-text-cell",
-        collapsed && "justify-center px-2",
-      )}
-    >
-      <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-white")} />
-      {!collapsed && <span className="truncate">{item.label}</span>}
-    </Link>
+    <NavigationItem active={isActive} compact={collapsed} asChild>
+      <Link
+        href={item.href}
+        data-tour={tourId}
+        title={collapsed ? item.label : undefined}
+      >
+        <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-white")} />
+        {!collapsed && <span className="truncate">{item.label}</span>}
+      </Link>
+    </NavigationItem>
   );
 }
 

@@ -22,17 +22,18 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
+      role="status"
       className={cn(
-        "flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 p-10 text-center",
+        "plpd-state-frame flex min-h-[118px] flex-col items-center justify-center rounded-plpd-panel border border-border-table p-[18px] text-center",
         className,
       )}
     >
       {icon ? (
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-surface-3 text-text-zero">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-border-tab bg-surface-3 text-text-zero">
           {icon}
         </div>
       ) : null}
-      <h3 className="text-sm font-semibold text-text-cell">{title}</h3>
+      <h3 className="text-plpd-body font-bold text-text-cell">{title}</h3>
       {description ? (
         <p className="mt-1 max-w-md text-sm text-text-team">{description}</p>
       ) : null}

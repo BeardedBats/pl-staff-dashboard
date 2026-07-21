@@ -3,9 +3,16 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Menu, User as UserIcon, X as XIcon } from "lucide-react";
+import { LogOut, Menu, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { NavigationItem, NavigationList } from "@/components/ui/navigation";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -70,19 +77,57 @@ export function Header({
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-tab bg-card/75 px-6">
       {/* Left — hamburger on mobile, brand echo on desktop */}
       <div className="flex items-center gap-2 text-sm">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={() => setMobileNavOpen((o) => !o)}
-          aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
-        >
-          {mobileNavOpen ? (
-            <XIcon className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
-        </Button>
+        <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-4 md:hidden">
+            <SheetTitle className="sr-only">Application navigation</SheetTitle>
+            <span className="mb-4 font-data text-sm font-bold uppercase tracking-[0.3px] text-cyan">
+              Pitcher List
+            </span>
+            <nav aria-label="Application">
+              <NavigationList>
+                {NAV_ITEMS.filter((item) =>
+                  isNavVisible(item, userRoles as AppRole[]),
+                ).map((item) => {
+                  const Icon = item.icon;
+                  const active =
+                    pathname === item.href ||
+                    (item.href !== "/home" &&
+                      pathname.startsWith(`${item.href}/`));
+                  return (
+                    <li key={item.href}>
+                      <NavigationItem active={active} asChild>
+                        <Link href={item.href}>
+                          <Icon
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              active && "text-white",
+                            )}
+                          />
+                          <span>{item.label}</span>
+                        </Link>
+                      </NavigationItem>
+                    </li>
+                  );
+                })}
+              </NavigationList>
+            </nav>
+            {userDisplayName ? (
+              <div className="mt-auto border-t border-border pt-4 text-xs text-text-zero">
+                {userDisplayName}
+              </div>
+            ) : null}
+          </SheetContent>
+        </Sheet>
         <span className="hidden font-mono text-[10px] font-semibold uppercase tracking-wider text-text-zero md:inline">
           Staff Dashboard
         </span>
@@ -143,64 +188,6 @@ export function Header({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      {/* Mobile navigation slide-over */}
-      {mobileNavOpen ? (
-        <div className="fixed inset-0 z-50 md:hidden">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-background/60 backdrop-blur-sm"
-            onClick={() => setMobileNavOpen(false)}
-          />
-          {/* Drawer */}
-          <nav className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card p-4 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="font-data text-sm font-bold uppercase tracking-[0.3px] text-cyan">
-                Pitcher List
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileNavOpen(false)}
-                aria-label="Close menu"
-              >
-                <XIcon className="h-4 w-4" />
-              </Button>
-            </div>
-            <ul className="space-y-1">
-              {NAV_ITEMS.filter((item) =>
-                isNavVisible(item, userRoles as AppRole[]),
-              ).map((item) => {
-                const Icon = item.icon;
-                const active =
-                  pathname === item.href ||
-                  (item.href !== "/home" && pathname.startsWith(`${item.href}/`));
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-colors",
-                        active
-                          ? "plpd-nav-active text-white"
-                          : "plpd-hover-surface text-text-nav hover:text-text-cell",
-                      )}
-                    >
-                      <Icon className={cn("h-4 w-4 shrink-0", active && "text-white")} />
-                      <span>{item.label}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-            {userDisplayName ? (
-              <div className="mt-6 border-t border-border pt-4 text-xs text-text-zero">
-                {userDisplayName}
-              </div>
-            ) : null}
-          </nav>
-        </div>
-      ) : null}
     </header>
   );
 }

@@ -3,6 +3,8 @@
 `npm run test:quality` builds the application, starts a production-mode Next.js
 server against isolated local Supabase fixtures, and runs the versioned quality
 gate in `quality-budgets.json`. It never targets production or external services.
+The local default is port 3101. If another application already owns that port,
+set `QUALITY_TEST_PORT` to a free local port; CI intentionally keeps the default.
 
 ## What is enforced
 
