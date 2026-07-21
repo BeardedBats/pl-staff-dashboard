@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { TablesUpdate } from "@/types/database";
 import type { AppSite } from "@/lib/auth/current-user";
 import { normalizeEmail } from "@/lib/identity/normalization";
+import { buildWpProfileUpdate } from "@/lib/users/wp-profile";
 
 // --------------------------------------------------------------------------
 // Role assignment shape (used by both the dedicated /roles endpoint and the
@@ -287,7 +288,7 @@ export async function importWpUser(
 
   const { data: emailMatch } = await supabase
     .from("users")
-    .select("id, wp_site")
+    .select("id, wp_site, display_name, display_name_override")
     .eq("email", normalizedEmail)
     .maybeSingle();
 
@@ -295,7 +296,7 @@ export async function importWpUser(
     ? { data: null }
     : await supabase
         .from("users")
-        .select("id, wp_site")
+        .select("id, wp_site, display_name, display_name_override")
         .eq("wp_user_id", wpUser.id)
         .in("wp_site", [site, "both"])
         .maybeSingle();
@@ -306,18 +307,27 @@ export async function importWpUser(
     const currentSite = existing.wp_site as AppSite;
     const nextSite: AppSite =
       currentSite === site || currentSite === "both" ? currentSite : "both";
+    const profileUpdate = buildWpProfileUpdate(
+      {
+        display_name: existing.display_name as string,
+        display_name_override: Boolean(existing.display_name_override),
+      },
+      wpUser,
+      new Date().toISOString(),
+    );
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("users")
       .update({
         wp_site: nextSite,
         email: normalizedEmail,
-        display_name: wpUser.name,
-        avatar_url: wpUser.avatar_url,
-        bio: wpUser.description || null,
-        last_wp_sync: new Date().toISOString(),
+        ...profileUpdate,
       })
       .eq("id", existing.id as string);
+
+    if (updateError) {
+      return { ok: false, error: "Failed to update user row" };
+    }
 
     return { ok: true, userId: existing.id as string, created: false };
   }
@@ -366,7 +376,7 @@ export async function resyncUserFromWp(
 
   const { data: user } = await supabase
     .from("users")
-    .select("wp_user_id, wp_site")
+    .select("wp_user_id, wp_site, display_name, display_name_override")
     .eq("id", userId)
     .maybeSingle();
 
@@ -381,14 +391,17 @@ export async function resyncUserFromWp(
   }
 
   const wp = wpResult.value;
+  const profileUpdate = buildWpProfileUpdate(
+    {
+      display_name: user.display_name as string,
+      display_name_override: Boolean(user.display_name_override),
+    },
+    wp,
+    new Date().toISOString(),
+  );
   const { error } = await supabase
     .from("users")
-    .update({
-      display_name: wp.name,
-      avatar_url: wp.avatar_url,
-      bio: wp.description || null,
-      last_wp_sync: new Date().toISOString(),
-    })
+    .update(profileUpdate)
     .eq("id", userId);
 
   if (error) return { ok: false, error: "DB update failed" };

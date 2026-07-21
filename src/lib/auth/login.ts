@@ -3,6 +3,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { normalizeEmail } from "@/lib/identity/normalization";
+import { buildWpProfileUpdate } from "@/lib/users/wp-profile";
 import {
   validateWpAnywhere,
   type WpSiteKey,
@@ -139,7 +140,9 @@ async function upsertUserFromWp(
   //    we match on email as the stable identifier.
   const { data: emailMatch } = await supabase
     .from("users")
-    .select("id, wp_site, onboarding_completed, display_name, email")
+    .select(
+      "id, wp_site, onboarding_completed, display_name, display_name_override, email",
+    )
     .eq("email", normalizedEmail)
     .maybeSingle();
 
@@ -147,7 +150,9 @@ async function upsertUserFromWp(
     ? { data: null }
     : await supabase
         .from("users")
-        .select("id, wp_site, onboarding_completed, display_name, email")
+        .select(
+          "id, wp_site, onboarding_completed, display_name, display_name_override, email",
+        )
         .eq("wp_user_id", wp.id)
         .in("wp_site", [site, "both"])
         .maybeSingle();
@@ -160,16 +165,21 @@ async function upsertUserFromWp(
     const currentSite = existing.wp_site as WpSiteKey | "both";
     const nextSite: WpSiteKey | "both" =
       currentSite === site || currentSite === "both" ? currentSite : "both";
+    const profileUpdate = buildWpProfileUpdate(
+      {
+        display_name: existing.display_name as string,
+        display_name_override: Boolean(existing.display_name_override),
+      },
+      wp,
+      new Date().toISOString(),
+    );
 
     const { data: updated, error } = await supabase
       .from("users")
       .update({
         wp_site: nextSite,
         email: normalizedEmail,
-        display_name: wp.name,
-        avatar_url: wp.avatar_url,
-        bio: wp.description || null,
-        last_wp_sync: new Date().toISOString(),
+        ...profileUpdate,
       })
       .eq("id", existing.id as string)
       .select("id, email, display_name, wp_site, onboarding_completed")
