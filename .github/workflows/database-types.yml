@@ -116,6 +116,16 @@ jobs:
         run: npm run db:start
       - name: Run anonymous and role-based journeys
         run: npm run test:browser
+      - name: Enforce performance and accessibility baselines
+        run: npm run test:quality
+      - name: Upload quality baseline evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-baseline
+          path: test-results/quality/
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload browser failure evidence
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7

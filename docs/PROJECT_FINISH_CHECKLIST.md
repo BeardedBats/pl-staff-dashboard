@@ -4,10 +4,10 @@ Last updated: 2026-07-21
 
 ## Recovery state
 
-- Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.12 — Establish measurable performance and accessibility baselines.
-- Branch: `codex/production-readiness-p2-11`
-- Stack base: `2931faf` (green draft PR #27, based on green draft PRs #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current phase: Phase 3 — PLPD design-system foundation
+- Current action: P3.1 — Convert the guide's canonical visual language into centralized application tokens.
+- Branch: `codex/production-readiness-p2-12`
+- Stack base: `75817ed` (green draft PR #28, based on green draft PRs #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -67,7 +67,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 - [x] P2.9 Add GitHub Actions for install, lint, type checking, tests, build, migration checks, dependency checks, and browser tests where appropriate.
 - [x] P2.10 Add structured logs, safe error reporting, cron freshness, integration health, import-job visibility, and actionable alerts.
 - [x] P2.11 Add backup, migration, rollback, incident, secret-rotation, and deployment runbooks.
-- [ ] P2.12 Establish measurable performance and accessibility baselines.
+- [x] P2.12 Establish measurable performance and accessibility baselines.
 
 Gate: a clean checkout can prove correctness in CI, and production failures are detectable and diagnosable without reading raw infrastructure logs.
 
@@ -460,7 +460,16 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Rehearsed Supabase's split logical backup and atomic restore against disposable local database `pl_restore_drill_p211`. The data dump excludes platform-managed vector tables, and the restore uses one stop-on-error transaction plus `SET session_replication_role = replica`, resolving the circular graphics/comment foreign-key warning. The restored database matched all 33 public tables and 23 public functions, retained a private `graphics` bucket, and passed all 306 pgTAP assertions. Only Supabase-managed `auth.schema_migrations` and `storage.migrations` histories were intentionally not copied. The disposable database was removed after verification; ignored SHA-256-addressed dump artifacts remain local.
 - Added a contract test and CI runbook verifier covering all six documents, all 15 `.env.example` keys, the migration chain, and required backup/migration/storage/Vercel/test commands. GitHub artifact uploads now use `actions/upload-artifact@v7`, closing the Node 20 runner warning from P2.10.
 - Final local gate: runbook contract; ESLint; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 53 Vitest files / 250 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; and all eight Chromium journeys pass. Browser teardown left no reported failures.
-- Clean GitHub run [29868899611](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29868899611) independently passed Application (including the runbook contract), Database, Dependencies, and all eight Browser journeys; Vercel passed and draft PR #28 is merge-clean.
+- Exact-head GitHub run [29871264905](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29871264905) independently passed Application (including the runbook contract), Database, Dependencies, and all eight Browser journeys; Vercel passed and draft PR #28 is merge-clean.
+
+### 2026-07-21 — P2.12 measurable quality-baseline gate
+
+- Added a versioned production-build quality lane with three representative performance profiles, eight axe accessibility scans across anonymous and role-specific pages in both dark and light themes, and a keyboard-order/visible-focus journey. The lane runs locally and in GitHub Actions, retains its machine-readable evidence for 14 days, and does not require production credentials.
+- The enforced lab budgets distinguish measured synthetic checks from field data: `fieldDataClaimed` is false, FCP is capped at 1,800 ms, LCP at 2,500 ms, CLS at 0.1, and long-task-derived TBT at 300 ms. Route-specific encoded-byte, JavaScript-byte, request-count, and DOM-size ceilings detect application growth without claiming real-user Core Web Vitals.
+- Latest production-build measurements: mobile login FCP/LCP 52 ms, CLS 0, TBT 0, 267,371 encoded bytes, 159,319 JavaScript bytes, 14 requests, and 62 DOM nodes; writer content FCP/LCP 144 ms, CLS 0.0596, TBT 0, 405,321 encoded bytes, 277,065 JavaScript bytes, 45 requests, and 440 DOM nodes; admin settings FCP/LCP 184 ms, CLS 0, TBT 0, 388,854 encoded bytes, 261,476 JavaScript bytes, 42 requests, and 310 DOM nodes.
+- The initial scans found real unnamed filter controls, invalid description-list children, dark-theme muted-text contrast failures, and light-theme brand/muted semantic contrast failures. The UI now supplies accessible names, valid `dt`/`dd` structure, and contrast-safe semantic foregrounds while preserving the canonical decorative tokens. All 12 quality checks pass with no rule exclusions, snapshots, or suppressions.
+- An independent Chromium inspection verified the login page has meaningful content, labeled inputs, a visible primary action, no framework error overlay, and the expected anonymous `/home` redirect. Automated axe checks are explicitly treated as a regression floor; keyboard, screen-reader, zoom/reflow, and assistive-technology review remain part of later design-system and final acceptance work.
+- Final local gate: runbook contract; ESLint; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 54 Vitest files / 251 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all eight role/anonymous Chromium journeys; and all 12 production-quality checks pass.
 
 ## Phase 0 prioritized defect and risk inventory
 

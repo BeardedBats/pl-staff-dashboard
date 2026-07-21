@@ -31,6 +31,7 @@ npm run test:database
 npm run db:types:check
 npm run db:lint
 npm run test:browser
+npm run test:quality
 npm audit --audit-level=low
 ```
 

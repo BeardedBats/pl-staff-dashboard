@@ -21,6 +21,13 @@ const supabaseStartArguments = [
   "--exclude",
   "edge-runtime,gotrue,imgproxy,logflare,mailpit,realtime,storage-api,studio,supavisor,vector",
 ];
+const forwardedArguments = process.argv.slice(2);
+const productionMode = forwardedArguments.includes("--production");
+const nextArguments = forwardedArguments.filter(
+  (argument) => argument !== "--production",
+);
+const portIndex = nextArguments.indexOf("--port");
+const appPort = portIndex >= 0 ? nextArguments[portIndex + 1] : "3100";
 
 function supabaseIsRunning() {
   return spawnSync(
@@ -88,13 +95,26 @@ const environment = {
   GA4_CLIENT_ID: "",
   GA4_CLIENT_SECRET: "",
   GA4_PROPERTY_ID: "",
-  NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3100",
+  NEXT_PUBLIC_APP_URL: `http://127.0.0.1:${appPort}`,
   CRON_SECRET: "browser-test-cron-secret-at-least-16-characters",
 };
 
+if (productionMode) {
+  const build = spawnSync(process.execPath, [nextCli, "build"], {
+    cwd: process.cwd(),
+    env: environment,
+    stdio: "inherit",
+  });
+  if (build.error) throw build.error;
+  if (build.status !== 0) {
+    stopOwnedLocalStack();
+    throw new Error(`next build exited with ${build.status}`);
+  }
+}
+
 const server = spawn(
   process.execPath,
-  [nextCli, "dev", ...process.argv.slice(2)],
+  [nextCli, productionMode ? "start" : "dev", ...nextArguments],
   {
     cwd: process.cwd(),
     env: environment,

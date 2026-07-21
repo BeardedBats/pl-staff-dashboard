@@ -19,6 +19,7 @@
     "test:browser": "playwright test",
     "test:browser:ui": "playwright test --ui",
     "test:browser:server": "node scripts/start-browser-test-server.mjs",
+    "test:quality": "playwright test --config playwright.quality.config.ts",
     "db:start": "supabase start --exclude edge-runtime,gotrue,imgproxy,logflare,mailpit,realtime,storage-api,studio,supavisor,vector",
     "db:stop": "supabase stop",
     "db:lint": "supabase db lint --local --fail-on warning",
@@ -67,6 +68,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^7.0.0",

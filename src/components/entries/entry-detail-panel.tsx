@@ -719,7 +719,7 @@ function PipelineTab({
           <h4 className="mb-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
             Meta
           </h4>
-          <dl className="space-y-2 text-xs">
+          <dl className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-2 text-xs">
             <MetaRow
               icon={<Clock className="h-3 w-3" />}
               label="Publish"
@@ -752,23 +752,25 @@ function PipelineTab({
               })}
             />
             {entry.creator ? (
-              <div className="flex items-center justify-between gap-2 text-text-team">
-                <div className="flex items-center gap-1 text-text-zero">
+              <>
+                <dt className="flex items-center gap-1 text-text-zero">
                   <Pencil className="h-3 w-3" />
                   <span className="uppercase tracking-wider">Created by</span>
-                </div>
-                <Link
-                  href={`/staff/${entry.creator.id}`}
-                  className="flex items-center gap-1.5 text-text-team hover:text-cyan"
-                >
-                  <UserAvatar
-                    displayName={entry.creator.display_name}
-                    avatarUrl={entry.creator.avatar_url}
-                    size="xs"
-                  />
-                  {entry.creator.display_name}
-                </Link>
-              </div>
+                </dt>
+                <dd className="justify-self-end">
+                  <Link
+                    href={`/staff/${entry.creator.id}`}
+                    className="flex items-center gap-1.5 text-text-team hover:text-cyan"
+                  >
+                    <UserAvatar
+                      displayName={entry.creator.display_name}
+                      avatarUrl={entry.creator.avatar_url}
+                      size="xs"
+                    />
+                    {entry.creator.display_name}
+                  </Link>
+                </dd>
+              </>
             ) : null}
           </dl>
         </section>
@@ -1060,13 +1062,13 @@ function MetaRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 text-text-team">
-      <div className="flex items-center gap-1 text-text-zero">
+    <>
+      <dt className="flex items-center gap-1 text-text-zero">
         {icon}
         <span className="uppercase tracking-wider">{label}</span>
-      </div>
-      <span className="text-text-team">{value}</span>
-    </div>
+      </dt>
+      <dd className="justify-self-end text-text-team">{value}</dd>
+    </>
   );
 }
 

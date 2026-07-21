@@ -13,6 +13,7 @@ names. A test belongs in the narrowest lane that can prove the behavior.
 | Component | `*.component.test.tsx` | Vitest + jsdom + Testing Library | User-observable client-component behavior | `npm run test:component` |
 | Database | `supabase/tests/*.test.sql` | Supabase CLI + pgTAP | Schema, RLS, RPC, constraint, and migration behavior | `npm run test:database` |
 | Browser | `tests/browser/*.spec.ts` | Playwright + Chromium | Real navigation, rendering, and browser/API boundaries | `npm run test:browser` |
+| Quality baseline | `tests/quality/*.spec.ts` | Production Next server + Playwright + axe-core | Versioned lab performance budgets and automated WCAG A/AA checks | `npm run test:quality` |
 
 `npm test` runs every Vitest lane. `npm run test:coverage` runs those lanes with
 V8 coverage and writes text, JSON, and HTML reports under `coverage/`.
@@ -47,6 +48,8 @@ V8 coverage and writes text, JSON, and HTML reports under `coverage/`.
    percentage gate is claimed in P2.1.
 4. Install the local browser once with `npx playwright install chromium` before
    the first browser run.
+5. Run `npm run test:quality` after user-facing layout, navigation, dependency,
+   or data-loading changes. It builds and starts the production application.
 
 Set `PLAYWRIGHT_BASE_URL` to test an explicitly selected deployed environment.
 When it is unset, Playwright owns a local Next development server on port 3100.
@@ -70,8 +73,10 @@ and local services; no production secret is required.
 - **Browser:** locked install, Chromium plus its Linux dependencies, and every
   anonymous and role-based journey against an owned Next/Supabase environment.
   Supabase starts before Playwright's Next-server timeout begins and always
-  stops afterward. Traces and screenshots are retained for seven days when the
-  lane fails.
+  stops afterward. The same job then builds the production application and
+  enforces the versioned quality baseline. Traces and screenshots are retained
+  for seven days when the lane fails; quality measurements and axe results are
+  retained for fourteen days on every run.
 
 Concurrent runs for the same pull request or branch cancel superseded work. The
 workflow has read-only repository permissions. The current private repository
