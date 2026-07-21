@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { z } from "zod";
-import { env } from "@/lib/env";
 import { getCurrentUser, isOperations } from "@/lib/auth/current-user";
 import { hasRoleForSite } from "@/lib/auth/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { findSystemUserId } from "@/lib/recurring-templates/generator";
+import {
+  getWordPressSiteConfig,
+  wordPressBasicAuth,
+  type WpSiteKey,
+} from "@/lib/wordpress/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,7 +38,7 @@ export const maxDuration = 300;
 
 const HISTORICAL_CUTOFF_ISO = "2022-09-30T23:59:59";
 
-type SiteKey = "pl" | "qb";
+type SiteKey = WpSiteKey;
 
 const bodySchema = z.object({
   site: z.enum(["pl", "qb", "both"]),
@@ -42,34 +46,6 @@ const bodySchema = z.object({
   start_page: z.number().int().positive().optional().default(1),
   max_pages: z.number().int().positive().optional().default(20),
 });
-
-type SiteConfig = {
-  url: string;
-  appUsername: string;
-  appPassword: string;
-};
-
-function getSiteConfig(site: SiteKey): SiteConfig | null {
-  if (site === "pl") {
-    if (!env.WP_PL_URL || !env.WP_PL_USERNAME || !env.WP_PL_APP_PASSWORD) return null;
-    return {
-      url: env.WP_PL_URL.replace(/\/$/, ""),
-      appUsername: env.WP_PL_USERNAME,
-      appPassword: env.WP_PL_APP_PASSWORD,
-    };
-  }
-  if (!env.WP_QB_URL || !env.WP_QB_USERNAME || !env.WP_QB_APP_PASSWORD) return null;
-  return {
-    url: env.WP_QB_URL.replace(/\/$/, ""),
-    appUsername: env.WP_QB_USERNAME,
-    appPassword: env.WP_QB_APP_PASSWORD,
-  };
-}
-
-function basicAuth(username: string, password: string): string {
-  const normalized = password.replace(/\s+/g, "");
-  return "Basic " + Buffer.from(`${username}:${normalized}`).toString("base64");
-}
 
 type WpHistoricalPost = {
   id: number;
@@ -166,7 +142,7 @@ async function importSite(
   maxPages: number,
 ): Promise<SiteReport> {
   const report = emptyReport(site);
-  const config = getSiteConfig(site);
+  const config = getWordPressSiteConfig(site);
   if (!config) {
     report.errors.push(`WordPress ${site.toUpperCase()} not configured`);
     return report;
@@ -220,7 +196,10 @@ async function importSite(
         `${config.url}/wp-json/wp/v2/posts?${params.toString()}`,
         {
           headers: {
-            Authorization: basicAuth(config.appUsername, config.appPassword),
+            Authorization: wordPressBasicAuth(
+              config.appUsername,
+              config.appPassword,
+            ),
             Accept: "application/json",
           },
           cache: "no-store",
@@ -428,7 +407,7 @@ export async function POST(request: Request) {
   const sites: SiteKey[] = (() => {
     if (requestedSite === "both") {
       const out: SiteKey[] = ["pl"];
-      if (env.WP_QB_URL) out.push("qb");
+      if (getWordPressSiteConfig("qb")) out.push("qb");
       return out;
     }
     return [requestedSite];

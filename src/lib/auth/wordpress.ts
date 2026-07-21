@@ -1,8 +1,12 @@
 import "server-only";
 
-import { env } from "@/lib/env";
+import {
+  getWordPressSiteConfig,
+  wordPressBasicAuth,
+  type WpSiteKey,
+} from "@/lib/wordpress/config";
 
-export type WpSiteKey = "pl" | "qb";
+export type { WpSiteKey } from "@/lib/wordpress/config";
 
 export type WpUser = {
   id: number;
@@ -24,36 +28,6 @@ export type WpAuthResult =
   | { ok: true; user: WpUser }
   | { ok: false; error: WpAuthError };
 
-type SiteConfig = {
-  url: string;
-  appUsername: string;
-  appPassword: string;
-};
-
-function getSiteConfig(site: WpSiteKey): SiteConfig | null {
-  if (site === "pl") {
-    if (!env.WP_PL_URL || !env.WP_PL_USERNAME || !env.WP_PL_APP_PASSWORD) return null;
-    return {
-      url: env.WP_PL_URL.replace(/\/$/, ""),
-      appUsername: env.WP_PL_USERNAME,
-      appPassword: env.WP_PL_APP_PASSWORD,
-    };
-  }
-  if (!env.WP_QB_URL || !env.WP_QB_USERNAME || !env.WP_QB_APP_PASSWORD) return null;
-  return {
-    url: env.WP_QB_URL.replace(/\/$/, ""),
-    appUsername: env.WP_QB_USERNAME,
-    appPassword: env.WP_QB_APP_PASSWORD,
-  };
-}
-
-/** Encode a username + application password for HTTP Basic auth. */
-function basicAuth(username: string, password: string): string {
-  // WordPress accepts app passwords with spaces — normalize to no-spaces just in case.
-  const normalized = password.replace(/\s+/g, "");
-  return "Basic " + Buffer.from(`${username}:${normalized}`).toString("base64");
-}
-
 /**
  * Validate WordPress credentials against the given site.
  *
@@ -69,7 +43,7 @@ export async function validateWpCredentials(
   username: string,
   password: string,
 ): Promise<WpAuthResult> {
-  const config = getSiteConfig(site);
+  const config = getWordPressSiteConfig(site);
   if (!config) {
     return {
       ok: false,
@@ -87,7 +61,7 @@ export async function validateWpCredentials(
     response = await fetch(endpoint, {
       method: "GET",
       headers: {
-        Authorization: basicAuth(username, password),
+        Authorization: wordPressBasicAuth(username, password),
         Accept: "application/json",
       },
       // Disable Next.js caching — this is an auth request.
@@ -198,13 +172,13 @@ export async function validateWpAnywhere(
 // --------------------------------------------------------------------------
 
 function adminAuthHeader(site: WpSiteKey): string | null {
-  const config = getSiteConfig(site);
+  const config = getWordPressSiteConfig(site);
   if (!config) return null;
-  return basicAuth(config.appUsername, config.appPassword);
+  return wordPressBasicAuth(config.appUsername, config.appPassword);
 }
 
 function siteBaseUrl(site: WpSiteKey): string | null {
-  const config = getSiteConfig(site);
+  const config = getWordPressSiteConfig(site);
   return config ? config.url : null;
 }
 

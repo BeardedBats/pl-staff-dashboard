@@ -2,7 +2,10 @@ import "server-only";
 
 import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { normaliseUrl } from "@/lib/analytics/raptive";
+import {
+  buildAnalyticsPathIndex,
+  normalizeAnalyticsPath,
+} from "@/lib/analytics/url-normalization";
 
 // --------------------------------------------------------------------------
 // GA4 integration
@@ -347,14 +350,12 @@ export async function syncGa4(
     .select("id, wp_post_url")
     .not("wp_post_url", "is", null);
 
-  const urlToEntry = new Map<string, string>();
-  for (const er of (entryRows ?? []) as Array<{
-    id: string;
-    wp_post_url: string | null;
-  }>) {
-    if (!er.wp_post_url) continue;
-    urlToEntry.set(normaliseUrl(er.wp_post_url), er.id);
-  }
+  const urlToEntry = buildAnalyticsPathIndex(
+    ((entryRows ?? []) as Array<{
+      id: string;
+      wp_post_url: string | null;
+    }>).map((row) => ({ id: row.id, url: row.wp_post_url })),
+  );
 
   // Aggregate: {entry_id, date} → stats. GA4 reports pagePath, so multiple
   // trailing-slash variants collapse into the same entry. We sum metrics.
@@ -371,7 +372,7 @@ export async function syncGa4(
   >();
 
   for (const r of rows) {
-    const normalised = normaliseUrl(r.pagePath);
+    const normalised = normalizeAnalyticsPath(r.pagePath);
     const entryId = urlToEntry.get(normalised);
     if (!entryId) continue;
     const key = `${entryId}|${r.date}`;

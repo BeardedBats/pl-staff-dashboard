@@ -1,9 +1,12 @@
 import "server-only";
 
-import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { applyWpStateToEntry } from "@/lib/entries/status-transitions";
-import type { WpSiteKey } from "@/lib/auth/wordpress";
+import {
+  getWordPressSiteConfig,
+  wordPressBasicAuth,
+  type WpSiteKey,
+} from "@/lib/wordpress/config";
 
 /**
  * WordPress → dashboard post sync.
@@ -27,38 +30,6 @@ import type { WpSiteKey } from "@/lib/auth/wordpress";
  * Errors on individual posts are caught and reported — one bad post never
  * blocks the rest of the sync.
  */
-
-// --------------------------------------------------------------------------
-// Site config + auth (mirrors the internal helpers in lib/auth/wordpress.ts)
-// --------------------------------------------------------------------------
-
-type SiteConfig = {
-  url: string;
-  appUsername: string;
-  appPassword: string;
-};
-
-function getSiteConfig(site: WpSiteKey): SiteConfig | null {
-  if (site === "pl") {
-    if (!env.WP_PL_URL || !env.WP_PL_USERNAME || !env.WP_PL_APP_PASSWORD) return null;
-    return {
-      url: env.WP_PL_URL.replace(/\/$/, ""),
-      appUsername: env.WP_PL_USERNAME,
-      appPassword: env.WP_PL_APP_PASSWORD,
-    };
-  }
-  if (!env.WP_QB_URL || !env.WP_QB_USERNAME || !env.WP_QB_APP_PASSWORD) return null;
-  return {
-    url: env.WP_QB_URL.replace(/\/$/, ""),
-    appUsername: env.WP_QB_USERNAME,
-    appPassword: env.WP_QB_APP_PASSWORD,
-  };
-}
-
-function basicAuth(username: string, password: string): string {
-  const normalized = password.replace(/\s+/g, "");
-  return "Basic " + Buffer.from(`${username}:${normalized}`).toString("base64");
-}
 
 // --------------------------------------------------------------------------
 // Types
@@ -205,7 +176,7 @@ export async function syncWpPostsForSite(
     errors: [],
   };
 
-  const config = getSiteConfig(site);
+  const config = getWordPressSiteConfig(site);
   if (!config) {
     report.errors.push({
       wpPostId: 0,
@@ -236,7 +207,10 @@ export async function syncWpPostsForSite(
       `${config.url}/wp-json/wp/v2/posts?${params.toString()}`,
       {
         headers: {
-          Authorization: basicAuth(config.appUsername, config.appPassword),
+          Authorization: wordPressBasicAuth(
+            config.appUsername,
+            config.appPassword,
+          ),
           Accept: "application/json",
         },
         cache: "no-store",
@@ -421,7 +395,7 @@ export async function syncWpPostsForBothSites(
 ): Promise<PostSyncReport[]> {
   const reports: PostSyncReport[] = [];
   reports.push(await syncWpPostsForSite("pl", systemUserId));
-  if (env.WP_QB_URL) {
+  if (getWordPressSiteConfig("qb")) {
     reports.push(await syncWpPostsForSite("qb", systemUserId));
   }
   return reports;

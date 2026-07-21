@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.8/P1.9 — Apply verified migrations when DDL access arrives; continue independent P1.10 work
-- Branch: `codex/production-readiness-p1-9`
-- Stack base: `a415b500c5c9919a0aa4571f5474813b6aaf4d9f` (green draft PR #9).
+- Current action: P1.8/P1.9 — Apply verified migrations when DDL access arrives; package completed P1.10 stack
+- Branch: `codex/production-readiness-p1-10`
+- Stack base: `edb5022` (green draft PR #10, based on green draft PR #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -42,7 +42,7 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [x] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow.
 - [ ] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants. — LOCAL GATE PASSED; PRODUCTION APPLY BLOCKED ON SUPABASE DDL ACCESS
 - [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
-- [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules.
+- [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8/P1.9
 - [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization.
 - [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability.
 - [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries.
@@ -304,6 +304,13 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Tier changes delete/reseed only incomplete checklist rows. If any selected entry has completed checklist work, the full selection is rejected with `409 CONFLICT`; the UI preserves selection and displays the safe error instead of deleting completion history.
 - Bulk creation is now hidden from non-manager users and only offers sites the viewer can manage. Both RPCs revoke execution from public/anon/authenticated roles and grant only `service_role`.
 - Migration `0014_transactional_bulk_entries.sql` passed a cold reset. Its 39 pgTAP probes deliberately inject invalid assignees, cross-site categories, duplicate authors, missing entries, bad actors/audit foreign keys, duplicate targets, and completed checklist conflicts; every rollback assertion passed. Combined database suite: 80 probes. Application gate: 10 Vitest files / 41 tests, generated-type drift check, database lint, ESLint, TypeScript, and Next.js production build passed.
+
+### 2026-07-21 — P1.10 canonical business rules local gate
+
+- A privacy-safe production scan paged all 10,442 entries with WordPress URLs. The canonical matcher indexed 10,441 article paths, intentionally excluded one site-root URL, and found zero ambiguous paths. Production has no Raptive revenue rows yet, so historical-file shape validation remains one of Nick's final real-input actions.
+- GA4 sync, Raptive matching, and the standalone GA4 backfill now share one hostless-path normalizer and one collision-refusing entry index. Full, protocol-relative, bare-host, absolute-path, relative-path, query, fragment, trailing-slash, encoded, malformed-percent, root, and cross-site collision inputs have regression coverage.
+- Six WordPress callers now share one typed site-configuration and Basic-auth module, including optional-QB availability. Login, profile updates, and WordPress user import now share one email normalizer.
+- No legacy URL, WordPress-config, Basic-auth, or duplicate email-normalization helper remains. Application gate: 13 Vitest files / 60 tests, ESLint, TypeScript, and the Next.js production build passed.
 
 ## Phase 0 prioritized defect and risk inventory
 

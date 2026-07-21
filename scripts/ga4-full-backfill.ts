@@ -20,6 +20,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as readline from "node:readline";
+import {
+  buildAnalyticsPathIndex,
+  normalizeAnalyticsPath,
+} from "../src/lib/analytics/url-normalization";
 
 const START_DATE = "2022-10-01";
 const TOKEN_EXPIRY_MARGIN_MS = 5 * 60 * 1000;
@@ -260,25 +264,6 @@ async function runGa4Report(
 }
 
 // --------------------------------------------------------------------------
-// Path normalisation — lowercase, strip trailing slash. Both the map keys
-// (from wp_post_url.pathname) and the GA4 pagePath are reduced to "/slug".
-// --------------------------------------------------------------------------
-
-function normalisePath(raw: string): string {
-  let s = raw.toLowerCase();
-  while (s.endsWith("/") && s.length > 1) s = s.slice(0, -1);
-  return s;
-}
-
-function pathnameFor(wpUrl: string): string | null {
-  try {
-    return new URL(wpUrl).pathname;
-  } catch {
-    return null;
-  }
-}
-
-// --------------------------------------------------------------------------
 // Date helpers — plain Date arithmetic, no date-fns
 // --------------------------------------------------------------------------
 
@@ -391,18 +376,9 @@ async function main(): Promise<void> {
     entryFrom += entryBatchSize;
   }
 
-  const urlMap = new Map<string, string>();
-  for (const row of (entryRows ?? []) as Array<{
-    id: string;
-    wp_post_url: string | null;
-  }>) {
-    if (!row.wp_post_url) continue;
-    const pathname = pathnameFor(row.wp_post_url);
-    if (!pathname) continue;
-    const key = normalisePath(pathname);
-    if (!key || key === "/") continue;
-    urlMap.set(key, row.id);
-  }
+  const urlMap = buildAnalyticsPathIndex(
+    entryRows.map((row) => ({ id: row.id, url: row.wp_post_url })),
+  );
   console.log(`Loaded ${urlMap.size} article URLs`);
 
   // ---- Load GA4 credentials + property ----
@@ -508,7 +484,7 @@ async function main(): Promise<void> {
       }
     >();
     for (const r of rows) {
-      const entryId = urlMap.get(normalisePath(r.pagePath));
+      const entryId = urlMap.get(normalizeAnalyticsPath(r.pagePath));
       if (!entryId) continue;
       const key = `${entryId}|${r.date}`;
       const cur = agg.get(key);

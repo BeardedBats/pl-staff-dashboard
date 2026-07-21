@@ -1,8 +1,12 @@
 import "server-only";
 
-import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import type { WpSiteKey } from "@/lib/auth/wordpress";
+import {
+  getWordPressSiteConfig,
+  wordPressBasicAuth,
+  type WordPressSiteConfig,
+  type WpSiteKey,
+} from "@/lib/wordpress/config";
 
 /**
  * WordPress → dashboard category sync.
@@ -16,38 +20,6 @@ import type { WpSiteKey } from "@/lib/auth/wordpress";
  * real UNIQUE constraint there, so we do an explicit select-then-upsert
  * to stay deterministic.
  */
-
-// --------------------------------------------------------------------------
-// Site config + auth (duplicated from lib/auth/wordpress.ts internals)
-// --------------------------------------------------------------------------
-
-type SiteConfig = {
-  url: string;
-  appUsername: string;
-  appPassword: string;
-};
-
-function getSiteConfig(site: WpSiteKey): SiteConfig | null {
-  if (site === "pl") {
-    if (!env.WP_PL_URL || !env.WP_PL_USERNAME || !env.WP_PL_APP_PASSWORD) return null;
-    return {
-      url: env.WP_PL_URL.replace(/\/$/, ""),
-      appUsername: env.WP_PL_USERNAME,
-      appPassword: env.WP_PL_APP_PASSWORD,
-    };
-  }
-  if (!env.WP_QB_URL || !env.WP_QB_USERNAME || !env.WP_QB_APP_PASSWORD) return null;
-  return {
-    url: env.WP_QB_URL.replace(/\/$/, ""),
-    appUsername: env.WP_QB_USERNAME,
-    appPassword: env.WP_QB_APP_PASSWORD,
-  };
-}
-
-function basicAuth(username: string, password: string): string {
-  const normalized = password.replace(/\s+/g, "");
-  return "Basic " + Buffer.from(`${username}:${normalized}`).toString("base64");
-}
 
 // --------------------------------------------------------------------------
 // Types
@@ -71,7 +43,7 @@ type WpCategory = {
 // --------------------------------------------------------------------------
 
 async function fetchAllCategories(
-  config: SiteConfig,
+  config: WordPressSiteConfig,
 ): Promise<WpCategory[]> {
   const all: WpCategory[] = [];
   let page = 1;
@@ -87,7 +59,10 @@ async function fetchAllCategories(
       `${config.url}/wp-json/wp/v2/categories?${params.toString()}`,
       {
         headers: {
-          Authorization: basicAuth(config.appUsername, config.appPassword),
+          Authorization: wordPressBasicAuth(
+            config.appUsername,
+            config.appPassword,
+          ),
           Accept: "application/json",
         },
         cache: "no-store",
@@ -135,7 +110,7 @@ export async function syncWpCategoriesForSite(
     deactivated: 0,
   };
 
-  const config = getSiteConfig(site);
+  const config = getWordPressSiteConfig(site);
   if (!config) return report;
 
   let wpCategories: WpCategory[];
@@ -241,7 +216,7 @@ export async function syncWpCategoriesForSite(
 export async function syncWpCategoriesForBothSites(): Promise<CategorySyncReport[]> {
   const reports: CategorySyncReport[] = [];
   reports.push(await syncWpCategoriesForSite("pl"));
-  if (env.WP_QB_URL) {
+  if (getWordPressSiteConfig("qb")) {
     reports.push(await syncWpCategoriesForSite("qb"));
   }
   return reports;
