@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
@@ -13,7 +14,7 @@ export const dynamic = "force-dynamic";
 export async function POST() {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { error } = await getSupabaseAdmin()
@@ -22,10 +23,7 @@ export async function POST() {
     .eq("id", viewer.id);
 
   if (error) {
-    return NextResponse.json(
-      { error: "Failed to mark onboarding complete" },
-      { status: 500 },
-    );
+    return errorResponse(500, "Failed to mark onboarding complete");
   }
 
   return NextResponse.json({ ok: true });

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import {
   getCurrentUser,
 } from "@/lib/auth/current-user";
@@ -23,24 +24,24 @@ type RouteContext = { params: Promise<{ id: string; userId: string }> };
 export async function DELETE(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id: teamId, userId } = await context.params;
   const team = await getTeamById(teamId);
   if (!team) {
-    return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    return errorResponse(404, "Team not found");
   }
 
   const isOwnManager =
     isManagerPlusForScope(viewer, team.site) && team.manager_id === viewer.id;
   if (!isAdminPlusForScope(viewer, team.site) && !isOwnManager) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
   const ok = await removeTeamMember(teamId, userId);
   if (!ok) {
-    return NextResponse.json({ error: "Remove failed" }, { status: 500 });
+    return errorResponse(500, "Remove failed");
   }
 
   const updated = await getTeamById(teamId);
@@ -54,24 +55,24 @@ export async function DELETE(_request: Request, context: RouteContext) {
 export async function PATCH(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id: teamId, userId } = await context.params;
   const team = await getTeamById(teamId);
   if (!team) {
-    return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    return errorResponse(404, "Team not found");
   }
 
   const isOwnManager =
     isManagerPlusForScope(viewer, team.site) && team.manager_id === viewer.id;
   if (!isAdminPlusForScope(viewer, team.site) && !isOwnManager) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
   const result = await setMemberPrimary(teamId, userId);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return errorResponse(500, result.error);
   }
 
   const updated = await getTeamById(teamId);

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import {
@@ -13,10 +14,10 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isAdminPlusForScope(viewer, "both")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
   const items = await listChecklistItems();
@@ -27,30 +28,18 @@ export async function GET() {
 export async function POST(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isAdminPlusForScope(viewer, "both")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = createChecklistItemSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, createChecklistItemSchema);
+  if (!parsed.ok) return parsed.response;
 
   const result = await createChecklistItem(parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return errorResponse(500, result.error);
   }
   return NextResponse.json({ id: result.id });
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import {
   getCurrentUser,
 } from "@/lib/auth/current-user";
@@ -21,13 +22,13 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   const team = await getTeamById(id);
   if (!team) {
-    return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    return errorResponse(404, "Team not found");
   }
   return NextResponse.json({ team });
 }
@@ -38,49 +39,34 @@ export async function GET(_request: Request, context: RouteContext) {
 export async function PATCH(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   const existing = await getTeamById(id);
   if (!existing) {
-    return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    return errorResponse(404, "Team not found");
   }
 
   const isOwnManager =
     isManagerPlusForScope(viewer, existing.site) && existing.manager_id === viewer.id;
   const isSiteAdmin = isAdminPlusForScope(viewer, existing.site);
   if (!isSiteAdmin && !isOwnManager) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = updateTeamSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, updateTeamSchema);
+  if (!parsed.ok) return parsed.response;
 
   // Non-admin managers can't reassign the manager_id (would let them abandon
   // their own approval responsibilities).
   if (!isSiteAdmin && parsed.data.manager_id) {
-    return NextResponse.json(
-      { error: "Only Admin+ can reassign team managers" },
-      { status: 403 },
-    );
+    return errorResponse(403, "Only Admin+ can reassign team managers");
   }
 
   const ok = await updateTeam(id, parsed.data);
   if (!ok) {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return errorResponse(500, "Update failed");
   }
 
   const team = await getTeamById(id);
@@ -91,19 +77,19 @@ export async function PATCH(request: Request, context: RouteContext) {
 export async function DELETE(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   const { id } = await context.params;
   const existing = await getTeamById(id);
   if (!existing) {
-    return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    return errorResponse(404, "Team not found");
   }
   if (!isAdminPlusForScope(viewer, existing.site)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
   const ok = await deleteTeam(id);
   if (!ok) {
-    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+    return errorResponse(500, "Delete failed");
   }
   return NextResponse.json({ ok: true });
 }

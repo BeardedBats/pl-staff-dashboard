@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import {
+  apiError,
+  errorResponse,
+  parseJsonBody,
+  readJsonBody,
+  validateData,
+} from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { listTiers } from "@/lib/entries/queries";
@@ -10,7 +17,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   const tiers = await listTiers();
   return NextResponse.json({ tiers });
@@ -36,25 +43,14 @@ const deleteSchema = z.object({
 export async function POST(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isAdminPlusForScope(viewer, "both")) {
-    return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    return errorResponse(403, "Admin only");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-  const parsed = createSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, createSchema);
+  if (!parsed.ok) return parsed.response;
 
   const supabase = getSupabaseAdmin();
   let sortOrder = parsed.data.sort_order;
@@ -78,7 +74,7 @@ export async function POST(request: Request) {
     .select("id")
     .single();
   if (error || !data) {
-    return NextResponse.json({ error: "Create failed" }, { status: 500 });
+    return errorResponse(500, "Create failed");
   }
   return NextResponse.json({ id: data.id });
 }
@@ -86,25 +82,14 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isAdminPlusForScope(viewer, "both")) {
-    return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    return errorResponse(403, "Admin only");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-  const parsed = updateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, updateSchema);
+  if (!parsed.ok) return parsed.response;
 
   const { id, name, label, sort_order } = parsed.data;
   const updates: { name?: string; label?: string; sort_order?: number } = {};
@@ -120,7 +105,7 @@ export async function PATCH(request: Request) {
     .update(updates)
     .eq("id", id);
   if (error) {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return errorResponse(500, "Update failed");
   }
   return NextResponse.json({ ok: true });
 }
@@ -128,18 +113,15 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isAdminPlusForScope(viewer, "both")) {
-    return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    return errorResponse(403, "Admin only");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    body = {};
-  }
+  const bodyResult = await readJsonBody(request, { allowEmpty: true });
+  if (!bodyResult.ok) return bodyResult.response;
+  const body = bodyResult.data;
   const url = new URL(request.url);
   const idFromQuery = url.searchParams.get("id");
   const merged =
@@ -148,13 +130,8 @@ export async function DELETE(request: Request) {
       : idFromQuery && (body === null || typeof body !== "object")
         ? { id: idFromQuery }
         : body;
-  const parsed = deleteSchema.safeParse(merged);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "tier id is required" },
-      { status: 400 },
-    );
-  }
+  const parsed = validateData(merged, deleteSchema);
+  if (!parsed.ok) return parsed.response;
 
   const supabase = getSupabaseAdmin();
   const { count } = await supabase
@@ -163,11 +140,10 @@ export async function DELETE(request: Request) {
     .eq("tier_id", parsed.data.id);
 
   if ((count ?? 0) > 0) {
-    return NextResponse.json(
-      {
-        error: `Tier is referenced by ${count} entr${count === 1 ? "y" : "ies"}. Reassign them before deleting.`,
-      },
-      { status: 409 },
+    return apiError(
+      409,
+      "CONFLICT",
+      `Tier is referenced by ${count} entr${count === 1 ? "y" : "ies"}. Reassign them before deleting.`,
     );
   }
 
@@ -176,7 +152,7 @@ export async function DELETE(request: Request) {
     .delete()
     .eq("id", parsed.data.id);
   if (error) {
-    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+    return errorResponse(500, "Delete failed");
   }
   return NextResponse.json({ ok: true });
 }

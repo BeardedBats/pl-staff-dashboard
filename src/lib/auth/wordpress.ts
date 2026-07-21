@@ -93,12 +93,12 @@ export async function validateWpCredentials(
       // Disable Next.js caching — this is an auth request.
       cache: "no-store",
     });
-  } catch (err) {
+  } catch {
     return {
       ok: false,
       error: {
         kind: "network",
-        message: err instanceof Error ? err.message : "Network error",
+        message: "Could not reach WordPress",
       },
     };
   }
@@ -260,10 +260,10 @@ export async function fetchWpUserById(
       headers: { Authorization: auth, Accept: "application/json" },
       cache: "no-store",
     });
-  } catch (err) {
+  } catch {
     return {
       ok: false,
-      error: { kind: "network", message: err instanceof Error ? err.message : "Network error" },
+      error: { kind: "network", message: "Could not reach WordPress" },
     };
   }
 
@@ -337,10 +337,10 @@ export async function fetchWpUserByUsername(
       headers: { Authorization: auth, Accept: "application/json" },
       cache: "no-store",
     });
-  } catch (err) {
+  } catch {
     return {
       ok: false,
-      error: { kind: "network", message: err instanceof Error ? err.message : "Network error" },
+      error: { kind: "network", message: "Could not reach WordPress" },
     };
   }
 

@@ -1,31 +1,48 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import {
+  errorResponse,
+  parseJsonBody,
+  parseSearchParams,
+} from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   listEntries,
   type ListEntriesFilters,
-  type ContentStatus,
-  type EditorStatus,
 } from "@/lib/entries/queries";
 import { createEntry, createEntrySchema } from "@/lib/entries/mutations";
-import type { AppSite } from "@/lib/auth/current-user";
 import { hasAnyRoleForSite } from "@/lib/auth/authorization";
 
 export const dynamic = "force-dynamic";
 
-const CONTENT_STATUSES: ContentStatus[] = [
-  "writer_needed",
-  "claim_requested",
-  "claimed",
-  "submitted",
-  "polishing",
-];
-const EDITOR_STATUSES: EditorStatus[] = [
-  "none",
-  "ready_for_edit",
-  "edited",
-  "scheduled",
-];
-const SITES: AppSite[] = ["pl", "qb", "both"];
+const queryBoolean = z
+  .enum(["true", "false"])
+  .transform((value) => value === "true")
+  .optional();
+const entriesQuerySchema = z.object({
+  search: z.string().trim().max(200).optional(),
+  site: z.enum(["pl", "qb", "both"]).optional(),
+  tierId: z.uuid().optional(),
+  categoryId: z.uuid().optional(),
+  contentStatus: z
+    .enum(["writer_needed", "claim_requested", "claimed", "submitted", "polishing"])
+    .optional(),
+  editorStatus: z.enum(["none", "ready_for_edit", "edited", "scheduled"]).optional(),
+  priority: queryBoolean,
+  authorId: z.uuid().optional(),
+  includeArchived: queryBoolean,
+  includeHistorical: queryBoolean,
+  archivedOnly: queryBoolean,
+  historicalOnly: queryBoolean,
+  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  sortBy: z.enum(["publish_date", "created_at", "updated_at", "title"]).optional(),
+  sortDir: z.enum(["asc", "desc"]).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
 
 /**
  * GET /api/entries
@@ -37,81 +54,38 @@ const SITES: AppSite[] = ["pl", "qb", "both"];
 export async function GET(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
-  const url = new URL(request.url);
-  const filters: ListEntriesFilters = {};
-
-  const search = url.searchParams.get("search");
-  if (search) filters.search = search;
-
-  const site = url.searchParams.get("site");
-  if (site && SITES.includes(site as AppSite)) filters.site = site as AppSite;
-
-  const tierId = url.searchParams.get("tierId");
-  if (tierId) filters.tierId = tierId;
-
-  const categoryId = url.searchParams.get("categoryId");
-  if (categoryId) filters.categoryId = categoryId;
-
-  const contentStatus = url.searchParams.get("contentStatus");
-  if (contentStatus && CONTENT_STATUSES.includes(contentStatus as ContentStatus)) {
-    filters.contentStatus = contentStatus as ContentStatus;
-  }
-
-  const editorStatus = url.searchParams.get("editorStatus");
-  if (editorStatus && EDITOR_STATUSES.includes(editorStatus as EditorStatus)) {
-    filters.editorStatus = editorStatus as EditorStatus;
-  }
-
-  const priority = url.searchParams.get("priority");
-  if (priority === "true") filters.priority = true;
-  if (priority === "false") filters.priority = false;
-
-  const authorId = url.searchParams.get("authorId");
-  if (authorId) filters.authorId = authorId;
-
-  if (url.searchParams.get("includeArchived") === "true") {
-    filters.includeArchived = true;
-  }
-  if (url.searchParams.get("includeHistorical") === "true") {
-    filters.includeHistorical = true;
-  }
-  if (url.searchParams.get("archivedOnly") === "true") {
-    filters.archivedOnly = true;
-  }
-  if (url.searchParams.get("historicalOnly") === "true") {
-    filters.historicalOnly = true;
-  }
-
-  const dateFrom = url.searchParams.get("dateFrom");
-  if (dateFrom) filters.dateFrom = dateFrom;
-  const dateTo = url.searchParams.get("dateTo");
-  if (dateTo) filters.dateTo = dateTo;
-
-  const sortBy = url.searchParams.get("sortBy");
-  if (sortBy && ["publish_date", "created_at", "updated_at", "title"].includes(sortBy)) {
-    filters.sortBy = sortBy as ListEntriesFilters["sortBy"];
-  }
-  const sortDir = url.searchParams.get("sortDir");
-  if (sortDir === "asc" || sortDir === "desc") filters.sortDir = sortDir;
-
-  const pageParam = url.searchParams.get("page");
-  const pageSizeParam = url.searchParams.get("pageSize");
-  if (pageParam || pageSizeParam) {
-    const pageSize = Math.min(
-      Math.max(Number(pageSizeParam) || 50, 1),
-      200,
-    );
-    const page = Math.max(Number(pageParam) || 1, 1);
+  const parsed = parseSearchParams(request, entriesQuerySchema);
+  if (!parsed.ok) return parsed.response;
+  const query = parsed.data;
+  const filters: ListEntriesFilters = {
+    search: query.search || undefined,
+    site: query.site,
+    tierId: query.tierId,
+    categoryId: query.categoryId,
+    contentStatus: query.contentStatus,
+    editorStatus: query.editorStatus,
+    priority: query.priority,
+    authorId: query.authorId,
+    includeArchived: query.includeArchived,
+    includeHistorical: query.includeHistorical,
+    archivedOnly: query.archivedOnly,
+    historicalOnly: query.historicalOnly,
+    dateFrom: query.dateFrom,
+    dateTo: query.dateTo,
+    sortBy: query.sortBy,
+    sortDir: query.sortDir,
+  };
+  if (query.page !== undefined || query.pageSize !== undefined) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 50;
     filters.limit = pageSize;
     filters.offset = (page - 1) * pageSize;
   } else {
-    const limit = Number(url.searchParams.get("limit") ?? "50");
-    filters.limit = Math.min(Math.max(Number.isFinite(limit) ? limit : 50, 1), 200);
-    const offset = Number(url.searchParams.get("offset") ?? "0");
-    filters.offset = Math.max(Number.isFinite(offset) ? offset : 0, 0);
+    filters.limit = query.limit;
+    filters.offset = query.offset;
   }
 
   const result = await listEntries(filters);
@@ -122,33 +96,21 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = createEntrySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, createEntrySchema);
+  if (!parsed.ok) return parsed.response;
   if (!hasAnyRoleForSite(viewer, parsed.data.site)) {
-    return NextResponse.json(
-      { error: "You do not have access to create entries for this site" },
-      { status: 403 },
+    return errorResponse(
+      403,
+      "You do not have access to create entries for this site",
     );
   }
 
   const result = await createEntry(viewer.id, parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return errorResponse(500, result.error);
   }
 
   return NextResponse.json({ entry_id: result.entryId });

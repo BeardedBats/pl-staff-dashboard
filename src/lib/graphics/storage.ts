@@ -136,7 +136,7 @@ export async function uploadGraphicFile(
     });
 
   if (error) {
-    return { ok: false, error: `Storage upload failed: ${error.message}` };
+    return { ok: false, error: "Storage upload failed" };
   }
 
   // Return a signed URL so the upload response can preview immediately.
@@ -145,7 +145,7 @@ export async function uploadGraphicFile(
     .createSignedUrl(storagePath, SIGNED_URL_TTL_SECONDS);
 
   if (signError || !signed) {
-    return { ok: false, error: `Failed to sign URL: ${signError?.message ?? "unknown"}` };
+    return { ok: false, error: "Failed to create a graphic preview URL" };
   }
 
   return {
@@ -220,7 +220,7 @@ export async function deleteStoredGraphic(
     .from(GRAPHICS_BUCKET)
     .remove([storagePath]);
 
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: "Stored graphic deletion failed" };
   return { ok: true };
 }
 
@@ -241,7 +241,7 @@ export async function downloadGraphicBytes(
     .download(storagePath);
 
   if (error || !data) {
-    return { ok: false, error: error?.message ?? "Download failed" };
+    return { ok: false, error: "Stored graphic download failed" };
   }
 
   const bytes = await data.arrayBuffer();

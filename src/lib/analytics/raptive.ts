@@ -160,10 +160,10 @@ export function parseRaptiveWorkbook(buffer: Buffer): RaptiveParseResult {
   let workbook: XLSX.WorkBook;
   try {
     workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
-  } catch (err) {
+  } catch {
     return {
       ok: false,
-      error: `Failed to read workbook: ${err instanceof Error ? err.message : "unknown"}`,
+      error: "Failed to read workbook. Upload a valid XLSX file.",
     };
   }
 
@@ -316,7 +316,7 @@ export async function commitRaptiveRows(
     .lte("date", dateRange.end);
 
   if (delError) {
-    return { ok: false, error: `Failed to clear existing rows: ${delError.message}` };
+    return { ok: false, error: "Failed to replace existing Raptive rows" };
   }
 
   // Chunk the inserts — Supabase REST caps payloads around 1 MB.
@@ -337,7 +337,7 @@ export async function commitRaptiveRows(
     if (error) {
       return {
         ok: false,
-        error: `Insert failed at chunk ${i}: ${error.message}`,
+        error: `Failed to save Raptive rows (batch ${Math.floor(i / CHUNK) + 1})`,
       };
     }
     inserted += chunk.length;

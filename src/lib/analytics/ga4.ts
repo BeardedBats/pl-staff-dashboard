@@ -130,16 +130,15 @@ export async function exchangeCodeForTokens(
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params.toString(),
     });
-  } catch (err) {
+  } catch {
     return {
       ok: false,
-      error: `Network error: ${err instanceof Error ? err.message : "unknown"}`,
+      error: "Could not reach Google. Try again in a moment.",
     };
   }
 
   if (!res.ok) {
-    const body = await res.text();
-    return { ok: false, error: `Google rejected token exchange: ${body}` };
+    return { ok: false, error: `Google rejected the token exchange (${res.status})` };
   }
 
   const data = (await res.json()) as {
@@ -152,7 +151,7 @@ export async function exchangeCodeForTokens(
   if (data.error || !data.refresh_token) {
     return {
       ok: false,
-      error: data.error ?? "No refresh token returned from Google",
+      error: "Google did not return a usable refresh token",
     };
   }
 
@@ -407,7 +406,7 @@ export async function syncGa4(
       .from("article_analytics")
       .upsert(upsertRows, { onConflict: "entry_id,date" });
     if (error) {
-      return { ok: false, error: `Upsert failed: ${error.message}` };
+      return { ok: false, error: "Failed to save GA4 analytics rows" };
     }
   }
 

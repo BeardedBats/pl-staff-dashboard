@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
@@ -31,34 +32,23 @@ const bodySchema = z.object({
 export async function PATCH(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id: entryId, itemId } = await context.params;
   const authorization = await loadEntryAuthorizationContext(entryId);
   if (!authorization || !canViewEntryResource(viewer, authorization)) {
-    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    return errorResponse(404, "Entry not found");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Validation failed" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.ok) return parsed.response;
 
   const allowed = await canUserEditChecklist(entryId, viewer);
   if (!allowed) {
-    return NextResponse.json(
-      {
-        error: "Only writers, editors, and admins on this entry can edit the checklist",
-      },
-      { status: 403 },
+    return errorResponse(
+      403,
+      "Only writers, editors, and admins on this entry can edit the checklist",
     );
   }
 
@@ -69,7 +59,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     parsed.data.is_completed,
   );
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return errorResponse(500, result.error);
   }
 
   await writeAuditRow(

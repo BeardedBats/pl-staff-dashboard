@@ -178,7 +178,7 @@ export async function runGenerator(): Promise<GeneratorReport> {
         if (error || !inserted) {
           report.errors.push({
             templateId: template.id,
-            message: `Insert failed for ${title}: ${error?.message}`,
+            message: `Failed to create generated entry: ${title}`,
           });
           continue;
         }
@@ -207,10 +207,10 @@ export async function runGenerator(): Promise<GeneratorReport> {
 
         report.entriesCreated++;
       }
-    } catch (err) {
+    } catch {
       report.errors.push({
         templateId: template.id,
-        message: err instanceof Error ? err.message : "Unknown error",
+        message: "Failed to process recurring template",
       });
     }
   }

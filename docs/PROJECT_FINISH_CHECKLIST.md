@@ -5,11 +5,11 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.5 — Reconcile navigation and server page access with backend policies
+- Current action: P1.6 — Standardize request/response validation and safe user-facing errors
 - Branch: `codex/production-readiness`
-- HEAD: `c0d853036a4ecf7fc73d389fef78898b4659d480`
-- Upstream baseline: `origin/main` at the same merge commit after PR #5.
-- Deployment: production deployment `5540561744` completed successfully from `c0d8530` on 2026-07-21. A separate unmerged documentation PR has a preview and is excluded from this project baseline.
+- HEAD: `97374b6c7b599d8e1da8b1256444a5ba4c2ef7bb`
+- Upstream baseline: `origin/main` at the same merge commit after PR #6.
+- Deployment: production deployment `5540869114` completed successfully from `97374b6` on 2026-07-21.
 - Known blockers: Vercel project-management access is unavailable; Supabase management CLI access is unavailable; no safe dashboard test-user session is available for live role navigation. These do not block local security implementation and are deferred until their dependent live gates.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
@@ -37,8 +37,8 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [x] P1.2 Ensure access-token requests validate the current server-side session state where required.
 - [x] P1.3 Audit every API route and server action against an explicit role-and-resource authorization matrix.
 - [x] P1.4 Fix graphics, editorial, analytics, administration, and synchronization authorization gaps.
-- [ ] P1.5 Reconcile navigation visibility with backend permissions so users never see inaccessible areas or gain access through hidden routes. — IN PROGRESS
-- [ ] P1.6 Standardize request and response validation using shared schemas and safe, user-facing error handling.
+- [x] P1.5 Reconcile navigation visibility with backend permissions so users never see inaccessible areas or gain access through hidden routes.
+- [ ] P1.6 Standardize request and response validation using shared schemas and safe, user-facing error handling. — IN PROGRESS
 - [ ] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow.
 - [ ] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants.
 - [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops.
@@ -250,6 +250,22 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - One-site administrators and analytics viewers are only offered permitted sites. Global season, sync, checklist, and recurring-generator controls require authority over both sites.
 - The user editor preserves duplicate per-site role grants instead of collapsing them when a global administrator saves an unrelated change.
 - Local gate: 5 Vitest files / 19 tests passed; lint passed; sequential TypeScript passed; Next.js production build passed with all expected routes. Preview, production deployment, and disposable-session UI/API probes remain before P1.5 completion.
+
+### 2026-07-21 — P1.5 interface authorization production gate
+
+- Commit `aba1498` passed the Vercel preview; PR #6 merged as `97374b6`; production deployment `5540869114` completed successfully.
+- A disposable production probe completed 25 assertions across PL-only Admin, EIC, and Editor sessions, then removed every temporary user, role, session, entry, author assignment, and graphic without cleanup errors.
+- Settings exposed only manageable PL users/site scope and omitted global Season, Sync, and Checklist tabs. Analytics carried a PL-only selector scope.
+- Editing Queue and Home included the PL test entry and excluded the QB test entry. A PL Admin could view a QB staff member's public identity but did not receive that user's private email or timezone.
+- The graphics API returned exactly the participant's PL request with action capabilities matching policy. The rendered page showed the permitted Flag action, omitted denied Upload/Release actions, and excluded the QB request.
+
+### 2026-07-21 — P1.6 API contract local gate
+
+- Added one shared JSON/query validation boundary with stable error codes: malformed JSON is distinct from schema validation, and validation issues expose only field paths and safe messages.
+- Migrated all 35 JSON-body handlers away from direct `request.json()` parsing and standardized API failures on the backward-compatible `{ error, code, issues? }` envelope.
+- Added bounded client-side error parsing so UI actions never render raw HTML or proxy response bodies, and sanitized WordPress, Google, storage, workbook, and database failures that cross route boundaries.
+- Added strict schemas for the entries, graphics, users, teams, categories, notifications, analytics, and mixed tier query paths; malformed filters now fail clearly instead of being silently ignored.
+- Static contract tests cover all API routes and their public helper boundaries. Local gate: 8 Vitest files / 32 tests passed; lint passed; TypeScript passed; Next.js production build passed with all expected routes.
 
 ## Phase 0 prioritized defect and risk inventory
 

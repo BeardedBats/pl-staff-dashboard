@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
@@ -28,32 +29,20 @@ const bodySchema = z.object({
 export async function POST(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   const authorization = await loadEntryAuthorizationContext(id);
   if (!authorization) {
-    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    return errorResponse(404, "Entry not found");
   }
   if (!canViewEntryResource(viewer, authorization)) {
-    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    return errorResponse(404, "Entry not found");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.ok) return parsed.response;
 
   const reason = parsed.data.reason;
   const direct = isAdminPlusForSite(viewer, authorization.site);
@@ -69,7 +58,7 @@ export async function POST(request: Request, context: RouteContext) {
       })
       .eq("id", id);
     if (error) {
-      return NextResponse.json({ error: "Archive failed" }, { status: 500 });
+      return errorResponse(500, "Archive failed");
     }
     await writeAuditRow(id, viewer.id, "archive", "is_archived", "false", `true (${reason})`);
     return NextResponse.json({ ok: true, direct: true });
@@ -77,7 +66,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   const result = await createArchiveRequest(viewer, id, reason);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return errorResponse(500, result.error);
   }
   return NextResponse.json({
     ok: true,

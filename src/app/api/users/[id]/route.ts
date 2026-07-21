@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import {
   getCurrentUser,
 } from "@/lib/auth/current-user";
@@ -29,13 +30,13 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   const target = await getUserById(id);
   if (!target) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+    return errorResponse(404, "User not found");
   }
 
   return NextResponse.json({ user: sanitizeUserForViewer(target, viewer) });
@@ -60,34 +61,22 @@ export async function GET(_request: Request, context: RouteContext) {
 export async function PATCH(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
   const targetBefore = await getUserById(id);
   if (!targetBefore) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+    return errorResponse(404, "User not found");
   }
   const isSelf = viewer.id === id;
   const isAdmin = isAdminPlusForScope(viewer, targetBefore.wp_site);
   if (!isSelf && !isAdmin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = userProfileUpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, userProfileUpdateSchema);
+  if (!parsed.ok) return parsed.response;
 
   const input = parsed.data;
 
@@ -95,56 +84,50 @@ export async function PATCH(request: Request, context: RouteContext) {
     (key) => input[key] !== undefined,
   );
   if (adminFieldsPresent && !isAdmin) {
-    return NextResponse.json(
-      { error: "Forbidden: admin-only fields in payload" },
-      { status: 403 },
-    );
+    return errorResponse(403, "Forbidden: admin-only fields in payload");
   }
   if (
     input.roles?.some(
       (assignment) => !isAdminPlusForScope(viewer, assignment.site),
     )
   ) {
-    return NextResponse.json(
-      { error: "Forbidden: role assignment exceeds your site authority" },
-      { status: 403 },
+    return errorResponse(
+      403,
+      "Forbidden: role assignment exceeds your site authority",
     );
   }
   if (
     input.wp_site !== undefined &&
     !isAdminPlusForScope(viewer, input.wp_site)
   ) {
-    return NextResponse.json(
-      { error: "Forbidden: site change exceeds your authority" },
-      { status: 403 },
-    );
+    return errorResponse(403, "Forbidden: site change exceeds your authority");
   }
   if (input.team_id) {
     const team = await getTeamById(input.team_id);
     if (!team || !isAdminPlusForScope(viewer, team.site)) {
-      return NextResponse.json(
-        { error: "Forbidden: team assignment exceeds your site authority" },
-        { status: 403 },
+      return errorResponse(
+        403,
+        "Forbidden: team assignment exceeds your site authority",
       );
     }
   }
 
   const ok = await updateUserProfile(id, input);
   if (!ok) {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return errorResponse(500, "Update failed");
   }
 
   if (input.roles !== undefined) {
     const result = await setUserRoles(id, input.roles);
     if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
+      return errorResponse(500, result.error);
     }
   }
 
   if (input.team_id !== undefined) {
     const result = await setUserPrimaryTeam(id, input.team_id ?? null);
     if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
+      return errorResponse(500, result.error);
     }
   }
 

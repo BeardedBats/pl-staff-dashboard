@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -14,10 +15,10 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   if (!isAdminPlusForScope(viewer, "both")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
   const supabase = getSupabaseAdmin();

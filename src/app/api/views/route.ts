@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   createView,
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   const views = await listViewsForUser(viewer.id);
   return NextResponse.json({ views });
@@ -22,27 +23,15 @@ export async function GET() {
 export async function POST(request: Request) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = createViewSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, createViewSchema);
+  if (!parsed.ok) return parsed.response;
 
   const result = await createView(viewer.id, parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return errorResponse(500, result.error);
   }
   return NextResponse.json({ view_id: result.id });
 }

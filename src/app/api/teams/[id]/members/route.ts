@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { z } from "zod";
 import {
   getCurrentUser,
@@ -30,35 +31,23 @@ const bodySchema = z.object({
 export async function POST(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id: teamId } = await context.params;
   const team = await getTeamById(teamId);
   if (!team) {
-    return NextResponse.json({ error: "Team not found" }, { status: 404 });
+    return errorResponse(404, "Team not found");
   }
 
   const isOwnManager =
     isManagerPlusForScope(viewer, team.site) && team.manager_id === viewer.id;
   if (!isAdminPlusForScope(viewer, team.site) && !isOwnManager) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.ok) return parsed.response;
 
   const result = await addTeamMember(
     teamId,
@@ -66,7 +55,7 @@ export async function POST(request: Request, context: RouteContext) {
     parsed.data.is_primary,
   );
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return errorResponse(500, result.error);
   }
 
   const updated = await getTeamById(teamId);

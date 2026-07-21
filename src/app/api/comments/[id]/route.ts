@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   deleteComment,
@@ -14,25 +15,16 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function PATCH(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   const { id } = await context.params;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = updateCommentSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Validation failed" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, updateCommentSchema);
+  if (!parsed.ok) return parsed.response;
 
   const result = await updateComment(viewer, id, parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 400 });
+    return errorResponse(400, result.error);
   }
   return NextResponse.json({ ok: true });
 }
@@ -41,12 +33,12 @@ export async function PATCH(request: Request, context: RouteContext) {
 export async function DELETE(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
   const { id } = await context.params;
   const result = await deleteComment(viewer, id);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 400 });
+    return errorResponse(400, result.error);
   }
   return NextResponse.json({ ok: true });
 }

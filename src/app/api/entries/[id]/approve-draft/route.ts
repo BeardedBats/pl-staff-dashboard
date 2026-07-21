@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   isAdminPlusForSite,
@@ -21,7 +22,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function POST(_request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
@@ -35,7 +36,7 @@ export async function POST(_request: Request, context: RouteContext) {
     .maybeSingle();
 
   if (!entry) {
-    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    return errorResponse(404, "Entry not found");
   }
   if (!entry.is_drafted) {
     return NextResponse.json({ ok: true, alreadyApproved: true });
@@ -49,7 +50,7 @@ export async function POST(_request: Request, context: RouteContext) {
     ? isAdminPlusForSite(viewer, authorization.site)
     : false;
   if (!isAuthor && !isSiteAdmin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return errorResponse(403, "Forbidden");
   }
 
   const { error } = await supabase
@@ -61,7 +62,7 @@ export async function POST(_request: Request, context: RouteContext) {
     .eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return errorResponse(500, "Update failed");
   }
 
   await writeAuditRow(

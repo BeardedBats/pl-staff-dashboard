@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseJsonBody, errorResponse } from "@/lib/api/http";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
@@ -27,22 +28,13 @@ const bodySchema = z.object({
 export async function PATCH(request: Request, context: RouteContext) {
   const viewer = await getCurrentUser();
   if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return errorResponse(401, "Not authenticated");
   }
 
   const { id } = await context.params;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Validation failed" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.ok) return parsed.response;
 
   const result =
     parsed.data.action === "claim"
@@ -50,9 +42,9 @@ export async function PATCH(request: Request, context: RouteContext) {
       : await markEdited(viewer, id);
 
   if (!result.ok) {
-    return NextResponse.json(
-      { error: errorMessage(result.error) },
-      { status: statusCodeForError(result.error) },
+    return errorResponse(
+      statusCodeForError(result.error),
+      errorMessage(result.error),
     );
   }
   return NextResponse.json({ ok: true });
@@ -75,5 +67,6 @@ function statusCodeForError(e: TransitionError): number {
 
 function errorMessage(e: TransitionError): string {
   if (e.kind === "not_found") return "Entry not found";
+  if (e.kind === "db_error") return "Unable to update the entry";
   return "message" in e ? e.message : "Unknown error";
 }
