@@ -450,6 +450,7 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Raptive commit attempts now begin before matching, finish atomically with the range replacement and upload row, and recover a success whose HTTP response was lost by checking the durable run. Settings > Analytics exposes running, failed, and successful attempts with safe codes instead of showing only successful uploads.
 - Settings > Sync now gives both-site Admin+ viewers a refreshable system-health surface for all eight jobs, PL/QB WordPress freshness, GA4 configuration/sync health, Raptive import health, and active alerts with concrete remediation. The endpoint rejects anonymous and one-site viewers; its failure response exposes only a correlation ID.
 - Final local gate: 52 Vitest files / 249 tests with V8 coverage, 10 database files / 306 pgTAP assertions, generated database-type drift, warning-failing database lint, zero-vulnerability audit, ESLint, TypeScript, Next.js 16.2.11 production build, and all eight Chromium journeys pass. The administrator journey visibly loads the health surface and receives HTTP 200 from an authenticated refresh.
+- Clean GitHub run [29866594243](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29866594243) independently passed Application, Database, Dependencies, and all eight Browser journeys; Vercel passed and draft PR #27 is merge-clean.
 
 ## Phase 0 prioritized defect and risk inventory
 
