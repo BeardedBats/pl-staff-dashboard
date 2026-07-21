@@ -1,7 +1,7 @@
 # API authorization matrix
 
 Audited: 2026-07-21  
-Scope: all 106 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
+Scope: all 107 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
 Status vocabulary: **OK** was enforced at the audit baseline; **GAP** was a baseline defect; **P1.12** marked the then-broken Vercel cron method contract. The closure table below is authoritative for post-audit repair state, and an automated parity test now rejects undocumented handlers.
 
 ## Policy vocabulary
@@ -108,6 +108,7 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | GET | `/api/graphic-requests` | Graphics worker, or participant for returned entries | Session only; signs every returned asset | **GAP AUTH-01/02** |
 | POST | `/api/graphic-requests` | Participant or Manager+ for entry site | Session plus entry existence only | **GAP AUTH-01/06** |
 | GET | `/api/graphic-requests/[id]` | Graphics worker or participant | Session only; signs asset | **GAP AUTH-01/02** |
+| GET | `/api/graphic-requests/[id]/versions` | Graphics worker or participant | Resource authorization before signing immutable private versions | OK |
 | PATCH claim | `/api/graphic-requests/[id]` | Graphics worker | Session plus state only | **GAP AUTH-01/02** |
 | PATCH unclaim | `/api/graphic-requests/[id]` | Claimer or Admin+ for site | Claimer or flat Admin+ | GAP AUTH-01 |
 | PATCH flag | `/api/graphic-requests/[id]` | Participant or Manager+ for site | Session only | **GAP AUTH-01/02** |

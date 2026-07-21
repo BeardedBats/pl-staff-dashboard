@@ -2,16 +2,14 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import {
-  getGraphicRequestById,
-} from "@/lib/graphics/data";
+import { getGraphicRequestById } from "@/lib/graphics/data";
 import {
   deleteStoredGraphic,
   uploadGraphicFile,
 } from "@/lib/graphics/storage";
-import { writeAuditRow } from "@/lib/entries/status-transitions";
 import {
   canUploadOrSubmitGraphicResource,
+  isAdminPlusForSite,
   loadEntryAuthorizationContext,
 } from "@/lib/auth/authorization";
 
@@ -26,8 +24,8 @@ type RouteContext = { params: Promise<{ id: string }> };
  * POST /api/graphic-requests/:id/upload
  *
  * Multipart upload. Expects a `file` field in the form data.
- * Replaces any previously-uploaded file for this request (old object
- * is deleted from Supabase Storage).
+ * Records an immutable version. A failed/concurrent metadata write removes
+ * only the just-uploaded object; prior versions remain recoverable.
  *
  * Must be in `needed`, `claimed`, or `flagged` state to upload.
  */
@@ -59,7 +57,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (existing.graphic_status === "submitted") {
     return errorResponse(
-      400,
+      409,
       "This graphic is already submitted. Unflag or create a new request.",
     );
   }
@@ -88,39 +86,33 @@ export async function POST(request: Request, context: RouteContext) {
     return errorResponse(400, upload.error);
   }
 
-  // Delete the previous file if one existed.
-  if (existing.storage_path && existing.storage_path !== upload.file.storagePath) {
-    // Best-effort; don't fail the upload if cleanup fails.
-    await deleteStoredGraphic(existing.storage_path);
-  }
-
-  // Persist only the durable private-object path. Authorized read paths mint
-  // short-lived signed URLs on demand; expiring bearer URLs never enter DB.
   const supabase = getSupabaseAdmin();
   const { error } = await supabase
-    .from("graphic_requests")
-    .update({
-      file_url: null,
-      storage_path: upload.file.storagePath,
-      file_name: upload.file.fileName,
-      file_size: upload.file.fileSize,
-      mime_type: upload.file.mimeType,
-      updated_at: new Date().toISOString(),
+    .rpc("record_graphic_upload", {
+      p_actor_id: viewer.id,
+      p_request_id: id,
+      p_allow_override: isAdminPlusForSite(viewer, authorization.site),
+      p_expected_storage_path: existing.storage_path ?? "",
+      p_storage_path: upload.file.storagePath,
+      p_file_name: upload.file.fileName,
+      p_file_size: upload.file.fileSize,
+      p_mime_type: upload.file.mimeType,
     })
-    .eq("id", id);
+    .single();
 
   if (error) {
+    await deleteStoredGraphic(upload.file.storagePath);
+    if (error.code === "P0001") {
+      return errorResponse(409, "Graphic changed while the upload was processing");
+    }
+    if (error.code === "P0002") {
+      return errorResponse(404, "Request not found");
+    }
+    if (error.code === "42501") {
+      return errorResponse(403, "Only the assigned graphics worker can upload");
+    }
     return errorResponse(500, "Failed to record upload");
   }
-
-  await writeAuditRow(
-    existing.entry_id,
-    viewer.id,
-    "graphic_update",
-    "file_url",
-    null,
-    `uploaded: ${upload.file.fileName} (${Math.round(upload.file.fileSize / 1024)} KB)`,
-  );
 
   const fresh = await getGraphicRequestById(viewer, id);
   return NextResponse.json({ request: fresh });

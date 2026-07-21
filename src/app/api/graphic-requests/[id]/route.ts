@@ -11,12 +11,21 @@ import {
   unflagGraphicRequest,
   updateGraphicRequest,
   updateGraphicRequestSchema,
+  type GraphicMutationErrorKind,
 } from "@/lib/graphics/data";
-import { deleteStoredGraphic } from "@/lib/graphics/storage";
+import { deleteStoredGraphics } from "@/lib/graphics/storage";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+const mutationStatus: Record<GraphicMutationErrorKind, number> = {
+  validation: 400,
+  not_found: 404,
+  forbidden: 403,
+  conflict: 409,
+  database: 500,
+};
 
 /** GET /api/graphic-requests/:id */
 export async function GET(_request: Request, context: RouteContext) {
@@ -67,7 +76,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   const parsed = await parseJsonBody(request, patchBodySchema);
   if (!parsed.ok) return parsed.response;
 
-  let result: { ok: true } | { ok: false; error: string };
+  let result:
+    | { ok: true }
+    | { ok: false; kind: GraphicMutationErrorKind; error: string };
 
   switch (parsed.data.action) {
     case "claim":
@@ -94,7 +105,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   if (!result.ok) {
-    return errorResponse(400, result.error);
+    return errorResponse(mutationStatus[result.kind], result.error);
   }
 
   const fresh = await getGraphicRequestById(viewer, id);
@@ -111,13 +122,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const { id } = await context.params;
   const result = await deleteGraphicRequest(viewer, id);
   if (!result.ok) {
-    return errorResponse(400, result.error);
+    return errorResponse(mutationStatus[result.kind], result.error);
   }
 
-  if (result.storage_path) {
-    // Best-effort cleanup — don't fail the delete if storage is flaky.
-    await deleteStoredGraphic(result.storage_path);
-  }
+  // Best-effort cleanup — the DB request/version rows are already gone, so a
+  // storage outage may leave inaccessible objects but cannot resurrect data.
+  await deleteStoredGraphics(result.storage_paths);
 
   return NextResponse.json({ ok: true });
 }

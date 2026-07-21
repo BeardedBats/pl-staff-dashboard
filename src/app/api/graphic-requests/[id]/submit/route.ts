@@ -27,7 +27,14 @@ export async function POST(_request: Request, context: RouteContext) {
 
   const result = await submitGraphicRequest(viewer, id);
   if (!result.ok) {
-    return errorResponse(502, result.error);
+    const status = {
+      not_found: 404,
+      forbidden: 403,
+      conflict: 409,
+      upstream: 502,
+      database: 500,
+    }[result.kind];
+    return errorResponse(status, result.error);
   }
 
   const fresh = await getGraphicRequestById(viewer, id);

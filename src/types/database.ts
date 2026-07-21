@@ -700,22 +700,80 @@ export type Database = {
         }
         Relationships: []
       }
+      graphic_request_versions: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number
+          id: string
+          mime_type: string
+          request_id: string
+          storage_path: string
+          uploaded_by: string | null
+          version_number: number
+          wp_media_id: number | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size: number
+          id?: string
+          mime_type: string
+          request_id: string
+          storage_path: string
+          uploaded_by?: string | null
+          version_number: number
+          wp_media_id?: number | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          request_id?: string
+          storage_path?: string
+          uploaded_by?: string | null
+          version_number?: number
+          wp_media_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "graphic_request_versions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "graphic_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graphic_request_versions_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       graphic_requests: {
         Row: {
           claimed_by: string | null
           created_at: string
           created_by: string | null
+          current_version_id: string | null
           description: string | null
           entry_id: string
           file_name: string | null
           file_size: number | null
           file_url: string | null
           flag_reason: string | null
+          flagged_version_id: string | null
           graphic_status: string
           id: string
           is_featured: boolean
           mime_type: string | null
           storage_path: string | null
+          submission_started_at: string | null
+          submission_token: string | null
           title: string
           updated_at: string
           urgency_date: string | null
@@ -725,17 +783,21 @@ export type Database = {
           claimed_by?: string | null
           created_at?: string
           created_by?: string | null
+          current_version_id?: string | null
           description?: string | null
           entry_id: string
           file_name?: string | null
           file_size?: number | null
           file_url?: string | null
           flag_reason?: string | null
+          flagged_version_id?: string | null
           graphic_status?: string
           id?: string
           is_featured?: boolean
           mime_type?: string | null
           storage_path?: string | null
+          submission_started_at?: string | null
+          submission_token?: string | null
           title: string
           updated_at?: string
           urgency_date?: string | null
@@ -745,17 +807,21 @@ export type Database = {
           claimed_by?: string | null
           created_at?: string
           created_by?: string | null
+          current_version_id?: string | null
           description?: string | null
           entry_id?: string
           file_name?: string | null
           file_size?: number | null
           file_url?: string | null
           flag_reason?: string | null
+          flagged_version_id?: string | null
           graphic_status?: string
           id?: string
           is_featured?: boolean
           mime_type?: string | null
           storage_path?: string | null
+          submission_started_at?: string | null
+          submission_token?: string | null
           title?: string
           updated_at?: string
           urgency_date?: string | null
@@ -777,10 +843,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "graphic_requests_current_version_id_fkey"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "graphic_request_versions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "graphic_requests_entry_id_fkey"
             columns: ["entry_id"]
             isOneToOne: false
             referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graphic_requests_flagged_version_id_fkey"
+            columns: ["flagged_version_id"]
+            isOneToOne: false
+            referencedRelation: "graphic_request_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -1401,6 +1481,22 @@ export type Database = {
     }
     Functions: {
       activate_season_mode: { Args: { p_mode_id: string }; Returns: boolean }
+      begin_graphic_submission: {
+        Args: {
+          p_actor_id: string
+          p_allow_override: boolean
+          p_request_id: string
+        }
+        Returns: {
+          existing_wp_media_id: number
+          graphic_title: string
+          lease_token: string
+          leased_entry_id: string
+          leased_file_name: string
+          leased_mime_type: string
+          leased_storage_path: string
+        }[]
+      }
       bulk_create_entries: {
         Args: { p_actor_id: string; p_entries: Json }
         Returns: {
@@ -1430,6 +1526,14 @@ export type Database = {
           run_id: string
         }[]
       }
+      complete_graphic_submission: {
+        Args: {
+          p_actor_id: string
+          p_request_id: string
+          p_submission_token: string
+        }
+        Returns: number
+      }
       create_writer_claim: {
         Args: {
           p_actor_id: string
@@ -1440,6 +1544,14 @@ export type Database = {
           claim_id: string
           claim_status: string
         }[]
+      }
+      delete_graphic_request: {
+        Args: {
+          p_actor_id: string
+          p_allow_override: boolean
+          p_request_id: string
+        }
+        Returns: string[]
       }
       finish_cron_run: {
         Args: {
@@ -1474,6 +1586,35 @@ export type Database = {
           word_count: number
         }[]
       }
+      record_graphic_upload: {
+        Args: {
+          p_actor_id: string
+          p_allow_override: boolean
+          p_expected_storage_path: string
+          p_file_name: string
+          p_file_size: number
+          p_mime_type: string
+          p_request_id: string
+          p_storage_path: string
+        }
+        Returns: {
+          previous_storage_path: string
+          recorded_version_id: string
+          recorded_version_number: number
+        }[]
+      }
+      record_graphic_wp_media: {
+        Args: {
+          p_request_id: string
+          p_submission_token: string
+          p_wp_media_id: number
+        }
+        Returns: boolean
+      }
+      release_graphic_submission: {
+        Args: { p_request_id: string; p_submission_token: string }
+        Returns: boolean
+      }
       resolve_writer_claim: {
         Args: { p_action: string; p_actor_id: string; p_claim_id: string }
         Returns: {
@@ -1489,6 +1630,16 @@ export type Database = {
           p_actor_id: string
           p_entry_id: string
           p_reason?: string
+        }
+        Returns: boolean
+      }
+      transition_graphic_request: {
+        Args: {
+          p_action: string
+          p_actor_id: string
+          p_allow_override?: boolean
+          p_reason?: string
+          p_request_id: string
         }
         Returns: boolean
       }

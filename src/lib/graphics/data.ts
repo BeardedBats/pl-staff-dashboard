@@ -22,6 +22,7 @@ import {
   canUploadOrSubmitGraphicResource,
   canViewGraphicResource,
   isAdminPlusForSite,
+  isManagerPlusForSite,
   loadEntryAuthorizationContext,
   loadEntryAuthorizationContexts,
 } from "@/lib/auth/authorization";
@@ -51,6 +52,7 @@ export type GraphicRequestRecord = {
   file_size: number | null;
   mime_type: string | null;
   storage_path: string | null;
+  current_version_number: number | null;
   wp_media_id: number | null;
   flag_reason: string | null;
   is_featured: boolean;
@@ -68,6 +70,29 @@ export type GraphicRequestPermissions = {
   delete: boolean;
   upload: boolean;
   submit: boolean;
+};
+
+export type GraphicMutationErrorKind =
+  | "validation"
+  | "not_found"
+  | "forbidden"
+  | "conflict"
+  | "database";
+
+export type GraphicMutationResult =
+  | { ok: true }
+  | { ok: false; kind: GraphicMutationErrorKind; error: string };
+
+export type GraphicVersionRecord = {
+  id: string;
+  version_number: number;
+  file_url: string | null;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  uploaded_by: string | null;
+  wp_media_id: number | null;
+  created_at: string;
 };
 
 // --------------------------------------------------------------------------
@@ -119,7 +144,8 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
     .select(
       `id, entry_id, title, description, urgency_date, graphic_status,
        claimed_by, created_by, file_name, file_size, mime_type,
-       storage_path, wp_media_id, flag_reason, is_featured, created_at, updated_at,
+       storage_path, current_version_id, wp_media_id, flag_reason, is_featured, created_at, updated_at,
+       graphic_request_versions!graphic_requests_current_version_id_fkey(version_number),
        entries!inner(id, title, site, publish_date, wp_post_id, is_archived)`,
     )
     .order("urgency_date", { ascending: true, nullsFirst: false });
@@ -149,6 +175,7 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
     file_size: number | null;
     mime_type: string | null;
     storage_path: string | null;
+    graphic_request_versions: { version_number: number } | null;
     wp_media_id: number | null;
     flag_reason: string | null;
     is_featured: boolean;
@@ -249,6 +276,8 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
       file_size: r.file_size,
       mime_type: r.mime_type,
       storage_path: r.storage_path,
+      current_version_number:
+        r.graphic_request_versions?.version_number ?? null,
       wp_media_id: r.wp_media_id,
       flag_reason: r.flag_reason,
       is_featured: Boolean(r.is_featured),
@@ -273,7 +302,8 @@ export async function getGraphicRequestById(
     .select(
       `id, entry_id, title, description, urgency_date, graphic_status,
        claimed_by, created_by, file_name, file_size, mime_type,
-       storage_path, wp_media_id, flag_reason, is_featured, created_at, updated_at,
+       storage_path, current_version_id, wp_media_id, flag_reason, is_featured, created_at, updated_at,
+       graphic_request_versions!graphic_requests_current_version_id_fkey(version_number),
        entries!inner(id, title, site, publish_date, wp_post_id, is_archived)`,
     )
     .eq("id", id)
@@ -294,6 +324,7 @@ export async function getGraphicRequestById(
     file_size: number | null;
     mime_type: string | null;
     storage_path: string | null;
+    graphic_request_versions: { version_number: number } | null;
     wp_media_id: number | null;
     flag_reason: string | null;
     is_featured: boolean;
@@ -366,6 +397,8 @@ export async function getGraphicRequestById(
     file_size: row.file_size,
     mime_type: row.mime_type,
     storage_path: row.storage_path,
+    current_version_number:
+      row.graphic_request_versions?.version_number ?? null,
     wp_media_id: row.wp_media_id,
     flag_reason: row.flag_reason,
     is_featured: Boolean(row.is_featured),
@@ -376,6 +409,49 @@ export async function getGraphicRequestById(
       claimedBy: row.claimed_by,
     }),
   };
+}
+
+/** Return immutable upload history for an authorized request viewer. */
+export async function listGraphicRequestVersions(
+  viewer: CurrentUser,
+  requestId: string,
+): Promise<GraphicVersionRecord[] | null> {
+  const supabase = getSupabaseAdmin();
+  const { data: request } = await supabase
+    .from("graphic_requests")
+    .select("entry_id")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (!request) return null;
+
+  const authorization = await loadEntryAuthorizationContext(request.entry_id);
+  if (!authorization || !canViewGraphicResource(viewer, authorization)) {
+    return null;
+  }
+
+  const { data } = await supabase
+    .from("graphic_request_versions")
+    .select(
+      "id, version_number, storage_path, file_name, file_size, mime_type, uploaded_by, wp_media_id, created_at",
+    )
+    .eq("request_id", requestId)
+    .order("version_number", { ascending: false });
+  const versions = data ?? [];
+  const signedUrls = await getSignedGraphicUrls(
+    versions.map((version) => version.storage_path),
+  );
+
+  return versions.map((version) => ({
+    id: version.id,
+    version_number: version.version_number,
+    file_url: signedUrls.get(version.storage_path) ?? null,
+    file_name: version.file_name,
+    file_size: version.file_size,
+    mime_type: version.mime_type,
+    uploaded_by: version.uploaded_by,
+    wp_media_id: version.wp_media_id,
+    created_at: version.created_at,
+  }));
 }
 
 function buildGraphicPermissions(
@@ -464,7 +540,7 @@ export async function createGraphicRequest(
 export async function claimGraphicRequest(
   viewer: CurrentUser,
   requestId: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<GraphicMutationResult> {
   const supabase = getSupabaseAdmin();
 
   const { data: req } = await supabase
@@ -473,41 +549,33 @@ export async function claimGraphicRequest(
     .eq("id", requestId)
     .maybeSingle();
 
-  if (!req) return { ok: false, error: "Request not found" };
+  if (!req) return { ok: false, kind: "not_found", error: "Request not found" };
 
   const authorization = await loadEntryAuthorizationContext(
     req.entry_id as string,
   );
   if (!authorization || !canClaimGraphicResource(viewer, authorization)) {
-    return { ok: false, error: "A graphics role for this site is required" };
-  }
-
-  if (req.graphic_status !== "needed") {
     return {
       ok: false,
-      error: `Request is already ${req.graphic_status}`,
+      kind: "forbidden",
+      error: "A graphics role for this site is required",
     };
   }
 
-  const { error } = await supabase
-    .from("graphic_requests")
-    .update({
-      graphic_status: "claimed",
-      claimed_by: viewer.id,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", requestId);
+  const { error } = await supabase.rpc("transition_graphic_request", {
+    p_actor_id: viewer.id,
+    p_request_id: requestId,
+    p_action: "claim",
+  });
 
-  if (error) return { ok: false, error: "Update failed" };
-
-  await writeAuditRow(
-    req.entry_id as string,
-    viewer.id,
-    "graphic_update",
-    "graphic_request",
-    "needed",
-    `claimed by ${viewer.display_name}: ${req.title}`,
-  );
+  if (error?.code === "P0001") {
+    return {
+      ok: false,
+      kind: "conflict",
+      error: "Request was claimed by someone else",
+    };
+  }
+  if (error) return { ok: false, kind: "database", error: "Update failed" };
 
   return { ok: true };
 }
@@ -515,7 +583,7 @@ export async function claimGraphicRequest(
 export async function unclaimGraphicRequest(
   viewer: CurrentUser,
   requestId: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<GraphicMutationResult> {
   const supabase = getSupabaseAdmin();
 
   const { data: req } = await supabase
@@ -523,40 +591,42 @@ export async function unclaimGraphicRequest(
     .select("id, entry_id, claimed_by, title")
     .eq("id", requestId)
     .maybeSingle();
-  if (!req) return { ok: false, error: "Request not found" };
+  if (!req) return { ok: false, kind: "not_found", error: "Request not found" };
 
   const authorization = await loadEntryAuthorizationContext(
     req.entry_id as string,
   );
-  if (!authorization) return { ok: false, error: "Parent entry not found" };
+  if (!authorization) {
+    return { ok: false, kind: "not_found", error: "Parent entry not found" };
+  }
 
   // Only the claimer or an admin+ can unclaim.
   if (
     req.claimed_by !== viewer.id &&
     !isAdminPlusForSite(viewer, authorization.site)
   ) {
-    return { ok: false, error: "Only the claimer can release this request" };
+    return {
+      ok: false,
+      kind: "forbidden",
+      error: "Only the claimer can release this request",
+    };
   }
 
-  const { error } = await supabase
-    .from("graphic_requests")
-    .update({
-      graphic_status: "needed",
-      claimed_by: null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", requestId);
+  const { error } = await supabase.rpc("transition_graphic_request", {
+    p_actor_id: viewer.id,
+    p_request_id: requestId,
+    p_action: "unclaim",
+    p_allow_override: isAdminPlusForSite(viewer, authorization.site),
+  });
 
-  if (error) return { ok: false, error: "Update failed" };
-
-  await writeAuditRow(
-    req.entry_id as string,
-    viewer.id,
-    "graphic_update",
-    "graphic_request",
-    "claimed",
-    `unclaimed: ${req.title}`,
-  );
+  if (error?.code === "P0001") {
+    return {
+      ok: false,
+      kind: "conflict",
+      error: "Request is no longer claimed",
+    };
+  }
+  if (error) return { ok: false, kind: "database", error: "Update failed" };
 
   return { ok: true };
 }
@@ -565,9 +635,9 @@ export async function flagGraphicRequest(
   viewer: CurrentUser,
   requestId: string,
   reason: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<GraphicMutationResult> {
   if (!reason.trim()) {
-    return { ok: false, error: "A reason is required" };
+    return { ok: false, kind: "validation", error: "A reason is required" };
   }
   const supabase = getSupabaseAdmin();
 
@@ -576,34 +646,34 @@ export async function flagGraphicRequest(
     .select("id, entry_id, title, graphic_status, claimed_by")
     .eq("id", requestId)
     .maybeSingle();
-  if (!req) return { ok: false, error: "Request not found" };
+  if (!req) return { ok: false, kind: "not_found", error: "Request not found" };
 
   const authorization = await loadEntryAuthorizationContext(
     req.entry_id as string,
   );
   if (!authorization || !canFlagGraphicResource(viewer, authorization)) {
-    return { ok: false, error: "You are not assigned to this entry" };
+    return {
+      ok: false,
+      kind: "forbidden",
+      error: "You are not assigned to this entry",
+    };
   }
 
-  const { error } = await supabase
-    .from("graphic_requests")
-    .update({
-      graphic_status: "flagged",
-      flag_reason: reason.trim(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", requestId);
+  const { error } = await supabase.rpc("transition_graphic_request", {
+    p_actor_id: viewer.id,
+    p_request_id: requestId,
+    p_action: "flag",
+    p_reason: reason.trim(),
+  });
 
-  if (error) return { ok: false, error: "Update failed" };
-
-  await writeAuditRow(
-    req.entry_id as string,
-    viewer.id,
-    "graphic_update",
-    "graphic_request",
-    req.graphic_status as string,
-    `flagged: ${reason.trim().slice(0, 120)}`,
-  );
+  if (error?.code === "P0001") {
+    return {
+      ok: false,
+      kind: "conflict",
+      error: "Request is no longer reviewable",
+    };
+  }
+  if (error) return { ok: false, kind: "database", error: "Update failed" };
 
   // Notify the artist who claimed this graphic (or the whole graphics
   // team if nobody's claimed it yet).
@@ -628,7 +698,7 @@ export async function flagGraphicRequest(
 export async function unflagGraphicRequest(
   viewer: CurrentUser,
   requestId: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<GraphicMutationResult> {
   const supabase = getSupabaseAdmin();
 
   const { data: req } = await supabase
@@ -636,37 +706,34 @@ export async function unflagGraphicRequest(
     .select("id, entry_id, title, claimed_by")
     .eq("id", requestId)
     .maybeSingle();
-  if (!req) return { ok: false, error: "Request not found" };
+  if (!req) return { ok: false, kind: "not_found", error: "Request not found" };
 
   const authorization = await loadEntryAuthorizationContext(
     req.entry_id as string,
   );
   if (!authorization || !canUnflagGraphicResource(viewer, authorization)) {
-    return { ok: false, error: "A graphics or manager role is required" };
+    return {
+      ok: false,
+      kind: "forbidden",
+      error: "A graphics or manager role is required",
+    };
   }
 
-  // Return to 'claimed' if there's still a claimer, otherwise 'needed'.
-  const nextStatus: GraphicStatus = req.claimed_by ? "claimed" : "needed";
+  const { error } = await supabase.rpc("transition_graphic_request", {
+    p_actor_id: viewer.id,
+    p_request_id: requestId,
+    p_action: "unflag",
+    p_allow_override: isManagerPlusForSite(viewer, authorization.site),
+  });
 
-  const { error } = await supabase
-    .from("graphic_requests")
-    .update({
-      graphic_status: nextStatus,
-      flag_reason: null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", requestId);
-
-  if (error) return { ok: false, error: "Update failed" };
-
-  await writeAuditRow(
-    req.entry_id as string,
-    viewer.id,
-    "graphic_update",
-    "graphic_request",
-    "flagged",
-    `unflagged: ${req.title}`,
-  );
+  if (error?.code === "P0001") {
+    return {
+      ok: false,
+      kind: "conflict",
+      error: "Upload a new graphic version before clearing this review flag",
+    };
+  }
+  if (error) return { ok: false, kind: "database", error: "Update failed" };
 
   return { ok: true };
 }
@@ -675,7 +742,7 @@ export async function updateGraphicRequest(
   viewer: CurrentUser,
   requestId: string,
   input: z.infer<typeof updateGraphicRequestSchema>,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<GraphicMutationResult> {
   const supabase = getSupabaseAdmin();
 
   const { data: req } = await supabase
@@ -683,7 +750,7 @@ export async function updateGraphicRequest(
     .select("id, entry_id, created_by, claimed_by")
     .eq("id", requestId)
     .maybeSingle();
-  if (!req) return { ok: false, error: "Request not found" };
+  if (!req) return { ok: false, kind: "not_found", error: "Request not found" };
 
   const authorization = await loadEntryAuthorizationContext(
     req.entry_id as string,
@@ -695,14 +762,18 @@ export async function updateGraphicRequest(
       claimedBy: req.claimed_by as string | null,
     })
   ) {
-    return { ok: false, error: "You cannot edit this graphic request" };
+    return {
+      ok: false,
+      kind: "forbidden",
+      error: "You cannot edit this graphic request",
+    };
   }
 
   const { error } = await supabase
     .from("graphic_requests")
     .update({ ...input, updated_at: new Date().toISOString() })
     .eq("id", requestId);
-  if (error) return { ok: false, error: "Update failed" };
+  if (error) return { ok: false, kind: "database", error: "Update failed" };
 
   await writeAuditRow(
     req.entry_id as string,
@@ -719,7 +790,10 @@ export async function updateGraphicRequest(
 export async function deleteGraphicRequest(
   viewer: CurrentUser,
   requestId: string,
-): Promise<{ ok: true; storage_path: string | null } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; storage_paths: string[] }
+  | { ok: false; kind: GraphicMutationErrorKind; error: string }
+> {
   const supabase = getSupabaseAdmin();
 
   const { data: req } = await supabase
@@ -727,36 +801,44 @@ export async function deleteGraphicRequest(
     .select("id, entry_id, title, storage_path, created_by")
     .eq("id", requestId)
     .maybeSingle();
-  if (!req) return { ok: false, error: "Request not found" };
+  if (!req) return { ok: false, kind: "not_found", error: "Request not found" };
 
   const authorization = await loadEntryAuthorizationContext(
     req.entry_id as string,
   );
-  if (!authorization) return { ok: false, error: "Parent entry not found" };
+  if (!authorization) {
+    return { ok: false, kind: "not_found", error: "Parent entry not found" };
+  }
 
   // Only the creator or admin+ can delete.
   if (
     req.created_by !== viewer.id &&
     !isAdminPlusForSite(viewer, authorization.site)
   ) {
-    return { ok: false, error: "Only the creator or an admin can delete" };
+    return {
+      ok: false,
+      kind: "forbidden",
+      error: "Only the creator or an admin can delete",
+    };
   }
 
-  const { error } = await supabase
-    .from("graphic_requests")
-    .delete()
-    .eq("id", requestId);
-
-  if (error) return { ok: false, error: "Delete failed" };
-
-  await writeAuditRow(
-    req.entry_id as string,
-    viewer.id,
-    "graphic_update",
-    "graphic_request",
-    null,
-    `deleted: ${req.title}`,
+  const { data: storagePaths, error } = await supabase.rpc(
+    "delete_graphic_request",
+    {
+      p_actor_id: viewer.id,
+      p_request_id: requestId,
+      p_allow_override: isAdminPlusForSite(viewer, authorization.site),
+    },
   );
 
-  return { ok: true, storage_path: (req.storage_path as string | null) ?? null };
+  if (error?.code === "P0001") {
+    return {
+      ok: false,
+      kind: "conflict",
+      error: "Submitted graphics cannot be deleted",
+    };
+  }
+  if (error) return { ok: false, kind: "database", error: "Delete failed" };
+
+  return { ok: true, storage_paths: storagePaths ?? [] };
 }
