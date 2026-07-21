@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  canViewEntryResource,
+  isAdminPlusForSite,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createArchiveRequest } from "@/lib/archive-requests/data";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
@@ -27,6 +32,13 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
+  const authorization = await loadEntryAuthorizationContext(id);
+  if (!authorization) {
+    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+  }
+  if (!canViewEntryResource(viewer, authorization)) {
+    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+  }
 
   let body: unknown;
   try {
@@ -44,7 +56,7 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const reason = parsed.data.reason;
-  const direct = isAdminPlus(viewer);
+  const direct = isAdminPlusForSite(viewer, authorization.site);
 
   if (direct) {
     const supabase = getSupabaseAdmin();

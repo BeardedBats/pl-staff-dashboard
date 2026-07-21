@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdminPlusForSite } from "@/lib/auth/authorization";
 import {
   createTemplate,
   createTemplateSchema,
@@ -22,10 +23,6 @@ export async function POST(request: Request) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isAdminPlus(viewer)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -39,6 +36,9 @@ export async function POST(request: Request) {
       { error: "Validation failed", issues: parsed.error.issues },
       { status: 400 },
     );
+  }
+  if (!isAdminPlusForSite(viewer, parsed.data.site)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const result = await createTemplate(parsed.data);

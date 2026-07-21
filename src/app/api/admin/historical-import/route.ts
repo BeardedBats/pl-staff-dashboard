@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { getCurrentUser, isOperations } from "@/lib/auth/current-user";
+import { hasRoleForSite } from "@/lib/auth/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { findSystemUserId } from "@/lib/recurring-templates/generator";
 
@@ -451,6 +452,12 @@ export async function POST(request: Request) {
     }
     return [requestedSite];
   })();
+  if (sites.some((site) => !hasRoleForSite(viewer, site, "operations"))) {
+    return NextResponse.json(
+      { error: "Operations access is required for every requested site" },
+      { status: 403 },
+    );
+  }
 
   const reports: SiteReport[] = [];
   for (const s of sites) {

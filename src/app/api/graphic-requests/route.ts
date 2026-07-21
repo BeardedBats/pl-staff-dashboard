@@ -36,7 +36,7 @@ export async function GET(request: Request) {
   const site = url.searchParams.get("site");
   const mine = url.searchParams.get("mine") === "true";
 
-  const requests = await listGraphicRequests({
+  const requests = await listGraphicRequests(viewer, {
     status:
       status && VALID_STATUSES.includes(status as GraphicStatus)
         ? (status as GraphicStatus)

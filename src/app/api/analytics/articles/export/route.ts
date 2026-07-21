@@ -1,6 +1,7 @@
 import { canViewAnalytics, getCurrentUser } from "@/lib/auth/current-user";
 import { articlesToCsv, getAnalyticsArticles } from "@/lib/analytics/queries";
 import { parseAnalyticsFilters } from "@/lib/analytics/filters";
+import { authorizeAnalyticsFilters } from "@/lib/analytics/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,9 @@ export async function GET(request: Request) {
   const parsed = parseAnalyticsFilters(searchParams);
   if (!parsed.ok) return new Response(parsed.error, { status: 400 });
 
-  const rows = await getAnalyticsArticles(parsed.filters);
+  const filters = authorizeAnalyticsFilters(viewer, parsed.filters);
+  if (!filters) return new Response("Forbidden", { status: 403 });
+  const rows = await getAnalyticsArticles(filters);
   const csv = articlesToCsv(rows);
   const filename = `analytics-articles-${parsed.filters.dateFrom}-${parsed.filters.dateTo}.csv`;
 

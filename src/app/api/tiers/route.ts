@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { listTiers } from "@/lib/entries/queries";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isAdminPlus(viewer)) {
+  if (!isAdminPlusForScope(viewer, "both")) {
     return NextResponse.json({ error: "Admin only" }, { status: 403 });
   }
 
@@ -87,7 +88,7 @@ export async function PATCH(request: Request) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isAdminPlus(viewer)) {
+  if (!isAdminPlusForScope(viewer, "both")) {
     return NextResponse.json({ error: "Admin only" }, { status: 403 });
   }
 
@@ -129,7 +130,7 @@ export async function DELETE(request: Request) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isAdminPlus(viewer)) {
+  if (!isAdminPlusForScope(viewer, "both")) {
     return NextResponse.json({ error: "Admin only" }, { status: 403 });
   }
 

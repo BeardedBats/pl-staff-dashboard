@@ -11,7 +11,7 @@ export default async function GraphicsPage() {
   if (!viewer) return null;
 
   // Server-side initial fetch: everything, unfiltered.
-  const requests = await listGraphicRequests({ limit: 200 });
+  const requests = await listGraphicRequests(viewer, { limit: 200 });
 
   return (
     <div className="space-y-6">

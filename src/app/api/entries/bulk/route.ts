@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUser, isManagerPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import {
+  canViewEntryResource,
+  isManagerPlusForSite,
+  loadEntryAuthorizationContexts,
+} from "@/lib/auth/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { writeAuditRow } from "@/lib/entries/status-transitions";
 
@@ -48,13 +53,6 @@ export async function POST(request: Request) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isManagerPlus(viewer)) {
-    return NextResponse.json(
-      { error: "Only Manager+ can perform bulk operations" },
-      { status: 403 },
-    );
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -71,6 +69,26 @@ export async function POST(request: Request) {
   }
 
   const input: BulkBody = parsed.data;
+  const uniqueEntryIds = Array.from(new Set(input.entry_ids));
+  const authorization = await loadEntryAuthorizationContexts(uniqueEntryIds);
+  if (authorization.size !== uniqueEntryIds.length) {
+    return NextResponse.json(
+      { error: "One or more entries were not found" },
+      { status: 404 },
+    );
+  }
+  if (
+    Array.from(authorization.values()).some(
+      (entry) =>
+        !canViewEntryResource(viewer, entry) ||
+        !isManagerPlusForSite(viewer, entry.site),
+    )
+  ) {
+    return NextResponse.json(
+      { error: "Manager+ access is required for every affected entry site" },
+      { status: 403 },
+    );
+  }
   const supabase = getSupabaseAdmin();
 
   // Build the update payload and audit annotations up front.

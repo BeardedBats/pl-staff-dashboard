@@ -14,6 +14,7 @@ import type {
   GraphicStatus,
 } from "@/lib/entries/queries";
 import type { AppSite, CurrentUser } from "@/lib/auth/current-user";
+import { canEditorActOnSite } from "@/lib/auth/authorization";
 
 /**
  * Central state machine for the content + editor status tracks.
@@ -165,7 +166,7 @@ export async function sendToPolishing(
 
   const { data: entry } = await supabase
     .from("entries")
-    .select("content_status")
+    .select("content_status, site")
     .eq("id", entryId)
     .maybeSingle();
   if (!entry) return { ok: false, error: { kind: "not_found" } };
@@ -181,7 +182,7 @@ export async function sendToPolishing(
   }
 
   // Permission: editor / manager+ / can_publish.
-  if (!canEditorAct(viewer)) {
+  if (!canEditorActOnSite(viewer, entry.site as Exclude<AppSite, "both">)) {
     return {
       ok: false,
       error: {
@@ -232,20 +233,21 @@ export async function claimEdit(
   viewer: CurrentUser,
   entryId: string,
 ): Promise<TransitionResult> {
-  if (!canEditorAct(viewer)) {
+  const supabase = getSupabaseAdmin();
+
+  const { data: entry } = await supabase
+    .from("entries")
+    .select("editor_status, site")
+    .eq("id", entryId)
+    .maybeSingle();
+  if (!entry) return { ok: false, error: { kind: "not_found" } };
+
+  if (!canEditorActOnSite(viewer, entry.site as Exclude<AppSite, "both">)) {
     return {
       ok: false,
       error: { kind: "forbidden", message: "Editor role required." },
     };
   }
-  const supabase = getSupabaseAdmin();
-
-  const { data: entry } = await supabase
-    .from("entries")
-    .select("editor_status")
-    .eq("id", entryId)
-    .maybeSingle();
-  if (!entry) return { ok: false, error: { kind: "not_found" } };
 
   if ((entry.editor_status as EditorStatus) !== "ready_for_edit") {
     return {
@@ -286,21 +288,21 @@ export async function markEdited(
   viewer: CurrentUser,
   entryId: string,
 ): Promise<TransitionResult> {
-  if (!canEditorAct(viewer)) {
+  const supabase = getSupabaseAdmin();
+
+  const { data: entry } = await supabase
+    .from("entries")
+    .select("content_status, editor_status, site")
+    .eq("id", entryId)
+    .maybeSingle();
+  if (!entry) return { ok: false, error: { kind: "not_found" } };
+
+  if (!canEditorActOnSite(viewer, entry.site as Exclude<AppSite, "both">)) {
     return {
       ok: false,
       error: { kind: "forbidden", message: "Editor role required." },
     };
   }
-
-  const supabase = getSupabaseAdmin();
-
-  const { data: entry } = await supabase
-    .from("entries")
-    .select("content_status, editor_status")
-    .eq("id", entryId)
-    .maybeSingle();
-  if (!entry) return { ok: false, error: { kind: "not_found" } };
 
   const currentContent = entry.content_status as ContentStatus;
   const currentEditor = entry.editor_status as EditorStatus;
@@ -515,15 +517,4 @@ async function isEntryAuthor(entryId: string, userId: string): Promise<boolean> 
     .eq("user_id", userId)
     .maybeSingle();
   return Boolean(data);
-}
-
-function canEditorAct(viewer: CurrentUser): boolean {
-  const roles = viewer.roles;
-  return (
-    roles.includes("editor") ||
-    roles.includes("manager") ||
-    roles.includes("admin") ||
-    roles.includes("eic") ||
-    roles.includes("operations")
-  );
 }

@@ -13,6 +13,17 @@ import {
 } from "@/lib/graphics/storage";
 import type { AppSite, CurrentUser } from "@/lib/auth/current-user";
 import type { GraphicStatus } from "@/lib/entries/queries";
+import {
+  canClaimGraphicResource,
+  canCreateGraphicResource,
+  canEditGraphicResource,
+  canFlagGraphicResource,
+  canUnflagGraphicResource,
+  canViewGraphicResource,
+  isAdminPlusForSite,
+  loadEntryAuthorizationContext,
+  loadEntryAuthorizationContexts,
+} from "@/lib/auth/authorization";
 
 // --------------------------------------------------------------------------
 // Types
@@ -79,7 +90,7 @@ export const updateGraphicRequestSchema = z.object({
 // --------------------------------------------------------------------------
 
 /** List graphic requests with optional status + entry filters. */
-export async function listGraphicRequests(filters: {
+export async function listGraphicRequests(viewer: CurrentUser, filters: {
   status?: GraphicStatus;
   entryId?: string;
   site?: AppSite;
@@ -150,10 +161,19 @@ export async function listGraphicRequests(filters: {
 
   if (siteFiltered.length === 0) return [];
 
+  const authorization = await loadEntryAuthorizationContexts(
+    siteFiltered.map((row) => row.entry_id),
+  );
+  const authorizedRows = siteFiltered.filter((row) => {
+    const entry = authorization.get(row.entry_id);
+    return entry ? canViewGraphicResource(viewer, entry) : false;
+  });
+  if (authorizedRows.length === 0) return [];
+
   // Hydrate claimed_by + created_by user names in one batch.
   const userIds = Array.from(
     new Set(
-      siteFiltered
+      authorizedRows
         .flatMap((r) => [r.claimed_by, r.created_by])
         .filter((v): v is string => Boolean(v)),
     ),
@@ -184,12 +204,12 @@ export async function listGraphicRequests(filters: {
   // Batch-sign storage paths so every preview URL is fresh + auth'd.
   // The bucket is private (migration 0008) so the stored file_url is
   // useless on its own — we always regenerate from storage_path.
-  const paths = siteFiltered
+  const paths = authorizedRows
     .map((r) => r.storage_path)
     .filter((p): p is string => Boolean(p));
   const signedMap = await getSignedGraphicUrls(paths);
 
-  return siteFiltered.map((r) => {
+  return authorizedRows.map((r) => {
     const claimer = r.claimed_by ? userMap.get(r.claimed_by) : undefined;
     const creator = r.created_by ? userMap.get(r.created_by) : undefined;
     const signedUrl = r.storage_path
@@ -227,6 +247,7 @@ export async function listGraphicRequests(filters: {
 
 /** Fetch a single graphic request with hydrated user names. */
 export async function getGraphicRequestById(
+  viewer: CurrentUser,
   id: string,
 ): Promise<GraphicRequestRecord | null> {
   const supabase = getSupabaseAdmin();
@@ -271,6 +292,11 @@ export async function getGraphicRequestById(
       is_archived: boolean;
     };
   };
+
+  const authorization = await loadEntryAuthorizationContext(row.entry_id);
+  if (!authorization || !canViewGraphicResource(viewer, authorization)) {
+    return null;
+  }
 
   // Hydrate users.
   const userIds = [row.claimed_by, row.created_by].filter(
@@ -343,6 +369,12 @@ export async function createGraphicRequest(
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const supabase = getSupabaseAdmin();
 
+  const authorization = await loadEntryAuthorizationContext(entryId);
+  if (!authorization) return { ok: false, error: "Entry not found" };
+  if (!canCreateGraphicResource(viewer, authorization)) {
+    return { ok: false, error: "You are not assigned to this entry" };
+  }
+
   // Verify the entry exists.
   const { data: entry } = await supabase
     .from("entries")
@@ -400,6 +432,13 @@ export async function claimGraphicRequest(
 
   if (!req) return { ok: false, error: "Request not found" };
 
+  const authorization = await loadEntryAuthorizationContext(
+    req.entry_id as string,
+  );
+  if (!authorization || !canClaimGraphicResource(viewer, authorization)) {
+    return { ok: false, error: "A graphics role for this site is required" };
+  }
+
   if (req.graphic_status !== "needed") {
     return {
       ok: false,
@@ -443,10 +482,15 @@ export async function unclaimGraphicRequest(
     .maybeSingle();
   if (!req) return { ok: false, error: "Request not found" };
 
+  const authorization = await loadEntryAuthorizationContext(
+    req.entry_id as string,
+  );
+  if (!authorization) return { ok: false, error: "Parent entry not found" };
+
   // Only the claimer or an admin+ can unclaim.
   if (
     req.claimed_by !== viewer.id &&
-    !viewer.roles.some((r) => ["admin", "eic", "operations"].includes(r))
+    !isAdminPlusForSite(viewer, authorization.site)
   ) {
     return { ok: false, error: "Only the claimer can release this request" };
   }
@@ -490,6 +534,13 @@ export async function flagGraphicRequest(
     .eq("id", requestId)
     .maybeSingle();
   if (!req) return { ok: false, error: "Request not found" };
+
+  const authorization = await loadEntryAuthorizationContext(
+    req.entry_id as string,
+  );
+  if (!authorization || !canFlagGraphicResource(viewer, authorization)) {
+    return { ok: false, error: "You are not assigned to this entry" };
+  }
 
   const { error } = await supabase
     .from("graphic_requests")
@@ -544,6 +595,13 @@ export async function unflagGraphicRequest(
     .maybeSingle();
   if (!req) return { ok: false, error: "Request not found" };
 
+  const authorization = await loadEntryAuthorizationContext(
+    req.entry_id as string,
+  );
+  if (!authorization || !canUnflagGraphicResource(viewer, authorization)) {
+    return { ok: false, error: "A graphics or manager role is required" };
+  }
+
   // Return to 'claimed' if there's still a claimer, otherwise 'needed'.
   const nextStatus: GraphicStatus = req.claimed_by ? "claimed" : "needed";
 
@@ -579,10 +637,23 @@ export async function updateGraphicRequest(
 
   const { data: req } = await supabase
     .from("graphic_requests")
-    .select("id, entry_id")
+    .select("id, entry_id, created_by, claimed_by")
     .eq("id", requestId)
     .maybeSingle();
   if (!req) return { ok: false, error: "Request not found" };
+
+  const authorization = await loadEntryAuthorizationContext(
+    req.entry_id as string,
+  );
+  if (
+    !authorization ||
+    !canEditGraphicResource(viewer, authorization, {
+      createdBy: req.created_by as string | null,
+      claimedBy: req.claimed_by as string | null,
+    })
+  ) {
+    return { ok: false, error: "You cannot edit this graphic request" };
+  }
 
   const { error } = await supabase
     .from("graphic_requests")
@@ -615,10 +686,15 @@ export async function deleteGraphicRequest(
     .maybeSingle();
   if (!req) return { ok: false, error: "Request not found" };
 
+  const authorization = await loadEntryAuthorizationContext(
+    req.entry_id as string,
+  );
+  if (!authorization) return { ok: false, error: "Parent entry not found" };
+
   // Only the creator or admin+ can delete.
   if (
     req.created_by !== viewer.id &&
-    !viewer.roles.some((r) => ["admin", "eic", "operations"].includes(r))
+    !isAdminPlusForSite(viewer, authorization.site)
   ) {
     return { ok: false, error: "Only the creator or an admin can delete" };
   }

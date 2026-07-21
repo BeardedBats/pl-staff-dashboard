@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import {
   getCurrentUser,
-  isAdminPlus,
-  isManagerPlus,
 } from "@/lib/auth/current-user";
+import {
+  isAdminPlusForScope,
+  isManagerPlusForScope,
+} from "@/lib/auth/authorization";
 import {
   getTeamById,
   removeTeamMember,
@@ -30,8 +32,9 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Team not found" }, { status: 404 });
   }
 
-  const isOwnManager = isManagerPlus(viewer) && team.manager_id === viewer.id;
-  if (!isAdminPlus(viewer) && !isOwnManager) {
+  const isOwnManager =
+    isManagerPlusForScope(viewer, team.site) && team.manager_id === viewer.id;
+  if (!isAdminPlusForScope(viewer, team.site) && !isOwnManager) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -60,8 +63,9 @@ export async function PATCH(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Team not found" }, { status: 404 });
   }
 
-  const isOwnManager = isManagerPlus(viewer) && team.manager_id === viewer.id;
-  if (!isAdminPlus(viewer) && !isOwnManager) {
+  const isOwnManager =
+    isManagerPlusForScope(viewer, team.site) && team.manager_id === viewer.id;
+  if (!isAdminPlusForScope(viewer, team.site) && !isOwnManager) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

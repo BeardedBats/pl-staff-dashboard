@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { syncGa4 } from "@/lib/analytics/ga4";
 
 export const runtime = "nodejs";
@@ -50,7 +51,7 @@ async function authorize(
     return { ok: true };
   }
   const viewer = await getCurrentUser();
-  if (viewer && isAdminPlus(viewer)) {
+  if (viewer && isAdminPlusForScope(viewer, "both")) {
     return { ok: true };
   }
   return { ok: false, error: "Not authorized" };

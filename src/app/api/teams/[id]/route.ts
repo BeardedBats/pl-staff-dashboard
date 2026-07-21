@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import {
   getCurrentUser,
-  isAdminPlus,
-  isManagerPlus,
 } from "@/lib/auth/current-user";
+import {
+  isAdminPlusForScope,
+  isManagerPlusForScope,
+} from "@/lib/auth/authorization";
 import {
   getTeamById,
   updateTeam,
@@ -46,8 +48,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const isOwnManager =
-    isManagerPlus(viewer) && existing.manager_id === viewer.id;
-  if (!isAdminPlus(viewer) && !isOwnManager) {
+    isManagerPlusForScope(viewer, existing.site) && existing.manager_id === viewer.id;
+  const isSiteAdmin = isAdminPlusForScope(viewer, existing.site);
+  if (!isSiteAdmin && !isOwnManager) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -68,7 +71,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   // Non-admin managers can't reassign the manager_id (would let them abandon
   // their own approval responsibilities).
-  if (!isAdminPlus(viewer) && parsed.data.manager_id) {
+  if (!isSiteAdmin && parsed.data.manager_id) {
     return NextResponse.json(
       { error: "Only Admin+ can reassign team managers" },
       { status: 403 },
@@ -90,11 +93,14 @@ export async function DELETE(_request: Request, context: RouteContext) {
   if (!viewer) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  if (!isAdminPlus(viewer)) {
+  const { id } = await context.params;
+  const existing = await getTeamById(id);
+  if (!existing) {
+    return NextResponse.json({ error: "Team not found" }, { status: 404 });
+  }
+  if (!isAdminPlusForScope(viewer, existing.site)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-
-  const { id } = await context.params;
   const ok = await deleteTeam(id);
   if (!ok) {
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });

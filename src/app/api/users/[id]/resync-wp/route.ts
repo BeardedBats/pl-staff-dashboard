@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, isAdminPlus } from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { resyncUserFromWp } from "@/lib/users/mutations";
 import { getUserById } from "@/lib/users/queries";
 
@@ -22,7 +23,11 @@ export async function POST(_request: Request, context: RouteContext) {
 
   const { id } = await context.params;
   const isSelf = viewer.id === id;
-  if (!isSelf && !isAdminPlus(viewer)) {
+  const target = await getUserById(id);
+  if (!target) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+  if (!isSelf && !isAdminPlusForScope(viewer, target.wp_site)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

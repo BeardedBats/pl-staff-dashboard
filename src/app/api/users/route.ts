@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { listUsers, type ListUsersFilters } from "@/lib/users/queries";
 import type { AppRole, AppSite } from "@/lib/auth/current-user";
+import { sanitizeUserForViewer } from "@/lib/users/visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -60,5 +61,8 @@ export async function GET(request: Request) {
   filters.offset = Math.max(Number.isFinite(offset) ? offset : 0, 0);
 
   const result = await listUsers(filters);
-  return NextResponse.json(result);
+  return NextResponse.json({
+    ...result,
+    users: result.users.map((target) => sanitizeUserForViewer(target, user)),
+  });
 }

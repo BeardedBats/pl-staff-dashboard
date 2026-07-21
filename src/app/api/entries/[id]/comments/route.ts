@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
+  canViewEntryResource,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
+import {
   createComment,
   createCommentSchema,
   listCommentsForEntry,
@@ -22,6 +26,10 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const { id } = await context.params;
+  const authorization = await loadEntryAuthorizationContext(id);
+  if (!authorization || !canViewEntryResource(viewer, authorization)) {
+    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+  }
   const comments = await listCommentsForEntry(id);
   return NextResponse.json({ comments });
 }
@@ -39,6 +47,10 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const { id } = await context.params;
+  const authorization = await loadEntryAuthorizationContext(id);
+  if (!authorization || !canViewEntryResource(viewer, authorization)) {
+    return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+  }
 
   let body: unknown;
   try {

@@ -5,11 +5,11 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.1 — Repair token rotation and session lifecycle
+- Current action: P1.4 — Repair authorization gaps with centralized site/resource policies
 - Branch: `codex/production-readiness`
-- HEAD: `ce1572bf851dd7e61878361271c731d3fa5e506a`
-- Upstream baseline: `origin/main` at the same merge commit after PR #3.
-- Deployment: production deployment `5539923582` completed successfully from `ce1572b` on 2026-07-21. A separate unmerged documentation PR has a preview and is excluded from this project baseline.
+- HEAD: `61524b1f1f7d5e4c9be5fa81add54512219684ae`
+- Upstream baseline: `origin/main` at the same merge commit after PR #4.
+- Deployment: production deployment `5540163108` completed successfully from `61524b1` on 2026-07-21. A separate unmerged documentation PR has a preview and is excluded from this project baseline.
 - Known blockers: Vercel project-management access is unavailable; Supabase management CLI access is unavailable; no safe dashboard test-user session is available for live role navigation. These do not block local security implementation and are deferred until their dependent live gates.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
@@ -33,10 +33,10 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 
 ## Phase 1 — Security, correctness, and data integrity
 
-- [ ] P1.1 Repair refresh-token rotation, replay protection, concurrent refresh behavior, revocation, expiry, logout, and session invalidation. — IN PROGRESS
-- [ ] P1.2 Ensure access-token requests validate the current server-side session state where required.
-- [ ] P1.3 Audit every API route and server action against an explicit role-and-resource authorization matrix.
-- [ ] P1.4 Fix graphics, editorial, analytics, administration, and synchronization authorization gaps.
+- [x] P1.1 Repair refresh-token rotation, replay protection, concurrent refresh behavior, revocation, expiry, logout, and session invalidation.
+- [x] P1.2 Ensure access-token requests validate the current server-side session state where required.
+- [x] P1.3 Audit every API route and server action against an explicit role-and-resource authorization matrix.
+- [ ] P1.4 Fix graphics, editorial, analytics, administration, and synchronization authorization gaps. — IN PROGRESS
 - [ ] P1.5 Reconcile navigation visibility with backend permissions so users never see inaccessible areas or gain access through hidden routes.
 - [ ] P1.6 Standardize request and response validation using shared schemas and safe, user-facing error handling.
 - [ ] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow.
@@ -208,6 +208,31 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - The sole object was copied to a new private path, byte-hash verified, signed-read verified, and repointed in the database. The old origin object was deleted through the Storage API. Recovery briefly used the authenticated CDN copy after the deletion probe observed stale cache.
 - Final live gate: bucket `public: false`; current public object request HTTP 400; signed request HTTP 200; 1 database reference; 1 origin object; all references present; 0 orphan objects.
 - Supabase documents that deletion invalidates CDN entries with propagation delay. The deleted old path is no longer stored in application state, so its regional cache eviction cannot be re-probed; this remains an explicitly tracked residual until the broader P1.13 storage review.
+
+### 2026-07-21 — P1.1 and P1.2 session lifecycle verified
+
+- Session issuance now uses unique token identifiers, pins HS256, stores one final token pair, and validates access tokens against the current session row and token hash.
+- Refresh rotation uses compare-and-swap against the prior refresh hash. Concurrent reuse yields exactly one successor; replay revokes the whole session family. Expired sessions, access invalidation, and refresh-only logout are covered by regression tests.
+- Two Vitest files with five deterministic tests passed alongside lint, sequential TypeScript checking, and the production build. A live temporary-row database probe produced one compare-and-swap winner and one loser and cleaned up its records.
+- PR #4 merged as `61524b1`; production deployment `5540163108` completed successfully.
+- A production synthetic-session probe returned access 200 before invalidation and 401 afterward; concurrent refresh returned 200/401; replay removed the family and invalidated the winner access token; refresh-only logout returned 200 and removed its session. All temporary sessions were deleted in a `finally` cleanup.
+
+### 2026-07-21 — P1.3 authorization matrix complete
+
+- `docs/AUTHORIZATION_MATRIX.md` covers all 97 exported API method handlers; `rg` found no Server Actions under `src`.
+- The audit distinguishes authentication, role checks, site scope, ownership, entry participation, and action-specific graphics assignment rather than treating a route-level session check as authorization.
+- Confirmed gaps are tracked as AUTH-01 through AUTH-08: global expansion of site roles, graphics access, unrestricted entry metadata mutation, staff private-field leakage, roleless writer claims, graphics creation without entry participation, cross-entry comment parents, and the Vercel cron method mismatch.
+- P1.4 repair began from centralized, testable policies; P1.12 remains the dedicated cron transport closure.
+
+### 2026-07-21 — P1.4 authorization repair local gate
+
+- Added centralized site-aware and resource-aware policy functions for concrete site scope, entry participation, draft visibility, graphics actions, Manager+, and Admin+.
+- Graphics signed URLs are now created only after viewer authorization. Upload and WordPress submission require the assigned graphics worker for that site or site Admin+; all other graphics actions have explicit role/ownership/participant policies.
+- Entry metadata, claims, editorial transitions, bulk updates, archive approval, checklist actions, comments, team/template/user administration, and global sync/settings actions now bind authority to the affected resource scope.
+- Staff API responses now use one tested visibility projection; another staff member no longer receives email, Discord ID, timezone, theme, publish/onboarding flags, or auto-approval state.
+- The audit uncovered and closed AUTH-09 during implementation: direct draft child routes now apply the author-or-site-Admin+ visibility rule.
+- Analytics API and CSV queries now force a one-site EIC/Operations user to that site, reject an explicitly unauthorized site, and treat full PL+QB coverage as an intentional unfiltered query.
+- Local gate: 5 Vitest files / 18 tests passed; lint passed; sequential TypeScript passed; Next.js production build passed with all expected routes.
 
 ## Phase 0 prioritized defect and risk inventory
 

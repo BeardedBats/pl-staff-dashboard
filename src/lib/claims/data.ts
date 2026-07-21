@@ -10,6 +10,11 @@ import {
   triggerClaimResolved,
 } from "@/lib/notifications/trigger";
 import { createWpDraftForEntry } from "@/lib/entries/wp-post";
+import {
+  canClaimWriterResource,
+  isManagerPlusForSite,
+  loadEntryAuthorizationContext,
+} from "@/lib/auth/authorization";
 
 // --------------------------------------------------------------------------
 // Types
@@ -72,6 +77,15 @@ export async function createClaim(
       ok: false,
       error:
         "Only writer claims go through /api/entries/:id/claim. Editors use claim-edit; graphics use Step 5 graphic requests.",
+    };
+  }
+
+  const authorization = await loadEntryAuthorizationContext(entryId);
+  if (!authorization) return { ok: false, error: "Entry not found" };
+  if (!canClaimWriterResource(viewer, authorization)) {
+    return {
+      ok: false,
+      error: "A writer role for this site is required to claim this entry",
     };
   }
 
@@ -178,9 +192,14 @@ export async function approveClaim(
     return { ok: false, error: `Claim already ${claim.status}` };
   }
 
+  const authorization = await loadEntryAuthorizationContext(
+    claim.entry_id as string,
+  );
+  if (!authorization) return { ok: false, error: "Entry not found" };
+
   // Permission check — skip in the auto-approval path (we've already vetted
   // the viewer there).
-  if (!opts.autoApproval && !isManagerPlus(approver)) {
+  if (!opts.autoApproval && !isManagerPlusForSite(approver, authorization.site)) {
     return { ok: false, error: "Only managers can approve claims" };
   }
 
@@ -288,7 +307,12 @@ export async function denyClaim(
     return { ok: false, error: `Claim already ${claim.status}` };
   }
 
-  if (!isManagerPlus(approver)) {
+  const authorization = await loadEntryAuthorizationContext(
+    claim.entry_id as string,
+  );
+  if (!authorization) return { ok: false, error: "Entry not found" };
+
+  if (!isManagerPlusForSite(approver, authorization.site)) {
     return { ok: false, error: "Only managers can deny claims" };
   }
 
@@ -376,7 +400,9 @@ export async function listPendingClaims(
     resolved_at: string | null;
     entries: { title: string; site: "pl" | "qb" };
     users?: { display_name: string; avatar_url: string | null } | null;
-  }>).map((row) => ({
+  }>)
+    .filter((row) => isManagerPlusForSite(viewer, row.entries.site))
+    .map((row) => ({
     id: row.id,
     entry_id: row.entry_id,
     user_id: row.user_id,
@@ -389,7 +415,7 @@ export async function listPendingClaims(
     entry_site: row.entries.site,
     claimer_name: row.users?.display_name ?? "Unknown",
     claimer_avatar: row.users?.avatar_url ?? null,
-  }));
+    }));
 }
 
 // --------------------------------------------------------------------------
