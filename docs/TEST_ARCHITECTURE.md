@@ -52,3 +52,30 @@ Set `PLAYWRIGHT_BASE_URL` to test an explicitly selected deployed environment.
 When it is unset, Playwright owns a local Next development server on port 3100.
 Authenticated role journeys are skipped when an external base URL is selected;
 do not point mutating browser tests at production.
+
+## Continuous integration
+
+`.github/workflows/database-types.yml` runs on every pull request, every push to
+`main`, and manual dispatch. It uses only synthetic application configuration
+and local services; no production secret is required.
+
+- **Application:** locked install, ESLint, TypeScript, every Vitest project with
+  V8 coverage, and the Next production build. The coverage report is retained
+  for seven days.
+- **Database:** locked install, a clean local Supabase start that applies every
+  migration, the full pgTAP suite, generated-type drift, and schema lint with
+  warnings treated as failures. Cleanup runs even after an earlier failure.
+- **Dependencies:** locked install and a full production/development dependency
+  audit at the low-severity threshold.
+- **Browser:** locked install, Chromium plus its Linux dependencies, and every
+  anonymous and role-based journey against an owned Next/Supabase environment.
+  Supabase starts before Playwright's Next-server timeout begins and always
+  stops afterward. Traces and screenshots are retained for seven days when the
+  lane fails.
+
+Concurrent runs for the same pull request or branch cancel superseded work. The
+workflow has read-only repository permissions. The current private repository
+plan does not expose branch-protection or repository-ruleset APIs, so GitHub
+cannot make these checks merge-required until the repository is made public or
+the account plan is upgraded; the workflow still runs and reports on every pull
+request and `main` push.

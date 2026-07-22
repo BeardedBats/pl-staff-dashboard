@@ -21,6 +21,7 @@
     "test:browser:server": "node scripts/start-browser-test-server.mjs",
     "db:start": "supabase start --exclude edge-runtime,gotrue,imgproxy,logflare,mailpit,realtime,storage-api,studio,supavisor,vector",
     "db:stop": "supabase stop",
+    "db:lint": "supabase db lint --local --fail-on warning",
     "db:types:generate": "node scripts/database-types.mjs",
     "db:types:check": "node scripts/database-types.mjs --check"
   },

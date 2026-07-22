@@ -1,37 +1,127 @@
-name: Database type contract
+name: Production readiness
 
 on:
   pull_request:
-    paths:
-      - "src/types/database.ts"
-      - "supabase/**"
-      - "scripts/database-types.mjs"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/database-types.yml"
   push:
     branches: [main]
-    paths:
-      - "src/types/database.ts"
-      - "supabase/**"
-      - "scripts/database-types.mjs"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/database-types.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-readiness-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
 
 jobs:
-  verify:
+  application:
+    name: Application
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
+      JWT_SECRET: ci-access-secret-at-least-32-characters
+      JWT_REFRESH_SECRET: ci-refresh-secret-at-least-32-characters
+      WP_PL_URL: https://example.com
+      WP_PL_USERNAME: ci-user
+      WP_PL_APP_PASSWORD: ci-application-password
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      CRON_SECRET: ci-cron-secret-at-least-16-characters
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
-      - run: npm run db:start
-      - run: npm run db:types:check
-      - run: npm run typecheck
-      - if: always()
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Test with coverage
+        run: npm run test:coverage
+      - name: Build production application
+        run: npm run build
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: error
+          retention-days: 7
+
+  database:
+    name: Database
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Apply migrations to a clean local stack
+        run: npm run db:start
+      - name: Run pgTAP suite
+        run: npm run test:database
+      - name: Check generated database types
+        run: npm run db:types:check
+      - name: Lint database schema
+        run: npm run db:lint
+      - name: Stop local database stack
+        if: ${{ always() }}
+        run: npm run db:stop
+
+  dependencies:
+    name: Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Audit all dependencies
+        run: npm audit --audit-level=low
+
+  browser:
+    name: Browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install Chromium and operating-system dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Start local database stack before the web-server timeout
+        run: npm run db:start
+      - name: Run anonymous and role-based journeys
+        run: npm run test:browser
+      - name: Upload browser failure evidence
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: browser-failure-evidence
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Stop local database stack
+        if: ${{ always() }}
         run: npm run db:stop

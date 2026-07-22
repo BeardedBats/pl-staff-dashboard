@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.9 — Add complete GitHub Actions enforcement while preserving the Supabase DDL release block.
-- Branch: `codex/production-readiness-p2-8`
-- Stack base: `1883eab` (green draft PR #24, based on green draft PRs #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P2.10 — Add observable, safe, actionable production-failure signals.
+- Branch: `codex/production-readiness-p2-9`
+- Stack base: `a6d3c42` (green draft PR #25, based on green draft PRs #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0021` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -64,7 +64,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 - [x] P2.6 Test cron jobs with the same method and headers used by Vercel.
 - [x] P2.7 Add representative Raptive importer tests with multi-sheet fixtures, duplicates, malformed rows, interruptions, and large files.
 - [x] P2.8 Add role-based end-to-end journeys for managers, writers, editors, graphics staff, and administrators.
-- [ ] P2.9 Add GitHub Actions for install, lint, type checking, tests, build, migration checks, dependency checks, and browser tests where appropriate.
+- [x] P2.9 Add GitHub Actions for install, lint, type checking, tests, build, migration checks, dependency checks, and browser tests where appropriate.
 - [ ] P2.10 Add structured logs, safe error reporting, cron freshness, integration health, import-job visibility, and actionable alerts.
 - [ ] P2.11 Add backup, migration, rollback, incident, secret-rotation, and deployment runbooks.
 - [ ] P2.12 Establish measurable performance and accessibility baselines.
@@ -433,13 +433,22 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - The first cold PostgREST-backed run exposed a release-blocking privilege defect. Migration `0016` revoked client roles correctly but never granted ordinary table privileges to `service_role`; bypassing RLS does not bypass SQL grants, so the server-only client could not read even `tiers`. Migration `0021_restore_service_role_table_access.sql` grants current and future public tables/sequences only to service_role while anon/authenticated stay revoked and forced RLS stays intact. A real local PostgREST probe succeeds after cold reset.
 - Final gate: 46 Vitest files / 232 tests; coverage remains 21.12% statements, 18.9% branches, 23.07% functions, and 21.97% lines. All 274 pgTAP assertions, generated database-type drift, database lint, zero-vulnerability audit, ESLint, TypeScript, the Next.js 16.2.11 production build, and eight Chromium tests pass. An independent live browser inspection confirmed meaningful login content and no framework error overlay.
 
+### 2026-07-21 — P2.9 complete GitHub Actions gate
+
+- Expanded the path-filtered database-type workflow into four independent `ubuntu-latest` jobs on every pull request, every `main` push, and manual dispatch. Superseded runs cancel by pull request or branch, repository permissions are read-only, every job uses Node 20 plus `npm ci`, and no production credential is required.
+- The Application job enforces ESLint, TypeScript, all 46 Vitest files / 232 tests with the recorded V8 coverage report, and the Next.js 16.2.11 production build. Dependencies audits the complete production/development lockfile at the low-severity threshold. Coverage is retained for seven days.
+- The Database job builds a clean local Supabase instance through migration `0021`, runs all nine files / 274 pgTAP assertions, rejects generated database-type drift, fails on database-lint warnings, and always stops its stack. The Browser job installs Chromium and Linux dependencies, starts Supabase before Playwright's web-server timeout, runs all eight anonymous/authenticated journeys, retains failure evidence, and always stops its stack.
+- The first clean Browser runner proved a CI-only lifecycle defect: public-ECR throttling and first-pull time consumed Playwright's 120-second Next-server window before tests began. Moving Supabase startup into its own workflow step fixed the boundary. Corrected run [29864580610](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29864580610) passed Application, Database, Dependencies, and all eight Browser journeys; Vercel also passed and draft PR #26 is merge-clean.
+- Local verification independently passed actionlint 1.7.12, a clean locked install, zero-vulnerability audit, ESLint, TypeScript, the production build, 232 Vitest tests, 274 pgTAP assertions, generated-type drift, warning-failing database lint, and eight Chromium journeys. Browser teardown left zero synthetic users/entries, no auth-state directory, and no port-3100 listener.
+- GitHub returned 403 for both branch-protection and repository-ruleset APIs because the repository is private on the current account plan. The complete checks therefore run and report on every pull request and `main` push but cannot be configured as merge-required until the repository becomes public or the plan is upgraded; this platform limitation is documented without treating the checks as hard merge prevention.
+
 ## Phase 0 prioritized defect and risk inventory
 
 1. **High — session lifecycle (P1.1, P1.2, P1.16):** refresh rotation reads then unconditionally updates, so concurrent reuse can succeed; access-token resolution does not verify the sessions row or token hash; logout relies on a valid access token and can leave a refresh session alive.
 2. **High — graphics authorization (P1.3, P1.4, P1.13, P1.16):** authenticated users can list/fetch all requests; upload and submit paths verify existence/state but not role, assignment, entry membership, or ownership; several mutations lack resource authorization.
 3. **High — scheduled jobs do not match Vercel (P1.12, P2.6):** all eight configured cron handlers export POST while Vercel invokes configured cron paths with GET, so scheduled execution receives 405.
 4. **High — dependency vulnerabilities (P1.14):** production audit reports 3 high and 6 moderate vulnerabilities across Next.js, Discord/Undici/WebSocket, PostCSS, Resend/Svix/UUID chains.
-5. **High — CI enforcement is incomplete (P2.9):** P2.1–P2.8 now provide executable unit, integration, API, component, database, coverage, anonymous-browser, and five-role browser proof. GitHub Actions does not yet enforce every lane; that release-control gap remains open for P2.9.
+5. **Medium — CI checks are advisory at merge (P2.9):** complete Application, Database, Dependencies, and Browser jobs now run on every pull request and `main` push. The private repository's current account plan does not expose branch protection or rulesets, so GitHub cannot make those green checks merge-required until the repository becomes public or the plan is upgraded.
 6. **High — Raptive production ingestion remains incomplete (P6.1–P6.15):** P2.7 now parses every qualifying sheet, rejects malformed/conflicting rows, bounds uploads to 10 MB, and commits range replacement atomically. The route still buffers the workbook inside a 60-second request and has no durable job/checkpoint/restart model; the real Raptive workbook contract and measured runtime remain unverified until Nick's final input.
 7. **Medium — profile overrides are inconsistent (P1.11):** scheduled profile sync honors `display_name_override`, but login, manual import, and manual resync overwrite the name without honoring the flag.
 8. **Medium — database typing is placeholder-only (P1.7):** every table, view, function, enum, and composite resolves through `any`, so current TypeScript success does not prove schema compatibility.
