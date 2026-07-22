@@ -61,6 +61,14 @@ export const CRON_JOBS = {
     remediation: "Open Settings > Analytics, reconnect GA4 if needed, and run Sync yesterday.",
     execution: { name: "ga4-sync", intervalSeconds: 24 * 60 * 60 },
   },
+  "raptive-sync": {
+    path: "/api/cron/raptive-sync",
+    schedule: "17 8 * * *",
+    label: "Raptive earnings synchronization",
+    staleAfterSeconds: 2 * 24 * 60 * 60,
+    remediation: "Open Settings > Analytics, verify the Raptive connection, and retry the affected date once.",
+    execution: { name: "raptive-sync", intervalSeconds: 24 * 60 * 60 },
+  },
   "deadline-reminders": {
     path: "/api/cron/deadline-reminders",
     schedule: "0 * * * *",

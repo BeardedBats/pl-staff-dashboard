@@ -73,12 +73,13 @@ Prefer a restore to a new Supabase project for rehearsal or investigation.
 Never rehearse against production.
 
 For a logical restore, create an empty **Supabase project** rather than an
-uninitialized Postgres database. Enable the source project's non-default
-extensions and Database Webhooks first. Obtain the target's direct or
-session-pooler connection string as `RESTORE_DB_URL`, then use Supabase's
-single-transaction restore shape. `session_replication_role = replica` is
-required for the circular foreign keys in graphics versions and threaded
-comments; it disables triggers only inside this atomic restore transaction:
+uninitialized Postgres database. Enable only the source project's verified
+non-default extensions first. The application has no Database Webhook
+dependency. Obtain the target's direct or session-pooler connection string as
+`RESTORE_DB_URL`, then use Supabase's single-transaction restore shape.
+`session_replication_role = replica` is required for the circular foreign keys
+in graphics versions and threaded comments; it disables triggers only inside
+this atomic restore transaction:
 
 ```powershell
 psql `
@@ -122,8 +123,8 @@ Storage objects are not restored with the database.
 - `pitr_enabled` is false but the plan assumes a point-in-time restore.
 - The Storage export is incomplete, hashes are missing, or object counts differ.
 - `RESTORE_DB_URL` identifies production during a rehearsal.
-- The target is not a newly initialized Supabase project with required
-  extensions and Webhooks configured.
+- The target is not a newly initialized Supabase project with the verified
+  required extensions configured.
 - Any `psql` step reports an error; do not continue to later restore stages.
 
 ## Verification

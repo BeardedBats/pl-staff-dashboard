@@ -18,6 +18,7 @@ import { GET as categorySync } from "@/app/api/cron/category-sync/route";
 import { GET as deadlineReminders } from "@/app/api/cron/deadline-reminders/route";
 import { GET as ga4Sync } from "@/app/api/cron/ga4-sync/route";
 import { GET as profileSync } from "@/app/api/cron/profile-sync/route";
+import { GET as raptiveSync } from "@/app/api/cron/raptive-sync/route";
 import {
   GET as recurringGenerate,
   POST as recurringGenerateManual,
@@ -53,6 +54,10 @@ const routes: Record<
   "/api/cron/profile-sync": {
     handler: profileSync,
     ...CRON_JOBS["profile-sync"].execution,
+  },
+  "/api/cron/raptive-sync": {
+    handler: raptiveSync,
+    ...CRON_JOBS["raptive-sync"].execution,
   },
   "/api/cron/recurring-generate": {
     handler: recurringGenerate,

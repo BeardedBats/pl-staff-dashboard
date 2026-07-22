@@ -4,6 +4,7 @@ import path from "node:path";
 const root = process.cwd();
 const requiredFiles = [
   "README.md",
+  "RELEASE_CANDIDATE.md",
   "BACKUP_AND_RESTORE.md",
   "MIGRATION_AND_ROLLBACK.md",
   "INCIDENT_RESPONSE.md",
@@ -72,6 +73,7 @@ for (const command of [
   "npm run test:coverage",
   "npm run test:database",
   "npm run test:browser",
+  "npm run test:quality",
   "npm run ops:preflight:production",
   "--single-transaction",
   "SET session_replication_role = replica",
@@ -79,6 +81,27 @@ for (const command of [
   "-x storage.vector_indexes",
 ]) {
   if (!combined.includes(command)) errors.push(`runbooks omit command: ${command}`);
+}
+
+const releaseCandidate = read("docs/runbooks/RELEASE_CANDIDATE.md");
+for (const requiredBoundary of [
+  "WordPress remains authoritative",
+  "Raptive workbook",
+  "Raptive API contract",
+  "NO PRODUCTION CHANGE",
+]) {
+  if (!releaseCandidate.includes(requiredBoundary)) {
+    errors.push(`release-candidate procedure omits boundary: ${requiredBoundary}`);
+  }
+}
+
+for (const removedDesign of [
+  "WordPress event identifiers are unique",
+  "divergent title edit is visible as a conflict",
+]) {
+  if (migrationRunbook.includes(removedDesign)) {
+    errors.push(`migration runbook retains removed design: ${removedDesign}`);
+  }
 }
 
 if (errors.length > 0) {

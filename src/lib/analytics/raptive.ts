@@ -353,6 +353,7 @@ export function parseRaptiveWorkbook(buffer: Buffer): RaptiveParseResult {
 
 export async function matchRaptiveRowsToEntries(
   rows: RaptiveParsedRow[],
+  site?: "pl" | "qb",
 ): Promise<{
   matched: Array<RaptiveParsedRow & { entry_id: string | null }>;
   matchedCount: number;
@@ -360,10 +361,12 @@ export async function matchRaptiveRowsToEntries(
   sampleUnmatched: string[];
 }> {
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
+  let query = supabase
     .from("entries")
     .select("id, wp_post_url")
     .not("wp_post_url", "is", null);
+  if (site) query = query.eq("site", site);
+  const { data, error } = await query;
   if (error) {
     throw Object.assign(new Error("Raptive entry matching is unavailable"), {
       code: "entry_match_unavailable",

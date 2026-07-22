@@ -126,9 +126,18 @@ async function productionContract() {
   const linkedRef = existsSync(linkedRefPath)
     ? readFileSync(linkedRefPath, "utf8").trim()
     : null;
+  const linkedMigrationAccess =
+    linkedRef === PROJECT_REF
+      ? run(
+          executable("npx"),
+          ["supabase", "migration", "list", "--linked"],
+          30_000,
+        )
+      : { ok: false, timedOut: false };
   const databaseMigrationAccessConfigured = Boolean(
     process.env.SUPABASE_DB_URL ||
-      (linkedRef === PROJECT_REF && process.env.SUPABASE_DB_PASSWORD),
+      (linkedRef === PROJECT_REF &&
+        (process.env.SUPABASE_DB_PASSWORD || linkedMigrationAccess.ok)),
   );
 
   const vercelLink = existsSync(path.join(process.cwd(), ".vercel", "project.json"));
@@ -150,6 +159,7 @@ async function productionContract() {
     projectRef: PROJECT_REF,
     backups: backupSummary,
     databaseMigrationAccessConfigured,
+    databaseMigrationAccessProbeTimedOut: linkedMigrationAccess.timedOut,
     vercel: {
       linked: vercelLink,
       authenticated: vercelIdentity.ok,

@@ -4,13 +4,13 @@ Last updated: 2026-07-22
 
 ## Recovery state
 
-- Current phase: Phase 6 — Raptive-ready data system
-- Current action: publish the consolidated Phase 6 exact head for one GitHub CI run and one Vercel preview.
-- Branch: `codex/production-readiness-p6`
+- Current phase: Phase 7 — release candidate, production deployment, and Raptive handoff
+- Current action: publish the completed Raptive Creator API release-candidate head for one exact-head GitHub CI run and one Vercel preview.
+- Branch: `codex/production-readiness-p7`
 - Stack base: `9115bd6` (combined Phase 4 exact head on green draft PR #40, based on the completed Phase 3 stack).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blocker: production application of the ordered migrations through `0026` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is available. This is a deployment blocker, not unfinished local development; Nick does not need to apply it now. QB WordPress remains unconfigured.
+- Known blocker: production application of the ordered migrations through `0027` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is available. This is a deployment blocker, not unfinished local development; Nick does not need to apply it now. QB WordPress remains unconfigured.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -127,21 +127,21 @@ Gate: one complete local Phase 5 suite, one exact-head GitHub CI run, and one Ve
 
 - [ ] P6.1 Validate Nick's real workbook format, size, rows, timezone, aggregation, and deduplication semantics when supplied. — FINAL REAL-WORKBOOK INPUT REQUIRED; NO ACTION NEEDED YET
 - [x] P6.2 Use the existing atomic importer for measured inputs up to 10 MB / 100,000 rows; add private storage, jobs, chunks, or resume only if real measurement requires them.
-- [ ] P6.3 Add a live connector only from an actual Raptive API contract, sharing canonical normalization/deduplication with historical imports. — FINAL API CONTRACT/AUTHORIZATION INPUT REQUIRED; SPECULATIVE CONNECTOR CORRECTLY NOT BUILT
-- [ ] P6.4 Keep necessary credentials server-only and provide enable/disable, health, retry, reconciliation, and a nontechnical administrator flow. — HISTORICAL FLOW COMPLETE; LIVE CONTROLS DEPEND ON P6.3
+- [x] P6.3 Add a live connector only from an actual Raptive API contract, sharing canonical normalization/deduplication with historical imports. — CREATOR API V1 CONTRACT SUPPLIED 2026-07-22; AFFECTED PHASE 7 GATE PENDING
+- [x] P6.4 Keep necessary credentials server-only and provide enable/disable, health, retry, reconciliation, and a nontechnical administrator flow. — VERCEL KEY PRESENCE AND LOCAL SECURITY/DB CONTRACT VERIFIED; LIVE ENABLEMENT WAITS FOR 0027/DEPLOYMENT
 - [x] P6.5 Preserve financial-data authorization and test malformed, duplicate, overlap, replay, partial, and secret-boundary cases.
 - [x] P6.6 Remove the finance-application contract unless a real consumer is identified.
 
-Gate: bounded historical fixtures, authorization, recovery, reconciliation, and the explicit no-speculation live boundary pass; only Nick's real workbook and actual live API contract/authorization remain.
+Gate: bounded historical fixtures, authorization, recovery, reconciliation, and the explicit no-speculation live boundary pass. Nick's actual contract/authorization arrived after this boundary; its implementation is being carried by the affected Phase 7 release gate. Only the real workbook remains input-gated.
 
-Phase 6 gate status: **LOCAL PASS; FINAL REAL-WORKBOOK AND LIVE-CONTRACT VALIDATION IS INPUT-GATED FOR P7.4.**
+Phase 6 gate status: **PASS.** Exact head `a37698f02f110dda625811f05d499dfe6f7d8426` passed GitHub Actions run `29894535937` and the single Vercel preview (`9UQncWjjFX8GGW73sAT4yTNsoF8u`). The subsequently supplied live contract is an affected Phase 7 addition; real-workbook validation remains input-gated for P7.4.
 
 ## Phase 7 — Full-system verification, deployment, and Raptive handoff
 
-- [ ] P7.1 Run one release-candidate clean-checkout quality, security, database, browser, accessibility, and complete route/role/viewport visual gate.
+- [ ] P7.1 Run one release-candidate clean-checkout quality, security, database, browser, accessibility, and complete route/role/viewport visual gate. — LOCAL CLEAN-CHECKOUT PASS; EXACT-HEAD CI/PREVIEW PENDING
 - [ ] P7.2 Execute one production migration/deployment procedure with verified backup and rollback readiness.
 - [ ] P7.3 Run one production smoke covering roles, WordPress/SEO, cron, integrations, and health.
-- [ ] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health.
+- [ ] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health. — API CONTRACT/CREDENTIAL ACTION RECEIVED; REAL WORKBOOK AND POST-DEPLOY ONE-DAY RECONCILIATION REMAIN
 - [ ] P7.5 Finish aligned documentation, evidence-linked checklist, residual-risk record, and one final release smoke after affected-gate repairs.
 
 Gate: the release is deployed and verified; real Raptive data is validated; every completion has concrete evidence.
@@ -640,7 +640,26 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Added the real-workbook validation procedure and the exact live-connector prerequisites. The application now plainly reports that live sync is disabled pending an actual account API contract and accepts/stores no speculative Raptive credential.
 - Confirmed there is no external finance consumer or daily-aggregate API in source. No speculative finance contract was added; financial reads/imports retain EIC/Operations authorization plus server/RLS boundaries.
 - Targeted parser, limit, route-authorization, failure/replay, uploads, and financial-data boundary tests pass.
-- The complete local Phase 6 gate passes: runbook contract, ESLint, TypeScript, 83 Vitest files / 355 tests with coverage, zero-vulnerability dependency audit, production build, 14 database files / 363 pgTAP assertions, generated-type drift, database lint, 11 browser journeys, and all 40 route/role/viewport quality checks. Exact-head CI and the single Vercel preview remain the Phase 6 boundary gate.
+- The complete local Phase 6 gate passes: runbook contract, ESLint, TypeScript, 83 Vitest files / 355 tests with coverage, zero-vulnerability dependency audit, production build, 14 database files / 363 pgTAP assertions, generated-type drift, database lint, 11 browser journeys, and all 40 route/role/viewport quality checks.
+- Exact head `a37698f02f110dda625811f05d499dfe6f7d8426` passed GitHub Actions run `29894535937`: Application, Database, Dependencies, Browser, all 11 browser journeys, and all 40 quality checks are green. The single Vercel preview (`9UQncWjjFX8GGW73sAT4yTNsoF8u`) also passed on PR #42. Phase 6 boundary gate: **PASS**.
+
+### 2026-07-22 — Phase 7 release-candidate local gate
+
+- Added one ordered release procedure covering immutable-head verification, the exact migration suffix through `0026`, backup/Storage export, forward-repair/restore rollback decisions, stacked deployment, production smoke, and Nick's two final Raptive inputs. The runbook verifier now rejects the removed WordPress webhook/conflict design and requires the corrected read-only boundary.
+- A detached clean checkout of commit `cd3e063159e1c5b8c637ca272878014c9aa0741e` passed locked install, runbook contract, ESLint, TypeScript, 83 Vitest files / 355 tests with coverage, zero-vulnerability dependency audit, production build, 14 database files / 363 pgTAP assertions, generated-type drift, database lint, and all 11 browser journeys.
+- The original sequential tool stream closed after producing the complete quality artifacts but before returning its final exit code. Only that affected matrix was rerun. Its first retry was infrastructure-blocked because Docker Desktop had stopped; after restoring Docker, all 40 accessibility, performance, responsive, and visual checks passed in 2.4 minutes. No product fix or broader suite rerun was needed.
+- Production remains unchanged. Supabase DDL authority, current backup/Storage export, Vercel production authority, and a dedicated live role-test session remain required before P7.2/P7.3. Known-unavailable Supabase DDL access was not rechecked.
+
+### 2026-07-22 — Raptive Creator API contract activation
+
+- Nick supplied Raptive's published Creator API v1 contract and added `RAPTIVE_CLIENT_ID` / `RAPTIVE_CLIENT_SECRET` to Vercel Preview and Production. Variable presence and environment scope were verified without reading or emitting values.
+- Added a server-only OAuth client for the documented five-minute bearer token, authorized-site discovery, analytics/earnings date bounds, and paginated one-calendar-day page performance. It reconciles all pages to the provider record count, bounds ingestion at 100,000 rows, honors `Retry-After`, retries transient failures, and refreshes once after 401 without exposing provider bodies or credentials.
+- Added exact WordPress-host mapping, disabled-by-default connection state, Operations-only configure/enable/retry controls, EIC read-only status, daily idempotent cron sync, safe health/alerts, and shared canonical URL matching. The API has no per-page sessions metric, so live rows explicitly store zero sessions and use its RPM for the two legacy RPM fields.
+- Migration `0027_raptive_creator_api_sync.sql` adds forced-RLS service-only connection state, site attribution, and an atomic single-site/single-day replacement RPC with defensive date/row/duplicate checks and row/earnings reconciliation. The reversible pre-deployment procedure and forward-repair boundary are documented.
+- Targeted gate: 6 Vitest files / 47 connector, pagination, retry, negative-role, resource-boundary, component, cron, and importer tests pass; the complete database suite passes 15 files / 388 pgTAP assertions including forced RLS, privilege denial, disabled writes, historical site attribution, ambiguous-overlap refusal, cross-site preservation, rollback, and reconciliation.
+- The affected complete local release gate passes: seven-runbook contract through `0027`; ESLint with zero warnings; TypeScript; 87 Vitest files / 376 tests with coverage; zero-vulnerability dependency audit; production build with all new routes; 15 database files / 388 pgTAP assertions; generated-type drift; warning-failing database lint; all 11 role/anonymous browser journeys; and all 40 accessibility, performance, responsive, route/role/viewport, and visual checks. The first coverage pass identified three new-route inventory/style contract omissions; only those affected contracts were fixed and rerun before the clean final suite.
+- Vercel confirms both Raptive variables exist as encrypted Preview/Production values. The local CLI correctly did not export those encrypted values, so the safe token/site/date-bound verifier remains for the deployed Operations-authorized runtime; no secret was weakened or exposed for local testing.
+- The earlier Phase 7 CI run was cancelled after this new release scope arrived and is not final evidence. The affected exact-head local/CI/preview gate remains pending. Production DDL remains blocked and was not rechecked.
 
 ## Phase 0 prioritized defect and risk inventory
 
@@ -649,7 +668,7 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 3. **High — scheduled jobs do not match Vercel (P1.12, P2.6):** all eight configured cron handlers export POST while Vercel invokes configured cron paths with GET, so scheduled execution receives 405.
 4. **High — dependency vulnerabilities (P1.14):** production audit reports 3 high and 6 moderate vulnerabilities across Next.js, Discord/Undici/WebSocket, PostCSS, Resend/Svix/UUID chains.
 5. **Medium — CI checks are advisory at merge (P2.9):** complete Application, Database, Dependencies, and Browser jobs now run on every pull request and `main` push. The private repository's current account plan does not expose branch protection or rulesets, so GitHub cannot make those green checks merge-required until the repository becomes public or the plan is upgraded.
-6. **Input-gated — Raptive production validation (P6.1–P6.4/P7.4):** the bounded synchronous importer is complete for files up to 10 MB / 100,000 rows. Nick's real workbook must validate its actual format, timezone, aggregation, dedupe semantics, size, and runtime. A live connector must wait for the actual Raptive account API contract and authorization; storage/jobs/chunk/resume infrastructure is required only if those measured inputs demand it.
+6. **Input-gated — Raptive production validation (P6.1/P7.4):** the bounded synchronous importer is complete for files up to 10 MB / 100,000 rows, and the supplied Creator API contract now has a server-only daily connector. Nick's real workbook must still validate actual format, timezone, aggregation, dedupe semantics, size, and runtime. Live production validation waits for migration `0027`, deployment, Operations host mapping, and one reconciled day; storage/jobs/chunk/resume infrastructure is required only if measured inputs demand it.
 7. **Medium — profile overrides are inconsistent (P1.11):** scheduled profile sync honors `display_name_override`, but login, manual import, and manual resync overwrite the name without honoring the flag.
 8. **Medium — database typing is placeholder-only (P1.7):** every table, view, function, enum, and composite resolves through `any`, so current TypeScript success does not prove schema compatibility.
 9. **Medium — bulk work is not atomic (P1.9):** bulk create fires up to 25 independent client requests; bulk update writes entries and audit rows in separate operations, allowing partial audit/data state.
