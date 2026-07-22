@@ -565,6 +565,7 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Two production-Chromium checks prove the real sign-in action computes to the exact borderless gradient/ring/white-fade/inset stack, real Archive metadata is upright, the active tab computes amber 700, and the real Pipeline Health link brightens to 1.1 without losing opacity. Retained Login and Archive captures were visually inspected with intact hierarchy, mesh, table depth, and no clipping or overflow.
 - React review found no new hooks, effects, requests, state, or client boundary. Changes are presentation-only class corrections plus source/browser regression ownership.
 - Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 63 Vitest files / 295 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 21 production-quality checks pass.
+- Clean GitHub run [29883807210](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29883807210) independently passed Application, Database, Dependencies, all 10 Browser journeys, all 21 production-quality checks, and retained quality evidence at implementation head `b7d65e5`. The Vercel preview passed, and draft PR #37 was clean and mergeable at that tested head.
 
 ## Phase 0 prioritized defect and risk inventory
 
