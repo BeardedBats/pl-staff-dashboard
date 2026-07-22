@@ -151,7 +151,7 @@ export default async function MyTasksPage() {
             </CardHeader>
             <CardContent>
               {upcoming.length === 0 ? (
-                <p className="text-xs italic text-text-zero">
+                <p className="text-xs text-text-zero">
                   No scheduled tasks yet.
                 </p>
               ) : (
@@ -242,7 +242,7 @@ function TaskRow({
               })}
             </div>
           ) : (
-            <span className="text-xs italic text-text-zero">No date</span>
+            <span className="text-xs text-text-zero">No date</span>
           )}
           {overdue ? (
             <div className="mt-0.5 font-sans text-[9px] uppercase text-destructive">

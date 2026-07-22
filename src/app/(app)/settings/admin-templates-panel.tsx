@@ -247,7 +247,7 @@ export function AdminTemplatesPanel({
                     </td>
                     <td className="px-3 py-2 text-xs text-text-team">
                       {t.assigned_user_name ?? (
-                        <span className="italic text-text-zero">
+                        <span className="text-text-zero">
                           Unassigned
                         </span>
                       )}

@@ -61,6 +61,8 @@ and production-browser tests can verify the state currently presented.
    See `PLPD_GATED_DATA.md` for the enforced financial-data boundary.
 7. Use the shared table shell, table, value, and pagination contracts described
    in `PLPD_TABLES.md`; page-local table styling is not a second design system.
+8. Treat every prohibition and its product-domain mapping in
+   `PLPD_NEVER_LIST.md` as a release rule.
 
-Page-wide adoption and responsive polish remain P3.8 work. P3.2 establishes
-the reusable, test-backed component vocabulary those page conversions consume.
+Responsive page-wide adoption remains P3.9 work. P3.2 establishes the reusable,
+test-backed component vocabulary those page conversions consume.

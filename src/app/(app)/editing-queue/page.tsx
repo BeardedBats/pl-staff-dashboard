@@ -144,7 +144,7 @@ export default async function EditingQueuePage() {
                             ) : null}
                           </div>
                         ) : (
-                          <span className="text-xs italic text-text-zero">
+                          <span className="text-xs text-text-zero">
                             —
                           </span>
                         )}
@@ -180,7 +180,7 @@ export default async function EditingQueuePage() {
                             ) : null}
                           </div>
                         ) : (
-                          <span className="text-xs italic text-text-zero">
+                          <span className="text-xs text-text-zero">
                             Unscheduled
                           </span>
                         )}
@@ -204,7 +204,7 @@ export default async function EditingQueuePage() {
                             ))}
                           </div>
                         ) : (
-                          <span className="text-xs italic text-text-zero">
+                          <span className="text-xs text-text-zero">
                             Unclaimed
                           </span>
                         )}

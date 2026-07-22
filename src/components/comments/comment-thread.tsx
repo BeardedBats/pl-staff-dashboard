@@ -218,7 +218,7 @@ function CommentItem({
                   timeStyle: "short",
                 })}
                 {comment.is_edited ? (
-                  <span className="ml-1 italic">(edited)</span>
+                  <span className="ml-1">(edited)</span>
                 ) : null}
               </p>
             </div>
@@ -323,7 +323,7 @@ function CommentItem({
                             timeStyle: "short",
                           })}
                           {reply.is_edited ? (
-                            <span className="ml-1 italic">(edited)</span>
+                            <span className="ml-1">(edited)</span>
                           ) : null}
                         </p>
                       </div>

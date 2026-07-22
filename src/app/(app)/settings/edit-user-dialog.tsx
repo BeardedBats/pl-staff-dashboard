@@ -186,7 +186,7 @@ export function EditUserDialog({
               <p className="text-text-zero">Email</p>
               <p className="text-text-team">
                 {user.email ?? (
-                  <span className="italic text-text-zero">
+                  <span className="text-text-zero">
                     (set on first WP login)
                   </span>
                 )}
