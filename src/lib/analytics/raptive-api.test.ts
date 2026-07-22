@@ -211,6 +211,38 @@ describe("Raptive Creator API client", () => {
     ]);
   });
 
+  it("normalizes documented numeric fields returned as strings and an omitted final-page next value", async () => {
+    fetchMock
+      .mockResolvedValueOnce(token())
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              pageUrl: "https://pitcherlist.com/coerced/",
+              earnings: "3.25",
+              pageviews: "75",
+              rpm: "5.5",
+            },
+          ],
+          meta: {
+            recordCount: "1",
+            page: { number: "1" },
+          },
+        }),
+      );
+
+    await expect(
+      getRaptivePagePerformance("site-1", "2026-07-20"),
+    ).resolves.toEqual([
+      {
+        pageUrl: "https://pitcherlist.com/coerced/",
+        earnings: 3.25,
+        pageviews: 75,
+        rpm: 5.5,
+      },
+    ]);
+  });
+
   it("returns an endpoint-specific code when a persisted page metric is invalid", async () => {
     fetchMock
       .mockResolvedValueOnce(token())
@@ -219,7 +251,7 @@ describe("Raptive Creator API client", () => {
           data: [
             {
               pageUrl: "https://pitcherlist.com/invalid/",
-              earnings: "3.25",
+              earnings: "not-a-number",
               pageviews: 75,
               rpm: 5.5,
             },

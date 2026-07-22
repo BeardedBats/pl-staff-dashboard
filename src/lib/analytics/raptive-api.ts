@@ -10,6 +10,20 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const PAGE_SIZE = 250;
 const MAX_REQUEST_ATTEMPTS = 3;
 
+const apiNumberSchema = z
+  .union([
+    z.number(),
+    z.string().regex(/^-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i),
+  ])
+  .transform(Number)
+  .pipe(z.number().finite());
+const apiNonnegativeIntegerSchema = apiNumberSchema.pipe(
+  z.number().int().nonnegative(),
+);
+const apiPositiveIntegerSchema = apiNumberSchema.pipe(
+  z.number().int().positive(),
+);
+
 const tokenSchema = z.object({
   access_token: z.string().min(1),
   token_type: z.literal("Bearer"),
@@ -60,20 +74,20 @@ const dateBoundsSchema = z.object({
 
 const pagePerformanceRowSchema = z.object({
   pageUrl: z.string().url(),
-  earnings: z.number(),
-  pageviews: z.number().int().nonnegative(),
-  rpm: z.number(),
+  earnings: apiNumberSchema,
+  pageviews: apiNonnegativeIntegerSchema,
+  rpm: apiNumberSchema,
 }).passthrough();
 
 const pageTraversalMetadataSchema = z.object({
-  number: z.number().int().positive(),
-  next: z.number().int().positive().nullable(),
+  number: apiPositiveIntegerSchema,
+  next: apiPositiveIntegerSchema.nullish().transform((value) => value ?? null),
 }).passthrough();
 
 const pagePerformanceSchema = z.object({
   data: z.array(pagePerformanceRowSchema),
   meta: z.object({
-    recordCount: z.number().int().nonnegative(),
+    recordCount: apiNonnegativeIntegerSchema,
     page: pageTraversalMetadataSchema,
   }).passthrough(),
 });
@@ -106,6 +120,17 @@ function safeApiErrorCode(value: unknown, fallback: string): string {
   return /^[a-z0-9][a-z0-9._-]{0,99}$/.test(normalized)
     ? normalized
     : fallback;
+}
+
+function valueTypeAtPath(value: unknown, path: PropertyKey[]): string {
+  let current = value;
+  for (const part of path) {
+    if (current === null || typeof current !== "object") return typeof current;
+    current = (current as Record<PropertyKey, unknown>)[part];
+  }
+  if (current === null) return "null";
+  if (Array.isArray(current)) return "array";
+  return typeof current;
 }
 
 async function responseErrorCode(response: Response): Promise<string> {
@@ -223,8 +248,23 @@ async function requestJson<T>(
     if (!response.ok) {
       throw new RaptiveApiError(await responseErrorCode(response), response.status);
     }
-    const parsed = schema.safeParse(await response.json());
+    const body = await response.json();
+    const parsed = schema.safeParse(body);
     if (!parsed.success) {
+      console.error(
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          level: "error",
+          component: "raptive",
+          event: "raptive.response_schema_invalid",
+          error_code: schemaErrorCode,
+          issues: parsed.error.issues.slice(0, 20).map((issue) => ({
+            path: issue.path.map(String).join("."),
+            code: issue.code,
+            actual_type: valueTypeAtPath(body, issue.path),
+          })),
+        }),
+      );
       throw new RaptiveApiError(schemaErrorCode, response.status);
     }
     return parsed.data;
