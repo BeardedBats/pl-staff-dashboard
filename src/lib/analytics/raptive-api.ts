@@ -49,15 +49,7 @@ const dateRangeSchema = z.object({
 
 const dateRangeSuiteSchema = z.object({
   range: dateRangeSchema,
-  mostRecentDay: dateRangeSchema,
-  lastThirtyDays: dateRangeSchema,
-  lastNinetyDays: dateRangeSchema,
-  monthToDate: dateRangeSchema,
-  lastMonth: dateRangeSchema,
-  lastMonthWidget: dateRangeSchema,
-  yearToDate: dateRangeSchema,
-  lastYear: dateRangeSchema,
-});
+}).passthrough();
 
 const dateBoundsSchema = z.object({
   data: z.object({
@@ -66,33 +58,23 @@ const dateBoundsSchema = z.object({
   }),
 });
 
-const scoredMetricSchema = z.object({
-  value: z.number(),
-  score: z.number(),
-});
-
 const pagePerformanceRowSchema = z.object({
   pageUrl: z.string().url(),
-  siteUrl: z.string().url().optional(),
-  impressions: z.number().nonnegative(),
   earnings: z.number(),
   pageviews: z.number().int().nonnegative(),
-  pageviewsPercent: z.number(),
   rpm: z.number(),
-  viewability: z.object({ value: z.number() }),
-  cpm: scoredMetricSchema,
-  impressionsPerPageview: scoredMetricSchema,
-  modifiedDate: z.string().nullable().optional(),
-  author: z.string().nullable(),
-  briefId: z.string().optional(),
-  briefStatus: z.string().optional(),
-});
+}).passthrough();
+
+const pageTraversalMetadataSchema = z.object({
+  number: z.number().int().positive(),
+  next: z.number().int().positive().nullable(),
+}).passthrough();
 
 const pagePerformanceSchema = z.object({
   data: z.array(pagePerformanceRowSchema),
   meta: z.object({
     recordCount: z.number().int().nonnegative(),
-    page: pageMetadataSchema,
+    page: pageTraversalMetadataSchema,
   }).passthrough(),
 });
 
@@ -203,6 +185,7 @@ async function requestToken(force = false): Promise<string> {
 async function requestJson<T>(
   path: string,
   schema: z.ZodType<T>,
+  schemaErrorCode: string,
 ): Promise<T> {
   let refreshedAfterUnauthorized = false;
   let forceTokenRefresh = false;
@@ -240,11 +223,11 @@ async function requestJson<T>(
     if (!response.ok) {
       throw new RaptiveApiError(await responseErrorCode(response), response.status);
     }
-    try {
-      return schema.parse(await response.json());
-    } catch {
-      throw new RaptiveApiError("raptive_response_schema_invalid", response.status);
+    const parsed = schema.safeParse(await response.json());
+    if (!parsed.success) {
+      throw new RaptiveApiError(schemaErrorCode, response.status);
     }
+    return parsed.data;
   }
   throw new RaptiveApiError("raptive_retry_exhausted");
 }
@@ -253,6 +236,7 @@ export async function listRaptiveSites(): Promise<RaptiveSite[]> {
   const response = await requestJson(
     "/sites?page%5Bsize%5D=0",
     siteListSchema,
+    "raptive_site_list_schema_invalid",
   );
   if (response.data.length !== response.meta.totalItemCount) {
     throw new RaptiveApiError("raptive_site_list_incomplete");
@@ -266,6 +250,7 @@ export async function getRaptiveDateBounds(
   const response = await requestJson(
     `/sites/${encodeURIComponent(siteId)}/date-bounds`,
     dateBoundsSchema,
+    "raptive_date_bounds_schema_invalid",
   );
   return response.data;
 }
@@ -297,6 +282,7 @@ export async function getRaptivePagePerformance(
     const response = await requestJson(
       `/sites/${encodeURIComponent(siteId)}/pages/performance?${params}`,
       pagePerformanceSchema,
+      "raptive_page_performance_schema_invalid",
     );
     expectedRecordCount ??= response.meta.recordCount;
     if (response.meta.recordCount !== expectedRecordCount) {
