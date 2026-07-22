@@ -291,6 +291,34 @@ export function AdminAnalyticsPanel({
       </Card>
 
       <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plug className="h-4 w-4" />
+            Raptive live sync
+          </CardTitle>
+          <CardDescription>
+            Live connection remains disabled until Raptive supplies a verified
+            API contract for this account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-text-zero">Status</span>
+            <Badge variant="outline" className="border-amber/40 text-amber">
+              Awaiting API contract
+            </Badge>
+          </div>
+          <p className="rounded-md border border-border bg-surface-3/30 p-3 text-text-team">
+            No Raptive API credential is accepted or stored yet. Historical
+            workbook imports remain available. Once the real endpoint,
+            authentication, pagination, rate limits, replay identity, and
+            response schema are confirmed, Operations can enable a tested
+            connector with disable, retry, health, and reconciliation controls.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">
