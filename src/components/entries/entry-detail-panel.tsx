@@ -25,6 +25,7 @@ import {
   X,
   Hand,
   History,
+  Search,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ import type { EntryDetail } from "@/lib/entries/queries";
 import type { GraphicRequestRecord } from "@/lib/graphics/data";
 import type { AppRole, AppSite } from "@/lib/auth/current-user";
 import { readApiError } from "@/lib/api/client";
+import { SeoWorkspace } from "@/components/seo/seo-workspace";
 
 type EntryDetailPanelProps = {
   entryId: string;
@@ -342,6 +344,7 @@ export function EntryDetailPanel({
     entry.content_status === "submitted" &&
     (entry.editor_status === "ready_for_edit" || entry.editor_status === "edited");
   const canWpRefresh = Boolean(entry.wp_post_id);
+  const canAnalyzeSeo = Boolean(entry.wp_post_id && (isParticipant || isManagerLike));
   const canArchive = !entry.is_archived;
 
   return (
@@ -496,6 +499,12 @@ export function EntryDetailPanel({
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="comments">Comments</TabsTrigger>
+          {canAnalyzeSeo ? (
+            <TabsTrigger value="seo">
+              <Search className="mr-1 h-3 w-3" />
+              SEO
+            </TabsTrigger>
+          ) : null}
           <TabsTrigger value="audit">
             <History className="mr-1 h-3 w-3" />
             Audit
@@ -545,6 +554,20 @@ export function EntryDetailPanel({
             }
           />
         </TabsContent>
+
+        {canAnalyzeSeo ? (
+          <TabsContent value="seo">
+            <SeoWorkspace
+              entryId={entry.id}
+              fallbackTitle={entry.title}
+              canApprove={isManagerLike}
+              onApplied={() => {
+                void reload();
+                onChanged();
+              }}
+            />
+          </TabsContent>
+        ) : null}
 
         <TabsContent value="audit">
           <AuditTab entryId={entryId} />

@@ -15,11 +15,13 @@ media, taxonomy, user, or metadata value was changed during verification.
   processes only the statuses used by its editorial workflow.
 - Post edit-context responses expose author, status, permalink, modified time,
   content, taxonomy IDs, featured media, and revision-relevant fields.
-- Yoast is installed (`yoast/v1`). Core post responses expose
-  `yoast_head` and `yoast_head_json` for reporting, but the core post schema
-  does not register Yoast fields as writable. The dashboard must not claim
-  Yoast write-back until a separate, non-destructive capability probe proves a
-  supported write endpoint and an intentional before/after approval flow.
+- Yoast is installed (`yoast/v1`). Core post responses expose read-only
+  rendered `yoast_head` and `yoast_head_json` values. The authenticated core
+  post `meta` schema separately registers exactly three writable strings used
+  by this dashboard: `_yoast_wpseo_focuskw`, `_yoast_wpseo_title`, and
+  `_yoast_wpseo_metadesc`. No other Yoast write is supported. These fields are
+  sent only through a manager-approved, revision-checked core post update with
+  a recorded before/after audit.
 
 QB List is not configured in the current application environment. All QB
 capability-dependent behavior must remain disabled or clearly unavailable

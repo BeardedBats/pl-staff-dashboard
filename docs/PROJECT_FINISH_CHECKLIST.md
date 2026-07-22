@@ -5,7 +5,7 @@ Last updated: 2026-07-22
 ## Recovery state
 
 - Current phase: Phase 5 — WordPress and SEO
-- Current action: P5.8–P5.19 — build title generation, explainable SEO analysis, approval, permissions, and supported write-back.
+- Current action: Phase 5 boundary gate — run the complete local suite once, then publish one exact-head CI run and one Vercel preview.
 - Branch: `codex/production-readiness-p5`
 - Stack base: `9115bd6` (combined Phase 4 exact head on green draft PR #40, based on the completed Phase 3 stack).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
@@ -123,18 +123,18 @@ Gate: each role can complete primary work with minimal instruction, and managers
 - [x] P5.5 Add prepublication validation.
 - [x] P5.6 Add safe dashboard/WordPress conflict resolution.
 - [x] P5.7 Add evergreen-refresh identification where supported.
-- [ ] P5.8 Implement the best maintainable title-generator integration.
-- [ ] P5.9 Embed title generation/scoring without duplicate data entry.
-- [ ] P5.10 Preserve explanations, SERP preview, suffix calculation, and copy/apply actions.
-- [ ] P5.11 Test scoring, pixels, ranking, and regressions.
-- [ ] P5.12 Determine supported Yoast read/write values and analysis.
-- [ ] P5.13 Separate Yoast-reported results from Pitcher List analysis.
-- [ ] P5.14 Analyze focus-keyphrase placement.
-- [ ] P5.15 Analyze length, distribution, stuffing, structure, voice, transitions, and readability.
-- [ ] P5.16 Provide prioritized, specific recommendations.
-- [ ] P5.17 Allow permissioned analysis, approval, and supported WordPress write-back.
-- [ ] P5.18 Require intentional before/after approval before overwrites.
-- [ ] P5.19 Test SEO analysis, permissions, write-back, conflicts, and recovery.
+- [x] P5.8 Implement the best maintainable title-generator integration.
+- [x] P5.9 Embed title generation/scoring without duplicate data entry.
+- [x] P5.10 Preserve explanations, SERP preview, suffix calculation, and copy/apply actions.
+- [x] P5.11 Test scoring, pixels, ranking, and regressions.
+- [x] P5.12 Determine supported Yoast read/write values and analysis.
+- [x] P5.13 Separate Yoast-reported results from Pitcher List analysis.
+- [x] P5.14 Analyze focus-keyphrase placement.
+- [x] P5.15 Analyze length, distribution, stuffing, structure, voice, transitions, and readability.
+- [x] P5.16 Provide prioritized, specific recommendations.
+- [x] P5.17 Allow permissioned analysis, approval, and supported WordPress write-back.
+- [x] P5.18 Require intentional before/after approval before overwrites.
+- [x] P5.19 Test SEO analysis, permissions, write-back, conflicts, and recovery.
 
 Gate: staff can optimize articles, understand recommendations, and safely sync supported fields with WordPress.
 
@@ -658,7 +658,7 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 ### 2026-07-22 — P5.1–P5.2 WordPress capability and webhook foundation
 
 - A read-only live Pitcher List probe verified application-password authentication, administrator integration authority, core REST edit-context access, supported post types, taxonomy, authors, media, statuses, and post schema. QB remains explicitly unconfigured.
-- Yoast is installed and exposes reportable `yoast_head` and `yoast_head_json` fields, but does not register writable fields in the core post schema. Dashboard analysis must stay separate from Yoast-reported results, and no Yoast write-back may be claimed without a later supported endpoint probe and intentional before/after approval.
+- Yoast is installed and exposes reportable `yoast_head` and `yoast_head_json` fields. The initial top-level post-field probe found no direct writable Yoast fields; the later nested-meta schema probe documented the three registered strings supported by the guarded write-back flow. Dashboard analysis remains separate from Yoast-reported results.
 - Added an optional HMAC-authenticated WordPress webhook that accepts only site/post/event identifiers. It never trusts inbound content; it records a server-only, unique, bounded three-attempt event and triggers the existing authenticated reconciliation path. Duplicate and concurrent completed events do not repeat WordPress work; the five-minute scheduled poll remains the recovery backstop when the webhook or secret is unavailable.
 - Migration `0026_wordpress_sync_recovery.sql` cold-applies through the ordered stack. All 14 database files / 368 pgTAP assertions pass, generated types match, and database lint has no warnings. Targeted webhook unit/API tests, ESLint, and TypeScript pass.
 
@@ -669,6 +669,14 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Conflict resolution is manager-scoped and confirmation-required. It acquires a database lease, re-reads WordPress, refuses a changed revision timestamp, records an intentional before/after audit, and either accepts WordPress locally or writes the dashboard title through the verified core post endpoint. Network/upstream failures remain visible and recoverable rather than reporting success.
 - Added an age-based evergreen queue for published posts at least one year old and unchanged in WordPress for six months. It is deliberately described as an editorial prompt and never uses or reveals traffic, revenue, or employee-performance data.
 - Migration `0027_wordpress_entry_sync_state.sql` cold-applies through the ordered stack. All 15 database files / 373 pgTAP assertions pass, generated types match, and database lint has no warnings. Targeted conflict, evergreen, route-authorization, webhook, and reconciliation tests plus ESLint and TypeScript pass.
+
+### 2026-07-22 — P5.8–P5.19 title and SEO batch
+
+- Embedded a deterministic, dependency-free title studio in the existing entry detail. It starts from the live WordPress title, never creates a second title record, ranks unique candidates with the verified 100-point rubric, estimates pixel width with the Pitcher List suffix, explains every category, renders a SERP preview, and provides copy, use, and manager-approved apply actions.
+- Added independent Pitcher List analysis for focus-keyphrase placement, description length, distribution/stuffing, headings, sentence length, likely passive voice, transitions, and readability. Findings are ordered, specific, and visibly separate from Yoast-reported title, description, canonical, robots, and focus keyphrase values.
+- A second read-only live schema probe confirmed that Yoast rendered fields are read-only while the authenticated core post meta schema registers exactly three writable strings: focus keyphrase, SEO title, and meta description. The dashboard supports only those fields plus the verified core title field; no broader Yoast capability is claimed.
+- Analysis is limited to entry participants and site managers. Write-back is site-Manager+ only, requires an explicit confirmation and exact analyzed WordPress revision, acquires a database lease, writes one bounded title/meta payload, checkpoints synchronization state, and records the before/after title audit. Changed revisions and concurrent work return conflicts without reporting success.
+- Targeted unit, integration, API, component, ESLint, and TypeScript checks pass. A manager-authenticated Chromium journey covers the complete workspace, approval boundary, suffix presentation, Pitcher List/Yoast separation, and a WCAG A/AA scan with zero violations.
 
 ## Phase 0 prioritized defect and risk inventory
 
