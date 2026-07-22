@@ -189,7 +189,7 @@ export function CommentComposer({
       />
 
       {suggestions.length > 0 ? (
-        <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-md border border-border bg-popover shadow-lg">
+        <div className="plpd-dropdown-menu absolute left-0 right-0 top-full z-10 mt-1 rounded-plpd-panel border-0">
           <ul className="max-h-48 overflow-y-auto p-1">
             {suggestions.map((u, idx) => (
               <li key={u.id}>

@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 3 — PLPD design-system foundation
-- Current action: P3.4 — Preserve the subtle-glass-over-mesh doctrine without opaque panels or heavy frosted glass.
-- Branch: `codex/production-readiness-p3-3`
-- Stack base: `77dfdbf` (green draft PR #31, based on green draft PRs #30, #29, #28, #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P3.5 — Implement every required default, hover, active, loading, error, empty, and gated component state.
+- Branch: `codex/production-readiness-p3-4`
+- Stack base: `e3cccad` (green draft PR #32, based on green draft PRs #31, #30, #29, #28, #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -76,7 +76,7 @@ Gate: a clean checkout can prove correctness in CI, and production failures are 
 - [x] P3.1 Convert the guide's canonical colors, typography, spacing, gradients, shadows, borders, mesh, and semantic styles into centralized application tokens.
 - [x] P3.2 Implement reusable PLPD primitives for navigation, headers, tabs, buttons, fields, dropdowns, cards, chips, tables, pagination, alerts, dialogs, drawers, loading states, empty states, errors, and gated values.
 - [x] P3.3 Apply Work Sans to data and DM Sans to application chrome as defined by the guide.
-- [ ] P3.4 Preserve the subtle-glass-over-mesh doctrine without opaque panels or heavy frosted glass.
+- [x] P3.4 Preserve the subtle-glass-over-mesh doctrine without opaque panels or heavy frosted glass.
 - [ ] P3.5 Implement all required component states: default, hover, active, loading, error, empty, and gated.
 - [ ] P3.6 Ensure gated data is withheld on the server rather than sent to the client and visually blurred.
 - [ ] P3.7 Bring tables, numeric alignment, zero styling, row fills, hover behavior, pagination, and data colors into exact guide compliance.
@@ -505,7 +505,19 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Added two production-Chromium checks that wait for the font loader and assert computed families on anonymous chrome, the wordmark, the sign-in action, authenticated page chrome, form values, the users table, and a data pill. Their retained screenshots were visually inspected: desktop settings and mobile login have intact hierarchy, no clipping, and no horizontal overflow.
 - Production-mode quality remains green across eight dark/light WCAG A/AA scenarios, keyboard focus order, three performance profiles, and the two typography checks. Latest lab measurements are login FCP/LCP 96 ms and 268,878 encoded bytes; writer content FCP/LCP 128 ms, CLS 0.0536, and 407,728 encoded bytes; admin settings FCP/LCP 184 ms and 391,424 encoded bytes; all TBT values are zero and all budgets pass.
 - Final local gate: diff hygiene; runbook contract; ESLint; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 59 Vitest files / 270 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all eight role/anonymous Chromium journeys; and all 14 production-quality checks pass.
-- Clean GitHub run [29877886050](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29877886050) independently passed Application, Database, Dependencies, all eight Browser journeys, all 14 quality checks, and the retained quality-evidence upload on Linux. The Vercel preview passed, and draft PR #32 was merge-clean and mergeable at the tested head `6f97c4e`.
+- Clean exact-head GitHub run [29878225892](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29878225892) independently passed Application, Database, Dependencies, all eight Browser journeys, all 14 quality checks, and the retained quality-evidence upload on Linux. The Vercel preview passed, and draft PR #32 was merge-clean and mergeable at the tested head `e3cccad`.
+
+### 2026-07-21 — P3.4 subtle-glass-over-mesh gate
+
+- Reverified the guide doctrine and its source hash. Dark mode retains all three load-bearing atmosphere layers: the exact mesh canvas, a transparent sidebar with its canonical cyan-tinted wash and edge shadow, and translucent panels/table rows that let the mesh remain visible.
+- Remapped the semantic `card` surface from opaque `--surface-2` to the guide's exact `rgba(33, 36, 58, 0.35)` panel fill in dark mode. This corrects all 56 existing `bg-card` consumers centrally without scattered opacity approximations; the documented derived light mode continues to use its readable 88% panel fill.
+- Completed the exact panel depth stack by pairing the source outer panel shadow with its 1 px inset highlights. Removed the login wordmark's generic heavy shadow/ring and sole backdrop blur, and migrated the last raw mention popup from an opaque popover/generic shadow to the canonical translucent dropdown gradient.
+- A four-test recursive source contract pins panel/state/row fills, the semantic card mapping, mesh/sidebar construction, exact panel depth, the migrated popup, source documentation, and zero `backdrop-filter` or `backdrop-blur-*` use. Ordinary blur remains only where the guide specifies the pointed card's behind-surface shadow.
+- Two production-Chromium checks prove the mesh resolves on anonymous and authenticated pages, the sidebar computes transparent with a non-empty wash, the legacy Calendar panel computes to exact alpha 0.35, the header remains translucent, backdrop filtering is absent, and neither representative page overflows horizontally.
+- Visual inspection of the retained mobile login and desktop Calendar captures found intact hierarchy, readable controls/data, subtle depth, and no opaque-panel or frosted-glass regression. The component review found no new effects, requests, state, or render-boundary changes.
+- Production-mode quality remains green across the two glass/mesh checks, eight dark/light WCAG A/AA scenarios, keyboard focus order, three performance profiles, and both typography checks. Latest lab measurements are login FCP/LCP 56 ms and 268,854 encoded bytes; writer content FCP/LCP 128 ms, CLS 0.0231, and 407,750 encoded bytes; admin settings FCP/LCP 200 ms and 391,429 encoded bytes; all TBT values are zero and all budgets pass.
+- Final local gate: diff hygiene; runbook contract; ESLint; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 60 Vitest files / 274 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all eight role/anonymous Chromium journeys; and all 16 production-quality checks pass.
+- Clean GitHub run [29878929258](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29878929258) independently passed Application, Database, Dependencies, all eight Browser journeys, all 16 quality checks, and the retained quality-evidence upload on Linux. The Vercel preview passed, and draft PR #33 was merge-clean and mergeable at the tested head `dc86d5b`.
 
 ## Phase 0 prioritized defect and risk inventory
 
