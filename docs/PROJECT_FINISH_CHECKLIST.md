@@ -4,9 +4,9 @@ Last updated: 2026-07-22
 
 ## Recovery state
 
-- Current phase: Phase 6 — Raptive-ready data system
-- Current action: publish the consolidated Phase 6 exact head for one GitHub CI run and one Vercel preview.
-- Branch: `codex/production-readiness-p6`
+- Current phase: Phase 7 — release candidate, production deployment, and Raptive handoff
+- Current action: publish the release-candidate exact head for one GitHub CI run and one Vercel preview.
+- Branch: `codex/production-readiness-p7`
 - Stack base: `9115bd6` (combined Phase 4 exact head on green draft PR #40, based on the completed Phase 3 stack).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
@@ -134,11 +134,11 @@ Gate: one complete local Phase 5 suite, one exact-head GitHub CI run, and one Ve
 
 Gate: bounded historical fixtures, authorization, recovery, reconciliation, and the explicit no-speculation live boundary pass; only Nick's real workbook and actual live API contract/authorization remain.
 
-Phase 6 gate status: **LOCAL PASS; FINAL REAL-WORKBOOK AND LIVE-CONTRACT VALIDATION IS INPUT-GATED FOR P7.4.**
+Phase 6 gate status: **PASS.** Exact head `a37698f02f110dda625811f05d499dfe6f7d8426` passed GitHub Actions run `29894535937` and the single Vercel preview (`9UQncWjjFX8GGW73sAT4yTNsoF8u`). Final real-workbook and live-contract validation remains input-gated for P7.4.
 
 ## Phase 7 — Full-system verification, deployment, and Raptive handoff
 
-- [ ] P7.1 Run one release-candidate clean-checkout quality, security, database, browser, accessibility, and complete route/role/viewport visual gate.
+- [ ] P7.1 Run one release-candidate clean-checkout quality, security, database, browser, accessibility, and complete route/role/viewport visual gate. — LOCAL CLEAN-CHECKOUT PASS; EXACT-HEAD CI/PREVIEW PENDING
 - [ ] P7.2 Execute one production migration/deployment procedure with verified backup and rollback readiness.
 - [ ] P7.3 Run one production smoke covering roles, WordPress/SEO, cron, integrations, and health.
 - [ ] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health.
@@ -640,7 +640,15 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Added the real-workbook validation procedure and the exact live-connector prerequisites. The application now plainly reports that live sync is disabled pending an actual account API contract and accepts/stores no speculative Raptive credential.
 - Confirmed there is no external finance consumer or daily-aggregate API in source. No speculative finance contract was added; financial reads/imports retain EIC/Operations authorization plus server/RLS boundaries.
 - Targeted parser, limit, route-authorization, failure/replay, uploads, and financial-data boundary tests pass.
-- The complete local Phase 6 gate passes: runbook contract, ESLint, TypeScript, 83 Vitest files / 355 tests with coverage, zero-vulnerability dependency audit, production build, 14 database files / 363 pgTAP assertions, generated-type drift, database lint, 11 browser journeys, and all 40 route/role/viewport quality checks. Exact-head CI and the single Vercel preview remain the Phase 6 boundary gate.
+- The complete local Phase 6 gate passes: runbook contract, ESLint, TypeScript, 83 Vitest files / 355 tests with coverage, zero-vulnerability dependency audit, production build, 14 database files / 363 pgTAP assertions, generated-type drift, database lint, 11 browser journeys, and all 40 route/role/viewport quality checks.
+- Exact head `a37698f02f110dda625811f05d499dfe6f7d8426` passed GitHub Actions run `29894535937`: Application, Database, Dependencies, Browser, all 11 browser journeys, and all 40 quality checks are green. The single Vercel preview (`9UQncWjjFX8GGW73sAT4yTNsoF8u`) also passed on PR #42. Phase 6 boundary gate: **PASS**.
+
+### 2026-07-22 — Phase 7 release-candidate local gate
+
+- Added one ordered release procedure covering immutable-head verification, the exact migration suffix through `0026`, backup/Storage export, forward-repair/restore rollback decisions, stacked deployment, production smoke, and Nick's two final Raptive inputs. The runbook verifier now rejects the removed WordPress webhook/conflict design and requires the corrected read-only boundary.
+- A detached clean checkout of commit `9ac544232ff82afd131194289e0775a88f6fcb57` passed locked install, runbook contract, ESLint, TypeScript, 83 Vitest files / 355 tests with coverage, zero-vulnerability dependency audit, production build, 14 database files / 363 pgTAP assertions, generated-type drift, database lint, and all 11 browser journeys.
+- The original sequential tool stream closed after producing the complete quality artifacts but before returning its final exit code. Only that affected matrix was rerun. Its first retry was infrastructure-blocked because Docker Desktop had stopped; after restoring Docker, all 40 accessibility, performance, responsive, and visual checks passed in 2.4 minutes. No product fix or broader suite rerun was needed.
+- Production remains unchanged. Supabase DDL authority, current backup/Storage export, Vercel production authority, and a dedicated live role-test session remain required before P7.2/P7.3. Known-unavailable Supabase DDL access was not rechecked.
 
 ## Phase 0 prioritized defect and risk inventory
 

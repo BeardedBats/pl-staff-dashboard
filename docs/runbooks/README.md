@@ -13,9 +13,10 @@ Content Dashboard. They are deliberately repository-specific.
 
 Use the runbooks in this order for a planned release:
 
-1. [Backup and restore](./BACKUP_AND_RESTORE.md)
-2. [Migration and rollback](./MIGRATION_AND_ROLLBACK.md)
-3. [Deployment](./DEPLOYMENT.md)
+1. [Release candidate](./RELEASE_CANDIDATE.md)
+2. [Backup and restore](./BACKUP_AND_RESTORE.md)
+3. [Migration and rollback](./MIGRATION_AND_ROLLBACK.md)
+4. [Deployment](./DEPLOYMENT.md)
 
 For unplanned work, start with [Incident response](./INCIDENT_RESPONSE.md).
 Use [Secret rotation](./SECRET_ROTATION.md) for planned rotation or suspected

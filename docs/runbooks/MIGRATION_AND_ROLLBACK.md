@@ -206,13 +206,13 @@ and application together.
   authenticated clients cannot execute `replace_notification_preferences`;
   and one invalid event must roll back both the preference set and delivery
   settings. Future scheduled items must remain outside unread counts until due.
-- WordPress event identifiers are unique per site, invalid post IDs and event
-  keys are rejected, retries stop at three attempts, completed delivery is
-  idempotent, and anon/authenticated roles cannot read the ledger or execute
-  its attempt functions.
-- Entry sync status accepts only the documented states; a divergent title edit
-  is visible as a conflict, concurrent resolution cannot acquire the same
-  lease, and a changed WordPress modified timestamp refuses the overwrite.
+- Entry sync status accepts only `pending`, `synced`, `stale`, and `error`;
+  invalid states and overlong error details are rejected. There is no
+  WordPress webhook/event ledger or generalized content-conflict schema.
+- WordPress polling remains read-only for article content and publication
+  metadata. A successful reconciliation updates the dashboard sync state and
+  watermark; partial-page and upstream failures retain the previous watermark
+  so an authorized manual refresh can recover without skipping changes.
 - The both-site Admin+ health endpoint loads, all integration probes are
   explainable, and no new critical alert appears.
 - Continue to the [Deployment](./DEPLOYMENT.md) gate; do not reopen release
