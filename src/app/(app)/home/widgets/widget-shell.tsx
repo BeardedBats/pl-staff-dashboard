@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import type { PlpdComponentState } from "@/components/ui/component-state";
 
 type Props = {
   title: string;
@@ -18,6 +19,7 @@ type Props = {
   /** Shown on the right of the header — usually a link to the full view. */
   seeMoreHref?: string;
   seeMoreLabel?: string;
+  state?: PlpdComponentState;
   children: ReactNode;
 };
 
@@ -32,10 +34,11 @@ export function WidgetShell({
   count,
   seeMoreHref,
   seeMoreLabel = "View all",
+  state = "default",
   children,
 }: Props) {
   return (
-    <Card>
+    <Card state={state} stateful>
       <CardHeader className="flex flex-row items-start justify-between gap-2">
         <div>
           <CardTitle className="flex items-center gap-2 text-sm">
@@ -56,7 +59,7 @@ export function WidgetShell({
         {seeMoreHref ? (
           <Link
             href={seeMoreHref}
-            className="flex items-center gap-1 text-[11px] text-cyan hover:underline"
+            className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] text-cyan hover:underline"
           >
             {seeMoreLabel}
             <ArrowRight className="h-3 w-3" />

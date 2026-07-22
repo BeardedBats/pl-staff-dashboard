@@ -1,15 +1,23 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import type { PlpdComponentState } from "@/components/ui/component-state";
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+type CardProps = React.HTMLAttributes<HTMLDivElement> & {
+  state?: PlpdComponentState;
+  stateful?: boolean;
+};
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, state = "default", stateful = false, ...props }, ref) => (
     <div
       ref={ref}
+      {...props}
+      data-plpd-state={state}
       className={cn(
         "plpd-card rounded-plpd-card border border-border-table text-card-foreground",
+        stateful && "plpd-stateful-card",
         className,
       )}
-      {...props}
     />
   ),
 );
@@ -77,3 +85,4 @@ export {
   CardContent,
   CardFooter,
 };
+export type { CardProps };

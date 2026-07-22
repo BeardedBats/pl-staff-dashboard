@@ -21,6 +21,7 @@ function GatedValue({
 }: GatedValueProps) {
   return (
     <span
+      data-plpd-state="gated"
       className={cn("inline-flex items-center gap-2", className)}
       aria-label={`${label} requires access`}
     >

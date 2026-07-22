@@ -22,6 +22,8 @@ function LoadingState({
     <div
       role="status"
       aria-live="polite"
+      aria-busy="true"
+      data-plpd-state="loading"
       className={cn(
         "plpd-state-frame flex min-h-[118px] flex-col items-center justify-center gap-2 rounded-plpd-panel border border-border-table p-[18px] text-center",
         className,
@@ -42,6 +44,7 @@ function ErrorState({ title, description, action, className }: StateProps) {
   return (
     <div
       role="alert"
+      data-plpd-state="error"
       className={cn(
         "plpd-alert-error flex min-h-[118px] flex-col items-center justify-center gap-2 rounded-plpd-panel border p-[18px] text-center",
         className,

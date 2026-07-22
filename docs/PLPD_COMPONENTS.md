@@ -26,6 +26,28 @@ claims.
 | Empty/error | `ui/empty-state.tsx`, `ui/state.tsx` | The frame remains in place; error copy is caller-authored rather than raw exception output. |
 | Gated values | `ui/gated-value.tsx` | Accepts only a label, unit, and placeholder. It has no real-value prop; authorization must withhold data on the server. |
 
+## Seven-state widget contract
+
+`ui/component-state.ts` is the canonical typed vocabulary: `default`, `hover`,
+`active`, `loading`, `error`, `empty`, and `gated`. The shared `Card` records the
+current state in `data-plpd-state`; every home-page `WidgetShell` opts into the
+stateful surface and can select any member of that vocabulary.
+
+- Default keeps the translucent resting surface and pointed inset construction.
+- Hover moves the surface up 1px over 150ms, layers the exact 4% guide wash,
+  and reduces contained badge opacity to `.88`.
+- Active applies the canonical warm-amber active shadow. No other state adds a
+  glow.
+- Loading uses the canonical spinner or the documented layout-preserving
+  skeleton extension; the guide's stand-in bars remain excluded.
+- Error accepts safe product copy, never an exception object or raw error text.
+- Empty retains the state frame so the surrounding layout does not collapse.
+- Gated renders a lock and placeholder only. The protected value is withheld
+  before rendering and cannot be supplied to `GatedValue`.
+
+Rendered state primitives expose the same `data-plpd-state` value so component
+and production-browser tests can verify the state currently presented.
+
 ## Usage rules
 
 1. Use these primitives before adding page-local visual construction.

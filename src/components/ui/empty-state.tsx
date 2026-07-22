@@ -23,6 +23,7 @@ export function EmptyState({
   return (
     <div
       role="status"
+      data-plpd-state="empty"
       className={cn(
         "plpd-state-frame flex min-h-[118px] flex-col items-center justify-center rounded-plpd-panel border border-border-table p-[18px] text-center",
         className,
