@@ -122,7 +122,7 @@ export function CalendarPageClient({
           value={siteFilter || ALL}
           onValueChange={(v) => setSiteFilter(v === ALL ? "" : (v as AppSite))}
         >
-          <SelectTrigger className="h-8 w-[140px] text-xs">
+          <SelectTrigger aria-label="Filter calendar by site" className="h-8 w-[140px] text-xs">
             <SelectValue placeholder="Site" />
           </SelectTrigger>
           <SelectContent>
@@ -136,7 +136,7 @@ export function CalendarPageClient({
           value={tierFilter || ALL}
           onValueChange={(v) => setTierFilter(v === ALL ? "" : v)}
         >
-          <SelectTrigger className="h-8 w-[160px] text-xs">
+          <SelectTrigger aria-label="Filter calendar by tier" className="h-8 w-[160px] text-xs">
             <SelectValue placeholder="Tier" />
           </SelectTrigger>
           <SelectContent>
@@ -217,6 +217,8 @@ export function CalendarPageClient({
             center: "title",
             right: "",
           }}
+          buttonIcons={false}
+          buttonText={{ prev: "Previous", next: "Next", today: "Today" }}
           events={events}
           eventClick={handleEventClick}
           height="auto"
@@ -242,7 +244,7 @@ export function CalendarPageClient({
           }
           .calendar-wrapper .fc-col-header-cell-cushion {
             font-family: var(--font-data);
-            color: var(--text-zero);
+            color: var(--text-zero-accessible);
             font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 0.05em;

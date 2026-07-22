@@ -84,6 +84,7 @@ export function AnalyticsFiltersBar({
           From
         </span>
         <Input
+          aria-label="Analytics start date"
           type="date"
           value={value.dateFrom}
           max={value.dateTo}
@@ -107,6 +108,7 @@ export function AnalyticsFiltersBar({
           To
         </span>
         <Input
+          aria-label="Analytics end date"
           type="date"
           value={value.dateTo}
           min={value.dateFrom}
@@ -165,7 +167,7 @@ export function AnalyticsFiltersBar({
             })
           }
         >
-          <SelectTrigger className="h-8 w-32 text-xs">
+          <SelectTrigger aria-label="Filter analytics by site" className="h-8 w-32 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -189,7 +191,7 @@ export function AnalyticsFiltersBar({
           value={value.tierId || "all"}
           onValueChange={(v) => setField("tierId", v === "all" ? "" : v)}
         >
-          <SelectTrigger className="h-8 w-40 text-xs">
+          <SelectTrigger aria-label="Filter analytics by tier" className="h-8 w-40 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -210,7 +212,7 @@ export function AnalyticsFiltersBar({
           value={value.categoryId || "all"}
           onValueChange={(v) => setField("categoryId", v === "all" ? "" : v)}
         >
-          <SelectTrigger className="h-8 w-44 text-xs">
+          <SelectTrigger aria-label="Filter analytics by category" className="h-8 w-44 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -231,7 +233,7 @@ export function AnalyticsFiltersBar({
           value={value.authorId || "all"}
           onValueChange={(v) => setField("authorId", v === "all" ? "" : v)}
         >
-          <SelectTrigger className="h-8 w-44 text-xs">
+          <SelectTrigger aria-label="Filter analytics by author" className="h-8 w-44 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="max-h-72">

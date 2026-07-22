@@ -278,7 +278,7 @@ function ArchiveFilters({
         value={site || SITE_ALL}
         onValueChange={(v) => onSite(v === SITE_ALL ? "" : (v as AppSite))}
       >
-        <SelectTrigger className="h-9 w-[140px] text-xs">
+        <SelectTrigger aria-label="Filter archive by site" className="h-9 w-[140px] text-xs">
           <SelectValue placeholder="Site" />
         </SelectTrigger>
         <SelectContent>

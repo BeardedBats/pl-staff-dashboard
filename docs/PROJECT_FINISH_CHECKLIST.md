@@ -4,10 +4,10 @@ Last updated: 2026-07-21
 
 ## Recovery state
 
-- Current phase: Phase 3 — PLPD design-system foundation
-- Current action: P3.10 — Add automated accessibility checks and keyboard/focus verification.
-- Branch: `codex/production-readiness-p3-9`
-- Stack base: `b6d4765` (P3.8 exact-evidence head on green draft PR #37, based on the green stacked production-readiness pull requests).
+- Current phase: Phase 4 — Role-focused workflow and usability
+- Current action: P4.1–P4.5 — core daily-workflow and state-coverage batch, after the combined Phase 3 remote gate.
+- Branch: `codex/production-readiness-p3-10`
+- Stack base: `f349747` (P3.9 exact-evidence head on green draft PR #38, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -82,8 +82,8 @@ Gate: a clean checkout can prove correctness in CI, and production failures are 
 - [x] P3.7 Bring tables, numeric alignment, zero styling, row fills, hover behavior, pagination, and data colors into exact guide compliance.
 - [x] P3.8 Remove Never List violations.
 - [x] P3.9 Create responsive desktop, tablet, and mobile behavior without inventing new brand colors or visual language.
-- [ ] P3.10 Add automated accessibility checks and keyboard/focus verification.
-- [ ] P3.11 Establish screenshot or visual-regression coverage for shared primitives and representative pages.
+- [x] P3.10 Add automated accessibility checks and keyboard/focus verification.
+- [x] P3.11 Establish screenshot or visual-regression coverage for shared primitives and representative pages.
 
 Gate: new feature work can be built entirely from verified PLPD primitives.
 
@@ -578,6 +578,17 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - React review found no new effects, requests, state synchronization, or client boundaries. Changes are responsive presentation, semantic heading, chart/calendar typography props, and regression ownership; existing handlers and data flow remain unchanged.
 - Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 64 Vitest files / 299 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 23 production-quality checks pass.
 - Clean GitHub run [29885510199](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29885510199) independently passed Application, Database, Dependencies, all 10 Browser journeys, all 23 production-quality checks, and retained quality evidence at implementation head `a4f0a16`. The Vercel preview passed, and draft PR #38 was clean and mergeable at the tested head.
+- Exact evidence-head run [29885830768](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29885830768) independently passed Application, Database, Dependencies, all 10 Browser journeys, and all 23 quality checks at `f349747`; Vercel passed and draft PR #38 remained clean and mergeable.
+
+### 2026-07-21 — P3.10/P3.11 accessibility and visual-regression batch
+
+- Expanded the automated WCAG A/AA floor from representative scenarios to all 18 authenticated routes with no exclusions. The route sweep found and repaired unnamed date, site, tier, category, author, role, team, notification, season, checklist, calendar, archive, and template controls.
+- Added production-Chromium keyboard journeys for the mobile drawer focus trap and trigger restoration, Settings arrow-key tab navigation, template-dialog focus containment and launcher restoration, and user-menu entry, arrow navigation, Escape close, and trigger restoration. Open drawer, dialog, and menu states are also axe-scanned.
+- Shared dropdown menus now default to non-modal behavior so opening a menu cannot leave focus inside an `aria-hidden` application shell. Template creation/edit launchers explicitly recover focus after close, while callers can still override the shared dropdown mode when a genuinely modal menu is required.
+- Added five committed visual-regression baselines: anonymous mobile login, administrator desktop home, responsive mobile Archive, the shared template-dialog control surface, and EIC desktop Analytics. Animations, caret, reduced motion, color scheme, time, viewport, data actors, and snapshot paths are deterministic. The global cross-platform pixel allowance is 3%; the text-dense mobile login capture uses 5% after the first exact-head Linux run proved a stable 4% glyph-edge-only Windows/Linux rasterization difference while all other baselines passed at 3%.
+- The committed captures were visually inspected before acceptance. They show intact PLPD hierarchy and surfaces, readable controls, representative desktop/mobile layouts, and no framework error overlay. A source contract pins the route-wide axe gate, keyboard/focus behaviors, dialog/menu focus contracts, screenshot configuration, test scenarios, and all five baseline files.
+- Targeted batch verification: ESLint and TypeScript pass; all four new accessibility/interaction journeys pass; all five visual baselines pass in comparison mode after generation; and all three accessibility/visual source-contract tests pass. React review found no new effects, requests, mirrored state, or unstable list keys; the one new ref is launcher-local focus recovery, and existing Radix semantics remain authoritative.
+- Combined Phase 3 full local gate: diff hygiene; six-runbook contract through migration `0022`; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability low-threshold audit; Next.js 16.2.11 production build; 65 Vitest files / 302 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 32 production-quality checks pass.
 
 ## Phase 0 prioritized defect and risk inventory
 

@@ -95,7 +95,10 @@ export function NotificationsPageClient({
             setTypeFilter(v === ALL ? "" : (v as NotificationEventType))
           }
         >
-          <SelectTrigger className="h-8 w-[220px] text-xs">
+          <SelectTrigger
+            aria-label="Filter notifications by type"
+            className="h-8 w-[220px] text-xs"
+          >
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
