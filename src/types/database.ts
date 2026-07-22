@@ -335,6 +335,48 @@ export type Database = {
           },
         ]
       }
+      cron_runs: {
+        Row: {
+          attempt: number
+          error_code: string | null
+          finished_at: string | null
+          id: string
+          job_name: string
+          lease_expires_at: string
+          run_key: string
+          source: string
+          started_at: string
+          status: string
+          summary: Json | null
+        }
+        Insert: {
+          attempt?: number
+          error_code?: string | null
+          finished_at?: string | null
+          id?: string
+          job_name: string
+          lease_expires_at: string
+          run_key: string
+          source: string
+          started_at?: string
+          status: string
+          summary?: Json | null
+        }
+        Update: {
+          attempt?: number
+          error_code?: string | null
+          finished_at?: string | null
+          id?: string
+          job_name?: string
+          lease_expires_at?: string
+          run_key?: string
+          source?: string
+          started_at?: string
+          status?: string
+          summary?: Json | null
+        }
+        Relationships: []
+      }
       entries: {
         Row: {
           archive_reason: string | null
@@ -782,6 +824,7 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
+          dedupe_key: string | null
           discord_sent: boolean
           email_sent: boolean
           entry_id: string | null
@@ -794,6 +837,7 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string
+          dedupe_key?: string | null
           discord_sent?: boolean
           email_sent?: boolean
           entry_id?: string | null
@@ -806,6 +850,7 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string
+          dedupe_key?: string | null
           discord_sent?: boolean
           email_sent?: boolean
           entry_id?: string | null
@@ -1386,6 +1431,28 @@ export type Database = {
           p_payload?: Json
         }
         Returns: number
+      }
+      claim_cron_run: {
+        Args: {
+          p_job_name: string
+          p_lease_seconds?: number
+          p_run_key: string
+          p_source: string
+        }
+        Returns: {
+          attempt: number
+          claim_status: string
+          run_id: string
+        }[]
+      }
+      finish_cron_run: {
+        Args: {
+          p_error_code?: string
+          p_run_id: string
+          p_succeeded: boolean
+          p_summary?: Json
+        }
+        Returns: boolean
       }
       get_analytics_overview: {
         Args: {

@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.8/P1.9 — Apply verified migrations when DDL access arrives; package completed P1.11 stack
-- Branch: `codex/production-readiness-p1-11`
-- Stack base: `65a211f` (green draft PR #11, based on green draft PRs #10 and #9).
+- Current action: P1.8/P1.9/P1.12 — Apply verified migrations when DDL access arrives; package P1.12 and continue P1.13
+- Branch: `codex/production-readiness-p1-12`
+- Stack base: `c152289` (green draft PR #12, based on green draft PRs #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -44,7 +44,7 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
 - [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules. — GREEN DRAFT PR #11; STACKED RELEASE PENDING P1.8/P1.9
 - [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8–P1.10
-- [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability.
+- [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
 - [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries.
 - [ ] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities.
 - [ ] P1.15 Either implement unfinished notification/settings behavior or remove misleading UI, types, tables, and code paths.
@@ -319,6 +319,22 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Login, admin WP import, self/admin manual resync, and scheduled profile sync now share one existing-user profile-update builder. When the override flag is true, the update omits `display_name` entirely while still refreshing bio, avatar, and sync time. New-user creation still seeds the WordPress name.
 - Manual WP import now reports a database update failure instead of returning false success. The profile UI explains that WordPress refresh preserves a locally saved display name.
 - Pure behavior and caller-contract regressions cover protected/unprotected names, blank remote names, empty profile fields, non-name changes, and all four existing-user paths. Application gate: 14 Vitest files / 69 tests, ESLint, TypeScript, and the Next.js production build passed.
+
+### 2026-07-21 — P1.12 cron method/auth sub-gate
+
+- Vercel's current official cron contract uses production `GET` requests, sends `CRON_SECRET` as a bearer token, does not automatically retry failures, and can deliver overlapping or duplicate invocations. The previous eight POST-only routes therefore returned 405 to every configured schedule.
+- Every path in `vercel.json` now exports the same handler as `GET` for Vercel and `POST` for the existing admin UI. One shared authorization boundary accepts only the exact cron bearer secret or a current admin+ session with both-site scope.
+- A configuration-driven contract test reads every committed Vercel cron path and requires both methods plus the shared authorization call. Targeted test: 8/8 route contracts; ESLint and TypeScript pass.
+- P1.12 remains open: serverless-safe overlap leases, persisted run outcomes, bounded retry semantics, and atomic notification delivery deduplication still require implementation and hostile/concurrent verification.
+
+### 2026-07-21 — P1.12 cron execution-control sub-gate
+
+- Migration `0015_cron_execution_control.sql` adds a private, RLS-enabled run ledger plus service-role-only claim/finish functions. Claims serialize by job using a transaction advisory lock, refuse active overlap, collapse successful duplicate windows, recover expired leases, and bound a failed window to three attempts.
+- Every configured job now claims before running and persists its safe JSON outcome, HTTP failure class, timestamps, source, attempt, and lease state. Claim or finish failures return a safe 503 instead of silently running without control or reporting success without an audit row.
+- Cold migration reset applied `0001`–`0015`. The database suite passes 102 pgTAP probes, including 22 new privilege, state, duplicate, overlap, retry, exhausted-attempt, expired-lease, and hostile-input assertions. Generated types include the ledger and both RPCs.
+- A two-connection filesystem-independent probe held the first claim transaction open; the second claimant blocked and then returned `overlap`. Application regressions cover unavailable control, duplicate/overlap/exhaustion no-ops, success/failure persistence, finish failure, and exception redaction.
+- Reminder jobs now use database-enforced per-recipient keys instead of check-then-insert races. A partial unclaimed-alert attempt can retry missing managers without suppressing them, and site-only managers no longer receive the other site's alerts. Unique-key behavior, null-key compatibility, hostile keys, caller wiring, and PL/QB/both recipient selection are covered.
+- Final P1.12 gate: cold reset through `0015`; 105 pgTAP probes; real two-connection overlap probe; generated-type drift and database lint clean; 17 Vitest files / 88 tests; ESLint, TypeScript, and production build pass. Actual email/Discord delivery remains intentionally outside this claim because those adapters are still stubs tracked by P1.15.
 
 ## Phase 0 prioritized defect and risk inventory
 

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
-import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { authorizeCronRequest } from "@/lib/cron/authorization";
+import { executeCronJob } from "@/lib/cron/execution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,18 +16,23 @@ type SeasonModeRow = {
 };
 
 /**
- * POST /api/cron/season-switch
+ * GET (Vercel) / POST (manual) /api/cron/season-switch
  *
  * Evaluates each season_mode row against today's UTC date and flips
  * `is_active` so the mode whose `[auto_switch_start, auto_switch_end]`
  * window contains today becomes active. Modes without auto-switch dates
  * are left alone — manual selections are preserved.
  */
-export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
-    return errorResponse(403, "Forbidden");
+async function handle(request: Request) {
+  const authorized = await authorizeCronRequest(request);
+  if (!authorized.ok) {
+    return errorResponse(401, authorized.error);
   }
+
+  return executeCronJob(authorized.source, {
+    name: "season-switch",
+    intervalSeconds: 24 * 60 * 60,
+  }, async () => {
 
   const supabase = getSupabaseAdmin();
 
@@ -88,4 +94,7 @@ export async function POST(request: Request) {
     switched,
     activeMode: activeName,
   });
+  });
 }
+
+export { handle as GET, handle as POST };

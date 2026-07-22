@@ -1,26 +1,32 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
-import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchNotification } from "@/lib/notifications/data";
+import { authorizeCronRequest } from "@/lib/cron/authorization";
+import { executeCronJob } from "@/lib/cron/execution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/cron/deadline-reminders
+ * GET (Vercel) / POST (manual) /api/cron/deadline-reminders
  *
  * Fires `deadline_approaching` notifications to the primary author and each
  * claimed editor for any entry whose `publish_date` lands inside the
  * configured reminder window (default 24h). Dedupes against the
- * notifications table so a single recipient doesn't get pinged twice within
- * 24 hours for the same entry.
+ * a database-enforced per-recipient key so retries cannot send the same
+ * deadline notification twice.
  */
-export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
-    return errorResponse(403, "Forbidden");
+async function handle(request: Request) {
+  const authorized = await authorizeCronRequest(request);
+  if (!authorized.ok) {
+    return errorResponse(401, authorized.error);
   }
+
+  return executeCronJob(authorized.source, {
+    name: "deadline-reminders",
+    intervalSeconds: 60 * 60,
+  }, async () => {
 
   const supabase = getSupabaseAdmin();
 
@@ -40,8 +46,6 @@ export async function POST(request: Request) {
   const now = new Date();
   const horizon = new Date(now);
   horizon.setHours(horizon.getHours() + hours);
-  const dedupeFloor = new Date(now);
-  dedupeFloor.setHours(dedupeFloor.getHours() - 24);
 
   const { data: entryRows } = await supabase
     .from("entries")
@@ -86,20 +90,6 @@ export async function POST(request: Request) {
     if (recipientIds.length === 0) continue;
 
     for (const userId of recipientIds) {
-      const { data: recent } = await supabase
-        .from("notifications")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("entry_id", entry.id)
-        .eq("type", "deadline_approaching")
-        .gte("created_at", dedupeFloor.toISOString())
-        .limit(1);
-
-      if (recent && recent.length > 0) {
-        notificationsSkipped++;
-        continue;
-      }
-
       const { data: userRow } = await supabase
         .from("users")
         .select("timezone")
@@ -116,14 +106,19 @@ export async function POST(request: Request) {
         timeZoneName: "short",
       });
 
-      await dispatchNotification({
+      const delivery = await dispatchNotification({
         userId,
         entryId: entry.id,
         type: "deadline_approaching",
         title: `Deadline approaching: ${entry.title}`,
         body: `Due in less than ${hours}h — ${formatted}`,
+        dedupeKey: `deadline:${entry.id}:${entry.publish_date}`,
       });
-      notificationsSent++;
+      if (!delivery.ok) {
+        throw new Error("Deadline notification dispatch failed");
+      }
+      if (delivery.deduplicated) notificationsSkipped++;
+      else notificationsSent++;
     }
   }
 
@@ -133,4 +128,7 @@ export async function POST(request: Request) {
     notificationsSent,
     notificationsSkipped,
   });
+  });
 }
+
+export { handle as GET, handle as POST };

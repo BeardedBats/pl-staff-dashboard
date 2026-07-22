@@ -1,40 +1,31 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
-import { env } from "@/lib/env";
-import { getCurrentUser } from "@/lib/auth/current-user";
-import { isAdminPlusForScope } from "@/lib/auth/authorization";
+import { authorizeCronRequest } from "@/lib/cron/authorization";
+import { executeCronJob } from "@/lib/cron/execution";
 import { syncWpCategoriesForBothSites } from "@/lib/wp-sync/categories";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/cron/category-sync
+ * GET (Vercel) / POST (manual) /api/cron/category-sync
  *
  * Pull WP categories from both sites and reconcile with the dashboard's
  * `categories` table. Rarely changes, so the cron runs weekly; admins
  * can hit this manually after renaming or adding a WP category.
  */
-export async function POST(request: Request) {
-  const authorized = await authorize(request);
+async function handle(request: Request) {
+  const authorized = await authorizeCronRequest(request);
   if (!authorized.ok) {
     return errorResponse(401, authorized.error);
   }
-
-  const reports = await syncWpCategoriesForBothSites();
-  return NextResponse.json({ ok: true, reports });
+  return executeCronJob(authorized.source, {
+    name: "category-sync",
+    intervalSeconds: 7 * 24 * 60 * 60,
+  }, async () => {
+    const reports = await syncWpCategoriesForBothSites();
+    return NextResponse.json({ ok: true, reports });
+  });
 }
 
-async function authorize(
-  request: Request,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader === `Bearer ${env.CRON_SECRET}`) {
-    return { ok: true };
-  }
-  const viewer = await getCurrentUser();
-  if (viewer && isAdminPlusForScope(viewer, "both")) {
-    return { ok: true };
-  }
-  return { ok: false, error: "Not authorized" };
-}
+export { handle as GET, handle as POST };

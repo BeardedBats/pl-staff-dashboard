@@ -1,30 +1,34 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
-import { env } from "@/lib/env";
-import { getCurrentUser } from "@/lib/auth/current-user";
-import { isAdminPlusForScope } from "@/lib/auth/authorization";
+import { authorizeCronRequest } from "@/lib/cron/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { dispatchNotificationBulk } from "@/lib/notifications/data";
+import { dispatchNotification } from "@/lib/notifications/data";
+import { executeCronJob } from "@/lib/cron/execution";
+import { recipientsForSite } from "@/lib/cron/recipients";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/cron/unclaimed-alerts
+ * GET (Vercel) / POST (manual) /api/cron/unclaimed-alerts
  *
  * Checks for entries that are still `writer_needed` with a publish date
  * inside the configured alert window (default 3 days / 72 hours), and
  * fires `unclaimed_slot` notifications to team managers.
  *
- * Dedupe: uses the notifications table itself. For each unclaimed entry,
- * we look for a prior `unclaimed_slot` notification for any user in the
- * last 24 hours; if one exists, we skip to avoid spamming.
+ * Dedupe: a database-enforced key is scoped to recipient, entry, and UTC
+ * day so a partial attempt cannot suppress unsent managers or send twice.
  */
-export async function POST(request: Request) {
-  const authorized = await authorize(request);
+async function handle(request: Request) {
+  const authorized = await authorizeCronRequest(request);
   if (!authorized.ok) {
     return errorResponse(401, authorized.error);
   }
+
+  return executeCronJob(authorized.source, {
+    name: "unclaimed-alerts",
+    intervalSeconds: 3 * 60 * 60,
+  }, async () => {
 
   const supabase = getSupabaseAdmin();
 
@@ -46,7 +50,7 @@ export async function POST(request: Request) {
   const entries = (unclaimed ?? []) as Array<{
     id: string;
     title: string;
-    site: string;
+    site: "pl" | "qb";
     publish_date: string;
     created_by: string;
   }>;
@@ -58,42 +62,36 @@ export async function POST(request: Request) {
   // Find manager+ user IDs once.
   const { data: managerRows } = await supabase
     .from("user_roles")
-    .select("user_id")
+    .select("user_id, site")
     .in("role", ["manager", "admin", "eic", "operations"]);
-  const managerIds = Array.from(
-    new Set(
-      ((managerRows ?? []) as Array<{ user_id: string }>).map((r) => r.user_id),
-    ),
-  );
+  const managerRoles = (managerRows ?? []) as Array<{
+    user_id: string;
+    site: "pl" | "qb" | "both";
+  }>;
 
   let alerted = 0;
   let skipped = 0;
+  const deliveryWindow = Math.floor(now.getTime() / (24 * 60 * 60 * 1000));
 
   for (const entry of entries) {
-    // Dedupe: skip if there's been an unclaimed_slot notification for this
-    // entry in the last 24 hours.
-    const dedupeWindow = new Date(now);
-    dedupeWindow.setHours(now.getHours() - 24);
-    const { data: recent } = await supabase
-      .from("notifications")
-      .select("id")
-      .eq("entry_id", entry.id)
-      .eq("type", "unclaimed_slot")
-      .gte("created_at", dedupeWindow.toISOString())
-      .limit(1);
-
-    if (recent && recent.length > 0) {
-      skipped++;
-      continue;
+    const managerIds = recipientsForSite(managerRoles, entry.site);
+    let sentForEntry = false;
+    for (const userId of managerIds) {
+      const delivery = await dispatchNotification({
+        userId,
+        entryId: entry.id,
+        type: "unclaimed_slot",
+        title: `"${entry.title}" still has no writer`,
+        body: `Publish date is within 72 hours. ${entry.site.toUpperCase()}`,
+        dedupeKey: `unclaimed:${entry.id}:${deliveryWindow}`,
+      });
+      if (!delivery.ok) {
+        throw new Error("Unclaimed notification dispatch failed");
+      }
+      if (!delivery.deduplicated) sentForEntry = true;
     }
-
-    await dispatchNotificationBulk(managerIds, {
-      entryId: entry.id,
-      type: "unclaimed_slot",
-      title: `"${entry.title}" still has no writer`,
-      body: `Publish date is within 72 hours. ${entry.site.toUpperCase()}`,
-    });
-    alerted++;
+    if (sentForEntry) alerted++;
+    else skipped++;
   }
 
   return NextResponse.json({
@@ -102,18 +100,7 @@ export async function POST(request: Request) {
     skipped,
     entries_in_window: entries.length,
   });
+  });
 }
 
-async function authorize(
-  request: Request,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader === `Bearer ${env.CRON_SECRET}`) {
-    return { ok: true };
-  }
-  const viewer = await getCurrentUser();
-  if (viewer && isAdminPlusForScope(viewer, "both")) {
-    return { ok: true };
-  }
-  return { ok: false, error: "Not authorized" };
-}
+export { handle as GET, handle as POST };
