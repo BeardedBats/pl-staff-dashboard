@@ -97,7 +97,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
       <CardContent className="space-y-6">
         {/* Claims */}
         <section>
-          <h4 className="mb-2 flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+          <h4 className="mb-2 flex items-center gap-2 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
             <Hand className="h-3 w-3" />
             Claim requests ({claims.length})
           </h4>
@@ -166,7 +166,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
 
         {/* Archive requests */}
         <section>
-          <h4 className="mb-2 flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+          <h4 className="mb-2 flex items-center gap-2 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
             <Archive className="h-3 w-3" />
             Archive requests ({archives.length})
           </h4>

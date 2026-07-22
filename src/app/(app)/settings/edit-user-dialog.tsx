@@ -181,7 +181,7 @@ export function EditUserDialog({
 
         <div className="space-y-5">
           {/* Read-only reference fields */}
-          <div className="grid grid-cols-2 gap-3 rounded-md border border-border bg-surface-3/40 p-3 font-mono text-[11px]">
+          <div className="grid grid-cols-2 gap-3 rounded-md border border-border bg-surface-3/40 p-3 font-data text-[11px]">
             <div>
               <p className="text-text-zero">Email</p>
               <p className="text-text-team">

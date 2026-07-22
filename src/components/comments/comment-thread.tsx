@@ -107,7 +107,7 @@ export function CommentThread({
     <div className="space-y-6">
       {/* New comment composer */}
       <section>
-        <h4 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+        <h4 className="mb-2 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
           Add a comment
         </h4>
         <CommentComposer

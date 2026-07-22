@@ -81,7 +81,7 @@ function Pagination({
       </PageControl>
       <span
         aria-current="page"
-        className="plpd-pagination-current inline-flex h-9 min-w-9 items-center justify-center rounded-sm border px-2 text-plpd-body font-bold tabular-nums"
+        className="plpd-pagination-current inline-flex h-9 min-w-9 items-center justify-center rounded-sm border px-2 font-data text-plpd-body font-bold tabular-nums"
       >
         {safePage}
       </span>

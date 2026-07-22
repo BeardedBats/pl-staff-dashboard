@@ -109,7 +109,7 @@ export function AnalyticsOverviewTab({ query }: Props) {
         </CardHeader>
         <CardContent>
           {hasData ? (
-            <div className="h-64 w-full">
+            <div className="h-64 w-full font-data">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data.daily}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -189,7 +189,7 @@ function MetricCard({
           {icon}
           {label}
         </div>
-        <div className="text-xl font-semibold text-text-cell tabular-nums">
+        <div className="font-data text-xl font-semibold text-text-cell tabular-nums">
           {value}
         </div>
         {hint ? <div className="text-[10px] text-text-zero">{hint}</div> : null}

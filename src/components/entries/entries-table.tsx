@@ -532,10 +532,10 @@ export function EntriesTable({
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <ContentStatusBadge status={entry.content_status} />
                           <EditorStatusBadge status={entry.editor_status} />
-                          <Badge variant="outline" className="text-[9px]">
+                          <Badge variant="outline" className="font-data text-[9px]">
                             {entry.site.toUpperCase()}
                           </Badge>
-                          <Badge variant="outline" className="text-[9px]">
+                          <Badge variant="outline" className="font-data text-[9px]">
                             {entry.tier.name}
                           </Badge>
                         </div>
@@ -1152,7 +1152,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       id: "tier",
       header: () => "Tier",
       cell: ({ row }) => (
-        <Badge variant="outline">
+        <Badge variant="outline" className="font-data">
           {row.original.tier.name}
         </Badge>
       ),
@@ -1161,7 +1161,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       id: "site",
       header: () => "Site",
       cell: ({ row }) => (
-        <Badge variant="outline">
+        <Badge variant="outline" className="font-data">
           {row.original.site.toUpperCase()}
         </Badge>
       ),
@@ -1186,7 +1186,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
               })}
             </div>
             {publish_date_precision !== "exact" ? (
-              <div className="font-mono text-[10px] uppercase text-text-zero">
+              <div className="font-data text-[10px] uppercase text-text-zero">
                 {precisionLabel(publish_date_precision)}
               </div>
             ) : null}
@@ -1217,7 +1217,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
         );
         return (
           <div className="flex items-center gap-1.5 text-xs">
-            <span className="font-mono tabular-nums text-text-team">
+            <span className="font-data tabular-nums text-text-team">
               {checklist_completed}/{checklist_total}
             </span>
             <div className="h-1 w-10 overflow-hidden rounded-full bg-surface-4">
@@ -1234,7 +1234,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       id: "word_count",
       header: () => "Words",
       cell: ({ row }) => (
-        <span className="font-mono text-xs tabular-nums text-text-team">
+        <span className="font-data text-xs tabular-nums text-text-team">
           {row.original.word_count > 0
             ? row.original.word_count.toLocaleString()
             : "—"}

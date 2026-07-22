@@ -118,7 +118,7 @@ export default async function EditingQueuePage() {
                           {entry.title}
                         </Link>
                         <div className="mt-0.5 flex items-center gap-1">
-                          <Badge variant="outline">
+                          <Badge variant="outline" className="font-data">
                             {entry.site.toUpperCase()}
                           </Badge>
                           {entry.priority ? (
@@ -150,7 +150,7 @@ export default async function EditingQueuePage() {
                         )}
                       </td>
                       <td className="px-3 py-3 align-top">
-                        <Badge variant="outline">{entry.tier.name}</Badge>
+                        <Badge variant="outline" className="font-data">{entry.tier.name}</Badge>
                       </td>
                       <td className="px-3 py-3 align-top">
                         {entry.publish_date ? (
@@ -170,11 +170,11 @@ export default async function EditingQueuePage() {
                               })}
                             </div>
                             {overdue ? (
-                              <div className="mt-0.5 font-mono text-[10px] uppercase text-destructive">
+                              <div className="mt-0.5 font-sans text-[10px] uppercase text-destructive">
                                 overdue
                               </div>
                             ) : dueSoon ? (
-                              <div className="mt-0.5 font-mono text-[10px] uppercase text-amber">
+                              <div className="mt-0.5 font-sans text-[10px] uppercase text-amber">
                                 due in 24h
                               </div>
                             ) : null}

@@ -349,7 +349,7 @@ export function EntryDetailPanel({
             )}
             Submit
             {submitGateBlocked ? (
-              <span className="ml-1 font-mono text-[10px] opacity-70">
+              <span className="ml-1 font-data text-[10px] opacity-70">
                 ({missingRequired.length} to check)
               </span>
             ) : null}
@@ -542,15 +542,15 @@ function EntryTopBar({
             Priority
           </Badge>
         ) : null}
-        <Badge variant="outline">
+        <Badge variant="outline" className="font-data">
           {entry.tier.name} — {entry.tier.label}
         </Badge>
-        <Badge variant="outline">{entry.site.toUpperCase()}</Badge>
+        <Badge variant="outline" className="font-data">{entry.site.toUpperCase()}</Badge>
         {entry.category ? (
-          <Badge variant="outline">{entry.category.name}</Badge>
+          <Badge variant="outline" className="font-data">{entry.category.name}</Badge>
         ) : null}
         {entry.series ? (
-          <Badge variant="cyan">
+          <Badge variant="cyan" className="font-data">
             Series: {resolveSeriesLabel(entry.series.title_pattern, entry)}
           </Badge>
         ) : null}
@@ -622,7 +622,7 @@ function PipelineTab({
     <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
       <div className="space-y-5">
         <div className="rounded-md border border-border bg-card p-4">
-          <h4 className="mb-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+          <h4 className="mb-3 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
             Pipeline
           </h4>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -683,7 +683,7 @@ function PipelineTab({
 
         {entry.description ? (
           <section>
-            <h4 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+            <h4 className="mb-2 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
               Brief
             </h4>
             <p className="whitespace-pre-wrap rounded-md border border-border bg-surface-3/40 p-3 text-sm text-text-team">
@@ -694,7 +694,7 @@ function PipelineTab({
 
         {entry.checklist.length > 0 ? (
           <section>
-            <h4 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+            <h4 className="mb-2 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
               Pre-submission checklist (
               {entry.checklist.filter((c) => c.is_completed).length}/
               {entry.checklist.length})
@@ -716,7 +716,7 @@ function PipelineTab({
 
       <div className="space-y-4">
         <section className="rounded-md border border-border bg-card p-4">
-          <h4 className="mb-3 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+          <h4 className="mb-3 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
             Meta
           </h4>
           <dl className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-2 text-xs">
@@ -777,7 +777,7 @@ function PipelineTab({
 
         <section>
           <div className="mb-2 flex items-center justify-between">
-            <h4 className="flex items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+            <h4 className="flex items-center gap-1.5 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
               <ImageIcon className="h-3 w-3" />
               Graphics ({graphicRequests.length})
             </h4>
@@ -870,7 +870,7 @@ function AuditTab({ entryId }: { entryId: string }) {
             </span>
           </div>
           {evt.field_name ? (
-            <p className="mt-1 font-mono text-xs text-text-team">
+            <p className="mt-1 font-data text-xs text-text-team">
               <span className="text-text-zero">{evt.field_name}:</span>{" "}
               {evt.old_value ? (
                 <>
@@ -1029,7 +1029,7 @@ function TrackSummary({
 }) {
   return (
     <div>
-      <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-text-zero">
+      <p className="mb-1.5 font-sans text-[10px] uppercase tracking-wider text-text-zero">
         {label}
       </p>
       <div className="mb-2">{badge}</div>
@@ -1039,7 +1039,7 @@ function TrackSummary({
             <li key={p.name} className="flex items-center gap-1.5 text-xs">
               <UserAvatar displayName={p.name} avatarUrl={p.avatar} size="xs" />
               <span className="text-text-team">{p.name}</span>
-              <span className="font-mono text-[10px] text-text-zero">
+              <span className="font-data text-[10px] text-text-zero">
                 {p.role}
               </span>
             </li>
@@ -1265,7 +1265,7 @@ function MiniMetric({
       </div>
       <div
         className={cn(
-          "mt-0.5 text-base font-semibold tabular-nums",
+          "mt-0.5 font-data text-base font-semibold tabular-nums",
           highlight ? "text-amber" : "text-text-cell",
         )}
       >

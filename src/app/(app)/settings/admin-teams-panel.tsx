@@ -161,7 +161,7 @@ export function AdminTeamsPanel({
                         >
                           {team.name}
                         </p>
-                        <Badge variant="outline" className="shrink-0">
+                        <Badge variant="outline" className="shrink-0 font-data">
                           {team.site === "both" ? "PL+QB" : team.site.toUpperCase()}
                         </Badge>
                       </div>
@@ -273,7 +273,7 @@ function TeamDetailPanel({
         <div>
           <CardTitle>{team.name}</CardTitle>
           <CardDescription className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-            <Badge variant="outline">
+            <Badge variant="outline" className="font-data">
               {team.site === "both" ? "PL + QB" : team.site.toUpperCase()}
             </Badge>
             <span>
@@ -323,7 +323,7 @@ function TeamDetailPanel({
                       <p className="truncate text-sm font-medium text-text-cell">
                         {m.display_name}
                       </p>
-                      <p className="truncate font-mono text-[10px] text-text-zero">
+                      <p className="truncate font-data text-[10px] text-text-zero">
                         {m.email}
                       </p>
                     </div>

@@ -96,13 +96,13 @@ export function AnalyticsWritersTab({ query }: Props) {
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
               <div className="flex justify-between">
                 <span className="text-text-zero">Revenue</span>
-                <span className="tabular-nums font-medium text-amber">
+                <span className="font-data tabular-nums font-medium text-amber">
                   ${r.earnings.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-zero">Pageviews</span>
-                <span className="tabular-nums text-text-cell">
+                <span className="font-data tabular-nums text-text-cell">
                   {r.pageviews.toLocaleString()}
                 </span>
               </div>

@@ -361,8 +361,8 @@ export function TemplateDialog({
                     onClick={() => toggleDailyDay(d.code)}
                     className={
                       dailyDays.includes(d.code)
-                        ? "rounded-sm border border-cyan bg-cyan-dim px-3 py-1 font-mono text-xs uppercase text-cyan"
-                        : "rounded-sm border border-border bg-card px-3 py-1 font-mono text-xs uppercase text-text-zero"
+                        ? "rounded-sm border border-cyan bg-cyan-dim px-3 py-1 font-data text-xs uppercase text-cyan"
+                        : "rounded-sm border border-border bg-card px-3 py-1 font-data text-xs uppercase text-text-zero"
                     }
                   >
                     {d.label}

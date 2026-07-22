@@ -21,12 +21,12 @@ export function StaffCard({ user }: { user: StaffUserSummary }) {
             <h3 className="truncate text-sm font-semibold text-text-cell">
               {user.display_name}
             </h3>
-            <Badge variant="outline" className="shrink-0">
+            <Badge variant="outline" className="shrink-0 font-data">
               {user.wp_site === "both" ? "PL + QB" : user.wp_site.toUpperCase()}
             </Badge>
           </div>
           {user.primary_team ? (
-            <p className="mt-0.5 truncate text-xs text-text-zero">
+            <p className="mt-0.5 truncate font-data text-xs text-text-zero">
               {user.primary_team.team_name}
               {user.primary_team.manager_name ? (
                 <>

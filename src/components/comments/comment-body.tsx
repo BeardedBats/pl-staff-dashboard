@@ -26,7 +26,7 @@ export function CommentBody({ body, mentions, className }: CommentBodyProps) {
   return (
     <div className={cn("space-y-1", className)}>
       {header ? (
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-amber">
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-wider text-amber">
           {header}
         </p>
       ) : null}

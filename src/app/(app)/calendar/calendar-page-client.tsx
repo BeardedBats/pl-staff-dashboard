@@ -185,7 +185,7 @@ export function CalendarPageClient({
           return (
             <span
               key={t.id}
-              className="inline-flex items-center gap-1 rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider"
+              className="inline-flex items-center gap-1 rounded-sm border border-border px-2 py-0.5 font-data text-[10px] uppercase tracking-wider"
             >
               <span
                 className="h-2 w-2 rounded-sm"
@@ -236,6 +236,7 @@ export function CalendarPageClient({
             background: var(--surface-3);
           }
           .calendar-wrapper .fc-col-header-cell-cushion {
+            font-family: var(--font-data);
             color: var(--text-zero);
             font-size: 10px;
             text-transform: uppercase;
@@ -243,6 +244,7 @@ export function CalendarPageClient({
             padding: 8px 4px;
           }
           .calendar-wrapper .fc-daygrid-day-number {
+            font-family: var(--font-data);
             color: var(--text-team);
             font-size: 12px;
             padding: 4px 6px;
@@ -278,6 +280,7 @@ export function CalendarPageClient({
             color: var(--text-cell);
           }
           .calendar-wrapper .fc-event {
+            font-family: var(--font-data);
             border-radius: 3px;
             padding: 1px 4px;
             font-size: 11px;
@@ -299,7 +302,7 @@ export function CalendarPageClient({
       {/* Unscheduled entries section */}
       {entries.filter((e) => !e.publish_date).length > 0 ? (
         <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="mb-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
+          <h3 className="mb-2 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
             Unscheduled ({entries.filter((e) => !e.publish_date).length})
           </h3>
           <p className="mb-3 text-xs text-text-zero">
@@ -316,8 +319,8 @@ export function CalendarPageClient({
                     onClick={() => router.push(`/content?entry=${e.id}`)}
                     className="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left text-sm hover:bg-surface-3"
                   >
-                    <Badge variant="outline">{e.tier.name}</Badge>
-                    <Badge variant="outline">{e.site.toUpperCase()}</Badge>
+                    <Badge variant="outline" className="font-data">{e.tier.name}</Badge>
+                    <Badge variant="outline" className="font-data">{e.site.toUpperCase()}</Badge>
                     <span className="truncate text-text-cell">{e.title}</span>
                   </button>
                 </li>

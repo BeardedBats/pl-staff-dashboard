@@ -265,7 +265,7 @@ export function GraphicRequestCard({
             </div>
           ) : null}
           {request.file_name ? (
-            <div className="flex items-center gap-1 font-mono">
+            <div className="flex items-center gap-1 font-data">
               <Upload className="h-3 w-3" />
               {request.file_name}
               {request.current_version_number

@@ -66,7 +66,7 @@ export default async function StaffMemberPage({
               {target.display_name}
             </h2>
             {isPrivileged && target.email ? (
-              <p className="mt-1 font-mono text-xs text-text-team">
+              <p className="mt-1 font-data text-xs text-text-team">
                 {target.email}
               </p>
             ) : null}
@@ -76,11 +76,11 @@ export default async function StaffMemberPage({
             </div>
 
             <div className="mt-4 flex flex-wrap justify-center gap-1">
-              <Badge variant="outline">
+              <Badge variant="outline" className="font-data">
                 {target.wp_site === "both" ? "PL + QB" : target.wp_site.toUpperCase()}
               </Badge>
               {target.primary_team ? (
-                <Badge variant="cyan">{target.primary_team.team_name}</Badge>
+                <Badge variant="cyan" className="font-data">{target.primary_team.team_name}</Badge>
               ) : null}
             </div>
 
@@ -178,7 +178,7 @@ export default async function StaffMemberPage({
                           </p>
                         ) : null}
                       </div>
-                      <Badge variant="outline">{t.team_site.toUpperCase()}</Badge>
+                      <Badge variant="outline" className="font-data">{t.team_site.toUpperCase()}</Badge>
                       {idx < 0 ? <Separator /> : null}
                     </li>
                   ))}
