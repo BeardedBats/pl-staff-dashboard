@@ -215,6 +215,14 @@ export async function syncWpPostsForSite(
     },
   });
   if (!fetched.ok) {
+    await supabase
+      .from("entries")
+      .update({
+        wp_sync_status: "stale",
+        wp_last_sync_error: fetched.error.slice(0, 500),
+      })
+      .eq("site", site)
+      .not("wp_post_id", "is", null);
     report.errors.push({ wpPostId: 0, message: fetched.error });
     return report;
   }
@@ -238,12 +246,17 @@ export async function syncWpPostsForSite(
         // Refresh the public permalink alongside the status mirror so that
         // migration 0010 can null out old admin URLs and trust the cron to
         // repopulate them with `post.link` on the next pass.
-        if (typeof post.link === "string" && post.link.length > 0) {
-          await supabase
-            .from("entries")
-            .update({ wp_post_url: post.link })
-            .eq("id", existing.id as string);
-        }
+        await supabase
+          .from("entries")
+          .update({
+            ...(typeof post.link === "string" && post.link.length > 0
+              ? { wp_post_url: post.link }
+              : {}),
+            wp_sync_status: "synced",
+            wp_last_synced_at: new Date().toISOString(),
+            wp_last_sync_error: null,
+          })
+          .eq("id", existing.id as string);
 
         // Update path — hand off to the status-transitions helper.
         await applyWpStateToEntry(existing.id as string, systemUserId, {
@@ -305,6 +318,9 @@ export async function syncWpPostsForSite(
           wp_post_url: publicUrl,
           wp_status: post.status,
           wp_modified_at: post.modified_gmt ? `${post.modified_gmt}Z` : null,
+          wp_sync_status: "synced",
+          wp_last_synced_at: new Date().toISOString(),
+          wp_last_sync_error: null,
           content_status: "claimed",
           editor_status: "none",
           created_by: dashboardUser.id as string,

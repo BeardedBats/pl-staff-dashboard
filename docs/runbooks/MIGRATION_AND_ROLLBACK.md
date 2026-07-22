@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0025_notification_delivery_controls.sql`. The
-current application stack depends on migrations `0013`–`0025`; apply those
+`0001_initial_schema.sql` through `0026_wordpress_entry_sync_state.sql`. The
+current application stack depends on migrations `0013`–`0026`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,7 +44,7 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0025_notification_delivery_controls.sql`. Apply once:
+`0026_wordpress_entry_sync_state.sql`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -155,6 +155,29 @@ COMMIT;
 
 After application deployment, do not reverse `0025`; deploy a compatible forward migration or restore the database and application together.
 
+### Migration 0026 contingency
+
+Migration `0026` adds the entry-level WordPress synchronization status, last
+successful time, bounded error, and attention index. It executes
+transactionally. After Phase 5 application deployment, prefer a forward repair
+because entry detail and operational health read these fields.
+
+Only before Phase 5 deployment, and only after a verified backup, reverse it
+in one transaction:
+
+```sql
+BEGIN;
+DROP INDEX IF EXISTS public.entries_wp_sync_attention_idx;
+ALTER TABLE public.entries
+  DROP COLUMN IF EXISTS wp_last_sync_error,
+  DROP COLUMN IF EXISTS wp_last_synced_at,
+  DROP COLUMN IF EXISTS wp_sync_status;
+COMMIT;
+```
+
+After deployment, ship a compatible forward migration or restore the database
+and application together.
+
 ## Stop conditions
 
 - Production DB access is absent. Management access that only lists backups is
@@ -183,6 +206,13 @@ After application deployment, do not reverse `0025`; deploy a compatible forward
   authenticated clients cannot execute `replace_notification_preferences`;
   and one invalid event must roll back both the preference set and delivery
   settings. Future scheduled items must remain outside unread counts until due.
+- WordPress event identifiers are unique per site, invalid post IDs and event
+  keys are rejected, retries stop at three attempts, completed delivery is
+  idempotent, and anon/authenticated roles cannot read the ledger or execute
+  its attempt functions.
+- Entry sync status accepts only the documented states; a divergent title edit
+  is visible as a conflict, concurrent resolution cannot acquire the same
+  lease, and a changed WordPress modified timestamp refuses the overwrite.
 - The both-site Admin+ health endpoint loads, all integration probes are
   explainable, and no new critical alert appears.
 - Continue to the [Deployment](./DEPLOYMENT.md) gate; do not reopen release

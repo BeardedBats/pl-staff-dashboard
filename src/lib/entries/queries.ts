@@ -3,6 +3,7 @@ import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { AppRole, AppSite, CurrentUser } from "@/lib/auth/current-user";
 import { getSignedGraphicUrls } from "@/lib/graphics/storage";
+import { getWordPressSiteConfig } from "@/lib/wordpress/config";
 import {
   canViewGraphicResource,
   canViewEntryResource,
@@ -28,6 +29,7 @@ export type EditorStatus =
   | "published";
 
 export type GraphicStatus = "needed" | "claimed" | "submitted" | "flagged";
+export type WpSyncStatus = "pending" | "synced" | "stale" | "error";
 
 /** Precision of a publish date — some recurring slots don't have an exact time yet. */
 export type PublishDatePrecision = "exact" | "loose_date" | "loose_time" | "none";
@@ -84,6 +86,11 @@ export type EntrySummary = {
   archive_reason: string | null;
   wp_post_id: number | null;
   wp_post_url: string | null;
+  wp_modified_at: string | null;
+  wp_sync_status: WpSyncStatus;
+  wp_last_synced_at: string | null;
+  wp_last_sync_error: string | null;
+  wp_edit_url: string | null;
   word_count: number;
   created_by: string;
   created_at: string;
@@ -165,7 +172,7 @@ export async function listEntries(
   let query = supabase
     .from("entries")
     .select(
-      "id, title, description, site, tier_id, priority, publish_date, publish_date_precision, content_status, editor_status, is_archived, archive_reason, wp_post_id, wp_post_url, word_count, created_by, created_at, updated_at, category_id, series_id",
+      "id, title, description, site, tier_id, priority, publish_date, publish_date_precision, content_status, editor_status, is_archived, archive_reason, wp_post_id, wp_post_url, wp_modified_at, wp_sync_status, wp_last_synced_at, wp_last_sync_error, word_count, created_by, created_at, updated_at, category_id, series_id",
       { count: "exact" },
     );
 
@@ -323,7 +330,7 @@ export async function getEntryById(
   const { data: row, error } = await supabase
     .from("entries")
     .select(
-      "id, title, description, site, tier_id, priority, publish_date, publish_date_precision, content_status, editor_status, is_archived, archive_reason, wp_post_id, wp_post_url, word_count, created_by, created_at, updated_at, category_id, series_id",
+      "id, title, description, site, tier_id, priority, publish_date, publish_date_precision, content_status, editor_status, is_archived, archive_reason, wp_post_id, wp_post_url, wp_modified_at, wp_sync_status, wp_last_synced_at, wp_last_sync_error, word_count, created_by, created_at, updated_at, category_id, series_id",
     )
     .eq("id", id)
     .maybeSingle();
@@ -396,6 +403,10 @@ type EntryRow = {
   archive_reason: string | null;
   wp_post_id: number | null;
   wp_post_url: string | null;
+  wp_modified_at: string | null;
+  wp_sync_status: WpSyncStatus;
+  wp_last_synced_at: string | null;
+  wp_last_sync_error: string | null;
   word_count: number;
   created_by: string;
   created_at: string;
@@ -436,6 +447,11 @@ function buildEntrySummary(row: unknown, maps: Maps): EntrySummary {
     archive_reason: r.archive_reason,
     wp_post_id: r.wp_post_id,
     wp_post_url: r.wp_post_url,
+    wp_modified_at: r.wp_modified_at,
+    wp_sync_status: r.wp_sync_status,
+    wp_last_synced_at: r.wp_last_synced_at,
+    wp_last_sync_error: r.wp_last_sync_error,
+    wp_edit_url: wordPressEditUrl(r.site, r.wp_post_id),
     word_count: r.word_count ?? 0,
     created_by: r.created_by,
     created_at: r.created_at,
@@ -448,6 +464,14 @@ function buildEntrySummary(row: unknown, maps: Maps): EntrySummary {
     checklist_total: checklist.total,
     checklist_completed: checklist.completed,
   };
+}
+
+function wordPressEditUrl(site: AppSite, postId: number | null): string | null {
+  if (postId == null || site === "both") return null;
+  const config = getWordPressSiteConfig(site);
+  return config
+    ? `${config.url}/wp-admin/post.php?post=${postId}&action=edit`
+    : null;
 }
 
 async function loadTiers(ids: string[]): Promise<Map<string, EntryTier>> {

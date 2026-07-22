@@ -21,6 +21,7 @@ import {
 } from "@/lib/analytics/raptive";
 import { getOperationalHealth } from "@/lib/observability/health";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { listEvergreenCandidates } from "@/lib/wp-sync/evergreen";
 import {
   Tabs,
   TabsContent,
@@ -99,13 +100,14 @@ export default async function SettingsPage({
     isAdminPlusForScope(viewer, template.site),
   );
 
-  const [syncStatus, checklistItems, operationalHealth] = globalAdminAccess
+  const [syncStatus, checklistItems, operationalHealth, evergreenCandidates] = globalAdminAccess
     ? await Promise.all([
         loadSyncStatus(),
         listChecklistItems(),
         getOperationalHealth(),
+        listEvergreenCandidates(),
       ])
-    : [{ pl: null, qb: null }, [], null];
+    : [{ pl: null, qb: null }, [], null, []];
 
   // Analytics panel — only fetched for EIC/Operations viewers
   const [ga4Status, raptiveUploads, raptiveImportRuns] = analyticsAccess
@@ -211,6 +213,7 @@ export default async function SettingsPage({
               <AdminSyncPanel
                 initialLastSync={syncStatus}
                 initialHealth={operationalHealth!}
+                evergreenCandidates={evergreenCandidates}
                 canRunHistoricalImport={isOperations(viewer)}
               />
             </TabsContent>

@@ -293,6 +293,19 @@ export default async function globalSetup() {
     "insert browser entries",
   );
   await expectWrite(
+    supabase
+      .from("entries")
+      .update({
+        wp_post_id: 4242,
+        wp_post_url: "https://pitcherlist.com/e2e-seo-preview/",
+        wp_modified_at: "2026-07-22T00:00:00Z",
+        wp_sync_status: "synced",
+        wp_last_synced_at: "2026-07-22T00:00:00Z",
+      })
+      .eq("id", browserRecords.managerEntryId),
+    "connect browser SEO entry",
+  );
+  await expectWrite(
     supabase.from("entries").insert(
       browserRecords.tableArchiveEntryIds.map((id, index) => ({
         id,

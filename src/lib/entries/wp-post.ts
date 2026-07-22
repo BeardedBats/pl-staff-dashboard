@@ -119,6 +119,9 @@ export async function createWpDraftForEntry(
       wp_post_url: publicUrl,
       wp_status: data.status,
       wp_modified_at: data.modified_gmt ? `${data.modified_gmt}Z` : null,
+      wp_sync_status: "synced",
+      wp_last_synced_at: new Date().toISOString(),
+      wp_last_sync_error: null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", entryId);
@@ -158,10 +161,18 @@ export async function refreshWpStatusForEntry(
     return { ok: false, error: "Entry has no WP post yet" };
   }
 
+  async function fail(error: string): Promise<{ ok: false; error: string }> {
+    await supabase
+      .from("entries")
+      .update({ wp_sync_status: "error", wp_last_sync_error: error.slice(0, 500) })
+      .eq("id", entryId);
+    return { ok: false, error };
+  }
+
   const site = (entry.site as WpSiteKey) ?? "pl";
   const config = getWordPressSiteConfig(site);
   if (!config) {
-    return { ok: false, error: `WordPress ${site.toUpperCase()} not configured` };
+    return fail(`WordPress ${site.toUpperCase()} not configured`);
   }
 
   let response: Response;
@@ -180,22 +191,25 @@ export async function refreshWpStatusForEntry(
       },
     );
   } catch {
-    return {
-      ok: false,
-      error: "Could not reach WordPress. Try again in a moment.",
-    };
+    return fail("Could not reach WordPress. Try again in a moment.");
   }
 
   if (response.status === 404) {
     // Post was deleted on WP — mark as trash.
     await supabase
       .from("entries")
-      .update({ wp_status: "trash", updated_at: new Date().toISOString() })
+      .update({
+        wp_status: "trash",
+        wp_sync_status: "synced",
+        wp_last_synced_at: new Date().toISOString(),
+        wp_last_sync_error: null,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", entryId);
     return { ok: true, wpStatus: "trash", unchanged: false };
   }
   if (!response.ok) {
-    return { ok: false, error: `WP returned ${response.status}` };
+    return fail(`WordPress returned ${response.status}`);
   }
 
   const data = (await response.json()) as {
@@ -211,12 +225,17 @@ export async function refreshWpStatusForEntry(
 
   // Keep wp_post_url in sync with the current public permalink — the link
   // changes when a post moves from draft (?p=N) to publish (clean slug).
-  if (typeof data.link === "string" && data.link.length > 0) {
-    await supabase
-      .from("entries")
-      .update({ wp_post_url: data.link })
-      .eq("id", entryId);
-  }
+  await supabase
+    .from("entries")
+    .update({
+      ...(typeof data.link === "string" && data.link.length > 0
+        ? { wp_post_url: data.link }
+        : {}),
+      wp_sync_status: "synced",
+      wp_last_synced_at: new Date().toISOString(),
+      wp_last_sync_error: null,
+    })
+    .eq("id", entryId);
 
   await applyWpStateToEntry(entryId, systemUserId, {
     status: data.status,

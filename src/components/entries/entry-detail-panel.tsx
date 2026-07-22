@@ -25,6 +25,7 @@ import {
   X,
   Hand,
   History,
+  Search,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ import type { EntryDetail } from "@/lib/entries/queries";
 import type { GraphicRequestRecord } from "@/lib/graphics/data";
 import type { AppRole, AppSite } from "@/lib/auth/current-user";
 import { readApiError } from "@/lib/api/client";
+import { SeoWorkspace } from "@/components/seo/seo-workspace";
 
 type EntryDetailPanelProps = {
   entryId: string;
@@ -321,6 +323,7 @@ export function EntryDetailPanel({
     entry.content_status === "submitted" &&
     (entry.editor_status === "ready_for_edit" || entry.editor_status === "edited");
   const canWpRefresh = Boolean(entry.wp_post_id);
+  const canAnalyzeSeo = Boolean(entry.wp_post_id && (isParticipant || isManagerLike));
   const canArchive = !entry.is_archived;
 
   return (
@@ -451,6 +454,12 @@ export function EntryDetailPanel({
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="comments">Comments</TabsTrigger>
+          {canAnalyzeSeo ? (
+            <TabsTrigger value="seo">
+              <Search className="mr-1 h-3 w-3" />
+              SEO
+            </TabsTrigger>
+          ) : null}
           <TabsTrigger value="audit">
             <History className="mr-1 h-3 w-3" />
             Audit
@@ -500,6 +509,20 @@ export function EntryDetailPanel({
             }
           />
         </TabsContent>
+
+        {canAnalyzeSeo ? (
+          <TabsContent value="seo">
+            <SeoWorkspace
+              entryId={entry.id}
+              fallbackTitle={entry.title}
+              canApplyDashboardTitle={isParticipant || isManagerLike}
+              onApplied={() => {
+                void reload();
+                onChanged();
+              }}
+            />
+          </TabsContent>
+        ) : null}
 
         <TabsContent value="audit">
           <AuditTab entryId={entryId} />
@@ -580,18 +603,48 @@ function EntryTopBar({
             Archived
           </Badge>
         ) : null}
+        {entry.wp_post_id ? (
+          <Badge
+            variant={
+              entry.wp_sync_status === "error"
+                ? "danger"
+                : entry.wp_sync_status === "stale"
+                  ? "amber"
+                  : "cyan"
+            }
+            className="font-data"
+            title={entry.wp_last_sync_error ?? undefined}
+          >
+            WP {entry.wp_sync_status}
+            {entry.wp_last_synced_at
+              ? ` · ${formatDate(entry.wp_last_synced_at)}`
+              : ""}
+          </Badge>
+        ) : null}
       </div>
 
       <div className="flex items-center gap-1">
-        {entry.wp_post_url ? (
+        {entry.wp_edit_url ? (
           <Button variant="outline" size="sm" asChild>
+            <Link
+              href={entry.wp_edit_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Edit in WordPress
+            </Link>
+          </Button>
+        ) : null}
+        {entry.wp_post_url ? (
+          <Button variant="ghost" size="sm" asChild>
             <Link
               href={entry.wp_post_url}
               target="_blank"
               rel="noopener noreferrer"
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              Edit in WordPress
+              Preview
             </Link>
           </Button>
         ) : null}
@@ -876,6 +929,18 @@ function ReadinessPanel({
       label: "WordPress draft",
       ready: Boolean(entry.wp_post_id),
       detail: entry.wp_post_id ? "Connected" : "Draft needed",
+    },
+    {
+      label: "WordPress synchronization",
+      ready: !entry.wp_post_id || entry.wp_sync_status === "synced",
+      detail:
+        entry.wp_sync_status === "error"
+            ? "Refresh failed"
+            : entry.wp_sync_status === "stale"
+              ? "Refresh required"
+              : entry.wp_sync_status === "pending"
+                ? "Waiting for first sync"
+                : "Current",
     },
   ];
   const blockers = checks.filter((check) => !check.ready);
