@@ -44,6 +44,7 @@ describe("PLPD accessibility and visual-regression contract", () => {
 
     expect(config).toContain("snapshotPathTemplate");
     expect(config).toContain("maxDiffPixelRatio: 0.03");
+    expect(browser).toContain("maxDiffPixelRatio: 0.05");
     for (const baseline of [
       "login-mobile-dark.png",
       "admin-home-desktop.png",

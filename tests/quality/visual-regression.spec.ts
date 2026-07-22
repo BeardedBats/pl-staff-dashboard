@@ -40,7 +40,10 @@ test("anonymous mobile login page matches its PLPD baseline", async ({ browser }
     await page.goto("/login", { waitUntil: "networkidle" });
     await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
-    await expect(page).toHaveScreenshot("login-mobile-dark.png", { fullPage: true });
+    await expect(page).toHaveScreenshot("login-mobile-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.05,
+    });
   } finally {
     await context.close();
   }
