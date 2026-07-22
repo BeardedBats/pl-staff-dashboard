@@ -1,8 +1,8 @@
 # API authorization matrix
 
 Audited: 2026-07-21  
-Scope: all 97 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.  
-Status vocabulary: **OK** was enforced at the audit baseline; **GAP** was a baseline defect; **P1.12** had correct identity enforcement but a broken Vercel cron method contract. The closure table below is authoritative for post-audit repair state.
+Scope: all 106 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
+Status vocabulary: **OK** was enforced at the audit baseline; **GAP** was a baseline defect; **P1.12** marked the then-broken Vercel cron method contract. The closure table below is authoritative for post-audit repair state, and an automated parity test now rejects undocumented handlers.
 
 ## Policy vocabulary
 
@@ -40,9 +40,9 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | AUTH-03 | Entry metadata mutation now requires an entry participant or site Manager+. | Production participant/outsider responses verified. |
 | AUTH-04 | Staff-list and staff-detail HTTP responses share one field projection; private fields are limited to self or Admin+ for the target site. | Production self/other projections verified. |
 | AUTH-05 | Writer claims require writer or Manager+ authority for the entry site. | Production non-writer denial verified. |
-| AUTH-06 | Graphics creation now requires parent-entry participation or site Manager+. | Focused policy tests and production build pass; negative route integration remains in P1.16. |
-| AUTH-07 | Reply creation rejects a parent comment from another entry. | TypeScript, lint, and build pass; route integration coverage remains in P1.16. |
-| AUTH-08 | Deliberately deferred to P1.12 so transport, secret auth, idempotency, overlap, and Vercel-shaped tests close together. | Open. |
+| AUTH-06 | Graphics creation now requires parent-entry participation or site Manager+. | Policy tests plus a data-layer negative regression prove a same-site outsider is rejected before any database access. |
+| AUTH-07 | Reply creation rejects a parent comment from another entry. | A validated composite foreign key and hostile pgTAP insert prove the boundary at the database layer. |
+| AUTH-08 | Every cron route exposes Vercel `GET` and interactive `POST` through the same authorization and durable execution-control wrapper. | Route contracts, 105 pgTAP probes, a two-connection overlap probe, and green Vercel/database checks pass. |
 | AUTH-09 | Central entry visibility now hides drafts from everyone except creator/author and site Admin+ across direct detail and child-resource routes. | Production author/outsider detail responses verified. |
 
 ## Route matrix
@@ -68,14 +68,22 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | PATCH | `/api/claims/[id]` | Manager+ | Approve/deny functions reject non-manager | OK |
 | PATCH | `/api/comments/[id]` | Comment author | `existing.user_id === viewer.id` | OK |
 | DELETE | `/api/comments/[id]` | Admin+ | Data function checks Admin+ | OK |
-| POST | `/api/cron/category-sync` | Cron or Admin+ | Secret equality or Admin+ session; wrong HTTP method | P1.12 |
-| POST | `/api/cron/deadline-reminders` | Cron | Secret equality; wrong HTTP method | P1.12 |
-| POST | `/api/cron/ga4-sync` | Cron or Admin+ | Secret equality or Admin+ session; wrong HTTP method | P1.12 |
-| POST | `/api/cron/profile-sync` | Cron or Admin+ | Secret equality or Admin+ session; wrong HTTP method | P1.12 |
-| POST | `/api/cron/recurring-generate` | Cron or Admin+ | Secret equality or Admin+ session; wrong HTTP method | P1.12 |
-| POST | `/api/cron/season-switch` | Cron | Secret equality; wrong HTTP method | P1.12 |
-| POST | `/api/cron/unclaimed-alerts` | Cron or Admin+ | Secret equality or Admin+ session; wrong HTTP method | P1.12 |
-| POST | `/api/cron/wp-sync` | Cron or Admin+ | Secret equality or Admin+ session; wrong HTTP method | P1.12 |
+| GET | `/api/cron/category-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| POST | `/api/cron/category-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| GET | `/api/cron/deadline-reminders` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| POST | `/api/cron/deadline-reminders` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| GET | `/api/cron/ga4-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| POST | `/api/cron/ga4-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| GET | `/api/cron/profile-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| POST | `/api/cron/profile-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| GET | `/api/cron/recurring-generate` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| POST | `/api/cron/recurring-generate` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| GET | `/api/cron/season-switch` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| POST | `/api/cron/season-switch` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| GET | `/api/cron/unclaimed-alerts` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| POST | `/api/cron/unclaimed-alerts` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| GET | `/api/cron/wp-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| POST | `/api/cron/wp-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
 | GET | `/api/entries` | Session; staff-wide pipeline visibility | `getCurrentUser` | OK |
 | POST | `/api/entries` | Session; product matrix permits all staff | `getCurrentUser` | OK |
 | GET | `/api/entries/[id]` | Session except drafts; drafts require author or site Admin+ | Session only | **GAP AUTH-09** |
@@ -91,6 +99,7 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | PATCH | `/api/entries/[id]/editor-status` | Editor/Manager+ for entry site | Flat editor/Manager+ role | **GAP AUTH-01** |
 | POST | `/api/entries/[id]/wp-refresh` | Session except drafts; draft visibility applies | Session only | **GAP AUTH-09** |
 | POST | `/api/entries/bulk` | Manager+ for affected entry sites | Flat Manager+ only | **GAP AUTH-01** |
+| POST | `/api/entries/bulk-create` | Manager+ for every affected entry site | Site-aware Manager+ check plus transactional RPC | OK |
 | GET | `/api/ga4/callback` | Operations | `isOperations` | OK |
 | POST | `/api/ga4/connect` | Operations | `isOperations` | OK |
 | POST | `/api/ga4/disconnect` | Operations | `isOperations` | OK |
