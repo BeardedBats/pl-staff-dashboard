@@ -2,7 +2,10 @@ import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { fetchWpUserById, type WpSiteKey } from "@/lib/auth/wordpress";
-import type { TablesUpdate } from "@/types/database";
+import {
+  buildWpProfileUpdate,
+  hasWpProfileChanges,
+} from "@/lib/users/wp-profile";
 
 /**
  * Periodic WP profile refresh.
@@ -119,34 +122,14 @@ export async function syncWpProfiles(): Promise<ProfileSyncReport> {
         continue;
       }
 
-      // Honor admin overrides: if display_name_override is set, leave the
-      // local value alone. Bio and avatar still sync from WP — only the
-      // name field is locked. (Add more override flags here if we ever
-      // need to protect bio/avatar too.)
-      const keepLocalName = user.display_name_override === true;
-      const nextDisplayName = keepLocalName
-        ? user.display_name ?? ""
-        : result.value.name || user.display_name || "";
-      const nextBio = result.value.description || "";
-      const nextAvatarUrl = result.value.avatar_url ?? null;
-
-      const changed =
-        (user.display_name ?? "") !== nextDisplayName ||
-        (user.bio ?? "") !== nextBio ||
-        (user.avatar_url ?? null) !== nextAvatarUrl;
-
-      if (!changed) {
+      const updatePayload = buildWpProfileUpdate(
+        user,
+        result.value,
+        new Date().toISOString(),
+      );
+      if (!hasWpProfileChanges(user, updatePayload)) {
         report.unchanged++;
         continue;
-      }
-
-      const updatePayload: TablesUpdate<"users"> = {
-        bio: nextBio,
-        avatar_url: nextAvatarUrl,
-        last_wp_sync: new Date().toISOString(),
-      };
-      if (!keepLocalName) {
-        updatePayload.display_name = nextDisplayName;
       }
 
       const { error: updateError } = await supabase

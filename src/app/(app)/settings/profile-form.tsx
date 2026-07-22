@@ -145,6 +145,8 @@ export function ProfileForm({ profile }: ProfileFormProps) {
             <CardTitle>Your profile</CardTitle>
             <CardDescription>
               This is how other staff see you in the directory and author bylines.
+              Refreshing from WordPress updates your bio and avatar without
+              replacing a display name you saved here.
             </CardDescription>
           </div>
           <Button

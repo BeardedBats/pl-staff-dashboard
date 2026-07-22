@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.8/P1.9 — Apply verified migrations when DDL access arrives; package completed P1.10 stack
-- Branch: `codex/production-readiness-p1-10`
-- Stack base: `edb5022` (green draft PR #10, based on green draft PR #9).
+- Current action: P1.8/P1.9 — Apply verified migrations when DDL access arrives; package completed P1.11 stack
+- Branch: `codex/production-readiness-p1-11`
+- Stack base: `65a211f` (green draft PR #11, based on green draft PRs #10 and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -42,8 +42,8 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [x] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow.
 - [ ] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants. — LOCAL GATE PASSED; PRODUCTION APPLY BLOCKED ON SUPABASE DDL ACCESS
 - [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
-- [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8/P1.9
-- [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization.
+- [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules. — GREEN DRAFT PR #11; STACKED RELEASE PENDING P1.8/P1.9
+- [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8–P1.10
 - [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability.
 - [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries.
 - [ ] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities.
@@ -311,6 +311,14 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - GA4 sync, Raptive matching, and the standalone GA4 backfill now share one hostless-path normalizer and one collision-refusing entry index. Full, protocol-relative, bare-host, absolute-path, relative-path, query, fragment, trailing-slash, encoded, malformed-percent, root, and cross-site collision inputs have regression coverage.
 - Six WordPress callers now share one typed site-configuration and Basic-auth module, including optional-QB availability. Login, profile updates, and WordPress user import now share one email normalizer.
 - No legacy URL, WordPress-config, Basic-auth, or duplicate email-normalization helper remains. Application gate: 13 Vitest files / 60 tests, ESLint, TypeScript, and the Next.js production build passed.
+- Commit `65a211f` is packaged in green draft PR #11; its Vercel preview completed successfully. The database-type workflow correctly did not run because P1.10 changes no migration, schema, generated type, package lock, or workflow input.
+
+### 2026-07-21 — P1.11 display-name override local gate
+
+- A privacy-safe production scan found two WordPress-linked users and one active `display_name_override`; no names, emails, IDs, or credentials were emitted. The protected user's WordPress profile was unavailable through the configured admin read path, so the database override flag remains authoritative.
+- Login, admin WP import, self/admin manual resync, and scheduled profile sync now share one existing-user profile-update builder. When the override flag is true, the update omits `display_name` entirely while still refreshing bio, avatar, and sync time. New-user creation still seeds the WordPress name.
+- Manual WP import now reports a database update failure instead of returning false success. The profile UI explains that WordPress refresh preserves a locally saved display name.
+- Pure behavior and caller-contract regressions cover protected/unprotected names, blank remote names, empty profile fields, non-name changes, and all four existing-user paths. Application gate: 14 Vitest files / 69 tests, ESLint, TypeScript, and the Next.js production build passed.
 
 ## Phase 0 prioritized defect and risk inventory
 
