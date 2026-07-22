@@ -126,7 +126,7 @@ function NavLink({
         "flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-all duration-150",
         isActive
           ? "plpd-nav-active text-white"
-          : "text-text-nav hover:bg-[rgba(255,255,255,0.04)] hover:text-text-cell",
+          : "plpd-hover-surface text-text-nav hover:text-text-cell",
         collapsed && "justify-center px-2",
       )}
     >

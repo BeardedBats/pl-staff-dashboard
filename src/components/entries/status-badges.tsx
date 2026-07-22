@@ -7,8 +7,8 @@ import type {
 } from "@/lib/entries/queries";
 
 // PLPD status → semantic mapping (approved artifact §4 + addendum Q1).
-// gray/zero · gold #f5b950 · blue #3da9f5 · green #34d399 · violet #a78bfa ·
-// val-pos #7fc8a9 · red #f4707c. CONFLICT-equivalent states (polishing,
+// gray/zero · gold · blue · green · violet · val-pos · red. Exact values live
+// only in the centralized PLPD registry. CONFLICT-equivalent states (polishing,
 // flagged) are always visible — never hidden.
 
 type BadgeVariant = React.ComponentProps<typeof Badge>["variant"];
