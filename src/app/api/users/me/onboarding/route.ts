@@ -6,10 +6,10 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/users/me/onboarding — mark the Joyride tour as done.
+ * POST /api/users/me/onboarding — mark role-based setup as complete.
  *
- * Called when the user either completes or skips the tour. We flip
- * `users.onboarding_completed` so the layout stops showing it.
+ * Called only after the user completes every item in the setup checklist.
+ * The introductory tour is dismissible and does not call this endpoint.
  */
 export async function POST() {
   const viewer = await getCurrentUser();

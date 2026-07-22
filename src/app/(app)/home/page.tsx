@@ -17,7 +17,11 @@ import {
   getUnclaimedWriterSlots,
   getWpSyncHealth,
 } from "@/lib/home/widgets";
+import { buildTodayBrief } from "@/lib/home/today";
+import { setupItemsForRoles } from "@/lib/onboarding/setup";
+import { SetupChecklist } from "@/components/onboarding/setup-checklist";
 import { ManagerInbox } from "./manager-inbox";
+import { TodayBrief } from "./today-brief";
 import {
   MyActiveClaimsWidget,
   MyDraftsToApproveWidget,
@@ -130,15 +134,27 @@ export default async function HomePage() {
     managerFit ? listPendingArchiveRequests(user) : Promise.resolve([]),
   ]);
 
+  const todayBrief = buildTodayBrief({
+    pendingClaims: pendingClaims.length,
+    pendingArchives: pendingArchives.length,
+    myClaims,
+    myDeadlines,
+    myDrafts,
+    editorQueue,
+    myEdits,
+    openGraphics,
+    myGraphics,
+    pipelineHealth,
+    staleEntries: stale,
+    unclaimedSlots,
+  });
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-cell">
-          Welcome, {user.display_name.split(" ")[0]}.
-        </h1>
+        <h1 className="text-2xl font-semibold text-text-cell">Today</h1>
         <p className="mt-1 text-sm text-text-team">
-          You&apos;re signed in as{" "}
-          <span className="font-data text-text-cell">{user.email}</span>
+          Welcome, {user.display_name.split(" ")[0]}. Start with the highest-impact item below.
           {user.roles.length > 0 ? (
             <>
               {" "}
@@ -150,6 +166,12 @@ export default async function HomePage() {
           ) : null}
         </p>
       </div>
+
+      {!user.onboarding_completed ? (
+        <SetupChecklist userId={user.id} items={setupItemsForRoles(user.roles)} />
+      ) : null}
+
+      <TodayBrief brief={todayBrief} />
 
       {/* Manager inbox first — approvals block work */}
       {managerFit ? (

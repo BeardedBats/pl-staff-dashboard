@@ -50,6 +50,12 @@ export const browserActors = {
     displayName: "EIC Journey",
     role: "eic",
   },
+  onboarding: {
+    userId: "28000000-0000-0000-0000-000000000007",
+    sessionId: "28100000-0000-0000-0000-000000000007",
+    displayName: "Onboarding Journey",
+    role: "writer",
+  },
 } as const;
 
 export const browserRecords = {
@@ -158,13 +164,13 @@ export default async function globalSetup() {
 
   await expectWrite(
     supabase.from("users").insert(
-      Object.values(browserActors).map((actor, index) => ({
+      Object.entries(browserActors).map(([name, actor], index) => ({
         id: actor.userId,
         wp_user_id: 28_001 + index,
         wp_site: actor.role === "admin" ? "both" : "pl",
-        email: `${actor.role}-journey@example.test`,
+        email: `${name}-journey@example.test`,
         display_name: actor.displayName,
-        onboarding_completed: true,
+        onboarding_completed: actor.userId !== browserActors.onboarding.userId,
       })),
     ),
     "insert browser actors",

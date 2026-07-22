@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 4 — Role-focused workflow and usability
-- Current action: P4.1–P4.5 — core daily-workflow and state-coverage batch, after the combined Phase 3 remote gate.
-- Branch: `codex/production-readiness-p3-10`
-- Stack base: `f349747` (P3.9 exact-evidence head on green draft PR #38, based on the green stacked production-readiness pull requests).
+- Current action: P4.6–P4.9 — manager control-center, saved-view, digest, and safe-bulk-action batch.
+- Branch: `codex/production-readiness-p4`
+- Stack base: `feb4f12` (combined Phase 3 exact head on green draft PR #39, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -89,11 +89,11 @@ Gate: new feature work can be built entirely from verified PLPD primitives.
 
 ## Phase 4 — Role-focused workflow and usability
 
-- [ ] P4.1 Create a useful Today home screen.
-- [ ] P4.2 Add global search and fast filtering.
-- [ ] P4.3 Present plain-language status and a recommended next action.
-- [ ] P4.4 Add role-based onboarding and setup checklists.
-- [ ] P4.5 Cover loading, empty, partial, stale, success, and error states.
+- [x] P4.1 Create a useful Today home screen.
+- [x] P4.2 Add global search and fast filtering.
+- [x] P4.3 Present plain-language status and a recommended next action.
+- [x] P4.4 Add role-based onboarding and setup checklists.
+- [x] P4.5 Cover loading, empty, partial, stale, success, and error states.
 - [ ] P4.6 Build a manager control center.
 - [ ] P4.7 Add useful saved views and presets.
 - [ ] P4.8 Add a concise weekly operational digest.
@@ -589,6 +589,16 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - The committed captures were visually inspected before acceptance. They show intact PLPD hierarchy and surfaces, readable controls, representative desktop/mobile layouts, and no framework error overlay. A source contract pins the route-wide axe gate, keyboard/focus behaviors, dialog/menu focus contracts, screenshot configuration, test scenarios, and all five baseline files.
 - Targeted batch verification: ESLint and TypeScript pass; all four new accessibility/interaction journeys pass; all five visual baselines pass in comparison mode after generation; and all three accessibility/visual source-contract tests pass. React review found no new effects, requests, mirrored state, or unstable list keys; the one new ref is launcher-local focus recovery, and existing Radix semantics remain authoritative.
 - Combined Phase 3 full local gate: diff hygiene; six-runbook contract through migration `0022`; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability low-threshold audit; Next.js 16.2.11 production build; 65 Vitest files / 302 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 32 production-quality checks pass.
+- Exact fixed-head GitHub run [29887618696](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29887618696) passed Application, Database, Dependencies, all 10 Browser journeys, and all 32 quality checks at `feb4f12`; Vercel passed and draft PR #39 was clean and mergeable. The first implementation head correctly exposed a stable 4% Windows/Linux glyph-edge rasterization difference on the text-dense mobile login capture; only that baseline now permits 5%, while the other four remain at the stricter 3% threshold.
+
+### 2026-07-21 — P4.1–P4.5 daily-workflow foundation batch
+
+- Replaced the generic welcome lead with a role-aware Today brief that presents exactly one highest-impact next action. A pure ordered decision model prioritizes team-blocking approvals, draft decisions, overdue assignments, editing, graphics, upcoming owned work, pipeline blocks, stale work, and optional capacity in that order; plain-language copy explains why the action matters.
+- Added a keyboard-accessible global search command palette to every authenticated page (`Ctrl/Cmd K` or `/`). Its server route searches staff, active content, writer/editor assignments, authorized graphic requests, and scheduled entries independently; entry/draft and graphic results reuse the production resource-authorization helpers, staff results never expose email or other private fields, and one failed source produces a clear partial result instead of discarding safe results.
+- Replaced “tour skipped equals onboarding complete” with explicit role-based setup ownership. First-time users receive a persistent checklist chosen from their responsibilities, visit each relevant workflow, and deliberately finish setup; the introductory tour is separately dismissible and cannot call the completion endpoint. Completion success and safe retry failure states are visible.
+- Added inherited authenticated-route loading and safe error/retry boundaries. Global search exercises idle, loading, empty, partial, success, and error states; the Today view surfaces stale work; manager decisions now check every response and show explicit success or non-destructive failure feedback.
+- Targeted verification: five Today/setup unit tests, three authenticated search-route API tests, two global-search partial/error component tests, four recursive workflow-foundation contract tests, and two production-Chromium journeys pass. The browser proof uses real seeded database records to exercise all five search groups, the prioritized Today action, role-specific setup persistence/completion, keyboard opening/focus, and an open-dialog WCAG A/AA scan with no exclusions.
+- React review: state remains local to the command palette, setup checklist, and existing manager inbox; fetch effects are abortable and clean up their debounce timer; the tour timer retains cleanup; no mirrored server state, unstable list keys, request waterfall, or new broad client boundary was introduced.
 
 ## Phase 0 prioritized defect and risk inventory
 

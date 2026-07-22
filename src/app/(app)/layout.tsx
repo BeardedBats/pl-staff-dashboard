@@ -43,7 +43,7 @@ export default async function AppLayout({
           </div>
         </main>
       </div>
-      <OnboardingTour enabled={!user.onboarding_completed} />
+      <OnboardingTour enabled={!user.onboarding_completed} userId={user.id} />
     </div>
   );
 }
