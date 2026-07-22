@@ -321,14 +321,14 @@ export function AdminAnalyticsPanel({
               />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full font-data text-sm">
+            <div className="plpd-table-shell overflow-x-auto">
+              <table className="plpd-table font-data">
                 <thead className="bg-card text-[10px] uppercase tracking-wide text-text-zero">
                   <tr className="border-b border-border">
                     <th className="px-3 py-2 text-left">File</th>
                     <th className="px-3 py-2 text-left">Status</th>
                     <th className="px-3 py-2 text-left">Range</th>
-                    <th className="px-3 py-2 text-right">Rows</th>
+                    <th data-numeric="true" className="px-3 py-2 text-right">Rows</th>
                     <th className="px-3 py-2 text-left">Requested by</th>
                     <th className="px-3 py-2 text-left">Started</th>
                     <th className="px-3 py-2 text-left">Error code</th>
@@ -348,7 +348,11 @@ export function AdminAnalyticsPanel({
                           ? `${run.date_range_start} → ${run.date_range_end}`
                           : "—"}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums">
+                      <td
+                        data-numeric="true"
+                        data-zero={run.rows_processed === 0}
+                        className="px-3 py-2 text-right font-data tabular-nums"
+                      >
                         {run.rows_processed?.toLocaleString() ?? "—"}
                       </td>
                       <td className="px-3 py-2 text-text-team">
@@ -400,13 +404,13 @@ export function AdminAnalyticsPanel({
               />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full font-data text-sm">
+            <div className="plpd-table-shell overflow-x-auto">
+              <table className="plpd-table font-data">
                 <thead className="bg-card text-[10px] uppercase tracking-wide text-text-zero">
                   <tr className="border-b border-border">
                     <th className="px-3 py-2 text-left">File</th>
                     <th className="px-3 py-2 text-left">Range</th>
-                    <th className="px-3 py-2 text-right">Rows</th>
+                    <th data-numeric="true" className="px-3 py-2 text-right">Rows</th>
                     <th className="px-3 py-2 text-left">Uploaded by</th>
                     <th className="px-3 py-2 text-left">When</th>
                   </tr>
@@ -420,7 +424,11 @@ export function AdminAnalyticsPanel({
                       <td className="px-3 py-2 text-[11px] text-text-team">
                         {u.date_range_start} → {u.date_range_end}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums">
+                      <td
+                        data-numeric="true"
+                        data-zero={u.rows_imported === 0}
+                        className="px-3 py-2 text-right font-data tabular-nums"
+                      >
                         {u.rows_imported.toLocaleString()}
                       </td>
                       <td className="px-3 py-2 text-text-team">

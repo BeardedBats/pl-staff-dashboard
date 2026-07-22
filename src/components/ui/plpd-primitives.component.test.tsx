@@ -23,6 +23,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableValue,
 } from "@/components/ui/table";
 
 describe("PLPD component primitives", () => {
@@ -98,6 +99,26 @@ describe("PLPD component primitives", () => {
     expect(
       screen.getByLabelText("Projected revenue requires access"),
     ).toHaveAttribute("data-plpd-state", "gated");
+  });
+
+  it("distinguishes zero and signed table values without chip colors", () => {
+    render(
+      <>
+        <TableValue value={0}>0</TableValue>
+        <TableValue value={2.4} delta>+2.4</TableValue>
+        <TableValue value={-1.7} delta>−1.7</TableValue>
+      </>,
+    );
+
+    expect(screen.getByText("0")).toHaveAttribute("data-value-tone", "zero");
+    expect(screen.getByText("+2.4")).toHaveAttribute(
+      "data-value-tone",
+      "positive",
+    );
+    expect(screen.getByText("−1.7")).toHaveAttribute(
+      "data-value-tone",
+      "negative",
+    );
   });
 
   it("exposes all seven PLPD widget states through one typed contract", () => {

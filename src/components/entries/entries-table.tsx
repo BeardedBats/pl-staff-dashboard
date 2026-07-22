@@ -115,6 +115,8 @@ const ALL_COLUMNS = [
   { id: "updated_at", label: "Updated", defaultVisible: false },
 ];
 
+const NUMERIC_COLUMN_IDS = new Set(["checklist", "word_count"]);
+
 const DEFAULT_VISIBILITY: VisibilityState = ALL_COLUMNS.reduce(
   (acc, col) => ({ ...acc, [col.id]: col.defaultVisible }),
   {},
@@ -587,10 +589,10 @@ export function EntriesTable({
       ) : (
         <div
           ref={tableContainerRef}
-          className="plpd-panel-frame max-h-[70vh] overflow-auto rounded-[10px] border border-border-table bg-transparent"
+          className="plpd-table-shell max-h-[70vh] overflow-auto bg-transparent"
         >
           {/* font-data → Work Sans for table DATA; badges keep DM Sans */}
-          <table className="w-full font-data text-sm">
+          <table className="plpd-table font-data">
             <thead className="plpd-thead sticky top-0 z-10 border-b border-border-thead">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
@@ -610,6 +612,7 @@ export function EntriesTable({
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
+                      data-numeric={NUMERIC_COLUMN_IDS.has(header.column.id)}
                       className="px-3 py-2 text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header"
                     >
                       {header.isPlaceholder
@@ -660,22 +663,23 @@ export function EntriesTable({
                   </td>
                 </tr>
               ) : (
-                allRows.map((row, idx) => {
+                allRows.map((row) => {
                   const isExpanded = expandedId === row.id;
                   const entry = row.original;
                   return (
                     <React.Fragment key={row.id}>
                       <tr
-                        className={cn(
-                          // PLPD translucent zebra (mesh breathes through) + hover lift.
-                          // Row-state variants use dedicated fills, NEVER opacity.
-                          "cursor-pointer transition-colors hover:bg-[var(--plpd-fill-row-hover)]",
-                          idx % 2 === 0 ? "bg-row-a" : "bg-row-b",
-                          isExpanded && "bg-[var(--plpd-fill-row-hover)]",
-                          entry.content_status === "writer_needed" &&
-                            "bg-[var(--plpd-fill-row-priority)]",
-                          row.getIsSelected() && "bg-[var(--plpd-fill-row-selected)]",
-                        )}
+                        className="cursor-pointer transition-colors"
+                        data-state={
+                          row.getIsSelected() || isExpanded
+                            ? "selected"
+                            : undefined
+                        }
+                        data-row-state={
+                          entry.content_status === "writer_needed"
+                            ? "priority"
+                            : undefined
+                        }
                         onClick={() =>
                           setExpandedId(isExpanded ? null : row.id)
                         }
@@ -703,6 +707,7 @@ export function EntriesTable({
                         {row.getVisibleCells().map((cell) => (
                           <td
                             key={cell.id}
+                            data-numeric={NUMERIC_COLUMN_IDS.has(cell.column.id)}
                             className="px-3 py-3 align-top"
                           >
                             {flexRender(
@@ -713,7 +718,7 @@ export function EntriesTable({
                         ))}
                       </tr>
                       {isExpanded ? (
-                        <tr>
+                        <tr data-row-detail="true">
                           <td
                             colSpan={table.getVisibleFlatColumns().length + 2}
                             className="bg-surface-2/50 p-0"

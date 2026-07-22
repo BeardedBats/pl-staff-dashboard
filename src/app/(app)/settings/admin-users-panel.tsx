@@ -117,8 +117,8 @@ export function AdminUsersPanel({
           className="max-w-sm"
         />
 
-        <div className="overflow-hidden rounded-md border border-border">
-          <table className="w-full divide-y divide-border font-data text-sm">
+        <div className="plpd-table-shell overflow-hidden">
+          <table className="plpd-table font-data">
             <thead className="bg-surface-3 text-xs uppercase tracking-wider text-text-zero">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">User</th>

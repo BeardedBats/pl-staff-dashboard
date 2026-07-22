@@ -67,8 +67,8 @@ export default async function EditingQueuePage() {
         />
       ) : (
         <Card>
-          <div className="overflow-hidden rounded-lg">
-            <table className="w-full font-data text-sm">
+          <div className="plpd-table-shell overflow-hidden">
+            <table className="plpd-table font-data">
               <thead className="plpd-thead border-b border-border-thead">
                 <tr>
                   <th className="px-3 py-2 text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
@@ -108,7 +108,7 @@ export default async function EditingQueuePage() {
                   return (
                     <tr
                       key={entry.id}
-                      className="hover:bg-surface-3/50"
+                      data-row-state={entry.priority ? "priority" : undefined}
                     >
                       <td className="px-3 py-3 align-top">
                         <Link
