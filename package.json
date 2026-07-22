@@ -23,7 +23,10 @@
     "db:stop": "supabase stop",
     "db:lint": "supabase db lint --local --fail-on warning",
     "db:types:generate": "node scripts/database-types.mjs",
-    "db:types:check": "node scripts/database-types.mjs --check"
+    "db:types:check": "node scripts/database-types.mjs --check",
+    "ops:verify-runbooks": "node scripts/verify-operations-runbooks.mjs",
+    "ops:preflight": "node scripts/operations-preflight.mjs",
+    "ops:preflight:production": "node scripts/operations-preflight.mjs --production"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
