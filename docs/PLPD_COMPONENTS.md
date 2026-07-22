@@ -1,0 +1,41 @@
+# PLPD component primitives
+
+This layer composes the verified tokens in `src/app/globals.css`. It does not
+restate visual values in TSX. Canonical PLPD constructions stay distinct from
+dashboard-only extensions so future changes cannot quietly become source
+claims.
+
+## Primitive map
+
+| Role | Module | Boundary |
+| --- | --- | --- |
+| Navigation | `ui/navigation.tsx`, `layout/sidebar.tsx`, `layout/header.tsx` | Canonical active/hover treatment; responsive drawer is derived. |
+| Page headers | `ui/page-header.tsx` | Canonical compact spacing and type hierarchy. |
+| Tabs | `ui/tabs.tsx` | Canonical amber active state and overhanging underline. |
+| Buttons | `ui/button.tsx` | Canonical four-layer primary/CTA and ghost treatments. |
+| Fields | `ui/field.tsx`, `ui/input.tsx`, `ui/textarea.tsx`, `ui/label.tsx` | Canonical input surface, focus border, and data typography. |
+| Dropdowns | `ui/select.tsx`, `ui/dropdown-menu.tsx`, `ui/popover.tsx` | Canonical primary gradient, highlighted row, and secondary flat variant. |
+| Cards | `ui/card.tsx` | Canonical pointed-center shadow and inset highlight. |
+| Chips | `ui/badge.tsx` | Canonical size, type, fill, border, and semantic palette. |
+| Tables | `ui/table.tsx` | Canonical panel frame, header band, zebra rows, dimensions, and hover/selected states. |
+| Pagination | `ui/pagination.tsx` | Canonical previous/current/next construction with accessible controls. |
+| Alerts | `ui/alert.tsx` | Success/error use the guide's calibration callouts; info/warning are labeled derived extensions. |
+| Dialogs | `ui/dialog.tsx` | Derived modal composition over the canonical panel treatment. |
+| Drawers | `ui/sheet.tsx` | Derived responsive composition over the same panel treatment. |
+| Loading | `ui/skeleton.tsx`, `ui/state.tsx` | Spinner is canonical; skeletons are a layout-preserving dashboard extension. The guide's stand-in loading bars are excluded. |
+| Empty/error | `ui/empty-state.tsx`, `ui/state.tsx` | The frame remains in place; error copy is caller-authored rather than raw exception output. |
+| Gated values | `ui/gated-value.tsx` | Accepts only a label, unit, and placeholder. It has no real-value prop; authorization must withhold data on the server. |
+
+## Usage rules
+
+1. Use these primitives before adding page-local visual construction.
+2. Keep visual literals in the central token registry, never in TSX.
+3. Use `SelectTrigger variant="secondary"` for subordinate filters.
+4. Keep numeric table cells right-aligned through `className`; the base table
+   defaults to left alignment so semantic row headers remain natural.
+5. Pass user-safe copy to `ErrorState`. Do not render caught exception text.
+6. Render `GatedValue` only when the server response omits the protected value.
+   CSS hiding, masking, or blur is not authorization.
+
+Page-wide adoption and responsive polish remain P3.8 work. P3.2 establishes
+the reusable, test-backed component vocabulary those page conversions consume.

@@ -9,16 +9,25 @@ const Select = SelectPrimitive.Root;
 const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 
+type SelectTriggerProps = React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Trigger
+> & {
+  variant?: "primary" | "secondary";
+};
+
 const SelectTrigger = React.forwardRef<
   React.ComponentRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
+  SelectTriggerProps
+>(({ className, children, variant = "primary", ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
       // PLPD dropdown trigger — 144.79° blue badge gradient + inset top
       // highlight. NO white-fade layer (that is exclusive to Import buttons).
-      "plpd-dropdown-trigger relative flex h-9 w-full items-center justify-between rounded-sm border-0 px-3 py-1 text-sm font-bold text-text-cell",
+      "relative flex h-9 w-full items-center justify-between rounded-sm px-3 py-1 font-data text-plpd-body text-text-cell",
+      variant === "primary"
+        ? "plpd-dropdown-trigger border-0 font-bold"
+        : "plpd-input-control border border-border-tab bg-surface-3 font-medium text-text-nav",
       "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
       "disabled:cursor-not-allowed disabled:opacity-50",
       "[&>span]:line-clamp-1",
@@ -71,7 +80,7 @@ const SelectContent = React.forwardRef<
       ref={ref}
       position={position}
       className={cn(
-        "plpd-dropdown-menu relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-[8px] border-0 text-text-cell",
+        "plpd-dropdown-menu relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-[8px] border-0 font-data text-text-cell",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
@@ -114,7 +123,7 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "plpd-menu-highlight relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm text-white/90 outline-none",
+      "plpd-menu-highlight relative flex h-6 w-full cursor-default select-none items-center rounded-sm pl-8 pr-2 text-plpd-body text-white/90 outline-none",
       // PLPD highlighted row — lighter-blue gradient bar
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,

@@ -67,6 +67,10 @@ describe("PLPD design-token contract", () => {
       "plpd-type-body": "14px",
       "plpd-weight-hero": "800",
       "plpd-weight-section": "900",
+      "plpd-fill-alert-success": "rgba(52,211,153,0.07)",
+      "plpd-border-alert-success": "rgba(52,211,153,0.28)",
+      "plpd-fill-alert-error": "rgba(244,112,124,0.07)",
+      "plpd-border-alert-error": "rgba(244,112,124,0.28)",
     };
 
     for (const [name, value] of Object.entries(expected)) {

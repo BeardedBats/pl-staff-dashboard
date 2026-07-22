@@ -88,6 +88,17 @@
   --plpd-fill-panel: rgba(33, 36, 58, 0.35);
   --plpd-fill-state: rgba(33, 36, 58, 0.4);
   --plpd-fill-code: rgba(15, 17, 32, 0.6);
+  --plpd-fill-alert-success: rgba(52, 211, 153, 0.07);
+  --plpd-border-alert-success: rgba(52, 211, 153, 0.28);
+  --plpd-fill-alert-error: rgba(244, 112, 124, 0.07);
+  --plpd-border-alert-error: rgba(244, 112, 124, 0.28);
+  /* Info/warning callouts are derived from the exact success/error
+     construction because the guide does not assign those two roles. */
+  --plpd-fill-alert-info: rgba(61, 169, 245, 0.07);
+  --plpd-border-alert-info: rgba(61, 169, 245, 0.28);
+  --plpd-fill-alert-warning: rgba(255, 194, 119, 0.07);
+  --plpd-border-alert-warning: rgba(255, 194, 119, 0.28);
+  --plpd-fill-card-point: rgba(0, 0, 0, 0.6);
   --plpd-border-input-focus: rgba(157, 244, 255, 0.35);
   --plpd-scrollbar: rgba(85, 232, 255, 0.15);
 
@@ -98,6 +109,7 @@
   --plpd-border-zero: rgba(164, 170, 202, 0.35);
   --plpd-scrollbar-hover: rgba(85, 232, 255, 0.28);
   --plpd-joyride-overlay: rgba(19, 21, 42, 0.78);
+  --plpd-dialog-overlay: rgba(19, 21, 42, 0.82);
 
   --plpd-gradient-sidebar: linear-gradient(
     90deg,
@@ -301,6 +313,7 @@
   --plpd-scrollbar: rgba(0, 103, 122, 0.2);
   --plpd-scrollbar-hover: rgba(0, 103, 122, 0.34);
   --plpd-joyride-overlay: rgba(0, 0, 0, 0.4);
+  --plpd-dialog-overlay: rgba(15, 20, 38, 0.42);
 
   /* shadcn remap (light) */
   --background: var(--surface-1);
@@ -665,6 +678,121 @@ code, kbd, pre, samp {
 
 .plpd-panel-frame {
   box-shadow: var(--plpd-shadow-panel);
+}
+
+.plpd-card {
+  position: relative;
+  isolation: isolate;
+  background: var(--plpd-fill-state);
+  box-shadow: var(--plpd-shadow-card);
+}
+
+.plpd-card::before {
+  content: "";
+  position: absolute;
+  left: 33.5%;
+  bottom: -9px;
+  z-index: -1;
+  width: 33%;
+  height: 18px;
+  border-radius: var(--plpd-radius-pill);
+  background: var(--plpd-fill-card-point);
+  filter: blur(13px);
+}
+
+.plpd-modal-surface {
+  background: var(--plpd-fill-state);
+  box-shadow: var(--plpd-shadow-panel), var(--plpd-shadow-panel-inset);
+}
+
+.plpd-dialog-overlay {
+  background: var(--plpd-dialog-overlay);
+}
+
+.plpd-alert-success {
+  border-color: var(--plpd-border-alert-success);
+  background: var(--plpd-fill-alert-success);
+}
+
+.plpd-alert-error {
+  border-color: var(--plpd-border-alert-error);
+  background: var(--plpd-fill-alert-error);
+}
+
+.plpd-alert-info {
+  border-color: var(--plpd-border-alert-info);
+  background: var(--plpd-fill-alert-info);
+}
+
+.plpd-alert-warning {
+  border-color: var(--plpd-border-alert-warning);
+  background: var(--plpd-fill-alert-warning);
+}
+
+.plpd-state-frame {
+  background: var(--plpd-fill-state);
+}
+
+.plpd-spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--border-tab);
+  border-top-color: var(--cyan);
+  border-radius: var(--plpd-radius-pill);
+  animation: plpd-spin 800ms linear infinite;
+}
+
+.plpd-gated-value {
+  color: var(--text-zero-accessible);
+  font-family: var(--font-data);
+  font-size: 20px;
+  font-weight: var(--plpd-weight-bold);
+  letter-spacing: 2px;
+}
+
+.plpd-table-shell {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-table);
+  border-radius: var(--plpd-radius-panel);
+  box-shadow: var(--plpd-shadow-panel);
+}
+
+.plpd-table-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--plpd-shadow-panel-inset);
+  pointer-events: none;
+}
+
+.plpd-table tbody tr:nth-child(odd) td {
+  background: var(--row-a);
+}
+
+.plpd-table tbody tr:nth-child(even) td {
+  background: var(--row-b);
+}
+
+.plpd-table tbody tr:hover td {
+  background: var(--plpd-fill-row-hover);
+}
+
+.plpd-table tbody tr[data-state="selected"] td {
+  background: var(--plpd-fill-row-selected);
+}
+
+.plpd-pagination-current {
+  border-color: var(--cyan);
+  background: var(--cyan);
+  color: var(--plpd-on-bright);
+}
+
+@keyframes plpd-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .plpd-dropdown-trigger {

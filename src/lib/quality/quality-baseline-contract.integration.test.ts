@@ -50,6 +50,9 @@ describe("quality baseline contract", () => {
     expect(read("package.json")).toContain(
       '"test:quality": "playwright test --config playwright.quality.config.ts"',
     );
+    expect(read("playwright.quality.config.ts")).toContain(
+      'process.env.QUALITY_TEST_PORT ?? "3101"',
+    );
     const workflow = read(".github/workflows/database-types.yml");
     expect(workflow).toContain("run: npm run test:quality");
     expect(workflow).toContain("name: quality-baseline");

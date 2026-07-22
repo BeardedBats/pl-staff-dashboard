@@ -13,7 +13,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-9 items-center gap-1 rounded-md border border-border bg-card p-1 text-muted-foreground",
+      "flex w-full items-end gap-8 overflow-x-auto border-b border-border-tab text-text-inactive-tab",
       className,
     )}
     {...props}
@@ -28,11 +28,11 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "plpd-tab-trigger inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1 text-sm font-medium transition-colors",
+      "plpd-tab-trigger inline-flex shrink-0 items-center justify-center whitespace-nowrap px-0 pb-4 pt-3.5 text-plpd-tab font-medium tracking-[0.34px] transition-colors",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       "disabled:pointer-events-none disabled:opacity-50",
       // PLPD active tab — amber 700 + warm underline/glow (never cyan)
-      "hover:text-text-cell",
+      "hover:text-text-cell data-[state=active]:text-amber",
       className,
     )}
     {...props}
