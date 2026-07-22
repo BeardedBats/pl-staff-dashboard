@@ -27,9 +27,14 @@ export type RaptiveParseResult =
       ok: true;
       rows: RaptiveParsedRow[];
       dateRange: { start: string; end: string };
-      matchedCount: number;
-      unmatchedCount: number;
-      sampleUnmatched: string[];
+      dataSheetCount: number;
+      duplicateCount: number;
+      rejectedCount: number;
+      sampleRejected: Array<{
+        sheet: string;
+        row: number;
+        reason: string;
+      }>;
     }
   | {
       ok: false;
@@ -89,15 +94,27 @@ function resolveColumns(
   };
 }
 
-function coerceNumber(v: unknown): number {
+function coerceNumber(v: unknown, allowBlank = true): number | null {
+  if (v === null || v === undefined || v === "") {
+    return allowBlank ? 0 : null;
+  }
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string") {
     // Strip $, commas, percent signs
     const cleaned = v.replace(/[$,%\s]/g, "");
     const n = Number(cleaned);
-    return Number.isFinite(n) ? n : 0;
+    return Number.isFinite(n) ? n : null;
   }
-  return 0;
+  return null;
+}
+
+function validIsoDate(year: string, month: string, day: string): string | null {
+  const value = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value
+    ? value
+    : null;
 }
 
 function coerceDate(v: unknown): string | null {
@@ -116,13 +133,11 @@ function coerceDate(v: unknown): string | null {
     const trimmed = v.trim();
     // ISO-ish format already?
     const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(trimmed);
-    if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+    if (iso) return validIsoDate(iso[1], iso[2], iso[3]);
     // US format M/D/YYYY
     const us = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(trimmed);
     if (us) {
-      const mm = us[1].padStart(2, "0");
-      const dd = us[2].padStart(2, "0");
-      return `${us[3]}-${mm}-${dd}`;
+      return validIsoDate(us[3], us[1], us[2]);
     }
     // Fallback — let Date() try
     const d = new Date(trimmed);
@@ -136,6 +151,18 @@ function coerceDate(v: unknown): string | null {
 // --------------------------------------------------------------------------
 
 export function parseRaptiveWorkbook(buffer: Buffer): RaptiveParseResult {
+  if (
+    buffer.length < 4 ||
+    buffer[0] !== 0x50 ||
+    buffer[1] !== 0x4b ||
+    buffer[2] !== 0x03 ||
+    buffer[3] !== 0x04
+  ) {
+    return {
+      ok: false,
+      error: "Failed to read workbook. Upload a valid XLSX file.",
+    };
+  }
   let workbook: XLSX.WorkBook;
   try {
     workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
@@ -146,67 +173,142 @@ export function parseRaptiveWorkbook(buffer: Buffer): RaptiveParseResult {
     };
   }
 
-  const firstSheetName = workbook.SheetNames[0];
-  if (!firstSheetName) {
+  if (workbook.SheetNames.length === 0) {
     return { ok: false, error: "Workbook has no sheets" };
   }
 
-  const sheet = workbook.Sheets[firstSheetName];
-  const raw = XLSX.utils.sheet_to_json(sheet, {
-    defval: null,
-    raw: false,
-  }) as Array<Record<string, unknown>>;
-
-  if (raw.length === 0) {
-    return { ok: false, error: "Workbook is empty" };
-  }
-
-  const cols = resolveColumns(raw[0]);
-  if (!cols) {
-    return { ok: false, error: "Could not resolve columns" };
-  }
-  if (!cols.date || !cols.page_url || !cols.earnings) {
-    return {
-      ok: false,
-      error: `Missing required columns. Need Date, Page URL, and Earnings. Found keys: ${Object.keys(
-        raw[0],
-      ).join(", ")}`,
-    };
-  }
-
   const rows: RaptiveParsedRow[] = [];
+  const rowsByKey = new Map<string, RaptiveParsedRow>();
   let minDate: string | null = null;
   let maxDate: string | null = null;
+  let dataSheetCount = 0;
+  let duplicateCount = 0;
+  let rejectedCount = 0;
+  const sampleRejected: Array<{
+    sheet: string;
+    row: number;
+    reason: string;
+  }> = [];
+  const reject = (sheet: string, row: number, reason: string) => {
+    rejectedCount += 1;
+    if (sampleRejected.length < 10) sampleRejected.push({ sheet, row, reason });
+  };
 
-  for (const r of raw) {
-    const date = coerceDate(cols.date ? r[cols.date] : null);
-    const url = cols.page_url ? String(r[cols.page_url] ?? "").trim() : "";
-    if (!date || !url) continue;
-
-    const earnings = coerceNumber(cols.earnings ? r[cols.earnings] : 0);
-    const rpm = coerceNumber(cols.rpm ? r[cols.rpm] : 0);
-    const pageRpm = coerceNumber(cols.page_rpm ? r[cols.page_rpm] : 0);
-    const sessions = Math.round(
-      coerceNumber(cols.sessions ? r[cols.sessions] : 0),
-    );
-    const pageviews = Math.round(
-      coerceNumber(cols.pageviews ? r[cols.pageviews] : 0),
-    );
-
-    rows.push({
-      date,
-      page_url: url,
-      earnings,
-      rpm,
-      page_rpm: pageRpm,
-      sessions,
-      pageviews,
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+      header: 1,
+      defval: null,
+      raw: true,
+      blankrows: false,
     });
+    const headerIndex = matrix.findIndex((candidate) => {
+      const sample = Object.fromEntries(
+        candidate.map((value, index) => [
+          String(value ?? `column_${index}`),
+          null,
+        ]),
+      );
+      const resolved = resolveColumns(sample);
+      return Boolean(resolved?.date && resolved.page_url && resolved.earnings);
+    });
+    if (headerIndex < 0) continue;
 
-    if (minDate === null || date < minDate) minDate = date;
-    if (maxDate === null || date > maxDate) maxDate = date;
+    dataSheetCount += 1;
+    const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+      range: headerIndex,
+      defval: null,
+      raw: true,
+      blankrows: false,
+    });
+    const cols = resolveColumns(raw[0] ?? {});
+    if (!cols?.date || !cols.page_url || !cols.earnings) continue;
+
+    for (const [rowIndex, record] of raw.entries()) {
+      const excelRow = headerIndex + rowIndex + 2;
+      const date = coerceDate(record[cols.date]);
+      const url = String(record[cols.page_url] ?? "").trim();
+      if (!date || !url) {
+        reject(sheetName, excelRow, "Missing or invalid Date or Page URL");
+        continue;
+      }
+
+      const earnings = coerceNumber(record[cols.earnings], false);
+      const rpm = coerceNumber(cols.rpm ? record[cols.rpm] : null);
+      const pageRpm = coerceNumber(cols.page_rpm ? record[cols.page_rpm] : null);
+      const sessions = coerceNumber(
+        cols.sessions ? record[cols.sessions] : null,
+      );
+      const pageviews = coerceNumber(
+        cols.pageviews ? record[cols.pageviews] : null,
+      );
+      if (
+        earnings === null ||
+        rpm === null ||
+        pageRpm === null ||
+        sessions === null ||
+        pageviews === null
+      ) {
+        reject(sheetName, excelRow, "Invalid numeric value");
+        continue;
+      }
+      if (
+        !Number.isSafeInteger(sessions) ||
+        sessions < 0 ||
+        !Number.isSafeInteger(pageviews) ||
+        pageviews < 0
+      ) {
+        reject(
+          sheetName,
+          excelRow,
+          "Sessions and pageviews must be nonnegative integers",
+        );
+        continue;
+      }
+
+      const parsedRow: RaptiveParsedRow = {
+        date,
+        page_url: url,
+        earnings,
+        rpm,
+        page_rpm: pageRpm,
+        sessions,
+        pageviews,
+      };
+      const normalizedUrl = normalizeAnalyticsPath(url) || url.toLowerCase();
+      const key = `${date}\u0000${normalizedUrl}`;
+      const existing = rowsByKey.get(key);
+      if (existing) {
+        if (
+          existing.earnings !== parsedRow.earnings ||
+          existing.rpm !== parsedRow.rpm ||
+          existing.page_rpm !== parsedRow.page_rpm ||
+          existing.sessions !== parsedRow.sessions ||
+          existing.pageviews !== parsedRow.pageviews
+        ) {
+          return {
+            ok: false,
+            error: "Conflicting duplicate rows found for the same date and URL",
+          };
+        }
+        duplicateCount += 1;
+        continue;
+      }
+
+      rowsByKey.set(key, parsedRow);
+      rows.push(parsedRow);
+      if (minDate === null || date < minDate) minDate = date;
+      if (maxDate === null || date > maxDate) maxDate = date;
+    }
   }
 
+  if (dataSheetCount === 0) {
+    return {
+      ok: false,
+      error: "No sheet contains Date, Page URL, and Earnings columns",
+    };
+  }
   if (rows.length === 0) {
     return { ok: false, error: "No valid rows found in workbook" };
   }
@@ -218,9 +320,10 @@ export function parseRaptiveWorkbook(buffer: Buffer): RaptiveParseResult {
       start: minDate ?? rows[0].date,
       end: maxDate ?? rows[0].date,
     },
-    matchedCount: 0, // Filled in by matchToEntries
-    unmatchedCount: 0,
-    sampleUnmatched: [],
+    dataSheetCount,
+    duplicateCount,
+    rejectedCount,
+    sampleRejected,
   };
 }
 
@@ -284,50 +387,29 @@ export async function commitRaptiveRows(
   }
   const supabase = getSupabaseAdmin();
 
-  // Clear existing rows in the date range to avoid duplicates. This matches
-  // Raptive's update model — re-uploading the same period replaces it.
-  const { error: delError } = await supabase
-    .from("raptive_revenue")
-    .delete()
-    .gte("date", dateRange.start)
-    .lte("date", dateRange.end);
-
-  if (delError) {
-    return { ok: false, error: "Failed to replace existing Raptive rows" };
+  const payload = rows.map((r) => ({
+    entry_id: r.entry_id,
+    date: r.date,
+    page_url: r.page_url,
+    earnings: r.earnings,
+    rpm: r.rpm,
+    page_rpm: r.page_rpm,
+    sessions: r.sessions,
+    pageviews: r.pageviews,
+  }));
+  const { data: inserted, error } = await supabase.rpc(
+    "commit_raptive_import",
+    {
+      p_rows: payload,
+      p_date_range_start: dateRange.start,
+      p_date_range_end: dateRange.end,
+      p_file_name: fileName,
+      p_uploaded_by: uploadedBy,
+    },
+  );
+  if (error || inserted === null) {
+    return { ok: false, error: "Failed to commit Raptive import" };
   }
-
-  // Chunk the inserts — Supabase REST caps payloads around 1 MB.
-  const CHUNK = 500;
-  let inserted = 0;
-  for (let i = 0; i < rows.length; i += CHUNK) {
-    const chunk = rows.slice(i, i + CHUNK).map((r) => ({
-      entry_id: r.entry_id,
-      date: r.date,
-      page_url: r.page_url,
-      earnings: r.earnings,
-      rpm: r.rpm,
-      page_rpm: r.page_rpm,
-      sessions: r.sessions,
-      pageviews: r.pageviews,
-    }));
-    const { error } = await supabase.from("raptive_revenue").insert(chunk);
-    if (error) {
-      return {
-        ok: false,
-        error: `Failed to save Raptive rows (batch ${Math.floor(i / CHUNK) + 1})`,
-      };
-    }
-    inserted += chunk.length;
-  }
-
-  // Record the upload history entry
-  await supabase.from("raptive_uploads").insert({
-    uploaded_by: uploadedBy,
-    file_name: fileName,
-    date_range_start: dateRange.start,
-    date_range_end: dateRange.end,
-    rows_imported: inserted,
-  });
 
   return { ok: true, inserted };
 }

@@ -20,6 +20,10 @@ type PreviewData = {
   unmatchedCount: number;
   sampleUnmatched: string[];
   totalEarnings: number;
+  dataSheetCount: number;
+  duplicateCount: number;
+  rejectedCount: number;
+  sampleRejected: Array<{ sheet: string; row: number; reason: string }>;
 };
 
 type Props = {
@@ -43,8 +47,8 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
   function acceptFile(f: File) {
     // Validate by extension since dragged files sometimes lack a MIME type
     const name = f.name.toLowerCase();
-    if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
-      setError("Drop an .xlsx or .xls file");
+    if (!name.endsWith(".xlsx")) {
+      setError("Drop an .xlsx file");
       return;
     }
     setFile(f);
@@ -196,7 +200,7 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
               )}
               <input
                 type="file"
-                accept=".xlsx,.xls"
+                accept=".xlsx"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -238,6 +242,26 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
                     ${preview.totalEarnings.toFixed(2)}
                   </dd>
                 </dl>
+                <div className="mt-3 border-t border-border/60 pt-2 text-[10px] text-text-zero">
+                  Parsed {preview.dataSheetCount} data sheet
+                  {preview.dataSheetCount === 1 ? "" : "s"}; collapsed {" "}
+                  {preview.duplicateCount.toLocaleString()} exact duplicate
+                  {preview.duplicateCount === 1 ? "" : "s"}; rejected {" "}
+                  {preview.rejectedCount.toLocaleString()} malformed row
+                  {preview.rejectedCount === 1 ? "" : "s"}.
+                </div>
+                {preview.sampleRejected.length > 0 ? (
+                  <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/5 p-2 text-[10px]">
+                    <p className="mb-1 font-semibold uppercase tracking-wide text-destructive">
+                      Resolve rejected rows before committing
+                    </p>
+                    {preview.sampleRejected.slice(0, 5).map((row) => (
+                      <p key={`${row.sheet}-${row.row}`}>
+                        {row.sheet} row {row.row}: {row.reason}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
                 {preview.sampleUnmatched.length > 0 ? (
                   <div className="mt-3 border-t border-border/60 pt-2">
                     <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-text-zero">
@@ -288,7 +312,9 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
               {preview ? (
                 <Button
                   onClick={handleCommit}
-                  disabled={phase === "committing"}
+                  disabled={
+                    phase === "committing" || preview.rejectedCount > 0
+                  }
                 >
                   {phase === "committing" ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
