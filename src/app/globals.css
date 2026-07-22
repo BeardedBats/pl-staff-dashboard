@@ -214,7 +214,9 @@
   /* ---- shadcn/ui CSS-var remap → PLPD values (dark) --------- */
   --background: var(--surface-1);
   --foreground: var(--text-cell);
-  --card: var(--surface-2);
+  /* Legacy `bg-card` panels inherit the source panel's translucent 35% fill,
+     so the mesh remains visible without page-by-page opacity overrides. */
+  --card: var(--plpd-fill-panel);
   --card-foreground: var(--text-cell);
   --popover: var(--surface-3);
   --popover-foreground: var(--text-cell);
@@ -318,7 +320,7 @@
   /* shadcn remap (light) */
   --background: var(--surface-1);
   --foreground: var(--text-cell);
-  --card: var(--surface-2);
+  --card: var(--plpd-fill-panel);
   --card-foreground: var(--text-cell);
   --popover: #ffffff;
   --popover-foreground: var(--text-cell);
@@ -692,7 +694,7 @@ code, kbd, pre, samp {
 }
 
 .plpd-panel-frame {
-  box-shadow: var(--plpd-shadow-panel);
+  box-shadow: var(--plpd-shadow-panel), var(--plpd-shadow-panel-inset);
 }
 
 .plpd-card {
