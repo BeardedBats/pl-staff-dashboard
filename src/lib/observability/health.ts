@@ -40,12 +40,21 @@ export type ImportHealthSummary = {
   recentFailedCount: number;
 };
 
+export type NotificationDeliveryHealth = {
+  level: HealthLevel;
+  detail: string;
+  scheduledCount: number;
+  activeFailureCount: number;
+  remediation: string;
+};
+
 export type OperationalHealthSnapshot = {
   generatedAt: string;
   overall: "healthy" | "warning" | "critical";
   cron: ReturnType<typeof evaluateCronHealth>;
   integrations: IntegrationHealthItem[];
   imports: ImportHealthSummary;
+  notifications: NotificationDeliveryHealth;
   alerts: OperationalAlertView[];
   probeErrors: string[];
 };
@@ -68,7 +77,7 @@ export async function getOperationalHealth(
 ): Promise<OperationalHealthSnapshot> {
   const supabase = getSupabaseAdmin();
   const probeErrors: string[] = [];
-  const [cronResult, settingsResult, alertResult, importResult, ga4Result] =
+  const [cronResult, settingsResult, alertResult, importResult, ga4Result, notificationResult] =
     await Promise.all([
       supabase
         .from("cron_runs")
@@ -96,6 +105,10 @@ export async function getOperationalHealth(
         (data) => ({ data, error: null }),
         (error: unknown) => ({ data: null, error }),
       ),
+      supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .gt("available_at", now.toISOString()),
     ]);
 
   for (const [probe, error] of [
@@ -104,6 +117,7 @@ export async function getOperationalHealth(
     ["alerts", alertResult.error],
     ["imports", importResult.error],
     ["ga4", ga4Result.error],
+    ["notification-delivery", notificationResult.error],
   ] as const) {
     if (!error) continue;
     probeErrors.push(probe);
@@ -238,6 +252,25 @@ export async function getOperationalHealth(
     firstSeenAt: row.first_seen_at,
     lastSeenAt: row.last_seen_at,
   }));
+  const notificationFailureCount = alerts.filter(
+    (alert) => alert.component === "notifications",
+  ).length;
+  const notifications: NotificationDeliveryHealth = {
+    level: notificationResult.error
+      ? "unknown"
+      : notificationFailureCount > 0
+        ? "warning"
+        : "healthy",
+    detail: notificationResult.error
+      ? "Notification delivery health could not be read."
+      : notificationFailureCount > 0
+        ? `${notificationFailureCount} active delivery alert${notificationFailureCount === 1 ? " requires" : "s require"} attention.`
+        : `${notificationResult.count ?? 0} notification${notificationResult.count === 1 ? " is" : "s are"} scheduled for a daily batch or quiet-hours release.`,
+    scheduledCount: notificationResult.count ?? 0,
+    activeFailureCount: notificationFailureCount,
+    remediation:
+      "Open Active alerts for the safe error code and retry the originating workflow after database connectivity recovers.",
+  };
 
   return {
     generatedAt: now.toISOString(),
@@ -245,12 +278,14 @@ export async function getOperationalHealth(
       ...cron.map((item) => item.level),
       ...integrations.map((item) => item.level),
       imports.level,
+      notifications.level,
       ...alerts.map((alert) => alert.severity),
       ...(probeErrors.length > 0 ? (["unknown"] as const) : []),
     ]),
     cron,
     integrations,
     imports,
+    notifications,
     alerts,
     probeErrors,
   };

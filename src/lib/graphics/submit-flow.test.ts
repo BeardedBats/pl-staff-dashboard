@@ -18,8 +18,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 vi.mock("@/lib/auth/authorization", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/auth/authorization")>()),
   loadEntryAuthorizationContext: mocks.loadAuthorization,
-  canUploadOrSubmitGraphicResource: () => true,
-  isAdminPlusForSite: () => false,
+  canFlagGraphicResource: () => true,
 }));
 vi.mock("./storage", () => ({ downloadGraphicBytes: mocks.download }));
 vi.mock("./wp-media", () => ({
@@ -80,7 +79,11 @@ function arrangeReads() {
   ];
   mocks.from.mockImplementation((table: string) =>
     table === "graphic_requests"
-      ? query({ id: "request-1", entry_id: "entry-1", claimed_by: "artist-1" })
+      ? query({
+          id: "request-1",
+          entry_id: "entry-1",
+          review_submitted_at: "2026-07-21T12:00:00.000Z",
+        })
       : query(entryReads.shift() ?? null),
   );
   mocks.loadAuthorization.mockResolvedValue({ site: "pl" });

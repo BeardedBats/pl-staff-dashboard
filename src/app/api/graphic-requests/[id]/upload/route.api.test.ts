@@ -51,6 +51,7 @@ describe("graphic upload route", () => {
         entry_id: "entry-1",
         claimed_by: "artist-1",
         graphic_status: "claimed",
+        review_submitted_at: null,
         storage_path: "entry-1/old.png",
       })
       .mockResolvedValueOnce({ id: "request-1", storage_path: "entry-1/new.png" });
@@ -94,5 +95,23 @@ describe("graphic upload route", () => {
     expect(response.status).toBe(409);
     expect(mocks.remove).toHaveBeenCalledWith("entry-1/new.png");
     expect(mocks.remove).not.toHaveBeenCalledWith("entry-1/old.png");
+  });
+
+  it("preserves the reviewed version until changes are requested", async () => {
+    mocks.getGraphic.mockReset();
+    mocks.getGraphic.mockResolvedValue({
+      id: "request-1",
+      entry_id: "entry-1",
+      claimed_by: "artist-1",
+      graphic_status: "claimed",
+      review_submitted_at: "2026-07-21T12:00:00.000Z",
+      storage_path: "entry-1/reviewed.png",
+    });
+
+    const response = await POST(requestWithFile(), context);
+
+    expect(response.status).toBe(409);
+    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 });

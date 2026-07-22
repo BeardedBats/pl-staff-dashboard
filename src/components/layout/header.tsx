@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { GlobalSearch } from "@/components/search/global-search";
 import { NAV_ITEMS, isNavVisible } from "@/components/layout/nav-config";
 import type { AppRole } from "@/lib/auth/current-user";
 
@@ -135,6 +136,8 @@ export function Header({
 
       {/* Right — notifications, theme, user menu */}
       <div className="flex items-center gap-1">
+        <GlobalSearch />
+
         <NotificationBell userId={userId} />
 
         <ThemeToggle />

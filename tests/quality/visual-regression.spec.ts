@@ -56,7 +56,7 @@ test("administrator home page matches its desktop PLPD baseline", async ({ brows
   });
 
   try {
-    await readyPage(page, "/home", /Welcome,/);
+    await readyPage(page, "/home", "Today");
     await expect(page).toHaveScreenshot("admin-home-desktop.png", { fullPage: true });
   } finally {
     await context.close();

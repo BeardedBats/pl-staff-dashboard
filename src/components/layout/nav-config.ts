@@ -32,7 +32,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/home", icon: Home },
   { label: "Content Table", href: "/content", icon: Table2 },
   { label: "Calendar", href: "/calendar", icon: Calendar },
-  { label: "My Tasks", href: "/my-tasks", icon: ListChecks },
+  { label: "My Work", href: "/my-tasks", icon: ListChecks },
   {
     label: "Editing Queue",
     href: "/editing-queue",

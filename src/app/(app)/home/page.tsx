@@ -13,11 +13,18 @@ import {
   getMyUpcomingDeadlines,
   getOpenGraphicRequests,
   getPipelineHealth,
+  getManagerSignals,
+  getCapacitySummary,
   getStaleEntries,
   getUnclaimedWriterSlots,
   getWpSyncHealth,
 } from "@/lib/home/widgets";
+import { buildTodayBrief } from "@/lib/home/today";
+import { setupItemsForRoles } from "@/lib/onboarding/setup";
+import { buildWeeklyOperationalDigest } from "@/lib/home/manager-operations";
+import { SetupChecklist } from "@/components/onboarding/setup-checklist";
 import { ManagerInbox } from "./manager-inbox";
+import { TodayBrief } from "./today-brief";
 import {
   MyActiveClaimsWidget,
   MyDraftsToApproveWidget,
@@ -39,6 +46,7 @@ import {
   StaleEntriesWidget,
   WpSyncHealthWidget,
 } from "./widgets/eic-widgets";
+import { ManagerControlCenter, WeeklyDigestWidget } from "./widgets/manager-widgets";
 
 export const metadata = {
   title: "Home",
@@ -110,6 +118,8 @@ export default async function HomePage() {
     stale,
     pendingClaims,
     pendingArchives,
+    managerSignals,
+    capacitySummary,
   ] = await Promise.all([
     writerFit ? getMyActiveClaims(user.id) : Promise.resolve([]),
     writerFit ? getMySubmittedInFlight(user.id) : Promise.resolve([]),
@@ -122,23 +132,46 @@ export default async function HomePage() {
     editorFit ? getMyActiveEdits(user.id) : Promise.resolve([]),
     graphicsScope ? getOpenGraphicRequests(graphicsScope) : Promise.resolve([]),
     graphicsFit ? getMyActiveGraphics(user.id) : Promise.resolve([]),
-    eicScope ? getPipelineHealth(eicScope) : Promise.resolve(null),
+    managerScope ? getPipelineHealth(managerScope) : Promise.resolve(null),
     eicScope ? getWpSyncHealth(eicScope) : Promise.resolve(null),
     eicScope ? getAnalyticsMini(eicScope) : Promise.resolve(null),
     eicScope ? getStaleEntries(eicScope) : Promise.resolve([]),
     managerFit ? listPendingClaims(user) : Promise.resolve([]),
     managerFit ? listPendingArchiveRequests(user) : Promise.resolve([]),
+    managerScope ? getManagerSignals(managerScope) : Promise.resolve(null),
+    managerScope ? getCapacitySummary(managerScope) : Promise.resolve(null),
   ]);
+
+  const weeklyDigest =
+    managerFit && pipelineHealth && managerSignals
+      ? buildWeeklyOperationalDigest({
+          health: pipelineHealth,
+          signals: managerSignals,
+          pendingApprovals: pendingClaims.length + pendingArchives.length,
+        })
+      : null;
+
+  const todayBrief = buildTodayBrief({
+    pendingClaims: pendingClaims.length,
+    pendingArchives: pendingArchives.length,
+    myClaims,
+    myDeadlines,
+    myDrafts,
+    editorQueue,
+    myEdits,
+    openGraphics,
+    myGraphics,
+    pipelineHealth,
+    staleEntries: stale,
+    unclaimedSlots,
+  });
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-cell">
-          Welcome, {user.display_name.split(" ")[0]}.
-        </h1>
+        <h1 className="text-2xl font-semibold text-text-cell">Today</h1>
         <p className="mt-1 text-sm text-text-team">
-          You&apos;re signed in as{" "}
-          <span className="font-data text-text-cell">{user.email}</span>
+          Welcome, {user.display_name.split(" ")[0]}. Start with the highest-impact item below.
           {user.roles.length > 0 ? (
             <>
               {" "}
@@ -151,12 +184,30 @@ export default async function HomePage() {
         </p>
       </div>
 
+      {!user.onboarding_completed ? (
+        <SetupChecklist userId={user.id} items={setupItemsForRoles(user.roles)} />
+      ) : null}
+
+      <TodayBrief brief={todayBrief} />
+
       {/* Manager inbox first — approvals block work */}
       {managerFit ? (
         <ManagerInbox
           initialClaims={pendingClaims}
           initialArchives={pendingArchives}
         />
+      ) : null}
+
+      {managerFit && pipelineHealth && managerSignals && weeklyDigest ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <ManagerControlCenter
+            health={pipelineHealth}
+            signals={managerSignals}
+            pendingApprovals={pendingClaims.length + pendingArchives.length}
+            capacity={capacitySummary}
+          />
+          <WeeklyDigestWidget digest={weeklyDigest} />
+        </div>
       ) : null}
 
       {/* EIC/Ops — pipeline health + analytics lead everything else */}

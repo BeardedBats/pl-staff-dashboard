@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ImageIcon, LayoutGrid, List, Loader2, Search } from "lucide-react";
+import { Images, ImageIcon, LayoutGrid, List, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ type GraphicsPageClientProps = {
   initialRequests: GraphicRequestRecord[];
 };
 
-type ViewMode = "table" | "kanban";
+type ViewMode = "table" | "kanban" | "assets";
 
 const ALL = "__all__";
 
@@ -136,6 +136,15 @@ export function GraphicsPageClient({
           </Button>
           <Button
             size="sm"
+            variant={view === "assets" ? "secondary" : "ghost"}
+            onClick={() => setView("assets")}
+            className="rounded-none"
+          >
+            <Images className="h-3.5 w-3.5" />
+            Assets
+          </Button>
+          <Button
+            size="sm"
             variant={view === "kanban" ? "secondary" : "ghost"}
             onClick={() => setView("kanban")}
             className="rounded-none rounded-r-sm"
@@ -187,12 +196,53 @@ export function GraphicsPageClient({
           requests={filtered}
           onChanged={refresh}
         />
-      ) : (
+      ) : view === "kanban" ? (
         <GraphicsKanban
           requests={filtered}
           onChanged={refresh}
         />
+      ) : (
+        <AssetLibrary
+          requests={filtered.filter((request) => request.file_url)}
+          onChanged={refresh}
+        />
       )}
+    </div>
+  );
+}
+
+function AssetLibrary({
+  requests,
+  onChanged,
+}: {
+  requests: GraphicRequestRecord[];
+  onChanged: () => void;
+}) {
+  if (requests.length === 0) {
+    return (
+      <EmptyState
+        icon={<Images className="h-5 w-5" />}
+        title="No uploaded assets match"
+        description="Uploaded versions appear here with their entry usage and featured-image state."
+      />
+    );
+  }
+  return (
+    <div>
+      <p className="mb-3 text-xs text-text-team">
+        {requests.length} uploaded {requests.length === 1 ? "asset" : "assets"}. Featured means the approved version is active in WordPress.
+      </p>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {requests.map((request) => (
+          <GraphicRequestCard
+            key={request.id}
+            request={request}
+            compact
+            showEntryLink
+            onChanged={onChanged}
+          />
+        ))}
+      </div>
     </div>
   );
 }

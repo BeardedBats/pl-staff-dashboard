@@ -36,6 +36,13 @@ const initialHealth: OperationalHealthSnapshot = {
     runningCount: 0,
     recentFailedCount: 0,
   },
+  notifications: {
+    level: "warning",
+    detail: "1 active delivery alert requires attention.",
+    scheduledCount: 2,
+    activeFailureCount: 1,
+    remediation: "Retry the originating workflow after database connectivity recovers.",
+  },
   alerts: [
     {
       id: "alert-1",
@@ -70,6 +77,12 @@ describe("OperationalHealthPanel", () => {
         level: "healthy",
         detail: "Synchronization is current.",
       })),
+      notifications: {
+        ...initialHealth.notifications,
+        level: "healthy",
+        detail: "0 notifications are scheduled for release.",
+        activeFailureCount: 0,
+      },
       alerts: [],
     };
     vi.stubGlobal(

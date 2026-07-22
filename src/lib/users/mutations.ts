@@ -43,6 +43,9 @@ export const userProfileUpdateSchema = z.object({
   timezone: z.string().trim().min(1).max(64).optional(),
   theme: z.enum(["dark", "light"]).optional(),
   auto_approve_drafts: z.boolean().optional(),
+  availability_status: z.enum(["available", "limited", "unavailable"]).optional(),
+  availability_note: z.string().trim().max(160).nullable().optional(),
+  availability_until: z.iso.date().nullable().optional(),
   email: z.email().optional(),
   // Admin-only fields. Route handler MUST gate these on isAdminPlus; the
   // schema accepts them so the same PATCH endpoint can power the admin

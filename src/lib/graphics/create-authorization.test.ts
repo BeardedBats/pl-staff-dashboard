@@ -62,6 +62,14 @@ describe("graphic request creation authorization", () => {
   it("rejects a same-site outsider before any database write", async () => {
     const result = await createGraphicRequest(viewer(), "entry-pl", {
       title: "Unauthorized request",
+      requirements: {
+        asset_type: "featured",
+        placement: "Featured image",
+        width: 1200,
+        height: 675,
+        format: "webp",
+        alt_text: "A descriptive test image",
+      },
     });
 
     expect(result).toEqual({

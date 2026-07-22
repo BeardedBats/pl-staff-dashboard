@@ -5,12 +5,12 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 4 — Role-focused workflow and usability
-- Current action: P4.1–P4.5 — core daily-workflow and state-coverage batch, after the combined Phase 3 remote gate.
-- Branch: `codex/production-readiness-p3-10`
-- Stack base: `f349747` (P3.9 exact-evidence head on green draft PR #38, based on the green stacked production-readiness pull requests).
+- Current action: Phase 4 boundary gate — publish the exact local head, obtain one green GitHub CI run, and verify its single Vercel preview.
+- Branch: `codex/production-readiness-p4`
+- Stack base: `feb4f12` (combined Phase 3 exact head on green draft PR #39, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
+- Known blockers: production application of the stacked migrations through `0025` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -89,28 +89,28 @@ Gate: new feature work can be built entirely from verified PLPD primitives.
 
 ## Phase 4 — Role-focused workflow and usability
 
-- [ ] P4.1 Create a useful Today home screen.
-- [ ] P4.2 Add global search and fast filtering.
-- [ ] P4.3 Present plain-language status and a recommended next action.
-- [ ] P4.4 Add role-based onboarding and setup checklists.
-- [ ] P4.5 Cover loading, empty, partial, stale, success, and error states.
-- [ ] P4.6 Build a manager control center.
-- [ ] P4.7 Add useful saved views and presets.
-- [ ] P4.8 Add a concise weekly operational digest.
-- [ ] P4.9 Add safe bulk actions.
-- [ ] P4.10 Build a focused My Work view.
-- [ ] P4.11 Make availability and capacity visible without employee surveillance.
-- [ ] P4.12 Present polishing requests as actionable feedback.
-- [ ] P4.13 Add risk-first editor queues, SLA indicators, bulk actions, and saved queues.
-- [ ] P4.14 Add polishing-reason templates and a readiness panel.
-- [ ] P4.15 Preserve editorial handoff and state-transition history.
-- [ ] P4.16 Capture complete graphics-request requirements.
-- [ ] P4.17 Add asset versioning and Submit, Approve, and Request Changes states.
-- [ ] P4.18 Add an asset library with usage and featured-image status.
-- [ ] P4.19 Restrict graphics users to relevant information and actions.
-- [ ] P4.20 Implement real supported notification delivery or remove unsupported choices.
-- [ ] P4.21 Add digests, quiet hours, timezone delivery, retry status, and delivery health.
-- [ ] P4.22 Add an understandable system-health page.
+- [x] P4.1 Create a useful Today home screen.
+- [x] P4.2 Add global search and fast filtering.
+- [x] P4.3 Present plain-language status and a recommended next action.
+- [x] P4.4 Add role-based onboarding and setup checklists.
+- [x] P4.5 Cover loading, empty, partial, stale, success, and error states.
+- [x] P4.6 Build a manager control center.
+- [x] P4.7 Add useful saved views and presets.
+- [x] P4.8 Add a concise weekly operational digest.
+- [x] P4.9 Add safe bulk actions.
+- [x] P4.10 Build a focused My Work view.
+- [x] P4.11 Make availability and capacity visible without employee surveillance.
+- [x] P4.12 Present polishing requests as actionable feedback.
+- [x] P4.13 Add risk-first editor queues, SLA indicators, bulk actions, and saved queues.
+- [x] P4.14 Add polishing-reason templates and a readiness panel.
+- [x] P4.15 Preserve editorial handoff and state-transition history.
+- [x] P4.16 Capture complete graphics-request requirements.
+- [x] P4.17 Add asset versioning and Submit, Approve, and Request Changes states.
+- [x] P4.18 Add an asset library with usage and featured-image status.
+- [x] P4.19 Restrict graphics users to relevant information and actions.
+- [x] P4.20 Implement real supported notification delivery or remove unsupported choices.
+- [x] P4.21 Add digests, quiet hours, timezone delivery, retry status, and delivery health.
+- [x] P4.22 Add an understandable system-health page.
 
 Gate: each role can complete primary work with minimal instruction, and managers can identify risks and decisions without raw tables.
 
@@ -589,6 +589,66 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - The committed captures were visually inspected before acceptance. They show intact PLPD hierarchy and surfaces, readable controls, representative desktop/mobile layouts, and no framework error overlay. A source contract pins the route-wide axe gate, keyboard/focus behaviors, dialog/menu focus contracts, screenshot configuration, test scenarios, and all five baseline files.
 - Targeted batch verification: ESLint and TypeScript pass; all four new accessibility/interaction journeys pass; all five visual baselines pass in comparison mode after generation; and all three accessibility/visual source-contract tests pass. React review found no new effects, requests, mirrored state, or unstable list keys; the one new ref is launcher-local focus recovery, and existing Radix semantics remain authoritative.
 - Combined Phase 3 full local gate: diff hygiene; six-runbook contract through migration `0022`; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability low-threshold audit; Next.js 16.2.11 production build; 65 Vitest files / 302 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 32 production-quality checks pass.
+- Exact fixed-head GitHub run [29887618696](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29887618696) passed Application, Database, Dependencies, all 10 Browser journeys, and all 32 quality checks at `feb4f12`; Vercel passed and draft PR #39 was clean and mergeable. The first implementation head correctly exposed a stable 4% Windows/Linux glyph-edge rasterization difference on the text-dense mobile login capture; only that baseline now permits 5%, while the other four remain at the stricter 3% threshold.
+
+### 2026-07-21 — P4.1–P4.5 daily-workflow foundation batch
+
+- Replaced the generic welcome lead with a role-aware Today brief that presents exactly one highest-impact next action. A pure ordered decision model prioritizes team-blocking approvals, draft decisions, overdue assignments, editing, graphics, upcoming owned work, pipeline blocks, stale work, and optional capacity in that order; plain-language copy explains why the action matters.
+- Added a keyboard-accessible global search command palette to every authenticated page (`Ctrl/Cmd K` or `/`). Its server route searches staff, active content, writer/editor assignments, authorized graphic requests, and scheduled entries independently; entry/draft and graphic results reuse the production resource-authorization helpers, staff results never expose email or other private fields, and one failed source produces a clear partial result instead of discarding safe results.
+- Replaced “tour skipped equals onboarding complete” with explicit role-based setup ownership. First-time users receive a persistent checklist chosen from their responsibilities, visit each relevant workflow, and deliberately finish setup; the introductory tour is separately dismissible and cannot call the completion endpoint. Completion success and safe retry failure states are visible.
+- Added inherited authenticated-route loading and safe error/retry boundaries. Global search exercises idle, loading, empty, partial, success, and error states; the Today view surfaces stale work; manager decisions now check every response and show explicit success or non-destructive failure feedback.
+- Targeted verification: five Today/setup unit tests, three authenticated search-route API tests, two global-search partial/error component tests, four recursive workflow-foundation contract tests, and two production-Chromium journeys pass. The browser proof uses real seeded database records to exercise all five search groups, the prioritized Today action, role-specific setup persistence/completion, keyboard opening/focus, and an open-dialog WCAG A/AA scan with no exclusions.
+- React review: state remains local to the command palette, setup checklist, and existing manager inbox; fetch effects are abortable and clean up their debounce timer; the tour timer retains cleanup; no mirrored server state, unstable list keys, request waterfall, or new broad client boundary was introduced.
+
+### 2026-07-21 — P4.6–P4.9 manager-operations batch
+
+- Managers and administrators now receive a site-scoped control center above their role queues. It surfaces pending decisions, overdue deadlines, writer coverage gaps, and stale work as direct actions; the existing EIC/Operations revenue boundary is unchanged.
+- Added a live weekly operations digest with published-seven-day output, upcoming-seven-day commitments, pending decisions, risk signals, and one ordered recommended action. Its pure decision model prioritizes approvals, overdue work, writer gaps, schedule blocks, and then the forward calendar.
+- Kept personal saved views and added four immediately useful, non-destructive presets: Needs a writer, Ready to edit, Priority work, and Recently changed. Presets reset unrelated filters before applying their documented purpose.
+- Every bulk archive, restore, priority, and tier operation now confirms the exact selected count, uses only currently visible selected resource IDs, reports the server's atomic updated count, and retains explicit safe failure feedback. The API still rejects the whole operation unless every entry exists, is visible, and is within the manager's site authority; status transitions remain deliberately excluded.
+- Targeted verification: ten manager-digest and transactional-bulk unit tests, four bulk-route API authorization/atomicity tests, ESLint, and TypeScript pass. Three production-Chromium workflow journeys pass against seeded data, including manager operations, a real preset, cancelled bulk confirmation, semantic widget headings, and a selected-action WCAG A/AA scan with no exclusions. The scan found and repaired the previously hidden bulk-tier control's missing accessible name.
+- React review: the new manager widgets remain server-rendered; digest derivation is pure; no request waterfall, broad client boundary, mirrored server state, or unstable key was introduced. Existing table-local state owns confirmations and feedback, and selection is derived from TanStack's current row model so stale filtered IDs cannot be submitted.
+
+### 2026-07-21 — P4.10–P4.15 editorial-workflow batch
+
+- Renamed and sharpened My Tasks into My Work while preserving its route. Writers see owned writing and editing work, deadlines, and the newest polishing request directly on the affected card; editor identity and actionable revision text come from the bounded recent-activity cache for already-authorized entries.
+- Added self-declared Available, Limited capacity, and Unavailable signals with an optional public note/date. Staff own their signal in Profile, directory cards expose it, and managers see only aggregate site-scoped counts with explicit “no productivity or activity score” copy. No availability is inferred from output, speed, presence, or tracking.
+- Rebuilt Editing Queue around risk-first ordering and built-in saved views for past-deadline, due-within-24-hours, unclaimed, and personally claimed work. SLA badges distinguish past deadline, due soon, waiting over 24 hours, and on track.
+- Added confirmed multi-select editor claiming backed by one database transaction. The route authorizes every resource and site before mutation; the database repeats the site-role boundary, locks all selected entries, rejects missing/duplicate/already-claimed/non-ready batches, and creates assignments plus matching handoff audits atomically. Direct anon/authenticated RPC execution remains revoked.
+- Added four polishing feedback starters and a publication-readiness panel covering writer assignment, required checklist, editorial review, graphics, publish date, and WordPress draft. The full authorized audit feed now reports load failures safely and translates polishing/state handoffs into readable history while preserving exact actors and timestamps.
+- Migration `0023_humane_capacity_and_editor_bulk_claims.sql` applied cleanly to a cold local stack. An over-broad readiness-trigger attempt was rejected by the immediate database gate and removed before commit; the final migration enforces submitted-state readiness only inside the new bulk transaction. The runbook provides the exact ordered apply gate plus a pre-deployment-only transactional reversal. Generated types match and database lint has no warnings.
+- Targeted verification: 12 unit tests, 8 bulk API authorization/atomicity tests, all 11 database files / 322 pgTAP assertions, generated-type drift, database lint, ESLint, and TypeScript pass. Four production-Chromium workflow journeys pass, including real writer polishing feedback, readable audit handoff, readiness, editor saved queue selection, cancelled bulk confirmation, feedback templates, and open-dialog WCAG A/AA scanning with no exclusions.
+- React review: the editing client owns only view, selection, request, and feedback state; risk derivation is memoized from server props and a stable server timestamp; no effect-based state synchronization or per-row request loop exists. Static template keys and queue identifiers are stable, and the new database reads remain server-only.
+
+### 2026-07-21 — P4.16–P4.19 graphics-workflow batch
+
+- Graphic requests now require a structured asset type, placement, dimensions, delivery format, and alt text, with an optional reference URL. The same contract is enforced by request validation and a database check; legacy rows receive explicit safe defaults.
+- Preserved immutable private asset versions and exposed authorized version history. A new version atomically clears prior review state, while the asset view shows entry usage and whether the approved version is featured in WordPress.
+- Split the workflow into assigned-worker **Submit for review**, entry-participant/manager **Approve**, and **Request changes**. Approval cannot acquire the durable WordPress submission lease until the current version was submitted for review; direct browser RPC execution remains revoked.
+- Graphics responses stay limited to the work record, entry usage, authorized assignee display data, and signed asset URLs. The role receives no financial, payment, revenue, or staff-email fields; the existing server-side analytics denial remains unchanged.
+- Migration `0024_graphics_review_requirements.sql` was rebuilt from a clean local reset after a pre-commit trigger-column defect was caught. The final stack through `0024` cold-applies, generated types match, database lint has no warnings, and all 12 database files / 341 pgTAP assertions pass.
+- Targeted verification: 9 graphics unit tests, 3 upload API tests, ESLint, TypeScript, and two production-Chromium quality journeys pass. The browser gate covers complete brief display, required form fields, the focused asset view, least-information response fields, and WCAG A/AA scanning with no exclusions.
+- React review: workflow state remains local to each card/dialog, remote refresh remains parent-owned, version history loads only on explicit demand, stable database IDs key every list, and no new effect-based request waterfall or broad client boundary was introduced.
+
+### 2026-07-22 — P4.20–P4.22 notification and health batch
+
+- Kept the previously verified delivery boundary: the dashboard offers durable in-app notifications only, and exposes no email or Discord settings or success flags. Event-level role defaults and personal opt-outs remain intact.
+- Added immediate or daily-batch delivery, a staff-local batch time, and optional local quiet hours. Visibility is calculated from the staff member's saved IANA timezone; held notifications remain private and unread until their scheduled time, and “mark all read” cannot consume future items.
+- Delivery writes use one stable notification ID across a bounded three-attempt retry. Dedupe keys remain authoritative, the successful attempt count is stored, and exhausted failures continue into sanitized active operational alerts.
+- Preference rows and delivery settings now replace atomically through a server-only transaction. Database constraints reject unsupported modes, incomplete quiet-hour pairs, invalid events, and retry counts outside the supported bound; authenticated clients cannot execute the RPC directly.
+- Expanded System health with a plain-language overall summary and in-app delivery health showing scheduled items, active failure alerts, and one concrete recovery action. Existing cron, WordPress, GA4, Raptive, and alert detail remains available.
+- Migration `0025_notification_delivery_controls.sql` cold-applies through the full ordered stack. All 13 database files / 358 pgTAP assertions pass, generated types match, and database lint reports no warnings.
+- Targeted verification: 9 notification scheduling/delivery contract tests, the operational-health component test, ESLint, TypeScript, and two production-Chromium journeys pass. The browser gate saves and reloads real daily/quiet-hour settings, proves fake external choices remain absent, renders delivery health, and completes WCAG A/AA scanning with no exclusions.
+- React review: delivery form state is local and persisted in one request; no effect derives server state, the existing preference load remains cancellation-safe, and no notification polling or per-event save loop was added.
+
+### 2026-07-22 — Phase 4 local boundary gate
+
+- Locked install, full ESLint, TypeScript, runbook verification, production build, and dependency audit pass; the audit reports zero vulnerabilities. The complete Vitest coverage run passes 77 files / 339 tests.
+- A clean Supabase reset applies the ordered stack through `0025`; all 13 database files / 358 pgTAP assertions pass, generated types match, and database lint reports no warnings.
+- All 10 anonymous and role-based browser journeys pass. The complete route/role/viewport quality matrix passes all 40 checks, including WCAG A/AA, keyboard/focus, responsive containment, component states, PLPD screenshots, and performance budgets.
+- The first boundary run correctly rejected two stale contracts (missing authorization-matrix rows and a site pill without the Work Sans marker) plus stale Today readiness selectors. Those exact contracts were repaired and rerun before the clean matrix.
+- The writer content-detail performance gate exposed a real layout shift when the asynchronously loaded expanded panel displaced later table rows. Reserving the panel's loading footprint reduced measured CLS from `0.1574` to `0.0041`; the quality artifact now records contributing layout-shift sources for future diagnosis.
+- Local Phase 4 gate: **PASS**. Remaining phase-boundary work is the one exact-head GitHub CI run and one Vercel preview required by the release protocol.
 
 ## Phase 0 prioritized defect and risk inventory
 

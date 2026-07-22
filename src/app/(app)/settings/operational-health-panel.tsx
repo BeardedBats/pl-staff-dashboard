@@ -37,6 +37,12 @@ function when(value: string | null): string {
   return value ? new Date(value).toLocaleString() : "Never";
 }
 
+const overallSummary = {
+  healthy: "Everything monitored is operating normally.",
+  warning: "The dashboard is available, but one or more items need attention.",
+  critical: "Action is required: a job, integration, or safety probe is failing.",
+} as const;
+
 export function OperationalHealthPanel({ initialHealth }: Props) {
   const [health, setHealth] = React.useState(initialHealth);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -96,6 +102,9 @@ export function OperationalHealthPanel({ initialHealth }: Props) {
         </Button>
       </CardHeader>
       <CardContent className="space-y-5">
+        <p className="rounded-md border border-border bg-surface-3/30 px-3 py-2 text-sm text-text-team">
+          {overallSummary[health.overall]}
+        </p>
         {refreshError ? (
           <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {refreshError}
@@ -159,6 +168,12 @@ export function OperationalHealthPanel({ initialHealth }: Props) {
               lastRunAt={health.imports.latestRunAt}
               remediation="Open Settings > Analytics to inspect recent import attempts and retry the source workbook."
             />
+            <HealthItem
+              label="In-app notifications"
+              level={health.notifications.level}
+              detail={health.notifications.detail}
+              remediation={health.notifications.remediation}
+            />
           </div>
         </section>
 
@@ -215,7 +230,7 @@ function HealthItem({
   label: string;
   level: HealthLevel;
   detail: string;
-  lastRunAt: string | null;
+  lastRunAt?: string | null;
   remediation: string;
 }) {
   return (
@@ -225,7 +240,9 @@ function HealthItem({
         <LevelBadge level={level} />
       </div>
       <p className="text-text-team">{detail}</p>
-      <p className="text-[10px] text-text-zero">Last success: {when(lastRunAt)}</p>
+      {lastRunAt !== undefined ? (
+        <p className="text-[10px] text-text-zero">Last success: {when(lastRunAt)}</p>
+      ) : null}
       {level !== "healthy" ? (
         <p className="text-[10px] text-text-zero">{remediation}</p>
       ) : null}

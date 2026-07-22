@@ -209,7 +209,7 @@ export async function claimEdit(
 
   const { data: entry } = await supabase
     .from("entries")
-    .select("editor_status, site")
+    .select("content_status, editor_status, site")
     .eq("id", entryId)
     .maybeSingle();
   if (!entry) return { ok: false, error: { kind: "not_found" } };
@@ -221,12 +221,15 @@ export async function claimEdit(
     };
   }
 
-  if ((entry.editor_status as EditorStatus) !== "ready_for_edit") {
+  if (
+    (entry.content_status as ContentStatus) !== "submitted" ||
+    (entry.editor_status as EditorStatus) !== "ready_for_edit"
+  ) {
     return {
       ok: false,
       error: {
         kind: "invalid_transition",
-        message: "Entry must be 'ready for edit' to claim.",
+        message: "The writer must submit an entry before an editor can claim it.",
       },
     };
   }

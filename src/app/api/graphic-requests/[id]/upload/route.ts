@@ -61,6 +61,15 @@ export async function POST(request: Request, context: RouteContext) {
       "This graphic is already submitted. Unflag or create a new request.",
     );
   }
+  if (
+    existing.graphic_status === "claimed" &&
+    existing.review_submitted_at
+  ) {
+    return errorResponse(
+      409,
+      "This version is awaiting review. Request changes before uploading a replacement.",
+    );
+  }
 
   let formData: FormData;
   try {

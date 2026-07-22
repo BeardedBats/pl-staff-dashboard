@@ -50,6 +50,12 @@ export const browserActors = {
     displayName: "EIC Journey",
     role: "eic",
   },
+  onboarding: {
+    userId: "28000000-0000-0000-0000-000000000007",
+    sessionId: "28100000-0000-0000-0000-000000000007",
+    displayName: "Onboarding Journey",
+    role: "writer",
+  },
 } as const;
 
 export const browserRecords = {
@@ -60,6 +66,7 @@ export const browserRecords = {
   managerClaimId: "28300000-0000-0000-0000-000000000001",
   graphicRequestId: "28400000-0000-0000-0000-000000000001",
   analyticsEntryId: "28200000-0000-0000-0000-000000000005",
+  polishingEntryId: "28200000-0000-0000-0000-000000000006",
   analyticsRowId: "28500000-0000-0000-0000-000000000001",
   revenueRowId: "28600000-0000-0000-0000-000000000001",
   financialSentinel: 731.2942,
@@ -122,6 +129,7 @@ export default async function globalSetup() {
     browserRecords.editorEntryId,
     browserRecords.graphicsEntryId,
     browserRecords.analyticsEntryId,
+    browserRecords.polishingEntryId,
   ];
 
   await expectWrite(
@@ -158,13 +166,13 @@ export default async function globalSetup() {
 
   await expectWrite(
     supabase.from("users").insert(
-      Object.values(browserActors).map((actor, index) => ({
+      Object.entries(browserActors).map(([name, actor], index) => ({
         id: actor.userId,
         wp_user_id: 28_001 + index,
         wp_site: actor.role === "admin" ? "both" : "pl",
-        email: `${actor.role}-journey@example.test`,
+        email: `${name}-journey@example.test`,
         display_name: actor.displayName,
-        onboarding_completed: true,
+        onboarding_completed: actor.userId !== browserActors.onboarding.userId,
       })),
     ),
     "insert browser actors",
@@ -262,6 +270,25 @@ export default async function globalSetup() {
         publish_date_precision: "exact",
         wp_post_url: "https://pitcherlist.com/e2e-p3-6-financial-sentinel/",
       },
+      {
+        id: browserRecords.polishingEntryId,
+        title: "E2E P4 polishing feedback",
+        site: "pl",
+        tier_id: tier.id,
+        created_by: browserActors.admin.userId,
+        content_status: "polishing",
+        editor_status: "ready_for_edit",
+        publish_date_precision: "none",
+        recent_activity: [
+          {
+            type: "status_change",
+            actor_id: browserActors.editor.userId,
+            actor_name: browserActors.editor.displayName,
+            label: "sent back for polishing: Clarify the conclusion and verify the final statistic.",
+            at: new Date().toISOString(),
+          },
+        ],
+      },
     ]),
     "insert browser entries",
   );
@@ -323,8 +350,25 @@ export default async function globalSetup() {
         user_id: browserActors.writer.userId,
         role: "primary",
       },
+      {
+        entry_id: browserRecords.polishingEntryId,
+        user_id: browserActors.writer.userId,
+        role: "primary",
+      },
     ]),
     "insert browser authors",
+  );
+  await expectWrite(
+    supabase.from("audit_log").insert({
+      entry_id: browserRecords.polishingEntryId,
+      user_id: browserActors.editor.userId,
+      action: "status_change",
+      field_name: "content_status",
+      old_value: "submitted",
+      new_value:
+        "polishing: Clarify the conclusion and verify the final statistic.",
+    }),
+    "insert polishing handoff audit",
   );
   await expectWrite(
     supabase.from("claims").insert({
@@ -342,6 +386,14 @@ export default async function globalSetup() {
       entry_id: browserRecords.graphicsEntryId,
       title: "E2E P2.8 featured image",
       description: "Claim this fixture without contacting WordPress.",
+      requirements: {
+        asset_type: "featured",
+        placement: "Article header",
+        width: 1200,
+        height: 675,
+        format: "webp",
+        alt_text: "Pitcher standing on the mound",
+      },
       graphic_status: "needed",
       created_by: browserActors.admin.userId,
     }),

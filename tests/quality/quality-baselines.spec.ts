@@ -25,6 +25,7 @@ type QualityMetrics = {
   scriptEncodedBodyBytes: number;
   requests: number;
   domNodes: number;
+  layoutShifts: Array<{ value: number; sources: string[] }>;
 };
 
 type Scenario = {
@@ -55,7 +56,7 @@ const accessibilityScenarios: Scenario[] = [
     name: "manager home",
     path: "/home",
     actor: "manager",
-    ready: { role: "heading", name: /Welcome/ },
+    ready: { role: "heading", name: "Today" },
   },
   {
     name: "editor queue",
@@ -155,6 +156,7 @@ async function installPerformanceObservers(page: Page) {
       lcpMs: 0,
       cls: 0,
       longTaskDurations: [] as number[],
+      layoutShifts: [] as Array<{ value: number; sources: string[] }>,
     };
     Object.defineProperty(window, "__qualityBaseline", {
       value: state,
@@ -173,6 +175,21 @@ async function installPerformanceObservers(page: Page) {
           hadRecentInput: boolean;
         };
         if (!shift.hadRecentInput) state.cls += shift.value;
+        if (!shift.hadRecentInput) {
+          const sources = (
+            entry as PerformanceEntry & {
+              sources?: Array<{ node?: Node | null }>;
+            }
+          ).sources ?? [];
+          state.layoutShifts.push({
+            value: shift.value,
+            sources: sources.map(({ node }) => {
+              if (!(node instanceof Element)) return "unknown";
+              const label = node.getAttribute("aria-label") ?? node.textContent?.trim().slice(0, 80);
+              return `${node.tagName.toLowerCase()}${node.id ? `#${node.id}` : ""}${label ? `:${label}` : ""}`;
+            }),
+          });
+        }
       }
     }).observe({ type: "layout-shift", buffered: true });
 
@@ -201,6 +218,7 @@ async function collectMetrics(page: Page): Promise<QualityMetrics> {
           lcpMs: number;
           cls: number;
           longTaskDurations: number[];
+          layoutShifts: Array<{ value: number; sources: string[] }>;
         };
       }
     ).__qualityBaseline;
@@ -223,6 +241,7 @@ async function collectMetrics(page: Page): Promise<QualityMetrics> {
         .reduce((total, resource) => total + resource.encodedBodySize, 0),
       requests: resources.length + 1,
       domNodes: document.querySelectorAll("*").length,
+      layoutShifts: state.layoutShifts,
     };
   });
 }

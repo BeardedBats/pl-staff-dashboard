@@ -8,8 +8,7 @@ import { uploadMediaToWp, setFeaturedMedia } from "./wp-media";
 import type { CurrentUser } from "@/lib/auth/current-user";
 import type { WpSiteKey } from "@/lib/auth/wordpress";
 import {
-  canUploadOrSubmitGraphicResource,
-  isAdminPlusForSite,
+  canFlagGraphicResource,
   loadEntryAuthorizationContext,
 } from "@/lib/auth/authorization";
 
@@ -52,25 +51,29 @@ export async function submitGraphicRequest(
   // boundary before acquiring the submission lease.
   const { data: req } = await supabase
     .from("graphic_requests")
-    .select("id, entry_id, claimed_by")
+    .select("id, entry_id, review_submitted_at")
     .eq("id", requestId)
     .maybeSingle();
 
   if (!req) return { ok: false, kind: "not_found", error: "Request not found" };
-
   const authorization = await loadEntryAuthorizationContext(
     req.entry_id as string,
   );
   if (
     !authorization ||
-    !canUploadOrSubmitGraphicResource(viewer, authorization, {
-      claimedBy: req.claimed_by as string | null,
-    })
+    !canFlagGraphicResource(viewer, authorization)
   ) {
     return {
       ok: false,
       kind: "forbidden",
-      error: "Only the assigned graphics worker can submit this request",
+      error: "An entry participant or manager must approve this graphic",
+    };
+  }
+  if (!req.review_submitted_at) {
+    return {
+      ok: false,
+      kind: "conflict",
+      error: "The graphics worker must submit a version for review first",
     };
   }
 
@@ -78,7 +81,7 @@ export async function submitGraphicRequest(
     .rpc("begin_graphic_submission", {
       p_actor_id: viewer.id,
       p_request_id: requestId,
-      p_allow_override: isAdminPlusForSite(viewer, authorization.site),
+      p_allow_override: true,
     })
     .single();
   if (leaseError || !lease) {
@@ -89,7 +92,7 @@ export async function submitGraphicRequest(
       return {
         ok: false,
         kind: "forbidden",
-        error: "Only the assigned graphics worker can submit this request",
+        error: "An entry participant or manager must approve this graphic",
       };
     }
     if (leaseError?.code === "P0001") {

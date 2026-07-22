@@ -7,6 +7,7 @@ import type { Step } from "react-joyride";
 type Props = {
   /** Only render the tour when the user hasn't finished it yet. */
   enabled: boolean;
+  userId: string;
 };
 
 /**
@@ -17,29 +18,23 @@ type Props = {
  * into the `options` prop — keep this in mind if you're copy-pasting from
  * older examples online.
  */
-export function OnboardingTour({ enabled }: Props) {
+export function OnboardingTour({ enabled, userId }: Props) {
   const [run, setRun] = React.useState(false);
-  const [completed, setCompleted] = React.useState(false);
+  const [dismissed, setDismissed] = React.useState(() =>
+    typeof window === "undefined"
+      ? false
+      : window.localStorage.getItem(`pl-dashboard-tour:${userId}`) === "done",
+  );
 
   React.useEffect(() => {
-    if (!enabled || completed) return;
+    if (!enabled || dismissed) return;
     // Small delay so the sidebar has time to mount and Joyride can measure
     // its target element correctly.
     const id = setTimeout(() => setRun(true), 600);
     return () => clearTimeout(id);
-  }, [enabled, completed]);
+  }, [enabled, dismissed]);
 
-  async function markComplete() {
-    setCompleted(true);
-    setRun(false);
-    try {
-      await fetch("/api/users/me/onboarding", { method: "POST" });
-    } catch {
-      // Non-blocking — the user can dismiss again next login if this fails.
-    }
-  }
-
-  if (!enabled || completed) return null;
+  if (!enabled || dismissed) return null;
 
   return (
     <Joyride
@@ -60,7 +55,9 @@ export function OnboardingTour({ enabled }: Props) {
       onEvent={(data) => {
         const { status } = data;
         if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-          void markComplete();
+          window.localStorage.setItem(`pl-dashboard-tour:${userId}`, "done");
+          setDismissed(true);
+          setRun(false);
         }
       }}
     />
@@ -83,18 +80,11 @@ const STEPS: Step[] = [
       "Everything lives in the sidebar. Your available pages depend on your roles — writers see the content queue, editors get the editing queue, and admins see the full pipeline.",
   },
   {
-    target: '[data-tour="nav-content"]',
-    placement: "right",
-    title: "The Content Table",
+    target: '[data-tour="global-search"]',
+    placement: "bottom",
+    title: "Find anything quickly",
     content:
-      "The pipeline. Every article in motion — with filters, saved views, and inline detail panels. This is where you'll spend most of your time.",
-  },
-  {
-    target: '[data-tour="nav-my-tasks"]',
-    placement: "right",
-    title: "My Tasks",
-    content:
-      "Your personal worklist: entries you've claimed, upcoming deadlines, and drafts waiting for your approval. The fastest way to see what you owe.",
+      "Search staff, content, assignments, graphics, and schedules from every page. Press Ctrl K or slash to open it.",
   },
   {
     target: '[data-tour="notification-bell"]',
@@ -102,12 +92,5 @@ const STEPS: Step[] = [
     title: "Notifications",
     content:
       "Real-time pings when something needs your attention — claim approvals, edit requests, mentions in comments. Click the bell to see the latest.",
-  },
-  {
-    target: '[data-tour="nav-settings"]',
-    placement: "right",
-    title: "Settings",
-    content:
-      "Update your profile and timezone, then tune which events appear in your in-app notification inbox.",
   },
 ];

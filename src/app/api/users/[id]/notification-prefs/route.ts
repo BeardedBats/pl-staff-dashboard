@@ -5,6 +5,7 @@ import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { getUserById } from "@/lib/users/queries";
 import {
   getPreferencesForUser,
+  getDeliverySettingsForUser,
   setPreferencesForUser,
   updatePreferencesSchema,
 } from "@/lib/notifications/data";
@@ -42,8 +43,12 @@ export async function GET(_request: Request, context: RouteContext) {
     (r) => r.role,
   );
 
-  const preferences = await getPreferencesForUser(id, roles);
-  return NextResponse.json({ preferences });
+  const [preferences, deliverySettings] = await Promise.all([
+    getPreferencesForUser(id, roles),
+    getDeliverySettingsForUser(id),
+  ]);
+  if (!deliverySettings) return errorResponse(404, "User not found");
+  return NextResponse.json({ preferences, deliverySettings });
 }
 
 /**
@@ -67,7 +72,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   const parsed = await parseJsonBody(request, updatePreferencesSchema);
   if (!parsed.ok) return parsed.response;
 
-  const ok = await setPreferencesForUser(id, parsed.data.preferences);
+  const ok = await setPreferencesForUser(
+    id,
+    parsed.data.preferences,
+    parsed.data.delivery_settings,
+  );
   if (!ok) {
     return errorResponse(500, "Save failed");
   }

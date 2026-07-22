@@ -49,6 +49,20 @@ export function StaffCard({ user }: { user: StaffUserSummary }) {
           <div className="mt-3">
             <RoleBadgeGroup roles={user.roles} />
           </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Badge
+              variant={user.availability_status === "available" ? "cyan" : user.availability_status === "limited" ? "amber" : "outline"}
+            >
+              {user.availability_status === "available"
+                ? "Available"
+                : user.availability_status === "limited"
+                  ? "Limited capacity"
+                  : "Unavailable"}
+            </Badge>
+            {user.availability_note ? (
+              <span className="text-xs text-text-team">{user.availability_note}</span>
+            ) : null}
+          </div>
         </div>
       </div>
     </Link>

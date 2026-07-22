@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { UserAvatar } from "@/components/users/user-avatar";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ClaimRecord } from "@/lib/claims/data";
 import type { ArchiveRequestRecord } from "@/lib/archive-requests/data";
 
@@ -29,11 +30,22 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
   const [claims, setClaims] = React.useState(initialClaims);
   const [archives, setArchives] = React.useState(initialArchives);
   const [busyId, setBusyId] = React.useState<string | null>(null);
+  const [feedback, setFeedback] = React.useState<{
+    kind: "success" | "error";
+    message: string;
+  } | null>(null);
 
   async function refresh() {
+    const [claimsResponse, archivesResponse] = await Promise.all([
+      fetch("/api/claims"),
+      fetch("/api/archive-requests"),
+    ]);
+    if (!claimsResponse.ok || !archivesResponse.ok) {
+      throw new Error("Manager inbox refresh failed");
+    }
     const [claimsRes, archivesRes] = await Promise.all([
-      fetch("/api/claims").then((r) => r.json()),
-      fetch("/api/archive-requests").then((r) => r.json()),
+      claimsResponse.json(),
+      archivesResponse.json(),
     ]);
     setClaims(claimsRes.claims ?? []);
     setArchives(archivesRes.requests ?? []);
@@ -42,13 +54,24 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
 
   async function resolveClaim(claimId: string, action: "approve" | "deny") {
     setBusyId(claimId);
+    setFeedback(null);
     try {
-      await fetch(`/api/claims/${claimId}`, {
+      const response = await fetch(`/api/claims/${claimId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
+      if (!response.ok) throw new Error("Claim update failed");
       await refresh();
+      setFeedback({
+        kind: "success",
+        message: action === "approve" ? "Claim approved." : "Claim denied.",
+      });
+    } catch {
+      setFeedback({
+        kind: "error",
+        message: "The claim was not changed. Try again.",
+      });
     } finally {
       setBusyId(null);
     }
@@ -56,13 +79,25 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
 
   async function resolveArchive(requestId: string, action: "approve" | "deny") {
     setBusyId(requestId);
+    setFeedback(null);
     try {
-      await fetch(`/api/archive-requests/${requestId}`, {
+      const response = await fetch(`/api/archive-requests/${requestId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
+      if (!response.ok) throw new Error("Archive update failed");
       await refresh();
+      setFeedback({
+        kind: "success",
+        message:
+          action === "approve" ? "Archive request approved." : "Archive request denied.",
+      });
+    } catch {
+      setFeedback({
+        kind: "error",
+        message: "The archive request was not changed. Try again.",
+      });
     } finally {
       setBusyId(null);
     }
@@ -71,7 +106,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
   const totalPending = claims.length + archives.length;
 
   return (
-    <Card>
+    <Card id="manager-inbox">
       <CardHeader>
         <div className="flex items-center gap-3">
           <Inbox className="h-4 w-4 text-cyan" />
@@ -85,6 +120,15 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {feedback ? (
+          <Alert variant={feedback.kind === "success" ? "success" : "error"}>
+            <AlertTitle>
+              {feedback.kind === "success" ? "Request updated" : "Update failed"}
+            </AlertTitle>
+            <AlertDescription>{feedback.message}</AlertDescription>
+          </Alert>
+        ) : null}
+
         {/* Claims */}
         <section>
           <h4 className="mb-2 flex items-center gap-2 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">

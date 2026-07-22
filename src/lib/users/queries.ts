@@ -3,6 +3,8 @@ import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { AppRole, AppSite } from "@/lib/auth/current-user";
 
+export type AvailabilityStatus = "available" | "limited" | "unavailable";
+
 // --------------------------------------------------------------------------
 // Shared shapes
 // --------------------------------------------------------------------------
@@ -24,6 +26,9 @@ export type StaffUserSummary = {
   can_publish: boolean;
   onboarding_completed: boolean;
   auto_approve_drafts: boolean;
+  availability_status: AvailabilityStatus;
+  availability_note: string | null;
+  availability_until: string | null;
   last_wp_sync: string | null;
   created_at: string;
   roles: AppRole[];
@@ -76,7 +81,7 @@ export async function listUsers(filters: ListUsersFilters = {}): Promise<ListUse
   let query = supabase
     .from("users")
     .select(
-      "id, wp_user_id, wp_site, email, display_name, avatar_url, bio, twitter_handle, bluesky_handle, timezone, theme, can_publish, onboarding_completed, auto_approve_drafts, last_wp_sync, created_at",
+      "id, wp_user_id, wp_site, email, display_name, avatar_url, bio, twitter_handle, bluesky_handle, timezone, theme, can_publish, onboarding_completed, auto_approve_drafts, availability_status, availability_note, availability_until, last_wp_sync, created_at",
       { count: "exact" },
     )
     .order("display_name", { ascending: true });
@@ -179,6 +184,9 @@ export async function listUsers(filters: ListUsersFilters = {}): Promise<ListUse
       can_publish: Boolean(u.can_publish),
       onboarding_completed: Boolean(u.onboarding_completed),
       auto_approve_drafts: Boolean(u.auto_approve_drafts),
+      availability_status: u.availability_status as AvailabilityStatus,
+      availability_note: (u.availability_note as string | null) ?? null,
+      availability_until: (u.availability_until as string | null) ?? null,
       last_wp_sync: (u.last_wp_sync as string | null) ?? null,
       created_at: u.created_at as string,
       roles: Array.from(new Set(roleList.map((r) => r.role))),
@@ -210,7 +218,7 @@ export async function getUserById(id: string): Promise<StaffUserSummary | null> 
   const { data, error } = await supabase
     .from("users")
     .select(
-      "id, wp_user_id, wp_site, email, display_name, avatar_url, bio, twitter_handle, bluesky_handle, timezone, theme, can_publish, onboarding_completed, auto_approve_drafts, last_wp_sync, created_at",
+      "id, wp_user_id, wp_site, email, display_name, avatar_url, bio, twitter_handle, bluesky_handle, timezone, theme, can_publish, onboarding_completed, auto_approve_drafts, availability_status, availability_note, availability_until, last_wp_sync, created_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -269,6 +277,9 @@ export async function getUserById(id: string): Promise<StaffUserSummary | null> 
     can_publish: Boolean(data.can_publish),
     onboarding_completed: Boolean(data.onboarding_completed),
     auto_approve_drafts: Boolean(data.auto_approve_drafts),
+    availability_status: data.availability_status as AvailabilityStatus,
+    availability_note: (data.availability_note as string | null) ?? null,
+    availability_until: (data.availability_until as string | null) ?? null,
     last_wp_sync: (data.last_wp_sync as string | null) ?? null,
     created_at: data.created_at as string,
     roles: Array.from(new Set(roleList.map((r) => r.role))),

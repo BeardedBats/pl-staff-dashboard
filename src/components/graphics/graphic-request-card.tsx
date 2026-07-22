@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -32,7 +33,10 @@ import {
 } from "@/components/ui/dialog";
 import { UserAvatar } from "@/components/users/user-avatar";
 import { GraphicStatusBadge } from "@/components/entries/status-badges";
-import type { GraphicRequestRecord } from "@/lib/graphics/data";
+import type {
+  GraphicRequestRecord,
+  GraphicVersionRecord,
+} from "@/lib/graphics/data";
 import { readApiError } from "@/lib/api/client";
 
 type GraphicRequestCardProps = {
@@ -54,6 +58,8 @@ export function GraphicRequestCard({
   const [busy, setBusy] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [flagDialogOpen, setFlagDialogOpen] = React.useState(false);
+  const [versionsOpen, setVersionsOpen] = React.useState(false);
+  const [versions, setVersions] = React.useState<GraphicVersionRecord[] | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   async function runAction(
@@ -120,8 +126,18 @@ export function GraphicRequestCard({
     }
   }
 
-  async function handleSubmit() {
-    await runAction("submit", () =>
+  async function handleSubmitReview() {
+    await runAction("submit-review", () =>
+      fetch(`/api/graphic-requests/${request.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "submit_review" }),
+      }),
+    );
+  }
+
+  async function handleApprove() {
+    await runAction("approve", () =>
       fetch(`/api/graphic-requests/${request.id}/submit`, { method: "POST" }),
     );
   }
@@ -157,16 +173,39 @@ export function GraphicRequestCard({
     );
   }
 
+  async function openVersions() {
+    setVersionsOpen(true);
+    if (versions) return;
+    try {
+      const response = await fetch(`/api/graphic-requests/${request.id}/versions`);
+      if (!response.ok) {
+        setError(await readApiError(response, "Unable to load version history"));
+        return;
+      }
+      const data = (await response.json()) as { versions: GraphicVersionRecord[] };
+      setVersions(data.versions ?? []);
+    } catch {
+      setError("Unable to load version history");
+    }
+  }
+
   const canClaim =
     request.permissions.claim && request.graphic_status === "needed";
   const canUnclaim =
     request.graphic_status === "claimed" && request.permissions.unclaim;
   const canUpload =
-    request.permissions.upload && request.graphic_status !== "submitted";
-  const canSubmit =
+    request.permissions.upload &&
+    request.graphic_status !== "submitted" &&
+    (!request.review_submitted_at || request.graphic_status === "flagged");
+  const canSubmitReview =
     request.permissions.submit &&
     request.graphic_status === "claimed" &&
-    Boolean(request.file_url);
+    Boolean(request.file_url) &&
+    !request.review_submitted_at;
+  const canApprove =
+    request.permissions.approve &&
+    request.graphic_status === "claimed" &&
+    Boolean(request.review_submitted_at);
   const canFlag =
     request.permissions.flag &&
     (request.graphic_status === "claimed" ||
@@ -208,6 +247,12 @@ export function GraphicRequestCard({
             ) : null}
           </div>
           <GraphicStatusBadge status={request.graphic_status} />
+          {request.review_submitted_at && request.graphic_status === "claimed" ? (
+            <Badge variant="amber">In review</Badge>
+          ) : request.approved_at ? (
+            <Badge variant="success">Approved</Badge>
+          ) : null}
+          {request.is_featured ? <Badge variant="cyan">Featured</Badge> : null}
         </div>
 
         {/* Description */}
@@ -215,6 +260,15 @@ export function GraphicRequestCard({
           <p className="mt-2 break-words text-xs text-text-team">
             {request.description}
           </p>
+        ) : null}
+
+        {!compact ? (
+          <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 rounded-sm border border-border bg-surface-3/30 p-2 text-[11px]">
+            <div><dt className="text-text-zero">Asset</dt><dd className="capitalize text-text-team">{request.requirements.asset_type}</dd></div>
+            <div><dt className="text-text-zero">Size</dt><dd className="font-data text-text-team">{request.requirements.width} × {request.requirements.height} {request.requirements.format.toUpperCase()}</dd></div>
+            <div className="col-span-2"><dt className="text-text-zero">Placement</dt><dd className="text-text-team">{request.requirements.placement}</dd></div>
+            <div className="col-span-2"><dt className="text-text-zero">Alt text</dt><dd className="text-text-team">{request.requirements.alt_text}</dd></div>
+          </dl>
         ) : null}
 
         {/* Thumbnail */}
@@ -337,20 +391,35 @@ export function GraphicRequestCard({
                 </Button>
               </>
             ) : null}
-            {canSubmit ? (
+            {canSubmitReview ? (
               <Button
                 size="sm"
                 variant="amber"
-                onClick={handleSubmit}
-                disabled={busy === "submit"}
-                title="Finalize: push to WordPress media library and set as featured image"
+                onClick={handleSubmitReview}
+                disabled={busy === "submit-review"}
               >
-                {busy === "submit" ? (
+                {busy === "submit-review" ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
                   <Send className="h-3 w-3" />
                 )}
-                Submit to WP
+                Submit for review
+              </Button>
+            ) : null}
+            {canApprove ? (
+              <Button
+                size="sm"
+                variant="amber"
+                onClick={handleApprove}
+                disabled={busy === "approve"}
+                title="Approve, send to WordPress, and set as the featured image"
+              >
+                {busy === "approve" ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Check className="h-3 w-3" />
+                )}
+                Approve
               </Button>
             ) : null}
             {canFlag ? (
@@ -362,7 +431,7 @@ export function GraphicRequestCard({
                 className="text-destructive"
               >
                 <Flag className="h-3 w-3" />
-                Flag
+                Request changes
               </Button>
             ) : null}
             {canUnflag ? (
@@ -389,6 +458,11 @@ export function GraphicRequestCard({
                 <Trash2 className="h-3 w-3" />
               </Button>
             ) : null}
+            {request.current_version_number ? (
+              <Button size="sm" variant="ghost" onClick={() => void openVersions()}>
+                Versions ({request.current_version_number})
+              </Button>
+            ) : null}
           </div>
         ) : null}
 
@@ -406,7 +480,52 @@ export function GraphicRequestCard({
         onConfirm={handleFlag}
         busy={busy === "flag"}
       />
+      <VersionHistoryDialog
+        open={versionsOpen}
+        onOpenChange={setVersionsOpen}
+        versions={versions}
+      />
     </>
+  );
+}
+
+function VersionHistoryDialog({
+  open,
+  onOpenChange,
+  versions,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  versions: GraphicVersionRecord[] | null;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Asset version history</DialogTitle>
+          <DialogDescription>
+            Immutable uploads, newest first. Prior versions remain available for comparison and recovery.
+          </DialogDescription>
+        </DialogHeader>
+        {versions === null ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-4 w-4 animate-spin text-text-zero" /></div>
+        ) : versions.length === 0 ? (
+          <p className="text-sm text-text-zero">No uploaded versions yet.</p>
+        ) : (
+          <ol className="space-y-2">
+            {versions.map((version) => (
+              <li key={version.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
+                <div>
+                  <p className="text-sm font-medium text-text-cell">Version {version.version_number} · {version.file_name}</p>
+                  <p className="text-xs text-text-zero">{Math.round(version.file_size / 1024)} KB · {formatDate(version.created_at, { dateStyle: "medium", timeStyle: "short" })}</p>
+                </div>
+                {version.file_url ? <Button size="sm" variant="outline" asChild><a href={version.file_url} target="_blank" rel="noopener noreferrer">Open</a></Button> : null}
+              </li>
+            ))}
+          </ol>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -431,14 +550,14 @@ function FlagDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Flag this graphic</DialogTitle>
+          <DialogTitle>Request graphic changes</DialogTitle>
           <DialogDescription>
-            Flagging returns the request to the graphics team with a note. They
-            can unflag and resubmit after fixing the issue.
+            Return this version to the graphics team with a specific note. A
+            new upload clears the prior review submission before resubmission.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
-          <Label htmlFor="flag-reason">What&apos;s wrong?</Label>
+          <Label htmlFor="flag-reason">What needs to change?</Label>
           <Textarea
             id="flag-reason"
             value={reason}
@@ -461,7 +580,7 @@ function FlagDialog({
             disabled={busy || !reason.trim()}
           >
             {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-            Flag
+            Request changes
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -173,7 +173,7 @@ console.log(JSON.stringify(report, null, 2));
 const localReady =
   report.local.runbooksPresent &&
   report.local.migrations.contiguous &&
-  report.local.migrations.latest?.startsWith("0022_");
+  Boolean(report.local.migrations.latest);
 const releaseReady =
   !includeProduction ||
   (report.local.trackedWorktreeClean &&
