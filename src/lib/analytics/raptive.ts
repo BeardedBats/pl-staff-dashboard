@@ -52,6 +52,19 @@ export type RaptiveUploadHistoryRow = {
   uploader_name: string;
 };
 
+export type RaptiveImportRunRow = {
+  id: string;
+  status: "running" | "succeeded" | "failed";
+  file_name: string;
+  started_at: string;
+  finished_at: string | null;
+  rows_processed: number | null;
+  date_range_start: string | null;
+  date_range_end: string | null;
+  error_code: string | null;
+  requester_name: string | null;
+};
+
 // --------------------------------------------------------------------------
 // Column resolution
 // --------------------------------------------------------------------------
@@ -340,10 +353,15 @@ export async function matchRaptiveRowsToEntries(
   sampleUnmatched: string[];
 }> {
   const supabase = getSupabaseAdmin();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("entries")
     .select("id, wp_post_url")
     .not("wp_post_url", "is", null);
+  if (error) {
+    throw Object.assign(new Error("Raptive entry matching is unavailable"), {
+      code: "entry_match_unavailable",
+    });
+  }
 
   const entryUrlMap = buildAnalyticsPathIndex(
     ((data ?? []) as Array<{
@@ -377,10 +395,17 @@ export async function matchRaptiveRowsToEntries(
 // --------------------------------------------------------------------------
 
 export async function commitRaptiveRows(
+  importRunId: string,
   rows: Array<RaptiveParsedRow & { entry_id: string | null }>,
   dateRange: { start: string; end: string },
   fileName: string,
   uploadedBy: string,
+  summary: {
+    matchedCount: number;
+    unmatchedCount: number;
+    dataSheetCount: number;
+    duplicateCount: number;
+  },
 ): Promise<{ ok: true; inserted: number } | { ok: false; error: string }> {
   if (rows.length === 0) {
     return { ok: false, error: "No rows to commit" };
@@ -400,18 +425,68 @@ export async function commitRaptiveRows(
   const { data: inserted, error } = await supabase.rpc(
     "commit_raptive_import",
     {
+      p_import_run_id: importRunId,
       p_rows: payload,
       p_date_range_start: dateRange.start,
       p_date_range_end: dateRange.end,
       p_file_name: fileName,
       p_uploaded_by: uploadedBy,
+      p_summary: {
+        matched_count: summary.matchedCount,
+        unmatched_count: summary.unmatchedCount,
+        data_sheet_count: summary.dataSheetCount,
+        duplicate_count: summary.duplicateCount,
+      },
     },
   );
   if (error || inserted === null) {
+    try {
+      const { data: recovered } = await supabase
+        .from("import_runs")
+        .select("status,rows_processed")
+        .eq("id", importRunId)
+        .maybeSingle();
+      if (
+        recovered?.status === "succeeded" &&
+        typeof recovered.rows_processed === "number"
+      ) {
+        return { ok: true, inserted: recovered.rows_processed };
+      }
+    } catch {
+      // The caller will preserve the safe failure and durable running record.
+    }
     return { ok: false, error: "Failed to commit Raptive import" };
   }
 
   return { ok: true, inserted };
+}
+
+export async function beginRaptiveImportRun(
+  fileName: string,
+  requestedBy: string,
+): Promise<string | null> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.rpc("begin_import_run", {
+    p_import_type: "raptive",
+    p_file_name: fileName,
+    p_requested_by: requestedBy,
+  });
+  return error ? null : data;
+}
+
+export async function failRaptiveImportRun(
+  importRunId: string,
+  errorCode: string,
+  stage: "matching" | "commit",
+): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.rpc("finish_import_run", {
+    p_import_run_id: importRunId,
+    p_succeeded: false,
+    p_error_code: errorCode,
+    p_summary: { stage },
+  });
+  return !error && data === true;
 }
 
 // --------------------------------------------------------------------------
@@ -448,5 +523,42 @@ export async function listRaptiveUploads(): Promise<RaptiveUploadHistoryRow[]> {
     created_at: r.created_at,
     uploaded_by: r.uploaded_by,
     uploader_name: r.users.display_name,
+  }));
+}
+
+export async function listRaptiveImportRuns(): Promise<RaptiveImportRunRow[]> {
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("import_runs")
+    .select(
+      "id,status,file_name,started_at,finished_at,rows_processed,date_range_start,date_range_end,error_code,requested_by,users(display_name)",
+    )
+    .eq("import_type", "raptive")
+    .order("started_at", { ascending: false })
+    .limit(50);
+
+  const rows = (data ?? []) as unknown as Array<{
+    id: string;
+    status: "running" | "succeeded" | "failed";
+    file_name: string;
+    started_at: string;
+    finished_at: string | null;
+    rows_processed: number | null;
+    date_range_start: string | null;
+    date_range_end: string | null;
+    error_code: string | null;
+    users: { display_name: string } | null;
+  }>;
+  return rows.map((row) => ({
+    id: row.id,
+    status: row.status,
+    file_name: row.file_name,
+    started_at: row.started_at,
+    finished_at: row.finished_at,
+    rows_processed: row.rows_processed,
+    date_range_start: row.date_range_start,
+    date_range_end: row.date_range_end,
+    error_code: row.error_code,
+    requester_name: row.users?.display_name ?? null,
   }));
 }

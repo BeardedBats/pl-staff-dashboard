@@ -3,6 +3,10 @@ import "server-only";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { Json } from "@/types/database";
+import {
+  emitStructuredLog,
+  safeErrorCode,
+} from "@/lib/observability/structured-log";
 
 // --------------------------------------------------------------------------
 // Create entry
@@ -122,7 +126,12 @@ export async function createEntries(
   );
 
   if (error) {
-    console.error("Transactional entry creation failed", { code: error.code });
+    emitStructuredLog({
+      level: "error",
+      component: "entries",
+      event: "entries.bulk_create_failed",
+      errorCode: safeErrorCode(error, "database"),
+    });
     if (error.code === "23503") {
       return {
         ok: false,

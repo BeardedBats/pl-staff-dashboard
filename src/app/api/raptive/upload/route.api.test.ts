@@ -5,6 +5,10 @@ const mocks = vi.hoisted(() => ({
   parse: vi.fn(),
   match: vi.fn(),
   commit: vi.fn(),
+  begin: vi.fn(),
+  fail: vi.fn(),
+  recordAlert: vi.fn(),
+  resolveAlert: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/current-user", () => ({
@@ -15,6 +19,12 @@ vi.mock("@/lib/analytics/raptive", () => ({
   parseRaptiveWorkbook: mocks.parse,
   matchRaptiveRowsToEntries: mocks.match,
   commitRaptiveRows: mocks.commit,
+  beginRaptiveImportRun: mocks.begin,
+  failRaptiveImportRun: mocks.fail,
+}));
+vi.mock("@/lib/observability/alerts", () => ({
+  recordOperationalAlert: mocks.recordAlert,
+  resolveOperationalAlert: mocks.resolveAlert,
 }));
 
 import { MAX_RAPTIVE_UPLOAD_BYTES, POST } from "./route";
@@ -33,6 +43,10 @@ describe("Raptive upload API boundary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getCurrentUser.mockResolvedValue({ id: "operator-1" });
+    mocks.begin.mockResolvedValue("run-1");
+    mocks.fail.mockResolvedValue(true);
+    mocks.recordAlert.mockResolvedValue("error-id");
+    mocks.resolveAlert.mockResolvedValue(undefined);
   });
 
   it("rejects an oversized workbook before parsing", async () => {
@@ -98,6 +112,82 @@ describe("Raptive upload API boundary", () => {
 
     const commit = await POST(uploadRequest(file, "commit"));
     expect(commit.status).toBe(409);
+    expect(mocks.commit).not.toHaveBeenCalled();
+  });
+
+  it("tracks a successful commit from its durable run through atomic completion", async () => {
+    const parsedRow = {
+      date: "2026-07-01",
+      page_url: "/valid/",
+      earnings: 1,
+      rpm: 1,
+      page_rpm: 1,
+      sessions: 1,
+      pageviews: 1,
+    };
+    mocks.parse.mockReturnValue({
+      ok: true,
+      rows: [parsedRow],
+      dateRange: { start: "2026-07-01", end: "2026-07-01" },
+      dataSheetCount: 2,
+      duplicateCount: 3,
+      rejectedCount: 0,
+      sampleRejected: [],
+    });
+    mocks.match.mockResolvedValue({
+      matched: [{ ...parsedRow, entry_id: "entry-1" }],
+      matchedCount: 1,
+      unmatchedCount: 0,
+      sampleUnmatched: [],
+    });
+    mocks.commit.mockResolvedValue({ ok: true, inserted: 1 });
+
+    const response = await POST(
+      uploadRequest(new File(["workbook"], "folder-safe.xlsx"), "commit"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.begin).toHaveBeenCalledWith("folder-safe.xlsx", "operator-1");
+    expect(mocks.commit).toHaveBeenCalledWith(
+      "run-1",
+      [{ ...parsedRow, entry_id: "entry-1" }],
+      { start: "2026-07-01", end: "2026-07-01" },
+      "folder-safe.xlsx",
+      "operator-1",
+      {
+        matchedCount: 1,
+        unmatchedCount: 0,
+        dataSheetCount: 2,
+        duplicateCount: 3,
+      },
+    );
+    expect(mocks.resolveAlert).toHaveBeenCalledTimes(3);
+  });
+
+  it("records matching failure with a safe error id and visible failed run", async () => {
+    mocks.parse.mockReturnValue({
+      ok: true,
+      rows: [{ date: "2026-07-01", page_url: "/valid/" }],
+      dateRange: { start: "2026-07-01", end: "2026-07-01" },
+      dataSheetCount: 1,
+      duplicateCount: 0,
+      rejectedCount: 0,
+      sampleRejected: [],
+    });
+    mocks.match.mockRejectedValue(new Error("database password do-not-log"));
+
+    const response = await POST(
+      uploadRequest(new File(["workbook"], "revenue.xlsx"), "commit"),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ errorId: "error-id" });
+    expect(mocks.fail).toHaveBeenCalledWith(
+      "run-1",
+      "error",
+      "matching",
+    );
+    expect(mocks.recordAlert).toHaveBeenCalledOnce();
     expect(mocks.commit).not.toHaveBeenCalled();
   });
 });

@@ -2,6 +2,10 @@ import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { AppSite } from "@/lib/auth/current-user";
+import {
+  emitStructuredLog,
+  safeErrorCode,
+} from "@/lib/observability/structured-log";
 
 // --------------------------------------------------------------------------
 // Types
@@ -93,6 +97,15 @@ type EntryRow = {
   is_archived: boolean;
 };
 
+function logAnalyticsFailure(event: string, error: unknown): void {
+  emitStructuredLog({
+    level: "error",
+    component: "analytics",
+    event,
+    errorCode: safeErrorCode(error, "query_failed"),
+  });
+}
+
 async function loadEntriesForRange(
   filters: AnalyticsFilters,
 ): Promise<Map<string, EntryRow>> {
@@ -113,7 +126,7 @@ async function loadEntriesForRange(
   if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
 
   const { data, error } = await q;
-  if (error) console.error("[analytics] loadEntriesForRange failed:", error.message);
+  if (error) logAnalyticsFailure("entries.load_failed", error);
   const rows = (data ?? []) as unknown as EntryRow[];
 
   const map = new Map<string, EntryRow>();
@@ -143,7 +156,7 @@ async function loadGa4Rows(
     .gte("date", filters.dateFrom)
     .lte("date", filters.dateTo)
     .limit(500000);
-  if (error) console.error("[analytics] loadGa4Rows failed:", error.message);
+  if (error) logAnalyticsFailure("ga4_rows.load_failed", error);
 
   return (data ?? []) as unknown as Array<{
     entry_id: string;
@@ -182,7 +195,7 @@ async function loadRaptiveRows(
     .gte("date", filters.dateFrom)
     .lte("date", filters.dateTo)
     .limit(500000);
-  if (error) console.error("[analytics] loadRaptiveRows failed:", error.message);
+  if (error) logAnalyticsFailure("raptive_rows.load_failed", error);
 
   return (data ?? []) as unknown as Array<{
     entry_id: string | null;
@@ -254,8 +267,7 @@ export async function getAnalyticsOverview(
     p_category_id: filters.categoryId || undefined,
     p_author_id: filters.authorId || undefined,
   });
-  if (error)
-    console.error("[analytics] get_analytics_overview rpc failed:", error.message);
+  if (error) logAnalyticsFailure("overview.load_failed", error);
 
   type RpcRow = {
     entry_id: string;

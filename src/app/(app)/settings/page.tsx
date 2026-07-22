@@ -15,7 +15,11 @@ import { listTemplates } from "@/lib/recurring-templates/data";
 import { listSeasonModes } from "@/lib/season-modes/data";
 import { listChecklistItems } from "@/lib/checklist/data";
 import { getGa4Status } from "@/lib/analytics/ga4";
-import { listRaptiveUploads } from "@/lib/analytics/raptive";
+import {
+  listRaptiveImportRuns,
+  listRaptiveUploads,
+} from "@/lib/analytics/raptive";
+import { getOperationalHealth } from "@/lib/observability/health";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   Tabs,
@@ -95,15 +99,24 @@ export default async function SettingsPage({
     isAdminPlusForScope(viewer, template.site),
   );
 
-  const [syncStatus, checklistItems] = globalAdminAccess
-    ? await Promise.all([loadSyncStatus(), listChecklistItems()])
-    : [{ pl: null, qb: null }, []];
+  const [syncStatus, checklistItems, operationalHealth] = globalAdminAccess
+    ? await Promise.all([
+        loadSyncStatus(),
+        listChecklistItems(),
+        getOperationalHealth(),
+      ])
+    : [{ pl: null, qb: null }, [], null];
 
   // Analytics panel — only fetched for EIC/Operations viewers
-  const [ga4Status, raptiveUploads] = analyticsAccess
-    ? await Promise.all([getGa4Status(), listRaptiveUploads()])
+  const [ga4Status, raptiveUploads, raptiveImportRuns] = analyticsAccess
+    ? await Promise.all([
+        getGa4Status(),
+        listRaptiveUploads(),
+        listRaptiveImportRuns(),
+      ])
     : [
         { configured: false, connected: false, propertyId: null, lastSyncedAt: null },
+        [],
         [],
       ];
 
@@ -197,6 +210,7 @@ export default async function SettingsPage({
             <TabsContent value="sync">
               <AdminSyncPanel
                 initialLastSync={syncStatus}
+                initialHealth={operationalHealth!}
                 canRunHistoricalImport={isOperations(viewer)}
               />
             </TabsContent>
@@ -213,6 +227,7 @@ export default async function SettingsPage({
             <AdminAnalyticsPanel
               initialGa4Status={ga4Status}
               initialUploads={raptiveUploads}
+              initialImportRuns={raptiveImportRuns}
               canConnectGa4={isOperations(viewer)}
             />
           </TabsContent>

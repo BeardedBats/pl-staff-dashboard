@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { authorizeCronRequest } from "@/lib/cron/authorization";
 import { executeCronJob } from "@/lib/cron/execution";
+import { CRON_JOBS } from "@/lib/cron/jobs";
 import { syncWpCategoriesForBothSites } from "@/lib/wp-sync/categories";
 
 export const runtime = "nodejs";
@@ -19,10 +20,7 @@ async function handle(request: Request) {
   if (!authorized.ok) {
     return errorResponse(401, authorized.error);
   }
-  return executeCronJob(authorized.source, {
-    name: "category-sync",
-    intervalSeconds: 7 * 24 * 60 * 60,
-  }, async () => {
+  return executeCronJob(authorized.source, CRON_JOBS["category-sync"].execution, async () => {
     const reports = await syncWpCategoriesForBothSites();
     if (reports.some((report) => report.errors.length > 0)) {
       return errorResponse(502, "WordPress category sync incomplete");

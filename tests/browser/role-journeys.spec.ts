@@ -174,6 +174,19 @@ test.describe("database-backed role journeys", () => {
       }
       await expect(page.getByRole("tab", { name: "Analytics" })).toHaveCount(0);
       await expect(page.getByText(browserActors.writer.displayName).first()).toBeVisible();
+
+      await page.getByRole("tab", { name: "Sync" }).click();
+      await expect(
+        page.getByText("System health", { exact: false }).first(),
+      ).toBeVisible();
+      await expect(page.getByText("Scheduled jobs", { exact: true })).toBeVisible();
+      const healthRefresh = page.waitForResponse(
+        (response) =>
+          response.url().endsWith("/api/settings/operational-health") &&
+          response.request().method() === "GET",
+      );
+      await page.getByRole("button", { name: "Refresh", exact: true }).click();
+      expect((await healthRefresh).status()).toBe(200);
     } finally {
       await context.close();
     }

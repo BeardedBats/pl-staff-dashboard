@@ -1,8 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const rpc = vi.fn();
+const recordAlert = vi.fn();
+const resolveAlert = vi.fn();
 vi.mock("@/lib/supabase/admin", () => ({
   getSupabaseAdmin: () => ({ rpc }),
+}));
+vi.mock("@/lib/observability/alerts", () => ({
+  recordOperationalAlert: (...args: unknown[]) => recordAlert(...args),
+  resolveOperationalAlert: (...args: unknown[]) => resolveAlert(...args),
 }));
 
 import { executeCronJob } from "./execution";
@@ -12,6 +18,8 @@ const job = { name: "test-job", intervalSeconds: 3600 };
 describe("executeCronJob", () => {
   beforeEach(() => {
     rpc.mockReset();
+    recordAlert.mockReset().mockResolvedValue("error-id");
+    resolveAlert.mockReset().mockResolvedValue(undefined);
     vi.useRealTimers();
   });
 
@@ -20,7 +28,9 @@ describe("executeCronJob", () => {
     const task = vi.fn();
     const response = await executeCronJob("vercel", job, task);
     expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({ errorId: "error-id" });
     expect(task).not.toHaveBeenCalled();
+    expect(recordAlert).toHaveBeenCalledOnce();
   });
 
   it("returns a safe 503 when the execution-control transport rejects", async () => {
@@ -69,6 +79,7 @@ describe("executeCronJob", () => {
       p_succeeded: true,
       p_summary: { ok: true, changed: 4 },
     });
+    expect(resolveAlert).toHaveBeenCalledTimes(2);
   });
 
   it("records a returned failure for bounded retry", async () => {
@@ -88,6 +99,7 @@ describe("executeCronJob", () => {
       p_summary: { error: "safe" },
       p_error_code: "http_502",
     });
+    expect(recordAlert).toHaveBeenCalledOnce();
   });
 
   it("fails closed when a successful task outcome cannot be persisted", async () => {
@@ -101,6 +113,7 @@ describe("executeCronJob", () => {
       Response.json({ ok: true }),
     );
     expect(response.status).toBe(503);
+    expect(recordAlert).toHaveBeenCalledOnce();
   });
 
   it("does not rewrite success as task failure when finish transport rejects", async () => {
@@ -137,6 +150,7 @@ describe("executeCronJob", () => {
       p_summary: null,
       p_error_code: "unhandled_exception",
     });
+    expect(recordAlert).toHaveBeenCalledOnce();
   });
 
   it("fails closed when an exception outcome cannot be recorded", async () => {
