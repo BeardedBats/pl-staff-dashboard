@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.8/P1.9/P1.12/P1.13 — Apply verified migrations when DDL access arrives; package P1.13 and continue P1.14
-- Branch: `codex/production-readiness-p1-13`
-- Stack base: `cbd2935` (green draft PR #13, based on green draft PRs #12, #11, #10, and #9).
+- Current action: P1.8/P1.9/P1.12/P1.13 — Apply verified migrations when DDL access arrives; package P1.14 and continue P1.15
+- Branch: `codex/production-readiness-p1-14`
+- Stack base: `4e0d4e4` (green draft PR #14, based on green draft PRs #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -45,8 +45,8 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules. — GREEN DRAFT PR #11; STACKED RELEASE PENDING P1.8/P1.9
 - [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8–P1.10
 - [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability. — GREEN DRAFT PR #13; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
-- [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
-- [ ] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities.
+- [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries. — GREEN DRAFT PR #14; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
+- [ ] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8–P1.13
 - [ ] P1.15 Either implement unfinished notification/settings behavior or remove misleading UI, types, tables, and code paths.
 - [ ] P1.16 Add regression tests for every repaired security or integrity defect.
 
@@ -343,6 +343,13 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Runtime denial probes verified all 30 public tables and three representative server-only RPCs reject the anonymous role. The source boundary contains no browser Supabase client or public-object URL call; signing remains in server-only modules after resource authorization.
 - A disposable production object probe verified upload, public denial (HTTP 400), signed read (HTTP 200), expiry denial (HTTP 400), and cleanup without emitting object paths or tokens. The one historical expiring signed URL stored in `graphic_requests.file_url` is cleared by migration; new uploads persist only the durable private path and mint bounded-lifetime URLs on authorized reads.
 - Final local P1.13 gate: 18 Vitest files / 98 tests; 120 pgTAP probes; anonymous table/RPC denial; disposable production private-object lifecycle; database lint and generated-type drift clean; ESLint, TypeScript, and production build pass.
+
+### 2026-07-21 — P1.14 dependency and dead-capability gate
+
+- The current registry audit began at 12 findings: 5 high, 6 moderate, and 1 low. Next and its matching ESLint config moved from `16.2.3` to `16.2.11`; vulnerable transitive packages moved to patched versions, and a narrow PostCSS override replaces Next's stale nested pin with `8.5.21`.
+- Removed 13 unused runtime packages plus the unused bcrypt type package. This deletes the dormant form, UI, alternate Supabase-client, virtualization, bcrypt, Discord, email, and toast dependency trees; source inspection confirmed the Discord and email SDKs were referenced only in comments around the still-stubbed P1.15 delivery behavior.
+- A fresh `npm ci` succeeds and the full production/development `npm audit` reports zero vulnerabilities. The unused-dependency scan is empty for runtime packages; its only development false positives are the Tailwind/PostCSS build packages directly consumed by `postcss.config.mjs`, `globals.css`, and the security override.
+- Final local P1.14 gate: clean install; zero audit findings; 18 Vitest files / 98 tests; ESLint, TypeScript, generated database-type drift, and the Next.js 16.2.11 production build pass.
 
 ## Phase 0 prioritized defect and risk inventory
 
