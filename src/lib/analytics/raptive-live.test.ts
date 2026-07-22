@@ -239,6 +239,24 @@ describe("Raptive live synchronization", () => {
     );
   });
 
+  it("reports earnings at the same four-decimal precision persisted by the database", async () => {
+    mocks.getPerformance.mockResolvedValue([
+      apiRow("/a/", 0.1),
+      apiRow("/b/", 0.2),
+    ]);
+
+    await expect(syncRaptiveConnection(connection)).resolves.toMatchObject({
+      ok: true,
+      totalEarnings: 0.3,
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      "commit_raptive_live_sync",
+      expect.objectContaining({
+        p_summary: expect.objectContaining({ total_earnings: 0.3 }),
+      }),
+    );
+  });
+
   it("refuses a date outside either documented availability range", async () => {
     const result = await syncRaptiveConnection(connection, "2025-12-31");
 
