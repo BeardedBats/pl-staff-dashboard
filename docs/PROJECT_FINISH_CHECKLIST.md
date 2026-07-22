@@ -5,12 +5,12 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 4 — Role-focused workflow and usability
-- Current action: P4.16–P4.19 — complete graphics requirements, review states, asset library, and least-information batch.
+- Current action: P4.20–P4.22 — finish supported notification delivery, digest controls, and understandable system health.
 - Branch: `codex/production-readiness-p4`
 - Stack base: `feb4f12` (combined Phase 3 exact head on green draft PR #39, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blockers: production application of the stacked migrations through `0023` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
+- Known blockers: production application of the stacked migrations through `0024` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -104,10 +104,10 @@ Gate: new feature work can be built entirely from verified PLPD primitives.
 - [x] P4.13 Add risk-first editor queues, SLA indicators, bulk actions, and saved queues.
 - [x] P4.14 Add polishing-reason templates and a readiness panel.
 - [x] P4.15 Preserve editorial handoff and state-transition history.
-- [ ] P4.16 Capture complete graphics-request requirements.
-- [ ] P4.17 Add asset versioning and Submit, Approve, and Request Changes states.
-- [ ] P4.18 Add an asset library with usage and featured-image status.
-- [ ] P4.19 Restrict graphics users to relevant information and actions.
+- [x] P4.16 Capture complete graphics-request requirements.
+- [x] P4.17 Add asset versioning and Submit, Approve, and Request Changes states.
+- [x] P4.18 Add an asset library with usage and featured-image status.
+- [x] P4.19 Restrict graphics users to relevant information and actions.
 - [ ] P4.20 Implement real supported notification delivery or remove unsupported choices.
 - [ ] P4.21 Add digests, quiet hours, timezone delivery, retry status, and delivery health.
 - [ ] P4.22 Add an understandable system-health page.
@@ -619,6 +619,16 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Migration `0023_humane_capacity_and_editor_bulk_claims.sql` applied cleanly to a cold local stack. An over-broad readiness-trigger attempt was rejected by the immediate database gate and removed before commit; the final migration enforces submitted-state readiness only inside the new bulk transaction. The runbook provides the exact ordered apply gate plus a pre-deployment-only transactional reversal. Generated types match and database lint has no warnings.
 - Targeted verification: 12 unit tests, 8 bulk API authorization/atomicity tests, all 11 database files / 322 pgTAP assertions, generated-type drift, database lint, ESLint, and TypeScript pass. Four production-Chromium workflow journeys pass, including real writer polishing feedback, readable audit handoff, readiness, editor saved queue selection, cancelled bulk confirmation, feedback templates, and open-dialog WCAG A/AA scanning with no exclusions.
 - React review: the editing client owns only view, selection, request, and feedback state; risk derivation is memoized from server props and a stable server timestamp; no effect-based state synchronization or per-row request loop exists. Static template keys and queue identifiers are stable, and the new database reads remain server-only.
+
+### 2026-07-21 — P4.16–P4.19 graphics-workflow batch
+
+- Graphic requests now require a structured asset type, placement, dimensions, delivery format, and alt text, with an optional reference URL. The same contract is enforced by request validation and a database check; legacy rows receive explicit safe defaults.
+- Preserved immutable private asset versions and exposed authorized version history. A new version atomically clears prior review state, while the asset view shows entry usage and whether the approved version is featured in WordPress.
+- Split the workflow into assigned-worker **Submit for review**, entry-participant/manager **Approve**, and **Request changes**. Approval cannot acquire the durable WordPress submission lease until the current version was submitted for review; direct browser RPC execution remains revoked.
+- Graphics responses stay limited to the work record, entry usage, authorized assignee display data, and signed asset URLs. The role receives no financial, payment, revenue, or staff-email fields; the existing server-side analytics denial remains unchanged.
+- Migration `0024_graphics_review_requirements.sql` was rebuilt from a clean local reset after a pre-commit trigger-column defect was caught. The final stack through `0024` cold-applies, generated types match, database lint has no warnings, and all 12 database files / 341 pgTAP assertions pass.
+- Targeted verification: 9 graphics unit tests, 3 upload API tests, ESLint, TypeScript, and two production-Chromium quality journeys pass. The browser gate covers complete brief display, required form fields, the focused asset view, least-information response fields, and WCAG A/AA scanning with no exclusions.
+- React review: workflow state remains local to each card/dialog, remote refresh remains parent-owned, version history loads only on explicit demand, stable database IDs key every list, and no new effect-based request waterfall or broad client boundary was introduced.
 
 ## Phase 0 prioritized defect and risk inventory
 

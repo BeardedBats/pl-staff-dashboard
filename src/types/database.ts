@@ -756,6 +756,7 @@ export type Database = {
       }
       graphic_requests: {
         Row: {
+          approved_at: string | null
           claimed_by: string | null
           created_at: string
           created_by: string | null
@@ -771,6 +772,8 @@ export type Database = {
           id: string
           is_featured: boolean
           mime_type: string | null
+          requirements: Json
+          review_submitted_at: string | null
           storage_path: string | null
           submission_started_at: string | null
           submission_token: string | null
@@ -780,6 +783,7 @@ export type Database = {
           wp_media_id: number | null
         }
         Insert: {
+          approved_at?: string | null
           claimed_by?: string | null
           created_at?: string
           created_by?: string | null
@@ -795,6 +799,8 @@ export type Database = {
           id?: string
           is_featured?: boolean
           mime_type?: string | null
+          requirements?: Json
+          review_submitted_at?: string | null
           storage_path?: string | null
           submission_started_at?: string | null
           submission_token?: string | null
@@ -804,6 +810,7 @@ export type Database = {
           wp_media_id?: number | null
         }
         Update: {
+          approved_at?: string | null
           claimed_by?: string | null
           created_at?: string
           created_by?: string | null
@@ -819,6 +826,8 @@ export type Database = {
           id?: string
           is_featured?: boolean
           mime_type?: string | null
+          requirements?: Json
+          review_submitted_at?: string | null
           storage_path?: string | null
           submission_started_at?: string | null
           submission_token?: string | null
@@ -1794,6 +1803,10 @@ export type Database = {
           resolution: string
           resolved_entry_id: string
         }[]
+      }
+      submit_graphic_for_review: {
+        Args: { p_actor_id: string; p_request_id: string }
+        Returns: boolean
       }
       transition_editorial_entry: {
         Args: {

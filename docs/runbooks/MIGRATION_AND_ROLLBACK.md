@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0023_humane_capacity_and_editor_bulk_claims.sql`. The
-current application stack depends on migrations `0013`–`0023`; apply those
+`0001_initial_schema.sql` through `0024_graphics_review_requirements.sql`. The
+current application stack depends on migrations `0013`–`0024`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,7 +44,7 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0023_humane_capacity_and_editor_bulk_claims.sql`. Apply once:
+`0024_graphics_review_requirements.sql`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -104,6 +104,31 @@ COMMIT;
 After application deployment, do not run that reversal; keep the compatible
 schema and ship a forward fix or restore the database and application together.
 
+### Migration 0024 contingency
+
+Migration `0024` adds structured graphic requirements and the worker-review / editorial-approval state machine. It executes transactionally. A failed apply must leave no new columns, triggers, or functions. After a successful apply, prefer a forward repair because the Phase 4 application reads the new columns and approval gate.
+
+Only before the Phase 4 application is deployed, and only after a verified backup, the release operator may reverse `0024` in one transaction:
+
+```sql
+BEGIN;
+DROP TRIGGER IF EXISTS trg_graphic_approval_stamp ON public.graphic_requests;
+DROP TRIGGER IF EXISTS trg_graphic_review_before_approval ON public.graphic_requests;
+DROP TRIGGER IF EXISTS trg_graphic_version_clears_review ON public.graphic_request_versions;
+DROP FUNCTION IF EXISTS public.stamp_graphic_approval();
+DROP FUNCTION IF EXISTS public.enforce_graphic_review_before_approval();
+DROP FUNCTION IF EXISTS public.clear_graphic_review_on_new_version();
+DROP FUNCTION IF EXISTS public.submit_graphic_for_review(uuid, uuid);
+ALTER TABLE public.graphic_requests
+  DROP CONSTRAINT IF EXISTS graphic_requests_requirements_object_check,
+  DROP COLUMN IF EXISTS approved_at,
+  DROP COLUMN IF EXISTS review_submitted_at,
+  DROP COLUMN IF EXISTS requirements;
+COMMIT;
+```
+
+After application deployment, do not reverse `0024`; deploy a compatible forward migration or restore the database and application together.
+
 ## Stop conditions
 
 - Production DB access is absent. Management access that only lists backups is
@@ -124,6 +149,10 @@ schema and ship a forward fix or restore the database and application together.
   authenticated clients cannot execute `bulk_claim_editor_entries`, while the
   service role can. A disposable editor batch must create matching assignment
   and audit rows or roll back completely on one conflict.
+- Malformed graphic briefs are rejected; authenticated clients cannot execute
+  `submit_graphic_for_review`; a replacement asset clears review state; and a
+  WordPress approval lease is impossible until the assigned worker submits the
+  current immutable version for review.
 - The both-site Admin+ health endpoint loads, all integration probes are
   explainable, and no new critical alert appears.
 - Continue to the [Deployment](./DEPLOYMENT.md) gate; do not reopen release

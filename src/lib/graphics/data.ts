@@ -13,6 +13,7 @@ import {
 } from "@/lib/graphics/storage";
 import type { AppSite, CurrentUser } from "@/lib/auth/current-user";
 import type { GraphicStatus } from "@/lib/entries/queries";
+import type { Json } from "@/types/database";
 import {
   canClaimGraphicResource,
   canCreateGraphicResource,
@@ -40,6 +41,7 @@ export type GraphicRequestRecord = {
   entry_wp_post_id: number | null;
   title: string;
   description: string | null;
+  requirements: GraphicRequirements;
   urgency_date: string | null;
   graphic_status: GraphicStatus;
   claimed_by: string | null;
@@ -56,6 +58,8 @@ export type GraphicRequestRecord = {
   wp_media_id: number | null;
   flag_reason: string | null;
   is_featured: boolean;
+  review_submitted_at: string | null;
+  approved_at: string | null;
   created_at: string;
   updated_at: string;
   permissions: GraphicRequestPermissions;
@@ -70,7 +74,32 @@ export type GraphicRequestPermissions = {
   delete: boolean;
   upload: boolean;
   submit: boolean;
+  approve: boolean;
 };
+
+export type GraphicRequirements = {
+  asset_type: "featured" | "inline" | "social" | "chart" | "other";
+  placement: string;
+  width: number;
+  height: number;
+  format: "png" | "jpeg" | "webp" | "gif";
+  alt_text: string;
+  reference_url?: string;
+};
+
+const legacyGraphicRequirements: GraphicRequirements = {
+  asset_type: "other",
+  placement: "Not specified",
+  width: 0,
+  height: 0,
+  format: "png",
+  alt_text: "Not provided",
+};
+
+function normalizeGraphicRequirements(value: unknown): GraphicRequirements {
+  const parsed = createGraphicRequestSchema.shape.requirements.safeParse(value);
+  return parsed.success ? parsed.data : legacyGraphicRequirements;
+}
 
 export type GraphicMutationErrorKind =
   | "validation"
@@ -107,6 +136,15 @@ export const createGraphicRequestSchema = z.object({
     .datetime({ offset: true })
     .nullable()
     .optional(),
+  requirements: z.object({
+    asset_type: z.enum(["featured", "inline", "social", "chart", "other"]),
+    placement: z.string().trim().min(1).max(200),
+    width: z.number().int().min(1).max(10000),
+    height: z.number().int().min(1).max(10000),
+    format: z.enum(["png", "jpeg", "webp", "gif"]),
+    alt_text: z.string().trim().min(1).max(500),
+    reference_url: z.url().max(2000).optional(),
+  }),
 });
 
 export type CreateGraphicRequestInput = z.infer<
@@ -143,8 +181,8 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
     .from("graphic_requests")
     .select(
       `id, entry_id, title, description, urgency_date, graphic_status,
-       claimed_by, created_by, file_name, file_size, mime_type,
-       storage_path, current_version_id, wp_media_id, flag_reason, is_featured, created_at, updated_at,
+       claimed_by, created_by, file_name, file_size, mime_type, requirements,
+       storage_path, current_version_id, wp_media_id, flag_reason, is_featured, review_submitted_at, approved_at, created_at, updated_at,
        graphic_request_versions!graphic_requests_current_version_id_fkey(version_number),
        entries!inner(id, title, site, publish_date, wp_post_id, is_archived)`,
     )
@@ -167,6 +205,7 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
     entry_id: string;
     title: string;
     description: string | null;
+    requirements: GraphicRequirements;
     urgency_date: string | null;
     graphic_status: GraphicStatus;
     claimed_by: string | null;
@@ -179,6 +218,8 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
     wp_media_id: number | null;
     flag_reason: string | null;
     is_featured: boolean;
+    review_submitted_at: string | null;
+    approved_at: string | null;
     created_at: string;
     updated_at: string;
     entries: {
@@ -264,6 +305,7 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
       entry_wp_post_id: r.entries.wp_post_id,
       title: r.title,
       description: r.description,
+      requirements: normalizeGraphicRequirements(r.requirements),
       urgency_date: r.urgency_date,
       graphic_status: r.graphic_status,
       claimed_by: r.claimed_by,
@@ -281,6 +323,8 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
       wp_media_id: r.wp_media_id,
       flag_reason: r.flag_reason,
       is_featured: Boolean(r.is_featured),
+      review_submitted_at: r.review_submitted_at,
+      approved_at: r.approved_at,
       created_at: r.created_at,
       updated_at: r.updated_at,
       permissions: buildGraphicPermissions(viewer, entry, {
@@ -301,8 +345,8 @@ export async function getGraphicRequestById(
     .from("graphic_requests")
     .select(
       `id, entry_id, title, description, urgency_date, graphic_status,
-       claimed_by, created_by, file_name, file_size, mime_type,
-       storage_path, current_version_id, wp_media_id, flag_reason, is_featured, created_at, updated_at,
+       claimed_by, created_by, file_name, file_size, mime_type, requirements,
+       storage_path, current_version_id, wp_media_id, flag_reason, is_featured, review_submitted_at, approved_at, created_at, updated_at,
        graphic_request_versions!graphic_requests_current_version_id_fkey(version_number),
        entries!inner(id, title, site, publish_date, wp_post_id, is_archived)`,
     )
@@ -316,6 +360,7 @@ export async function getGraphicRequestById(
     entry_id: string;
     title: string;
     description: string | null;
+    requirements: GraphicRequirements;
     urgency_date: string | null;
     graphic_status: GraphicStatus;
     claimed_by: string | null;
@@ -328,6 +373,8 @@ export async function getGraphicRequestById(
     wp_media_id: number | null;
     flag_reason: string | null;
     is_featured: boolean;
+    review_submitted_at: string | null;
+    approved_at: string | null;
     created_at: string;
     updated_at: string;
     entries: {
@@ -385,6 +432,7 @@ export async function getGraphicRequestById(
     entry_wp_post_id: row.entries.wp_post_id,
     title: row.title,
     description: row.description,
+    requirements: normalizeGraphicRequirements(row.requirements),
     urgency_date: row.urgency_date,
     graphic_status: row.graphic_status,
     claimed_by: row.claimed_by,
@@ -402,6 +450,8 @@ export async function getGraphicRequestById(
     wp_media_id: row.wp_media_id,
     flag_reason: row.flag_reason,
     is_featured: Boolean(row.is_featured),
+    review_submitted_at: row.review_submitted_at,
+    approved_at: row.approved_at,
     created_at: row.created_at,
     updated_at: row.updated_at,
     permissions: buildGraphicPermissions(viewer, authorization, {
@@ -474,6 +524,7 @@ function buildGraphicPermissions(
     delete: request.createdBy === viewer.id || siteAdmin,
     upload: uploadOrSubmit,
     submit: uploadOrSubmit,
+    approve: canFlagGraphicResource(viewer, entry),
   };
 }
 
@@ -508,6 +559,7 @@ export async function createGraphicRequest(
       entry_id: entryId,
       title: input.title,
       description: input.description?.trim() || null,
+      requirements: input.requirements as Json,
       urgency_date: input.urgency_date ?? null,
       created_by: viewer.id,
     })
@@ -628,6 +680,48 @@ export async function unclaimGraphicRequest(
   }
   if (error) return { ok: false, kind: "database", error: "Update failed" };
 
+  return { ok: true };
+}
+
+export async function submitGraphicForReview(
+  viewer: CurrentUser,
+  requestId: string,
+): Promise<GraphicMutationResult> {
+  const supabase = getSupabaseAdmin();
+  const { data: request } = await supabase
+    .from("graphic_requests")
+    .select("entry_id, claimed_by")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (!request) return { ok: false, kind: "not_found", error: "Request not found" };
+  const authorization = await loadEntryAuthorizationContext(request.entry_id);
+  if (
+    !authorization ||
+    !canUploadOrSubmitGraphicResource(viewer, authorization, {
+      claimedBy: request.claimed_by,
+    })
+  ) {
+    return {
+      ok: false,
+      kind: "forbidden",
+      error: "Only the assigned graphics worker can submit for review",
+    };
+  }
+  const { error } = await supabase.rpc("submit_graphic_for_review", {
+    p_actor_id: viewer.id,
+    p_request_id: requestId,
+  });
+  if (error?.code === "P0002") {
+    return { ok: false, kind: "not_found", error: "Request not found" };
+  }
+  if (error?.code === "P0001") {
+    return {
+      ok: false,
+      kind: "conflict",
+      error: "Upload a current version before submitting for review",
+    };
+  }
+  if (error) return { ok: false, kind: "database", error: "Review submission failed" };
   return { ok: true };
 }
 

@@ -113,6 +113,7 @@ SELECT is(
 SELECT is((SELECT graphic_status FROM public.graphic_requests WHERE id = '49000000-0000-0000-0000-000000000001'), 'flagged', 'replacement remains flagged until explicit review completion');
 SELECT ok(public.transition_graphic_request('19000000-0000-0000-0000-000000000001', '49000000-0000-0000-0000-000000000001', 'unflag'), 'artist can clear review after uploading a newer version');
 SELECT is((SELECT graphic_status FROM public.graphic_requests WHERE id = '49000000-0000-0000-0000-000000000001'), 'claimed', 'successful review returns the request to submit-ready state');
+SELECT ok(public.submit_graphic_for_review('19000000-0000-0000-0000-000000000001', '49000000-0000-0000-0000-000000000001'), 'artist submits the replacement version for review');
 
 CREATE TEMP TABLE first_lease AS
 SELECT * FROM public.begin_graphic_submission(
@@ -155,6 +156,7 @@ SELECT is(
   )),
   1, 'replacement featured request gets version 1'
 );
+SELECT ok(public.submit_graphic_for_review('19000000-0000-0000-0000-000000000001', '49000000-0000-0000-0000-000000000002'), 'artist submits the replacement featured request for review');
 CREATE TEMP TABLE second_lease AS
 SELECT * FROM public.begin_graphic_submission(
   '19000000-0000-0000-0000-000000000001',
@@ -195,6 +197,7 @@ BEGIN
     INSERT INTO public.entries (id, title, site, tier_id, wp_post_id, created_by) VALUES ('39000000-0000-0000-0000-000000000091', 'Lease race', 'pl', '29000000-0000-0000-0000-000000000091', 1991, '19000000-0000-0000-0000-000000000091');
     INSERT INTO public.graphic_requests (id, entry_id, title, graphic_status, claimed_by, created_by) VALUES ('49000000-0000-0000-0000-000000000091', '39000000-0000-0000-0000-000000000091', 'Lease race', 'claimed', '19000000-0000-0000-0000-000000000091', '19000000-0000-0000-0000-000000000091')$$);
   PERFORM * FROM dblink('graphic_worker_1', $$SELECT recorded_version_id FROM public.record_graphic_upload('19000000-0000-0000-0000-000000000091', '49000000-0000-0000-0000-000000000091', false, '', '39000000-0000-0000-0000-000000000091/v1.png', 'v1.png', 64, 'image/png')$$) AS result(version_id uuid);
+  PERFORM * FROM dblink('graphic_worker_1', $$SELECT public.submit_graphic_for_review('19000000-0000-0000-0000-000000000091', '49000000-0000-0000-0000-000000000091')$$) AS result(submitted boolean);
 END;
 $setup$;
 SELECT ok(dblink_exec('graphic_worker_1', 'BEGIN') = 'BEGIN', 'first submit worker begins a transaction');
@@ -240,6 +243,8 @@ BEGIN
     VALUES
       ('69000000-0000-0000-0000-000000000092', '49000000-0000-0000-0000-000000000092', 1, '39000000-0000-0000-0000-000000000092/a.png', 'a.png', 64, 'image/png', '19000000-0000-0000-0000-000000000092', 19921),
       ('69000000-0000-0000-0000-000000000093', '49000000-0000-0000-0000-000000000093', 1, '39000000-0000-0000-0000-000000000092/b.png', 'b.png', 64, 'image/png', '19000000-0000-0000-0000-000000000092', 19922);
+    UPDATE public.graphic_requests SET review_submitted_at = clock_timestamp()
+    WHERE id IN ('49000000-0000-0000-0000-000000000092', '49000000-0000-0000-0000-000000000093');
     UPDATE public.graphic_requests SET
       current_version_id = CASE id
         WHEN '49000000-0000-0000-0000-000000000092' THEN '69000000-0000-0000-0000-000000000092'::uuid

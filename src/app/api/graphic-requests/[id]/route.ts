@@ -7,6 +7,7 @@ import {
   deleteGraphicRequest,
   flagGraphicRequest,
   getGraphicRequestById,
+  submitGraphicForReview,
   unclaimGraphicRequest,
   unflagGraphicRequest,
   updateGraphicRequest,
@@ -49,6 +50,7 @@ const patchBodySchema = z.discriminatedUnion("action", [
     reason: z.string().trim().min(1).max(500),
   }),
   z.object({ action: z.literal("unflag") }),
+  z.object({ action: z.literal("submit_review") }),
   z.object({
     action: z.literal("edit"),
     title: z.string().trim().min(1).max(300).optional(),
@@ -92,6 +94,9 @@ export async function PATCH(request: Request, context: RouteContext) {
       break;
     case "unflag":
       result = await unflagGraphicRequest(viewer, id);
+      break;
+    case "submit_review":
+      result = await submitGraphicForReview(viewer, id);
       break;
     case "edit": {
       const editInput = updateGraphicRequestSchema.parse({
