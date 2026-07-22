@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 3 — PLPD design-system foundation
-- Current action: P3.6 — Prove gated data is withheld on the server rather than delivered and visually obscured.
-- Branch: `codex/production-readiness-p3-5`
-- Stack base: `92e162d` (green draft PR #33, based on green draft PRs #32, #31, #30, #29, #28, #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P3.7 — Bring tables, alignment, zero styling, row fills, hover, pagination, and data colors into exact guide compliance.
+- Branch: `codex/production-readiness-p3-6`
+- Stack base: `568bd29` (green draft PR #34, based on green draft PRs #33, #32, #31, #30, #29, #28, #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -78,7 +78,7 @@ Gate: a clean checkout can prove correctness in CI, and production failures are 
 - [x] P3.3 Apply Work Sans to data and DM Sans to application chrome as defined by the guide.
 - [x] P3.4 Preserve the subtle-glass-over-mesh doctrine without opaque panels or heavy frosted glass.
 - [x] P3.5 Implement all required component states: default, hover, active, loading, error, empty, and gated.
-- [ ] P3.6 Ensure gated data is withheld on the server rather than sent to the client and visually blurred.
+- [x] P3.6 Ensure gated data is withheld on the server rather than sent to the client and visually blurred.
 - [ ] P3.7 Bring tables, numeric alignment, zero styling, row fills, hover behavior, pagination, and data colors into exact guide compliance.
 - [ ] P3.8 Remove Never List violations.
 - [ ] P3.9 Create responsive desktop, tablet, and mobile behavior without inventing new brand colors or visual language.
@@ -449,7 +449,7 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Every configured cron now shares one canonical registry for path, Vercel schedule, durable execution name, freshness window, and remediation. Failed, stuck, missing, and stale runs are differentiated; task/control failures create durable alerts and successful recovery resolves them.
 - Raptive commit attempts now begin before matching, finish atomically with the range replacement and upload row, and recover a success whose HTTP response was lost by checking the durable run. Settings > Analytics exposes running, failed, and successful attempts with safe codes instead of showing only successful uploads.
 - Settings > Sync now gives both-site Admin+ viewers a refreshable system-health surface for all eight jobs, PL/QB WordPress freshness, GA4 configuration/sync health, Raptive import health, and active alerts with concrete remediation. The endpoint rejects anonymous and one-site viewers; its failure response exposes only a correlation ID.
-- Final local gate: 52 Vitest files / 249 tests with V8 coverage, 10 database files / 306 pgTAP assertions, generated database-type drift, warning-failing database lint, zero-vulnerability audit, ESLint, TypeScript, Next.js 16.2.11 production build, and all eight Chromium journeys pass. The administrator journey visibly loads the health surface and receives HTTP 200 from an authenticated refresh.
+- Final local gate: 61 Vitest files / 282 tests, 10 database files / 306 pgTAP assertions, generated database-type drift, warning-failing database lint, zero-vulnerability audit, ESLint, TypeScript, actionlint 1.7.12, Next.js 16.2.11 production build, all 10 Chromium journeys, and all 17 production-quality checks pass.
 - Clean GitHub run [29866594243](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29866594243) independently passed Application, Database, Dependencies, and all eight Browser journeys; Vercel passed and draft PR #27 is merge-clean.
 
 ### 2026-07-21 — P2.11 recovery and operating-runbook gate
@@ -528,7 +528,17 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - A production-Chromium check opens the database-backed home page, observes a real default widget and empty frame, executes the actual hover transition, verifies `.88` badge opacity, switches the same built surface to active, and confirms the computed warm-amber shadow. The retained capture was visually inspected; hierarchy, mesh visibility, empty frames, and active depth remain intact. The inspection also found and fixed a wrapped `View all` action at narrow card widths.
 - React review: no new hooks, effects, requests, state synchronization, or client boundary were introduced; props remain colocated and typed, links remain semantic, and the state contract composes the existing Card/Badge/state primitives.
 - Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 60 Vitest files / 277 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all eight role/anonymous Chromium journeys; and all 17 production-quality checks pass.
-- Clean GitHub run [29880034906](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29880034906) independently passed Application, Database, Dependencies, all eight Browser journeys, all 17 quality checks, and the retained quality-evidence upload on Linux. The Vercel preview passed, and draft PR #34 was merge-clean and mergeable at the tested implementation head `3a19dde`.
+- Clean exact-head GitHub run [29880332245](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29880332245) independently passed Application, Database, Dependencies, all eight Browser journeys, all 17 quality checks, and the retained quality-evidence upload on Linux. The Vercel preview passed, and draft PR #34 was merge-clean and mergeable at the tested head `568bd29`.
+
+### 2026-07-21 — P3.6 server-withheld gated-data gate
+
+- Documented and pinned the actual financial-data policy: Raptive earnings, RPM, and joined revenue analytics are limited to EIC and Operations for their authorized site scope. Admin remains deliberately excluded; administrative system-health summaries may report Raptive freshness/failure but contain no financial values.
+- Added a unique live-database revenue sentinel plus an EIC browser actor. The EIC receives the exact sentinel through the real article-analytics API and sees its rounded value on the server-rendered home widget, proving the positive path is populated rather than vacuously empty.
+- The same executed browser gate proves writer, manager, editor, graphics, and admin sessions receive 403 before article analytics are queried. It separately probes every analytics JSON/CSV route and Raptive history as admin, confirms the admin home HTML and content UI never contain the sentinel, and verifies no Analytics tab is rendered for the admin entry panel.
+- The five-test source contract pins the EIC/Operations-only role definition, authorization-before-loader ordering across seven financial read routes, page/home server-loader gates, direct database privilege revocations, placeholder-only/no-blur `GatedValue`, and non-negative initial dimensions on every responsive financial chart.
+- The new EIC runtime probe surfaced Recharts' `-1px` first-measure warning. All six responsive charts now share a stable `1x1` initial measurement before ResizeObserver supplies the real size; the browser test asserts the warning does not recur. React review found no hook, effect, fetch, state, semantic, or client-boundary change beyond that static sizing prop.
+- Retained EIC/admin captures were visually inspected. The EIC home clearly renders `$731.29` with an intact one-point chart; the admin content page shows the same sentinel entry but no analytics surface or financial value, with no clipping, overflow, framework overlay, or visual masking.
+- Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 61 Vitest files / 282 tests; 10 database files / 306 pgTAP assertions including direct-client privilege denial; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 17 production-quality checks pass.
 
 ## Phase 0 prioritized defect and risk inventory
 

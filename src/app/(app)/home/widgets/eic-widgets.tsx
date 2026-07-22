@@ -20,6 +20,7 @@ import { Line, LineChart, ResponsiveContainer } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { RESPONSIVE_CHART_INITIAL_DIMENSION } from "@/lib/design/chart";
 import { WidgetShell } from "./widget-shell";
 import { EntryList } from "./entry-list";
 import type { HomeEntryCard, PipelineHealth, WpSyncHealth } from "@/lib/home/widgets";
@@ -235,7 +236,12 @@ export function AnalyticsMiniWidget({ data }: { data: MiniAnalytics }) {
             </Card>
           </div>
           <div className="h-16 w-full font-data">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+              minWidth={0}
+              initialDimension={RESPONSIVE_CHART_INITIAL_DIMENSION}
+            >
               <LineChart data={data.daily}>
                 <Line
                   type="monotone"

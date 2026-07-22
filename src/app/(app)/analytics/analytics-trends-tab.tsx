@@ -28,6 +28,7 @@ import type {
   DayOfWeekHeatPoint,
   PublishToPeakPoint,
 } from "@/lib/analytics/queries";
+import { RESPONSIVE_CHART_INITIAL_DIMENSION } from "@/lib/design/chart";
 
 type Props = { query: string };
 
@@ -133,7 +134,12 @@ export function AnalyticsTrendsTab({ query }: Props) {
         <CardContent>
           {hasDaily ? (
             <div className="h-64 w-full font-data">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                initialDimension={RESPONSIVE_CHART_INITIAL_DIMENSION}
+              >
                 <LineChart data={overview.daily}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="date" stroke="var(--color-text-zero)" fontSize={11} />
@@ -198,7 +204,12 @@ export function AnalyticsTrendsTab({ query }: Props) {
         <CardContent>
           {hasTier ? (
             <div className="h-64 w-full font-data">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                initialDimension={RESPONSIVE_CHART_INITIAL_DIMENSION}
+              >
                 <BarChart data={tierData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="tier" stroke="var(--color-text-zero)" fontSize={11} />
@@ -237,7 +248,12 @@ export function AnalyticsTrendsTab({ query }: Props) {
         <CardContent>
           {hasTier ? (
             <div className="h-64 w-full font-data">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                initialDimension={RESPONSIVE_CHART_INITIAL_DIMENSION}
+              >
                 <BarChart data={tierData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="tier" stroke="var(--color-text-zero)" fontSize={11} />
@@ -309,7 +325,12 @@ function PublishToPeakChart({ curve }: { curve: PublishToPeakPoint[] | null }) {
   }
   return (
     <div className="h-72 w-full font-data">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        minWidth={0}
+        initialDimension={RESPONSIVE_CHART_INITIAL_DIMENSION}
+      >
         <LineChart data={curve}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           <XAxis

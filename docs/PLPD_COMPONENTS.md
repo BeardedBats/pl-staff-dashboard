@@ -58,6 +58,7 @@ and production-browser tests can verify the state currently presented.
 5. Pass user-safe copy to `ErrorState`. Do not render caught exception text.
 6. Render `GatedValue` only when the server response omits the protected value.
    CSS hiding, masking, or blur is not authorization.
+   See `PLPD_GATED_DATA.md` for the enforced financial-data boundary.
 
 Page-wide adoption and responsive polish remain P3.8 work. P3.2 establishes
 the reusable, test-backed component vocabulary those page conversions consume.
