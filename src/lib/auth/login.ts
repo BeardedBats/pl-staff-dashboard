@@ -2,6 +2,7 @@ import "server-only";
 
 import crypto from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { normalizeEmail } from "@/lib/identity/normalization";
 import {
   validateWpAnywhere,
   type WpSiteKey,
@@ -131,7 +132,7 @@ async function upsertUserFromWp(
   wp: WpUser,
 ): Promise<DbUser | null> {
   const supabase = getSupabaseAdmin();
-  const normalizedEmail = wp.email.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(wp.email);
 
   // 1. Look for an existing user by (wp_user_id, wp_site) OR by email.
   //    An editor who later also writes for QB List might have 'both' as site —

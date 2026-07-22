@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { TablesUpdate } from "@/types/database";
 import type { AppSite } from "@/lib/auth/current-user";
+import { normalizeEmail } from "@/lib/identity/normalization";
 
 // --------------------------------------------------------------------------
 // Role assignment shape (used by both the dedicated /roles endpoint and the
@@ -98,7 +99,7 @@ export async function updateUserProfile(
     ...rest,
     email:
       typeof rest.email === "string"
-        ? rest.email.trim().toLowerCase()
+        ? normalizeEmail(rest.email)
         : rest.email,
     twitter_handle: rest.twitter_handle
       ? rest.twitter_handle.replace(/^@/, "")
@@ -282,7 +283,7 @@ export async function importWpUser(
   }
 
   const supabase = getSupabaseAdmin();
-  const normalizedEmail = wpUser.email.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(wpUser.email);
 
   const { data: emailMatch } = await supabase
     .from("users")

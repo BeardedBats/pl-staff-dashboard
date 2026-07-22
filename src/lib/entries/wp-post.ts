@@ -1,9 +1,12 @@
 import "server-only";
 
-import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { applyWpStateToEntry, writeAuditRow } from "@/lib/entries/status-transitions";
-import type { WpSiteKey } from "@/lib/auth/wordpress";
+import {
+  getWordPressSiteConfig,
+  wordPressBasicAuth,
+  type WpSiteKey,
+} from "@/lib/wordpress/config";
 
 /**
  * WordPress helpers for content entries.
@@ -17,34 +20,6 @@ import type { WpSiteKey } from "@/lib/auth/wordpress";
  * The Step 10 cron will call refreshWpStatusForEntry for every entry with
  * a wp_post_id in bulk. For now it's per-entry on demand.
  */
-
-type SiteConfig = {
-  url: string;
-  appUsername: string;
-  appPassword: string;
-};
-
-function getSiteConfig(site: WpSiteKey): SiteConfig | null {
-  if (site === "pl") {
-    if (!env.WP_PL_URL || !env.WP_PL_USERNAME || !env.WP_PL_APP_PASSWORD) return null;
-    return {
-      url: env.WP_PL_URL.replace(/\/$/, ""),
-      appUsername: env.WP_PL_USERNAME,
-      appPassword: env.WP_PL_APP_PASSWORD,
-    };
-  }
-  if (!env.WP_QB_URL || !env.WP_QB_USERNAME || !env.WP_QB_APP_PASSWORD) return null;
-  return {
-    url: env.WP_QB_URL.replace(/\/$/, ""),
-    appUsername: env.WP_QB_USERNAME,
-    appPassword: env.WP_QB_APP_PASSWORD,
-  };
-}
-
-function basicAuth(username: string, password: string): string {
-  const normalized = password.replace(/\s+/g, "");
-  return "Basic " + Buffer.from(`${username}:${normalized}`).toString("base64");
-}
 
 // --------------------------------------------------------------------------
 // Create WP draft on claim approval
@@ -86,7 +61,7 @@ export async function createWpDraftForEntry(
   const wpAuthorId = (authorRow?.wp_user_id as number | null) ?? null;
 
   const site = (entry.site as WpSiteKey) ?? "pl";
-  const config = getSiteConfig(site);
+  const config = getWordPressSiteConfig(site);
   if (!config) {
     return { ok: false, error: `WordPress ${site.toUpperCase()} not configured` };
   }
@@ -103,7 +78,10 @@ export async function createWpDraftForEntry(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: basicAuth(config.appUsername, config.appPassword),
+        Authorization: wordPressBasicAuth(
+          config.appUsername,
+          config.appPassword,
+        ),
         Accept: "application/json",
       },
       body: JSON.stringify(payload),
@@ -181,7 +159,7 @@ export async function refreshWpStatusForEntry(
   }
 
   const site = (entry.site as WpSiteKey) ?? "pl";
-  const config = getSiteConfig(site);
+  const config = getWordPressSiteConfig(site);
   if (!config) {
     return { ok: false, error: `WordPress ${site.toUpperCase()} not configured` };
   }
@@ -192,7 +170,10 @@ export async function refreshWpStatusForEntry(
       `${config.url}/wp-json/wp/v2/posts/${entry.wp_post_id}?context=edit`,
       {
         headers: {
-          Authorization: basicAuth(config.appUsername, config.appPassword),
+          Authorization: wordPressBasicAuth(
+            config.appUsername,
+            config.appPassword,
+          ),
           Accept: "application/json",
         },
         cache: "no-store",

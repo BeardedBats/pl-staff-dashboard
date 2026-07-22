@@ -2,6 +2,10 @@ import "server-only";
 
 import * as XLSX from "xlsx";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  buildAnalyticsPathIndex,
+  normalizeAnalyticsPath,
+} from "@/lib/analytics/url-normalization";
 
 // --------------------------------------------------------------------------
 // Types
@@ -128,31 +132,6 @@ function coerceDate(v: unknown): string | null {
 }
 
 // --------------------------------------------------------------------------
-// URL normalisation
-// --------------------------------------------------------------------------
-
-/**
- * Normalise a URL for matching — strips protocol, trailing slashes, www,
- * query strings, and lowercases the result. This lets us match Raptive rows
- * (which may report "https://www.pitcherlist.com/foo/") to stored WP URLs
- * (which may be stored as "https://pitcherlist.com/foo") reliably.
- */
-export function normaliseUrl(raw: string): string {
-  if (!raw) return "";
-  let s = raw.trim().toLowerCase();
-  s = s.replace(/^https?:\/\//, "");
-  s = s.replace(/^www\./, "");
-  s = s.replace(/^[^/]+\//, "");
-  s = s.replace(/^\//, "");
-  const qIdx = s.indexOf("?");
-  if (qIdx >= 0) s = s.slice(0, qIdx);
-  const hIdx = s.indexOf("#");
-  if (hIdx >= 0) s = s.slice(0, hIdx);
-  while (s.endsWith("/")) s = s.slice(0, -1);
-  return s;
-}
-
-// --------------------------------------------------------------------------
 // Parse the XLSX buffer
 // --------------------------------------------------------------------------
 
@@ -263,14 +242,12 @@ export async function matchRaptiveRowsToEntries(
     .select("id, wp_post_url")
     .not("wp_post_url", "is", null);
 
-  const entryUrlMap = new Map<string, string>(); // normalised URL → entry_id
-  for (const row of (data ?? []) as Array<{
-    id: string;
-    wp_post_url: string | null;
-  }>) {
-    if (!row.wp_post_url) continue;
-    entryUrlMap.set(normaliseUrl(row.wp_post_url), row.id);
-  }
+  const entryUrlMap = buildAnalyticsPathIndex(
+    ((data ?? []) as Array<{
+      id: string;
+      wp_post_url: string | null;
+    }>).map((row) => ({ id: row.id, url: row.wp_post_url })),
+  );
 
   const matched: Array<RaptiveParsedRow & { entry_id: string | null }> = [];
   let matchedCount = 0;
@@ -278,7 +255,7 @@ export async function matchRaptiveRowsToEntries(
   const sampleUnmatched: string[] = [];
 
   for (const r of rows) {
-    const norm = normaliseUrl(r.page_url);
+    const norm = normalizeAnalyticsPath(r.page_url);
     const entryId = entryUrlMap.get(norm) ?? null;
     if (entryId) {
       matchedCount += 1;
