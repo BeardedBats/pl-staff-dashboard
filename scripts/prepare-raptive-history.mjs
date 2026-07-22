@@ -311,9 +311,23 @@ for (const row of canonicalRows.values()) {
   total.pageviews += row.pageviews;
   unmatchedTotals.set(key, total);
 }
+const attributableStoredEarnings = new Map();
 for (const total of attributableTotals.values()) {
+  total.earnings = Number(total.earnings.toFixed(4));
+  const key = `${total.wp_site}\0${total.date}`;
+  attributableStoredEarnings.set(
+    key,
+    Number(((attributableStoredEarnings.get(key) ?? 0) + total.earnings).toFixed(4)),
+  );
   total.rpm = total.sessions > 0 ? (total.earnings / total.sessions) * 1000 : 0;
   total.page_rpm = total.pageviews > 0 ? (total.earnings / total.pageviews) * 1000 : 0;
+}
+for (const [key, expected] of expectedTotals) {
+  const unmatched = unmatchedTotals.get(key);
+  if (!unmatched) throw new Error(`Missing unmatched reconciliation row for ${key.replace("\0", ":")}`);
+  unmatched.earnings = Number((
+    Number(expected.earnings.toFixed(4)) - (attributableStoredEarnings.get(key) ?? 0)
+  ).toFixed(4));
 }
 for (const total of unmatchedTotals.values()) {
   total.rpm = total.sessions > 0 ? (total.earnings / total.sessions) * 1000 : 0;

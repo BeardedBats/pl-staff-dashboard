@@ -4,10 +4,10 @@ Last updated: 2026-07-22
 
 ## Recovery state
 
-- Current phase: Phase 7 — compact historical Raptive release and final production verification
-- Current action: complete the one affected local gate, exact-head preview, ordered `0028`/`0029` migration, compact history import, and final production reconciliation.
+- Current phase: Phase 7 — final Raptive live-boundary hardening and production verification
+- Current action: deploy migration `0030`, promote the verified connector fix, move PL July 20 from compact history to the live boundary, and run final production reconciliation.
 - Branch: `codex/raptive-live-schema-fix`
-- Deployment: the current production Raptive Creator API release is healthy; the compact-history release is not deployed yet.
+- Deployment: production is healthy on merge commit `f271084495308fa8cb1ba149608e4e7677832192`; migrations `0028`/`0029` and the compact historical import are live. Migration `0030` and its connector fix are the remaining affected release.
 - Known blocker: none requiring Nick. GitHub-hosted CI is waived because the account billing gate conflicts with the explicit no-spend requirement; local, database, preview, and production gates remain mandatory. QB WordPress remains unconfigured.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
@@ -668,6 +668,9 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - All 38 generated XLSX chunks and compact payloads passed SHA-256 verification and round-tripped 738,035 rows through the production parser with zero rejected or duplicate rows. Every parsed row resolved to the manifest's exact site, date, entry, earnings, sessions, and pageviews. No production historical write has occurred yet.
 - Migrations `0028` and `0029` add site-safe raw imports plus a forced-RLS compact history table, service-only idempotent batch upsert/summary, entry/site validation, and analytics union. Targeted lint, TypeScript, importer/component tests, clean migration reset, generated types, and the new pgTAP security/reconciliation tests pass; the one complete affected release gate remains next.
 - Affected Phase 7 local gate: **PASS**. Runbook contract through `0029`, ESLint, TypeScript, 87 Vitest files / 386 tests with coverage, zero-vulnerability low-threshold audit, production build, 17 database files / 406 pgTAP assertions, generated-type drift, warning-failing database lint, all 11 role/anonymous Chromium journeys, and all 40 accessibility/performance/responsive/visual checks pass. The final head includes a service-only database article rollup so multi-year writer/article reports do not page through hundreds of daily batches.
+- Production migration and compact import: **PASS**. Migrations `0028` and `0029` are applied; all 738,035 aggregate rows were imported and reconciled, a repeated chunk preserved exact totals, and the post-import production database remained below the no-spend capacity ceiling.
+- Drive daily extension: **PASS**. The 71 daily workbooks are the continuation of the same source set. Their generated dates map to consecutive source dates 2026-05-11 through 2026-07-20. All three prepared chunks round-tripped through the production parser and imported 51,935 compact rows with exact PL/QB financial and traffic reconciliation. The prior overlapping PL raw rows were backed up and removed.
+- Final affected hardening gate: **PASS locally**. Raptive null/missing RPM is accepted and derived, conflicting normalized URL variants are aggregated, and migration `0030` serializes each site/day while rejecting raw/compact overlap in either direction. Runbooks are current through `0030`; ESLint, TypeScript, 87 Vitest files / 387 tests, zero-vulnerability audit, production build, 18 database files / 411 pgTAP assertions, generated-type drift, and warning-failing database lint pass. Exact-head preview, production migration, PL July 20 live cutover, and final smoke remain.
 
 ## Phase 0 prioritized defect and risk inventory
 

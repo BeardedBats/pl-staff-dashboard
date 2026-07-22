@@ -243,6 +243,49 @@ describe("Raptive Creator API client", () => {
     ]);
   });
 
+  it("accepts null and omitted RPM values emitted for historical rows", async () => {
+    fetchMock
+      .mockResolvedValueOnce(token())
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              pageUrl: "/null-rpm/",
+              earnings: "1.25",
+              pageviews: "250",
+              rpm: null,
+            },
+            {
+              pageUrl: "/missing-rpm/",
+              earnings: 0,
+              pageviews: 0,
+            },
+          ],
+          meta: {
+            recordCount: 2,
+            page: { number: 1, next: null },
+          },
+        }),
+      );
+
+    await expect(
+      getRaptivePagePerformance("site-1", "2026-07-20"),
+    ).resolves.toEqual([
+      {
+        pageUrl: "/null-rpm/",
+        earnings: 1.25,
+        pageviews: 250,
+        rpm: null,
+      },
+      {
+        pageUrl: "/missing-rpm/",
+        earnings: 0,
+        pageviews: 0,
+        rpm: null,
+      },
+    ]);
+  });
+
   it("accepts the hostless page paths returned by the live API", async () => {
     fetchMock
       .mockResolvedValueOnce(token())
