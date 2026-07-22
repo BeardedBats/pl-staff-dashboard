@@ -365,10 +365,13 @@ export async function syncRaptiveConnection(
       canonicalRows,
       connection.wpSite,
     );
-    const totalEarnings = canonicalRows.reduce(
+    // Match raptive_connections.last_earnings NUMERIC(14,4) so the API result,
+    // reconciliation summary, and persisted status expose one stable total.
+    const rawTotalEarnings = canonicalRows.reduce(
       (total, row) => total + row.earnings,
       0,
     );
+    const totalEarnings = Number(rawTotalEarnings.toFixed(4));
     const supabase = getSupabaseAdmin();
     const { data: insertedRows, error } = await supabase.rpc(
       "commit_raptive_live_sync",
