@@ -3,14 +3,20 @@ import {
   canClaimGraphicResource,
   canClaimWriterResource,
   canCreateGraphicResource,
+  canEditChecklistResource,
   canEditGraphicResource,
   canEditEntryResource,
+  canEditorActOnSite,
   canFlagGraphicResource,
   canUnflagGraphicResource,
   canUploadOrSubmitGraphicResource,
   canViewGraphicResource,
   canViewEntryResource,
+  hasAnyRoleForSite,
+  isAdminPlusForSite,
   isAdminPlusForScope,
+  isManagerPlusForSite,
+  isManagerPlusForScope,
   authorizedSiteScope,
   type EntryAuthorizationContext,
 } from "./authorization";
@@ -50,6 +56,30 @@ function entry(site: "pl" | "qb"): EntryAuthorizationContext {
 }
 
 describe("site-aware resource authorization", () => {
+  it.each([
+    ["writer", false, false, false],
+    ["editor", false, false, true],
+    ["graphics", false, false, false],
+    ["manager", false, true, true],
+    ["admin", true, true, true],
+    ["eic", true, true, true],
+    ["operations", true, true, true],
+  ] as const)(
+    "keeps the %s role inside its exact hierarchy and site",
+    (role, adminPlus, managerPlus, editorAction) => {
+      const viewer = user(role, [{ role, site: "pl" }]);
+
+      expect(hasAnyRoleForSite(viewer, "pl")).toBe(true);
+      expect(isAdminPlusForSite(viewer, "pl")).toBe(adminPlus);
+      expect(isManagerPlusForSite(viewer, "pl")).toBe(managerPlus);
+      expect(canEditorActOnSite(viewer, "pl")).toBe(editorAction);
+      expect(hasAnyRoleForSite(viewer, "qb")).toBe(false);
+      expect(isAdminPlusForSite(viewer, "qb")).toBe(false);
+      expect(isManagerPlusForSite(viewer, "qb")).toBe(false);
+      expect(canEditorActOnSite(viewer, "qb")).toBe(false);
+    },
+  );
+
   it("does not expand a PL-only role into QB authority", () => {
     const plAdmin = user("admin", [{ role: "admin", site: "pl" }]);
     expect(canEditEntryResource(plAdmin, entry("pl"))).toBe(true);
@@ -77,6 +107,20 @@ describe("site-aware resource authorization", () => {
     ).toBe(false);
   });
 
+  it("requires manager authority on both concrete sites for a both scope", () => {
+    const splitManager = user("manager", [
+      { role: "manager", site: "pl" },
+      { role: "admin", site: "qb" },
+    ]);
+    expect(isManagerPlusForScope(splitManager, "both")).toBe(true);
+    expect(
+      isManagerPlusForScope(
+        user("pl-manager", [{ role: "manager", site: "pl" }]),
+        "both",
+      ),
+    ).toBe(false);
+  });
+
   it("derives the concrete site scope for a role family", () => {
     const mixed = user("mixed", [
       { role: "editor", site: "pl" },
@@ -95,6 +139,34 @@ describe("site-aware resource authorization", () => {
     expect(canViewGraphicResource(author, entry("pl"))).toBe(true);
     expect(canEditEntryResource(outsider, entry("pl"))).toBe(false);
     expect(canCreateGraphicResource(outsider, entry("pl"))).toBe(false);
+  });
+
+  it("limits checklist edits to authors, editors, and site admins", () => {
+    const plEntry = entry("pl");
+    expect(
+      canEditChecklistResource(
+        user("author", [{ role: "writer", site: "pl" }]),
+        plEntry,
+      ),
+    ).toBe(true);
+    expect(
+      canEditChecklistResource(
+        user("editor", [{ role: "editor", site: "pl" }]),
+        plEntry,
+      ),
+    ).toBe(true);
+    expect(
+      canEditChecklistResource(
+        user("creator", [{ role: "writer", site: "pl" }]),
+        plEntry,
+      ),
+    ).toBe(false);
+    expect(
+      canEditChecklistResource(
+        user("qb-admin", [{ role: "admin", site: "qb" }]),
+        plEntry,
+      ),
+    ).toBe(false);
   });
 
   it("applies action-specific graphics walls", () => {

@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.2 — Expand authentication, session, role, membership, and negative-authorization coverage while preserving the Supabase DDL release block.
-- Branch: `codex/production-readiness-p2-1`
-- Stack base: `6d54d2a` (green draft PR #17, based on green draft PRs #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P2.3 — Expand WordPress synchronization, reconciliation, conflict, retry, and idempotency coverage while preserving the Supabase DDL release block.
+- Branch: `codex/production-readiness-p2-2`
+- Stack base: `b92ec84` (green draft PR #18, based on green draft PRs #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -57,7 +57,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 ## Phase 2 — Test system, CI, observability, and operational safety
 
 - [x] P2.1 Establish a practical unit, integration, database, API, and browser-test architecture.
-- [ ] P2.2 Test authentication, session rotation, role permissions, membership boundaries, and negative authorization cases.
+- [x] P2.2 Test authentication, session rotation, role permissions, membership boundaries, and negative authorization cases.
 - [ ] P2.3 Test WordPress synchronization, webhooks, scheduled reconciliation, conflict handling, retries, and idempotency.
 - [ ] P2.4 Test editorial claims, assignments, state transitions, bulk actions, deadlines, and concurrent operations.
 - [ ] P2.5 Test graphics submission, review, versioning, authorization, and storage behavior.
@@ -374,6 +374,13 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Added an ownership-aware Supabase runner for the five pgTAP files. It preserves an already-running developer stack and otherwise owns startup/cleanup; all 124 database assertions pass and the owned stack stops cleanly.
 - Added Playwright Chromium architecture with synthetic environment values, an external-base-URL escape hatch, and three non-mutating anonymous navigation/API boundary checks. The committed suite passes, the server lifecycle closes port 3100, and an independent annotated-browser inspection found meaningful login content, expected interactive controls, and no Next error overlay.
 - `docs/TEST_ARCHITECTURE.md` defines test placement and boundary rules. Full GitHub Actions enforcement remains deliberately scoped to P2.9.
+
+### 2026-07-21 — P2.2 identity and authorization test gate
+
+- The authentication audit found and repaired two authority drifts: login accepted any valid WordPress account without enforcing the documented staff-role allowlist, and a new WordPress `author` was promoted to dashboard `editor` instead of the canonical `writer` mapping used by manual import. Login now uses the same `isStaffWpUser` and `wpRoleToDashboardRole` rules as the import path.
+- Added route-level API contracts for login, refresh, logout, and current-user resolution. They cover validation-before-authentication, safe failure envelopes, missing/invalid/stale credentials, every refresh outcome, successful rotation, refresh-backed logout, family deduplication, revocation failure cleanup, live access-hash checks, and role-row projection.
+- Added an exhaustive seven-role hierarchy/site table plus both-site scope, checklist participation, draft visibility, graphics assignment, and cross-site negative cases. Added exact-team-manager API coverage proving cross-site admins, managers of another team, and single-site managers of a both-site team cannot mutate membership.
+- Final gate: 29 Vitest files / 146 tests (114 unit, eight integration, 22 API, and two component); coverage increased from the P2.1 baseline to 8.77% statements, 8.89% branches, 13.12% functions, and 9% lines. All 124 pgTAP assertions, zero-vulnerability audit, ESLint, TypeScript, production build, and three Chromium boundary tests pass; owned database and browser servers stop cleanly.
 
 ## Phase 0 prioritized defect and risk inventory
 
