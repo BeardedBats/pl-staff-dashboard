@@ -210,6 +210,35 @@ describe("Raptive live synchronization", () => {
     expect(mocks.resolveAlert).toHaveBeenCalled();
   });
 
+  it("keeps the site homepage in daily totals as an unmatched row", async () => {
+    mocks.getPerformance.mockResolvedValue([
+      apiRow("/", 1),
+      apiRow("/article/", 2),
+    ]);
+    mocks.matchRows.mockImplementation(async (rows) => ({
+      matched: rows.map((row: { page_url: string }, index: number) => ({
+        ...row,
+        entry_id: index === 0 ? null : "entry-1",
+      })),
+      matchedCount: 1,
+      unmatchedCount: 1,
+      sampleUnmatched: ["/"],
+    }));
+
+    await expect(syncRaptiveConnection(connection)).resolves.toMatchObject({
+      ok: true,
+      apiRows: 2,
+      insertedRows: 2,
+      matchedRows: 1,
+      unmatchedRows: 1,
+      totalEarnings: 3,
+    });
+    expect(mocks.matchRows).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ page_url: "/" })]),
+      "pl",
+    );
+  });
+
   it("refuses a date outside either documented availability range", async () => {
     const result = await syncRaptiveConnection(connection, "2025-12-31");
 

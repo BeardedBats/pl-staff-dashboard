@@ -213,11 +213,14 @@ function canonicalizeApiRows(
   const byPath = new Map<string, RaptiveParsedRow>();
   for (const row of rows) {
     const path = normalizeAnalyticsPath(row.pageUrl);
-    if (!path) {
+    if (!path && !row.pageUrl.trim()) {
       throw Object.assign(new Error("Raptive returned an invalid page URL"), {
         code: "raptive_page_url_invalid",
       });
     }
+    // The site homepage legitimately normalizes to an empty article path. Keep
+    // it in the daily totals as an unmatched row and deduplicate root variants.
+    const canonicalPath = path || "\0homepage";
     const canonical: RaptiveParsedRow = {
       date,
       page_url: row.pageUrl,
@@ -227,7 +230,7 @@ function canonicalizeApiRows(
       sessions: 0,
       pageviews: row.pageviews,
     };
-    const existing = byPath.get(path);
+    const existing = byPath.get(canonicalPath);
     if (existing) {
       if (
         existing.earnings !== canonical.earnings ||
@@ -241,7 +244,7 @@ function canonicalizeApiRows(
       }
       continue;
     }
-    byPath.set(path, canonical);
+    byPath.set(canonicalPath, canonical);
   }
   return [...byPath.values()];
 }
