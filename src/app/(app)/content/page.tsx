@@ -8,9 +8,18 @@ export const metadata = {
   title: "Content",
 };
 
-export default async function ContentPage() {
+type SearchParams = Promise<{ entry?: string | string[] }>;
+
+export default async function ContentPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const viewer = await getCurrentUser();
   if (!viewer) return null;
+  const params = await searchParams;
+  const initialEntryId =
+    typeof params.entry === "string" ? params.entry : null;
   const managerScope = authorizedSiteScope(
     viewer,
     "manager",
@@ -46,6 +55,7 @@ export default async function ContentPage() {
         tiers={tiers}
         categories={categories}
         initialViews={views}
+        initialEntryId={initialEntryId}
         manageableSites={manageableSites}
       />
     </div>

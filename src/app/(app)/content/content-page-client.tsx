@@ -12,6 +12,7 @@ type ContentPageClientProps = {
   tiers: EntryTier[];
   categories: EntryCategory[];
   initialViews: SavedViewRecord[];
+  initialEntryId: string | null;
   manageableSites: Array<"pl" | "qb">;
 };
 
@@ -19,6 +20,7 @@ export function ContentPageClient({
   tiers,
   categories,
   initialViews,
+  initialEntryId,
   manageableSites,
 }: ContentPageClientProps) {
   const router = useRouter();
@@ -33,6 +35,7 @@ export function ContentPageClient({
         key={refreshKey}
         tiers={tiers}
         initialViews={initialViews}
+        initialEntryId={initialEntryId}
         manageableSites={manageableSites}
         onCreateClick={() => setCreateOpen(true)}
         onBulkCreateClick={

@@ -127,6 +127,7 @@ const DEFAULT_VISIBILITY: VisibilityState = ALL_COLUMNS.reduce(
 type EntriesTableProps = {
   tiers: EntryTier[];
   initialViews: SavedViewRecord[];
+  initialEntryId?: string | null;
   onCreateClick: () => void;
   onBulkCreateClick?: () => void;
   manageableSites: Array<"pl" | "qb">;
@@ -135,6 +136,7 @@ type EntriesTableProps = {
 export function EntriesTable({
   tiers,
   initialViews,
+  initialEntryId,
   onCreateClick,
   onBulkCreateClick,
   manageableSites,
@@ -145,7 +147,9 @@ export function EntriesTable({
   const [entries, setEntries] = React.useState<EntrySummary[]>([]);
   const [totalCount, setTotalCount] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
-  const [expandedId, setExpandedId] = React.useState<string | null>(null);
+  const [expandedId, setExpandedId] = React.useState<string | null>(
+    initialEntryId ?? null,
+  );
   const [views, setViews] = React.useState<SavedViewRecord[]>(initialViews);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [bulkBusy, setBulkBusy] = React.useState(false);
@@ -302,6 +306,20 @@ export function EntriesTable({
 
   return (
     <div className="space-y-4">
+      {expandedId &&
+      !loading &&
+      !entries.some((entry) => entry.id === expandedId) ? (
+        <div className="rounded-lg border border-border bg-surface-2/50 p-0">
+          <EntryDetailPanel
+            entryId={expandedId}
+            onClose={() => setExpandedId(null)}
+            onChanged={() => {
+              router.refresh();
+              setFilters((filters) => ({ ...filters }));
+            }}
+          />
+        </div>
+      ) : null}
       {/* Toolbar */}
       <EntriesToolbar
         filters={filters}
