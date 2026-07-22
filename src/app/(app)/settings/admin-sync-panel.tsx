@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import type { OperationalHealthSnapshot } from "@/lib/observability/health";
 import { OperationalHealthPanel } from "./operational-health-panel";
+import type { EvergreenCandidate } from "@/lib/wp-sync/evergreen";
 
 type Props = {
   initialLastSync: {
@@ -29,6 +30,7 @@ type Props = {
     qb: string | null;
   };
   initialHealth: OperationalHealthSnapshot;
+  evergreenCandidates: EvergreenCandidate[];
   /** Operations-only — gates the historical import section. */
   canRunHistoricalImport?: boolean;
 };
@@ -90,6 +92,7 @@ const initialState: SyncState = { running: false, result: null, error: null };
 export function AdminSyncPanel({
   initialLastSync,
   initialHealth,
+  evergreenCandidates,
   canRunHistoricalImport = false,
 }: Props) {
   const [posts, setPosts] = React.useState<SyncState>(initialState);
@@ -176,6 +179,40 @@ export function AdminSyncPanel({
               })
             }
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <History className="h-4 w-4" />
+            Evergreen refresh candidates
+          </CardTitle>
+          <CardDescription>
+            Published at least one year ago and unchanged in WordPress for six months. This is an age-based editorial prompt, not a traffic or revenue score.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {evergreenCandidates.length === 0 ? (
+            <p className="text-xs text-text-zero">No age-based candidates right now.</p>
+          ) : (
+            <ul className="space-y-2">
+              {evergreenCandidates.map((candidate) => (
+                <li key={candidate.id} className="flex flex-wrap items-center gap-2 rounded-sm border border-border px-3 py-2 text-xs">
+                  <span className="font-data text-text-zero">{candidate.site.toUpperCase()}</span>
+                  <span className="mr-auto text-text-cell">{candidate.title}</span>
+                  <span className="text-text-zero">Last changed {formatDate(candidate.wpModifiedAt)}</span>
+                  {candidate.wpPostUrl ? (
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={candidate.wpPostUrl} target="_blank" rel="noopener noreferrer">
+                        Review
+                      </a>
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
 

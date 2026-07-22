@@ -401,10 +401,14 @@ export type Database = {
           title: string
           updated_at: string
           word_count: number | null
+          wp_last_sync_error: string | null
+          wp_last_synced_at: string | null
           wp_modified_at: string | null
           wp_post_id: number | null
           wp_post_url: string | null
           wp_status: string | null
+          wp_sync_status: string
+          wp_synced_title: string | null
         }
         Insert: {
           archive_reason?: string | null
@@ -429,10 +433,14 @@ export type Database = {
           title: string
           updated_at?: string
           word_count?: number | null
+          wp_last_sync_error?: string | null
+          wp_last_synced_at?: string | null
           wp_modified_at?: string | null
           wp_post_id?: number | null
           wp_post_url?: string | null
           wp_status?: string | null
+          wp_sync_status?: string
+          wp_synced_title?: string | null
         }
         Update: {
           archive_reason?: string | null
@@ -457,10 +465,14 @@ export type Database = {
           title?: string
           updated_at?: string
           word_count?: number | null
+          wp_last_sync_error?: string | null
+          wp_last_synced_at?: string | null
           wp_modified_at?: string | null
           wp_post_id?: number | null
           wp_post_url?: string | null
           wp_status?: string | null
+          wp_sync_status?: string
+          wp_synced_title?: string | null
         }
         Relationships: [
           {

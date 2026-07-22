@@ -236,6 +236,27 @@ export function EntryDetailPanel({
     );
   }
 
+  async function handleWpConflict(resolution: "wordpress" | "dashboard") {
+    if (!entry?.wp_modified_at) return;
+    const source = resolution === "wordpress" ? "WordPress" : "the dashboard";
+    if (
+      !window.confirm(
+        `Use the title from ${source}? This intentionally replaces the other title after checking that WordPress has not changed again.`,
+      )
+    ) return;
+    await runAction(`wp-conflict-${resolution}`, () =>
+      fetch(`/api/entries/${entryId}/wp-conflict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resolution,
+          expected_wp_modified_at: entry.wp_modified_at,
+          confirm: true,
+        }),
+      }),
+    );
+  }
+
   async function handleArchive(reason: string) {
     const ok = await runAction("archive", () =>
       fetch(`/api/entries/${entryId}/archive`, {
@@ -334,6 +355,30 @@ export function EntryDetailPanel({
 
       {/* Action bar */}
       <div className="mt-4 flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-3/40 p-3">
+        {entry.wp_sync_status === "conflict" && isManagerLike ? (
+          <div className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-amber/40 bg-amber/10 p-2 text-xs text-text-team">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber" />
+            <span className="mr-auto">
+              The title changed in both places. Compare Preview and WordPress, then choose intentionally.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void handleWpConflict("wordpress")}
+              disabled={!entry.wp_modified_at || busyAction?.startsWith("wp-conflict")}
+            >
+              Use WordPress title
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void handleWpConflict("dashboard")}
+              disabled={!entry.wp_modified_at || busyAction?.startsWith("wp-conflict")}
+            >
+              Use dashboard title
+            </Button>
+          </div>
+        ) : null}
         {isClaimableContent && canClaimWriter ? (
           <Button
             size="sm"
@@ -580,18 +625,48 @@ function EntryTopBar({
             Archived
           </Badge>
         ) : null}
+        {entry.wp_post_id ? (
+          <Badge
+            variant={
+              entry.wp_sync_status === "conflict" || entry.wp_sync_status === "error"
+                ? "danger"
+                : entry.wp_sync_status === "stale"
+                  ? "amber"
+                  : "cyan"
+            }
+            className="font-data"
+            title={entry.wp_last_sync_error ?? undefined}
+          >
+            WP {entry.wp_sync_status}
+            {entry.wp_last_synced_at
+              ? ` · ${formatDate(entry.wp_last_synced_at)}`
+              : ""}
+          </Badge>
+        ) : null}
       </div>
 
       <div className="flex items-center gap-1">
-        {entry.wp_post_url ? (
+        {entry.wp_edit_url ? (
           <Button variant="outline" size="sm" asChild>
+            <Link
+              href={entry.wp_edit_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Edit in WordPress
+            </Link>
+          </Button>
+        ) : null}
+        {entry.wp_post_url ? (
+          <Button variant="ghost" size="sm" asChild>
             <Link
               href={entry.wp_post_url}
               target="_blank"
               rel="noopener noreferrer"
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              Edit in WordPress
+              Preview
             </Link>
           </Button>
         ) : null}
@@ -876,6 +951,20 @@ function ReadinessPanel({
       label: "WordPress draft",
       ready: Boolean(entry.wp_post_id),
       detail: entry.wp_post_id ? "Connected" : "Draft needed",
+    },
+    {
+      label: "WordPress synchronization",
+      ready: !entry.wp_post_id || entry.wp_sync_status === "synced",
+      detail:
+        entry.wp_sync_status === "conflict"
+          ? "Resolve title conflict"
+          : entry.wp_sync_status === "error"
+            ? "Refresh failed"
+            : entry.wp_sync_status === "stale"
+              ? "Refresh required"
+              : entry.wp_sync_status === "pending"
+                ? "Waiting for first sync"
+                : "Current",
     },
   ];
   const blockers = checks.filter((check) => !check.ready);

@@ -8,6 +8,7 @@ import {
   type WpSiteKey,
 } from "@/lib/wordpress/config";
 import { fetchAllWpPages } from "@/lib/wp-sync/pagination";
+import { decideTitleSync } from "@/lib/wp-sync/conflicts";
 
 /**
  * WordPress → dashboard post sync.
@@ -229,21 +230,36 @@ export async function syncWpPostsForSite(
       // Look up an existing entry for this WP post on this site.
       const { data: existing } = await supabase
         .from("entries")
-        .select("id")
+        .select("id, title, wp_synced_title")
         .eq("wp_post_id", post.id)
         .eq("site", site)
         .maybeSingle();
 
       if (existing?.id) {
+        const incomingTitle = pickTitle(post);
+        const titleDecision = decideTitleSync({
+          dashboardTitle: existing.title as string,
+          lastSyncedTitle: (existing.wp_synced_title as string | null) ?? null,
+          wordPressTitle: incomingTitle,
+        });
         // Refresh the public permalink alongside the status mirror so that
         // migration 0010 can null out old admin URLs and trust the cron to
         // repopulate them with `post.link` on the next pass.
-        if (typeof post.link === "string" && post.link.length > 0) {
-          await supabase
-            .from("entries")
-            .update({ wp_post_url: post.link })
-            .eq("id", existing.id as string);
-        }
+        await supabase
+          .from("entries")
+          .update({
+            ...(typeof post.link === "string" && post.link.length > 0
+              ? { wp_post_url: post.link }
+              : {}),
+            wp_sync_status: titleDecision.status,
+            wp_last_synced_at: new Date().toISOString(),
+            wp_last_sync_error:
+              titleDecision.status === "conflict"
+                ? "Title changed in both the dashboard and WordPress"
+                : null,
+            wp_synced_title: titleDecision.nextBaseline,
+          })
+          .eq("id", existing.id as string);
 
         // Update path — hand off to the status-transitions helper.
         await applyWpStateToEntry(existing.id as string, systemUserId, {
@@ -305,6 +321,10 @@ export async function syncWpPostsForSite(
           wp_post_url: publicUrl,
           wp_status: post.status,
           wp_modified_at: post.modified_gmt ? `${post.modified_gmt}Z` : null,
+          wp_sync_status: "synced",
+          wp_last_synced_at: new Date().toISOString(),
+          wp_last_sync_error: null,
+          wp_synced_title: title,
           content_status: "claimed",
           editor_status: "none",
           created_by: dashboardUser.id as string,

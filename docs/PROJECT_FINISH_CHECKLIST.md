@@ -5,12 +5,12 @@ Last updated: 2026-07-22
 ## Recovery state
 
 - Current phase: Phase 5 — WordPress and SEO
-- Current action: P5.3–P5.7 — finish synchronization conflict, staleness, recovery, link/status, validation, and evergreen behavior.
+- Current action: P5.8–P5.19 — build title generation, explainable SEO analysis, approval, permissions, and supported write-back.
 - Branch: `codex/production-readiness-p5`
 - Stack base: `9115bd6` (combined Phase 4 exact head on green draft PR #40, based on the completed Phase 3 stack).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blockers: production application of the stacked migrations through `0026` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable. QB WordPress and inbound WordPress webhooks are unconfigured; scheduled PL reconciliation remains available.
+- Known blockers: production application of the stacked migrations through `0027` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable. QB WordPress and inbound WordPress webhooks are unconfigured; scheduled PL reconciliation remains available.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -118,11 +118,11 @@ Gate: each role can complete primary work with minimal instruction, and managers
 
 - [x] P5.1 Verify actual WordPress authentication, REST, content types, taxonomy, author, media, status, and Yoast capabilities.
 - [x] P5.2 Combine webhooks with scheduled reconciliation.
-- [ ] P5.3 Add idempotency, retries, conflict detection, staleness, and manual recovery.
-- [ ] P5.4 Add preview/edit links and revision/synchronization status.
-- [ ] P5.5 Add prepublication validation.
-- [ ] P5.6 Add safe dashboard/WordPress conflict resolution.
-- [ ] P5.7 Add evergreen-refresh identification where supported.
+- [x] P5.3 Add idempotency, retries, conflict detection, staleness, and manual recovery.
+- [x] P5.4 Add preview/edit links and revision/synchronization status.
+- [x] P5.5 Add prepublication validation.
+- [x] P5.6 Add safe dashboard/WordPress conflict resolution.
+- [x] P5.7 Add evergreen-refresh identification where supported.
 - [ ] P5.8 Implement the best maintainable title-generator integration.
 - [ ] P5.9 Embed title generation/scoring without duplicate data entry.
 - [ ] P5.10 Preserve explanations, SERP preview, suffix calculation, and copy/apply actions.
@@ -661,6 +661,14 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Yoast is installed and exposes reportable `yoast_head` and `yoast_head_json` fields, but does not register writable fields in the core post schema. Dashboard analysis must stay separate from Yoast-reported results, and no Yoast write-back may be claimed without a later supported endpoint probe and intentional before/after approval.
 - Added an optional HMAC-authenticated WordPress webhook that accepts only site/post/event identifiers. It never trusts inbound content; it records a server-only, unique, bounded three-attempt event and triggers the existing authenticated reconciliation path. Duplicate and concurrent completed events do not repeat WordPress work; the five-minute scheduled poll remains the recovery backstop when the webhook or secret is unavailable.
 - Migration `0026_wordpress_sync_recovery.sql` cold-applies through the ordered stack. All 14 database files / 368 pgTAP assertions pass, generated types match, and database lint has no warnings. Targeted webhook unit/API tests, ESLint, and TypeScript pass.
+
+### 2026-07-22 — P5.3–P5.7 synchronization recovery batch
+
+- Entry synchronization now stores a status, last successful time, sanitized error, and last common title. The reconciliation path uses that baseline for a real three-way comparison: one-sided or matching edits remain safe, while divergent dashboard and WordPress title edits become an explicit conflict instead of silently overwriting either side.
+- Entry detail separates the public Preview link from the authenticated WordPress Edit link, shows current synchronization status/time, retains manual refresh recovery, and includes synchronization in the prepublication readiness checks.
+- Conflict resolution is manager-scoped and confirmation-required. It acquires a database lease, re-reads WordPress, refuses a changed revision timestamp, records an intentional before/after audit, and either accepts WordPress locally or writes the dashboard title through the verified core post endpoint. Network/upstream failures remain visible and recoverable rather than reporting success.
+- Added an age-based evergreen queue for published posts at least one year old and unchanged in WordPress for six months. It is deliberately described as an editorial prompt and never uses or reveals traffic, revenue, or employee-performance data.
+- Migration `0027_wordpress_entry_sync_state.sql` cold-applies through the ordered stack. All 15 database files / 373 pgTAP assertions pass, generated types match, and database lint has no warnings. Targeted conflict, evergreen, route-authorization, webhook, and reconciliation tests plus ESLint and TypeScript pass.
 
 ## Phase 0 prioritized defect and risk inventory
 

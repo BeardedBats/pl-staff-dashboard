@@ -60,6 +60,7 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | GET | `/api/archive-requests` | Manager+ | Data function rejects non-manager | OK |
 | PATCH | `/api/archive-requests/[id]` | Manager+ | Approve/deny functions reject non-manager | OK |
 | POST | `/api/auth/login` | Public plus valid WordPress staff credentials | WordPress authentication and staff-role check | OK |
+| POST | `/api/webhooks/wordpress` | Valid HMAC sender only | Exact-body signature, bounded identifier schema, server-only idempotency ledger; payload content is never trusted | OK |
 | POST | `/api/auth/logout` | Presented signed session cookies | Revokes access- or refresh-presented session | OK |
 | GET | `/api/auth/me` | Session | `getCurrentUser` | OK |
 | POST | `/api/auth/refresh` | Valid current refresh session | Compare-and-swap rotation and replay revocation | OK |
@@ -98,6 +99,7 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | PATCH | `/api/entries/[id]/content-status` | Assigned author for submit; editor/Manager+ for polishing | Submit checks author; polishing checks flat role | GAP AUTH-01 on polishing |
 | PATCH | `/api/entries/[id]/editor-status` | Editor/Manager+ for entry site | Flat editor/Manager+ role | **GAP AUTH-01** |
 | POST | `/api/entries/[id]/wp-refresh` | Session except drafts; draft visibility applies | Session only | **GAP AUTH-09** |
+| POST | `/api/entries/[id]/wp-conflict` | Manager+ for the entry site | Resource lookup, site-scoped Manager+, explicit confirmation, modified-time compare, database lease | OK |
 | POST | `/api/entries/bulk` | Manager+ for affected entry sites | Flat Manager+ only | **GAP AUTH-01** |
 | POST | `/api/entries/bulk-claim-edits` | Editor or Manager+ for every selected entry site | Route authorizes every visible resource; transactional RPC repeats site-role, state, and conflict checks | OK |
 | POST | `/api/entries/bulk-create` | Manager+ for every affected entry site | Site-aware Manager+ check plus transactional RPC | OK |
