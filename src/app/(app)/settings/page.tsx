@@ -19,6 +19,7 @@ import {
   listRaptiveImportRuns,
   listRaptiveUploads,
 } from "@/lib/analytics/raptive";
+import { getRaptiveLiveStatus } from "@/lib/analytics/raptive-live";
 import { getOperationalHealth } from "@/lib/observability/health";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { listEvergreenCandidates } from "@/lib/wp-sync/evergreen";
@@ -110,16 +111,18 @@ export default async function SettingsPage({
     : [{ pl: null, qb: null }, [], null, []];
 
   // Analytics panel — only fetched for EIC/Operations viewers
-  const [ga4Status, raptiveUploads, raptiveImportRuns] = analyticsAccess
+  const [ga4Status, raptiveUploads, raptiveImportRuns, raptiveLiveStatus] = analyticsAccess
     ? await Promise.all([
         getGa4Status(),
         listRaptiveUploads(),
         listRaptiveImportRuns(),
+        getRaptiveLiveStatus(),
       ])
     : [
         { configured: false, connected: false, propertyId: null, lastSyncedAt: null },
         [],
         [],
+        { configured: false, databaseReady: true, connections: [] },
       ];
 
   const validTabs = ["profile", "notifications"];
@@ -231,7 +234,9 @@ export default async function SettingsPage({
               initialGa4Status={ga4Status}
               initialUploads={raptiveUploads}
               initialImportRuns={raptiveImportRuns}
+              initialRaptiveStatus={raptiveLiveStatus}
               canConnectGa4={isOperations(viewer)}
+              canManageRaptive={isOperations(viewer)}
             />
           </TabsContent>
         ) : null}

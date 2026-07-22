@@ -26,6 +26,10 @@
       "schedule": "47 7 * * *"
     },
     {
+      "path": "/api/cron/raptive-sync",
+      "schedule": "17 8 * * *"
+    },
+    {
       "path": "/api/cron/deadline-reminders",
       "schedule": "0 * * * *"
     },

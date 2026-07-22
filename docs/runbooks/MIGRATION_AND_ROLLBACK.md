@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0026_wordpress_entry_sync_state.sql`. The
-current application stack depends on migrations `0013`–`0026`; apply those
+`0001_initial_schema.sql` through `0027_raptive_creator_api_sync.sql`. The
+current application stack depends on migrations `0013`–`0027`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,7 +44,7 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0026_wordpress_entry_sync_state.sql`. Apply once:
+`0027_raptive_creator_api_sync.sql`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -178,6 +178,35 @@ COMMIT;
 After deployment, ship a compatible forward migration or restore the database
 and application together.
 
+### Migration 0027 contingency
+
+Migration `0027` adds site attribution to Raptive revenue, private forced-RLS
+connection state, and service-role-only configure/enable/fail/atomic-daily-sync
+RPCs. It backfills site attribution only where an existing revenue row is
+already joined to an entry. The migration is transactional.
+
+Only before the Phase 7 application is deployed, before any live sync is
+enabled, and after a verified backup, reverse it in one transaction:
+
+```sql
+BEGIN;
+DROP TRIGGER IF EXISTS trg_raptive_revenue_assign_site ON public.raptive_revenue;
+DROP FUNCTION IF EXISTS public.assign_raptive_revenue_site();
+DROP FUNCTION IF EXISTS public.commit_raptive_live_sync(text, text, date, jsonb, jsonb);
+DROP FUNCTION IF EXISTS public.fail_raptive_live_sync(text, text, date, text);
+DROP FUNCTION IF EXISTS public.set_raptive_connection_enabled(text, boolean);
+DROP FUNCTION IF EXISTS public.configure_raptive_connection(text, text, text, text, uuid);
+DROP TABLE IF EXISTS public.raptive_connections;
+DROP INDEX IF EXISTS public.raptive_revenue_site_date_idx;
+ALTER TABLE public.raptive_revenue DROP COLUMN IF EXISTS wp_site;
+COMMIT;
+```
+
+After deployment or any live write, do not run this reversal: it would discard
+connection/reconciliation state and site attribution. Disable the connector,
+preserve the affected daily rows, and ship a compatible forward repair or
+restore database and application together.
+
 ## Stop conditions
 
 - Production DB access is absent. Management access that only lists backups is
@@ -213,6 +242,12 @@ and application together.
   metadata. A successful reconciliation updates the dashboard sync state and
   watermark; partial-page and upstream failures retain the previous watermark
   so an authorized manual refresh can recover without skipping changes.
+- Raptive connection state has forced RLS and is inaccessible to anon and
+  authenticated roles; only service-role RPCs can configure or write it. A
+  connection starts disabled. A disposable one-day sync must replace only its
+  selected PL/QB day, preserve the other site, reject duplicates/invalid rows,
+  refuse unattributed historical overlap, and reconcile row count, earnings,
+  date, and safe failure state atomically.
 - The both-site Admin+ health endpoint loads, all integration probes are
   explainable, and no new critical alert appears.
 - Continue to the [Deployment](./DEPLOYMENT.md) gate; do not reopen release

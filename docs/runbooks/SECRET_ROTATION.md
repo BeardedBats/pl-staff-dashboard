@@ -16,6 +16,7 @@ changes affect only new deployments, so every rotation requires a new build.
 | `WP_PL_URL`, `WP_QB_URL` | Public endpoints | Verify HTTPS and REST identity/capabilities before changing; deploy with the matching credentials. |
 | `GA4_CLIENT_ID`, `GA4_CLIENT_SECRET` | Google OAuth client | Create/add the replacement client or secret with the exact callback, deploy, reconnect in Settings > Analytics, sync one bounded day, then retire the old credential. |
 | `GA4_PROPERTY_ID` | Non-secret identifier | Verify the intended property before changing; a wrong value can write valid-looking data for the wrong property. |
+| `RAPTIVE_CLIENT_ID`, `RAPTIVE_CLIENT_SECRET` | Raptive Creator API client | Create a replacement API client, deploy and verify token/site/date-bound access plus one bounded daily reconciliation, then revoke the old client. Never expose the Basic authorization value or bearer token. |
 | `CRON_SECRET` | Critical request secret | Update Vercel Cron authentication and application env in the same deployment window; verify one Vercel-shaped request, then invalidate the old value. |
 | `NEXT_PUBLIC_APP_URL` | Public origin | Change only with domain migration; update GA4 callback allowlists and WordPress integration references before deploy. |
 
@@ -77,6 +78,16 @@ Keep the exact production callback `${NEXT_PUBLIC_APP_URL}/api/ga4/callback`
 authorized. After deploying the new client ID/secret, reconnect through the UI;
 stored refresh tokens may belong to the old client and must not be copied to a
 different client blindly.
+
+### Raptive Creator API client
+
+Create a replacement client in Raptive Dashboard > Account Settings > Raptive
+Creator API. Add its ID and one-time-visible secret as Sensitive Vercel values,
+redeploy, and run `node scripts/verify-raptive-api.mjs` with the new deployment
+environment. The verifier emits counts and token lifetime only. Confirm the
+Settings > Analytics site discovery, date bounds, and one daily sync reconcile
+before revoking the old client. Reconfiguration intentionally disables a site
+until Operations reviews and explicitly enables it.
 
 ## Stop conditions
 

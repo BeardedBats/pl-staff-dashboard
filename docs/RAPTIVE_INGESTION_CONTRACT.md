@@ -39,25 +39,52 @@ When the final workbook is supplied, Operations will:
 4. Commit once, verify atomic replacement and upload/run history, then preview
    and reconcile the same workbook again to prove repeat behavior.
 
-## Live connector boundary
+## Live Creator API contract
 
-There is no verified Raptive API contract or credential in the application.
-The dashboard must not guess an endpoint, accept a speculative secret, scrape a
-portal, or expose a misleading enable button.
+The implemented connector follows Raptive's published Creator API v1 contract:
 
-A connector may be built only after the actual account contract identifies:
+- OAuth 2.0 client credentials use HTTP Basic authentication at
+  `POST https://publisher-api.raptive.com/oauth/token`. The short-lived bearer
+  token expires after 300 seconds and has no refresh token.
+- Data requests use `https://publisher-api.raptive.com/creator-api/v1`.
+  Operations discovers authorized sites from `GET /sites`; site IDs are never
+  guessed. A site must be active and its normalized host must exactly match the
+  selected PL or QB WordPress host before it can be saved.
+- `GET /sites/{siteId}/date-bounds` supplies separate analytics and earnings
+  ranges. Automatic sync chooses the newest calendar day present in both; a
+  manual retry must also fall inside both ranges.
+- `GET /sites/{siteId}/pages/performance` is requested for one inclusive
+  calendar day. Every numbered page is read and reconciled to `recordCount`,
+  with a 100,000-row safety limit.
+- The response provides page URL, earnings, pageviews, and RPM, but not sessions.
+  Live rows therefore store `sessions = 0` and map API RPM to both legacy `rpm`
+  fields. This limitation is explicit rather than inferred.
+- HTTP 429 honors `Retry-After`; transient 5xx/network failures use bounded
+  exponential backoff. One 401 clears and replaces the cached bearer token.
+  Provider bodies, client credentials, bearer tokens, and site IDs never enter
+  user-facing errors or structured logs.
 
-- base URL, authentication and rotation method;
-- financial-data scope and least-privilege permissions;
-- response schema, timezone, aggregation level, pagination and maximum range;
-- rate limits, retry guidance, stable record/replay identity, and correction
-  behavior;
-- test/sandbox method and production reconciliation totals.
+Credentials are server-only `RAPTIVE_CLIENT_ID` and
+`RAPTIVE_CLIENT_SECRET` values. Connection state is service-role-only with
+forced RLS. Configuration is disabled by default, enabling rechecks that the
+stored site remains visible, and synchronization rechecks active status and
+host identity.
 
-Only then may Operations receive enable, disable, test, backfill, retry,
-freshness/health, and reconciliation controls. Credentials remain server-only
-managed secrets. Historical and live ingestion must share the canonical URL
-normalization and date-plus-path identity.
+Each sync performs a single-day, site-scoped replacement inside one database
+transaction. The transaction locks the connection, refuses disabled or changed
+site IDs, validates row shape/date/count/duplicates, replaces only that PL/QB
+day, and records row/earnings reconciliation. A failed transaction preserves
+the prior day. The daily cron retries the newest complete day idempotently;
+Operations can retry a specific valid date for provider corrections.
+
+Historical rows matched to an entry inherit that entry's PL/QB site. A live
+sync refuses a day containing any still-unattributed historical row instead of
+guessing its site, deleting another site's revenue, or double-counting it. The
+real-workbook gate must resolve that ambiguity before an overlapping live day
+can be enabled or retried.
+
+Contract sources: [Raptive Creator API documentation](https://api-docs.raptive.com/)
+and its published [OpenAPI definition](https://api-docs.raptive.com/openapi/creator-api-v1.openapi.json).
 
 ## Finance contract
 

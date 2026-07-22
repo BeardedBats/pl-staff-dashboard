@@ -1070,6 +1070,65 @@ export type Database = {
         }
         Relationships: []
       }
+      raptive_connections: {
+        Row: {
+          configured_at: string
+          configured_by: string | null
+          enabled: boolean
+          last_attempted_date: string | null
+          last_earnings: number | null
+          last_error_code: string | null
+          last_row_count: number | null
+          last_successful_date: string | null
+          last_synced_at: string | null
+          raptive_site_id: string
+          site_name: string
+          site_url: string
+          updated_at: string
+          wp_site: string
+        }
+        Insert: {
+          configured_at?: string
+          configured_by?: string | null
+          enabled?: boolean
+          last_attempted_date?: string | null
+          last_earnings?: number | null
+          last_error_code?: string | null
+          last_row_count?: number | null
+          last_successful_date?: string | null
+          last_synced_at?: string | null
+          raptive_site_id: string
+          site_name: string
+          site_url: string
+          updated_at?: string
+          wp_site: string
+        }
+        Update: {
+          configured_at?: string
+          configured_by?: string | null
+          enabled?: boolean
+          last_attempted_date?: string | null
+          last_earnings?: number | null
+          last_error_code?: string | null
+          last_row_count?: number | null
+          last_successful_date?: string | null
+          last_synced_at?: string | null
+          raptive_site_id?: string
+          site_name?: string
+          site_url?: string
+          updated_at?: string
+          wp_site?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raptive_connections_configured_by_fkey"
+            columns: ["configured_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       raptive_revenue: {
         Row: {
           date: string
@@ -1082,6 +1141,7 @@ export type Database = {
           rpm: number
           sessions: number
           synced_at: string
+          wp_site: string | null
         }
         Insert: {
           date: string
@@ -1094,6 +1154,7 @@ export type Database = {
           rpm?: number
           sessions?: number
           synced_at?: string
+          wp_site?: string | null
         }
         Update: {
           date?: string
@@ -1106,6 +1167,7 @@ export type Database = {
           rpm?: number
           sessions?: number
           synced_at?: string
+          wp_site?: string | null
         }
         Relationships: [
           {
@@ -1706,6 +1768,16 @@ export type Database = {
         }
         Returns: number
       }
+      commit_raptive_live_sync: {
+        Args: {
+          p_raptive_site_id: string
+          p_rows: Json
+          p_summary: Json
+          p_sync_date: string
+          p_wp_site: string
+        }
+        Returns: number
+      }
       complete_graphic_submission: {
         Args: {
           p_actor_id: string
@@ -1713,6 +1785,37 @@ export type Database = {
           p_submission_token: string
         }
         Returns: number
+      }
+      configure_raptive_connection: {
+        Args: {
+          p_configured_by: string
+          p_raptive_site_id: string
+          p_site_name: string
+          p_site_url: string
+          p_wp_site: string
+        }
+        Returns: {
+          configured_at: string
+          configured_by: string | null
+          enabled: boolean
+          last_attempted_date: string | null
+          last_earnings: number | null
+          last_error_code: string | null
+          last_row_count: number | null
+          last_successful_date: string | null
+          last_synced_at: string | null
+          raptive_site_id: string
+          site_name: string
+          site_url: string
+          updated_at: string
+          wp_site: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "raptive_connections"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       create_writer_claim: {
         Args: {
@@ -1732,6 +1835,15 @@ export type Database = {
           p_request_id: string
         }
         Returns: string[]
+      }
+      fail_raptive_live_sync: {
+        Args: {
+          p_error_code: string
+          p_raptive_site_id: string
+          p_sync_date: string
+          p_wp_site: string
+        }
+        Returns: boolean
       }
       finish_cron_run: {
         Args: {
@@ -1841,6 +1953,10 @@ export type Database = {
           resolution: string
           resolved_entry_id: string
         }[]
+      }
+      set_raptive_connection_enabled: {
+        Args: { p_enabled: boolean; p_wp_site: string }
+        Returns: boolean
       }
       submit_graphic_for_review: {
         Args: { p_actor_id: string; p_request_id: string }

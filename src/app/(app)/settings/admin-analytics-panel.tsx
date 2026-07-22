@@ -29,25 +29,45 @@ import type {
   RaptiveImportRunRow,
   RaptiveUploadHistoryRow,
 } from "@/lib/analytics/raptive";
+import type {
+  RaptiveLiveStatus,
+  RaptiveConnection,
+} from "@/lib/analytics/raptive-live";
+import type { RaptiveSite } from "@/lib/analytics/raptive-api";
 
 type Props = {
   initialGa4Status: Ga4Status;
   initialUploads: RaptiveUploadHistoryRow[];
   initialImportRuns: RaptiveImportRunRow[];
+  initialRaptiveStatus: RaptiveLiveStatus;
   canConnectGa4: boolean;
+  canManageRaptive: boolean;
 };
+
+function formatUsd(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
+}
 
 export function AdminAnalyticsPanel({
   initialGa4Status,
   initialUploads,
   initialImportRuns,
+  initialRaptiveStatus,
   canConnectGa4,
+  canManageRaptive,
 }: Props) {
   const searchParams = useSearchParams();
   const ga4Flag = searchParams.get("ga4");
   const [status, setStatus] = React.useState(initialGa4Status);
   const [uploads, setUploads] = React.useState(initialUploads);
   const [importRuns, setImportRuns] = React.useState(initialImportRuns);
+  const [raptiveStatus, setRaptiveStatus] = React.useState(initialRaptiveStatus);
+  const [raptiveSites, setRaptiveSites] = React.useState<RaptiveSite[]>([]);
+  const [selectedRaptiveSite, setSelectedRaptiveSite] = React.useState("");
+  const [raptiveDate, setRaptiveDate] = React.useState("");
   const [busy, setBusy] = React.useState<string | null>(null);
   const [flash, setFlash] = React.useState<
     { kind: "success" | "error"; message: string } | null
@@ -88,6 +108,119 @@ export function AdminAnalyticsPanel({
       if (data.runs) setImportRuns(data.runs);
     } catch {
       // ignore
+    }
+  }
+
+  async function refreshRaptiveStatus() {
+    const res = await fetch("/api/raptive/live/status");
+    const data = (await res.json().catch(() => ({}))) as {
+      status?: RaptiveLiveStatus;
+    };
+    if (res.ok && data.status) setRaptiveStatus(data.status);
+  }
+
+  async function discoverSites() {
+    setBusy("raptive-discover");
+    setFlash(null);
+    try {
+      const res = await fetch("/api/raptive/live/sites");
+      const data = (await res.json().catch(() => ({}))) as {
+        sites?: RaptiveSite[];
+        error?: string;
+      };
+      if (!res.ok || !data.sites) {
+        setFlash({ kind: "error", message: data.error ?? "Could not load Raptive sites." });
+        return;
+      }
+      setRaptiveSites(data.sites);
+      setSelectedRaptiveSite(data.sites[0]?.id ?? "");
+      setFlash({
+        kind: "success",
+        message: `Found ${data.sites.length} eligible Raptive site${data.sites.length === 1 ? "" : "s"}.`,
+      });
+    } catch {
+      setFlash({ kind: "error", message: "Could not load Raptive sites." });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function updateRaptiveConnection(
+    action: "configure" | "enable" | "disable",
+    wpSite: "pl" | "qb",
+  ) {
+    setBusy(`raptive-${action}-${wpSite}`);
+    setFlash(null);
+    try {
+      const res = await fetch("/api/raptive/live/connection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          wpSite,
+          ...(action === "configure"
+            ? { raptiveSiteId: selectedRaptiveSite }
+            : {}),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setFlash({ kind: "error", message: data.error ?? "Raptive connection update failed." });
+        return;
+      }
+      await refreshRaptiveStatus();
+      setFlash({
+        kind: "success",
+        message:
+          action === "configure"
+            ? `Raptive site saved for ${wpSite === "pl" ? "Pitcher List" : "QB List"}. Review it, then enable sync.`
+            : `Raptive live sync ${action === "enable" ? "enabled" : "disabled"}.`,
+      });
+    } catch {
+      setFlash({ kind: "error", message: "Raptive connection update failed." });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function syncRaptive(connection: RaptiveConnection) {
+    setBusy(`raptive-sync-${connection.wpSite}`);
+    setFlash(null);
+    try {
+      const res = await fetch("/api/raptive/live/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wpSite: connection.wpSite,
+          ...(raptiveDate ? { date: raptiveDate } : {}),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        errorCode?: string;
+        date?: string;
+        insertedRows?: number;
+        matchedRows?: number;
+        unmatchedRows?: number;
+        totalEarnings?: number;
+      };
+      if (!res.ok) {
+        setFlash({
+          kind: "error",
+          message: `${data.error ?? "Raptive sync failed"}${data.errorCode ? ` (${data.errorCode})` : ""}.`,
+        });
+        await refreshRaptiveStatus();
+        return;
+      }
+      await refreshRaptiveStatus();
+      setFlash({
+        kind: "success",
+        message: `Raptive ${data.date}: ${data.insertedRows ?? 0} rows committed (${data.matchedRows ?? 0} matched, ${data.unmatchedRows ?? 0} unmatched), ${formatUsd(data.totalEarnings ?? 0)} reconciled.`,
+      });
+    } catch {
+      setFlash({ kind: "error", message: "Raptive sync failed." });
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -297,24 +430,182 @@ export function AdminAnalyticsPanel({
             Raptive live sync
           </CardTitle>
           <CardDescription>
-            Live connection remains disabled until Raptive supplies a verified
-            API contract for this account.
+            Server-only Creator API sync for daily page earnings. Operations
+            chooses the matching site, enables it, and can retry one date.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 text-xs">
+        <CardContent className="space-y-4 text-xs">
           <div className="flex items-center gap-2">
             <span className="text-text-zero">Status</span>
-            <Badge variant="outline" className="border-amber/40 text-amber">
-              Awaiting API contract
+            <Badge
+              variant="outline"
+              className={
+                raptiveStatus.configured && raptiveStatus.databaseReady
+                  ? "border-cyan/40 text-cyan"
+                  : "border-amber/40 text-amber"
+              }
+            >
+              {!raptiveStatus.configured
+                ? "Credentials missing"
+                : !raptiveStatus.databaseReady
+                  ? "Migration pending"
+                  : raptiveStatus.connections.some((item) => item.enabled)
+                    ? "Enabled"
+                    : "Ready to connect"}
             </Badge>
           </div>
-          <p className="rounded-md border border-border bg-surface-3/30 p-3 text-text-team">
-            No Raptive API credential is accepted or stored yet. Historical
-            workbook imports remain available. Once the real endpoint,
-            authentication, pagination, rate limits, replay identity, and
-            response schema are confirmed, Operations can enable a tested
-            connector with disable, retry, health, and reconciliation controls.
-          </p>
+          {!raptiveStatus.configured ? (
+            <p className="rounded-md border border-amber/40 bg-amber/5 p-3 text-amber">
+              Add <code>RAPTIVE_CLIENT_ID</code> and <code>RAPTIVE_CLIENT_SECRET</code>
+              as server-only Vercel variables, then redeploy.
+            </p>
+          ) : !raptiveStatus.databaseReady ? (
+            <p className="rounded-md border border-amber/40 bg-amber/5 p-3 text-amber">
+              Apply migration 0027 before configuring live sync. Credentials are
+              present but cannot be used until the atomic connection state exists.
+            </p>
+          ) : (
+            <>
+              {canManageRaptive ? (
+                <div className="space-y-3 rounded-md border border-border bg-surface-3/30 p-3">
+                  <div className="flex flex-wrap items-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void discoverSites()}
+                      disabled={busy === "raptive-discover"}
+                    >
+                      {busy === "raptive-discover" ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCcw className="h-3.5 w-3.5" />
+                      )}
+                      Find eligible sites
+                    </Button>
+                    {raptiveSites.length > 0 ? (
+                      <label className="grid gap-1 text-text-team">
+                        Raptive site
+                        <select
+                          className="h-8 rounded-md border border-border bg-card px-2 text-text-cell"
+                          value={selectedRaptiveSite}
+                          onChange={(event) => setSelectedRaptiveSite(event.target.value)}
+                        >
+                          {raptiveSites.map((site) => (
+                            <option key={site.id} value={site.id}>
+                              {site.name} — {site.url ?? "URL unavailable"}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : null}
+                  </div>
+                  {raptiveSites.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => void updateRaptiveConnection("configure", "pl")}
+                        disabled={!selectedRaptiveSite || busy !== null}
+                      >
+                        Use for Pitcher List
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => void updateRaptiveConnection("configure", "qb")}
+                        disabled={!selectedRaptiveSite || busy !== null}
+                      >
+                        Use for QB List
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-text-zero">Only Operations can change or run the connection.</p>
+              )}
+
+              {raptiveStatus.connections.length === 0 ? (
+                <EmptyState
+                  icon={<Plug className="h-5 w-5" />}
+                  title="No Raptive site selected"
+                  description="Find eligible sites, then choose which dashboard site the matching hostname belongs to."
+                />
+              ) : (
+                <div className="space-y-3">
+                  {raptiveStatus.connections.map((connection) => (
+                    <div
+                      key={connection.wpSite}
+                      className="space-y-3 rounded-md border border-border bg-card/40 p-3"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-text-cell">
+                            {connection.wpSite === "pl" ? "Pitcher List" : "QB List"}: {connection.siteName}
+                          </p>
+                          <p className="text-text-zero">{connection.siteUrl}</p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={connection.enabled ? "border-cyan/40 text-cyan" : ""}
+                        >
+                          {connection.enabled ? "Enabled" : "Disabled"}
+                        </Badge>
+                      </div>
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
+                        <dt className="text-text-zero">Last successful date</dt>
+                        <dd className="text-text-cell">{connection.lastSuccessfulDate ?? "never"}</dd>
+                        <dt className="text-text-zero">Last reconciliation</dt>
+                        <dd className="text-text-cell">
+                          {connection.lastRowCount === null
+                            ? "—"
+                            : `${connection.lastRowCount.toLocaleString()} rows · ${formatUsd(connection.lastEarnings ?? 0)}`}
+                        </dd>
+                        <dt className="text-text-zero">Last error</dt>
+                        <dd className="font-data text-text-cell">{connection.lastErrorCode ?? "—"}</dd>
+                      </dl>
+                      {canManageRaptive ? (
+                        <div className="flex flex-wrap items-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              void updateRaptiveConnection(
+                                connection.enabled ? "disable" : "enable",
+                                connection.wpSite,
+                              )
+                            }
+                            disabled={busy !== null}
+                          >
+                            {connection.enabled ? "Disable" : "Enable"}
+                          </Button>
+                          <label className="grid gap-1 text-text-team">
+                            Retry date (optional)
+                            <input
+                              type="date"
+                              className="h-8 rounded-md border border-border bg-card px-2 text-text-cell"
+                              value={raptiveDate}
+                              onChange={(event) => setRaptiveDate(event.target.value)}
+                            />
+                          </label>
+                          <Button
+                            size="sm"
+                            onClick={() => void syncRaptive(connection)}
+                            disabled={!connection.enabled || busy !== null}
+                          >
+                            {busy === `raptive-sync-${connection.wpSite}` ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <RefreshCcw className="h-3.5 w-3.5" />
+                            )}
+                            {raptiveDate ? "Retry date" : "Sync latest day"}
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 

@@ -1,7 +1,7 @@
 # API authorization matrix
 
 Audited: 2026-07-21  
-Scope: all 111 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
+Scope: all 117 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
 Status vocabulary: **OK** was enforced at the audit baseline; **GAP** was a baseline defect; **P1.12** marked the then-broken Vercel cron method contract. The closure table below is authoritative for post-audit repair state, and an automated parity test now rejects undocumented handlers.
 
 ## Policy vocabulary
@@ -76,6 +76,8 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | POST | `/api/cron/ga4-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
 | GET | `/api/cron/profile-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
 | POST | `/api/cron/profile-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| GET | `/api/cron/raptive-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
+| POST | `/api/cron/raptive-sync` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
 | GET | `/api/cron/recurring-generate` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
 | POST | `/api/cron/recurring-generate` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
 | GET | `/api/cron/season-switch` | Cron or global Admin+ | Shared cron authorization and execution control | OK |
@@ -119,6 +121,10 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | DELETE | `/api/graphic-requests/[id]` | Creator or Admin+ for site | Creator or flat Admin+ | GAP AUTH-01 |
 | POST | `/api/graphic-requests/[id]/submit` | Claimed graphics worker or Admin+ for site | Session only before WordPress mutation | **GAP AUTH-01/02** |
 | POST | `/api/graphic-requests/[id]/upload` | Claimed graphics worker or Admin+ for site | Session plus state only | **GAP AUTH-01/02** |
+| POST | `/api/raptive/live/connection` | Operations | `isOperations`; configure binds provider host to selected PL/QB host; enable rechecks provider visibility | OK |
+| GET | `/api/raptive/live/sites` | Operations | `isOperations` before provider discovery | OK |
+| GET | `/api/raptive/live/status` | Analytics | `canViewAnalytics`; returns service-projected connection state without credentials | OK |
+| POST | `/api/raptive/live/sync` | Operations | `isOperations`; requested PL/QB must have an exact configured connection | OK |
 | POST | `/api/raptive/upload` | Operations | `isOperations` | OK |
 | GET | `/api/raptive/uploads` | Analytics | `canViewAnalytics` | OK |
 | GET | `/api/search` | Session; results use each resource's existing visibility boundary | Server queries only projected staff, visible entries, authorized graphics, and schedules | OK |

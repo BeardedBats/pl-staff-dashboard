@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getGa4Status } from "@/lib/analytics/ga4";
+import { getRaptiveLiveStatus } from "@/lib/analytics/raptive-live";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { emitStructuredLog, safeErrorCode } from "./structured-log";
 import {
@@ -77,7 +78,7 @@ export async function getOperationalHealth(
 ): Promise<OperationalHealthSnapshot> {
   const supabase = getSupabaseAdmin();
   const probeErrors: string[] = [];
-  const [cronResult, settingsResult, alertResult, importResult, ga4Result, notificationResult] =
+  const [cronResult, settingsResult, alertResult, importResult, ga4Result, raptiveResult, notificationResult] =
     await Promise.all([
       supabase
         .from("cron_runs")
@@ -105,6 +106,10 @@ export async function getOperationalHealth(
         (data) => ({ data, error: null }),
         (error: unknown) => ({ data: null, error }),
       ),
+      getRaptiveLiveStatus().then(
+        (data) => ({ data, error: null }),
+        (error: unknown) => ({ data: null, error }),
+      ),
       supabase
         .from("notifications")
         .select("id", { count: "exact", head: true })
@@ -117,6 +122,7 @@ export async function getOperationalHealth(
     ["alerts", alertResult.error],
     ["imports", importResult.error],
     ["ga4", ga4Result.error],
+    ["raptive", raptiveResult.error],
     ["notification-delivery", notificationResult.error],
   ] as const) {
     if (!error) continue;
@@ -149,6 +155,19 @@ export async function getOperationalHealth(
   const ga4Freshness = ga4?.connected
     ? evaluateTimestampFreshness(ga4.lastSyncedAt, 2 * 24 * 60 * 60, now)
     : null;
+  const raptive = raptiveResult.data;
+  const enabledRaptive = raptive?.connections.filter((item) => item.enabled) ?? [];
+  const latestRaptive = [...enabledRaptive].sort((a, b) =>
+    (b.lastSyncedAt ?? "").localeCompare(a.lastSyncedAt ?? ""),
+  )[0];
+  const raptiveFreshness = latestRaptive
+    ? evaluateTimestampFreshness(
+        latestRaptive.lastSyncedAt,
+        2 * 24 * 60 * 60,
+        now,
+      )
+    : null;
+  const raptiveError = enabledRaptive.find((item) => item.lastErrorCode);
   const integrations: IntegrationHealthItem[] = [
     {
       key: "wordpress-pl",
@@ -183,6 +202,35 @@ export async function getOperationalHealth(
             : ga4Freshness!.detail,
       lastSuccessAt: ga4?.lastSyncedAt ?? null,
       remediation: "Open Settings > Analytics to configure, reconnect, or manually synchronize GA4.",
+    },
+    {
+      key: "raptive",
+      label: "Raptive Creator API",
+      level: raptiveResult.error
+        ? "unknown"
+        : !raptive?.configured
+          ? "not_configured"
+          : !raptive.databaseReady
+            ? "critical"
+            : enabledRaptive.length === 0
+              ? "not_configured"
+              : raptiveError
+                ? "critical"
+                : raptiveFreshness!.level,
+      detail: raptiveResult.error
+        ? "Raptive health could not be read."
+        : !raptive?.configured
+          ? "Raptive Creator API credentials are not configured."
+          : !raptive.databaseReady
+            ? "The Raptive live-sync migration is not applied."
+            : enabledRaptive.length === 0
+              ? "Raptive credentials are present, but no site is enabled."
+              : raptiveError
+                ? `The latest Raptive sync failed (${raptiveError.lastErrorCode}).`
+                : raptiveFreshness!.detail,
+      lastSuccessAt: latestRaptive?.lastSyncedAt ?? null,
+      remediation:
+        "Open Settings > Analytics, verify the Raptive site connection, and retry the affected date once.",
     },
   ];
 

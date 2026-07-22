@@ -45,6 +45,10 @@ const optionalSchema = z.object({
   GA4_CLIENT_ID: z.string().optional().or(z.literal("")),
   GA4_CLIENT_SECRET: z.string().optional().or(z.literal("")),
   GA4_PROPERTY_ID: z.string().optional().or(z.literal("")),
+
+  // Raptive Creator API (OAuth 2.0 client credentials; server-only)
+  RAPTIVE_CLIENT_ID: z.string().optional().or(z.literal("")),
+  RAPTIVE_CLIENT_SECRET: z.string().optional().or(z.literal("")),
 });
 
 const envSchema = coreSchema.merge(optionalSchema);
