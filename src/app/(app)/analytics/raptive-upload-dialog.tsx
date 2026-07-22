@@ -11,9 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { MAX_RAPTIVE_UPLOAD_BYTES } from "@/lib/analytics/raptive-contract";
 
 type PreviewData = {
   fileName: string;
+  fileSizeBytes: number;
   totalRows: number;
   dateRange: { start: string; end: string };
   matchedCount: number;
@@ -53,6 +55,10 @@ export function RaptiveUploadDialog({
     const name = f.name.toLowerCase();
     if (!name.endsWith(".xlsx")) {
       setError("Drop an .xlsx file");
+      return;
+    }
+    if (f.size < 1 || f.size > MAX_RAPTIVE_UPLOAD_BYTES) {
+      setError("Workbook must be between 1 byte and 10 MB");
       return;
     }
     setFile(f);
@@ -224,6 +230,10 @@ export function RaptiveUploadDialog({
                   <dt className="text-text-zero">Total rows</dt>
                   <dd className="text-right text-text-cell">
                     {preview.totalRows.toLocaleString()}
+                  </dd>
+                  <dt className="text-text-zero">File size</dt>
+                  <dd className="text-right text-text-cell">
+                    {(preview.fileSizeBytes / (1024 * 1024)).toFixed(2)} MB
                   </dd>
                   <dt className="text-text-zero">Matched to entries</dt>
                   <dd className="text-right text-cyan">

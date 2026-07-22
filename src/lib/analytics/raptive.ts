@@ -6,6 +6,7 @@ import {
   buildAnalyticsPathIndex,
   normalizeAnalyticsPath,
 } from "@/lib/analytics/url-normalization";
+import { MAX_RAPTIVE_IMPORT_ROWS } from "@/lib/analytics/raptive-contract";
 
 // --------------------------------------------------------------------------
 // Types
@@ -311,6 +312,12 @@ export function parseRaptiveWorkbook(buffer: Buffer): RaptiveParseResult {
 
       rowsByKey.set(key, parsedRow);
       rows.push(parsedRow);
+      if (rows.length > MAX_RAPTIVE_IMPORT_ROWS) {
+        return {
+          ok: false,
+          error: "Workbook must contain between 1 and 100,000 valid rows",
+        };
+      }
       if (minDate === null || date < minDate) minDate = date;
       if (maxDate === null || date > maxDate) maxDate = date;
     }

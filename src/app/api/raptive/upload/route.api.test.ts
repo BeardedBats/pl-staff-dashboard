@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
+  isOperations: vi.fn(),
   parse: vi.fn(),
   match: vi.fn(),
   commit: vi.fn(),
@@ -13,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/auth/current-user", () => ({
   getCurrentUser: mocks.getCurrentUser,
-  isOperations: () => true,
+  isOperations: mocks.isOperations,
 }));
 vi.mock("@/lib/analytics/raptive", () => ({
   parseRaptiveWorkbook: mocks.parse,
@@ -27,7 +28,8 @@ vi.mock("@/lib/observability/alerts", () => ({
   resolveOperationalAlert: mocks.resolveAlert,
 }));
 
-import { MAX_RAPTIVE_UPLOAD_BYTES, POST } from "./route";
+import { MAX_RAPTIVE_UPLOAD_BYTES } from "@/lib/analytics/raptive-contract";
+import { POST } from "./route";
 
 function uploadRequest(file: File, mode = "preview") {
   const form = new FormData();
@@ -43,10 +45,22 @@ describe("Raptive upload API boundary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getCurrentUser.mockResolvedValue({ id: "operator-1" });
+    mocks.isOperations.mockReturnValue(true);
     mocks.begin.mockResolvedValue("run-1");
     mocks.fail.mockResolvedValue(true);
     mocks.recordAlert.mockResolvedValue("error-id");
     mocks.resolveAlert.mockResolvedValue(undefined);
+  });
+
+  it("keeps financial imports behind authentication and Operations authority", async () => {
+    const file = new File(["workbook"], "revenue.xlsx");
+    mocks.getCurrentUser.mockResolvedValue(null);
+    expect((await POST(uploadRequest(file))).status).toBe(401);
+
+    mocks.getCurrentUser.mockResolvedValue({ id: "eic-1" });
+    mocks.isOperations.mockReturnValue(false);
+    expect((await POST(uploadRequest(file))).status).toBe(403);
+    expect(mocks.parse).not.toHaveBeenCalled();
   });
 
   it("rejects an oversized workbook before parsing", async () => {
@@ -107,7 +121,7 @@ describe("Raptive upload API boundary", () => {
     const preview = await POST(uploadRequest(file));
     expect(preview.status).toBe(200);
     await expect(preview.json()).resolves.toMatchObject({
-      preview: { rejectedCount: 1 },
+      preview: { rejectedCount: 1, fileSizeBytes: file.size },
     });
 
     const commit = await POST(uploadRequest(file, "commit"));

@@ -8,6 +8,7 @@ import {
   matchRaptiveRowsToEntries,
   parseRaptiveWorkbook,
 } from "@/lib/analytics/raptive";
+import { validateRaptiveImportLimits } from "@/lib/analytics/raptive-contract";
 import {
   recordOperationalAlert,
   resolveOperationalAlert,
@@ -17,7 +18,6 @@ import { emitStructuredLog, safeErrorCode } from "@/lib/observability/structured
 export const dynamic = "force-dynamic";
 // Reasonable ceiling: Raptive sheets for ~6 months are typically under 5MB
 export const maxDuration = 60;
-export const MAX_RAPTIVE_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 /**
  * POST /api/raptive/upload
@@ -54,9 +54,8 @@ export async function POST(request: Request) {
   if (mode !== "preview" && mode !== "commit") {
     return errorResponse(400, "Mode must be preview or commit");
   }
-  if (file.size === 0 || file.size > MAX_RAPTIVE_UPLOAD_BYTES) {
-    return errorResponse(413, "Workbook must be between 1 byte and 10 MB");
-  }
+  const fileLimit = validateRaptiveImportLimits(file.size, 1);
+  if (!fileLimit.ok) return errorResponse(413, fileLimit.error);
   if (!file.name.toLowerCase().endsWith(".xlsx")) {
     return errorResponse(400, "Upload an XLSX workbook");
   }
@@ -66,6 +65,8 @@ export async function POST(request: Request) {
   if (!parsed.ok) {
     return errorResponse(400, parsed.error);
   }
+  const limits = validateRaptiveImportLimits(file.size, parsed.rows.length);
+  if (!limits.ok) return errorResponse(413, limits.error);
 
   if (mode === "commit" && parsed.rejectedCount > 0) {
     return errorResponse(
@@ -126,6 +127,7 @@ export async function POST(request: Request) {
 
   const preview = {
     fileName: file.name,
+    fileSizeBytes: file.size,
     totalRows: parsed.rows.length,
     dateRange: parsed.dateRange,
     matchedCount: matchResult.matchedCount,

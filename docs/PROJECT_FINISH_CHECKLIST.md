@@ -4,9 +4,9 @@ Last updated: 2026-07-22
 
 ## Recovery state
 
-- Current phase: Phase 5 — WordPress and SEO
-- Current action: publish the corrected Phase 5 exact head for one GitHub CI run and one Vercel preview.
-- Branch: `codex/production-readiness-p5`
+- Current phase: Phase 6 — Raptive-ready data system
+- Current action: publish the consolidated Phase 6 exact head for one GitHub CI run and one Vercel preview.
+- Branch: `codex/production-readiness-p6`
 - Stack base: `9115bd6` (combined Phase 4 exact head on green draft PR #40, based on the completed Phase 3 stack).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
@@ -125,14 +125,16 @@ Gate: one complete local Phase 5 suite, one exact-head GitHub CI run, and one Ve
 
 ## Phase 6 — Raptive-ready data system
 
-- [ ] P6.1 Validate Nick's real workbook format, size, rows, timezone, aggregation, and deduplication semantics when supplied.
-- [ ] P6.2 Use the existing atomic importer for measured inputs up to 10 MB / 100,000 rows; add private storage, jobs, chunks, or resume only if real measurement requires them.
-- [ ] P6.3 Add a live connector only from an actual Raptive API contract, sharing canonical normalization/deduplication with historical imports.
-- [ ] P6.4 Keep necessary credentials server-only and provide enable/disable, health, retry, reconciliation, and a nontechnical administrator flow.
-- [ ] P6.5 Preserve financial-data authorization and test malformed, duplicate, overlap, replay, partial, and secret-boundary cases.
-- [ ] P6.6 Remove the finance-application contract unless a real consumer is identified.
+- [ ] P6.1 Validate Nick's real workbook format, size, rows, timezone, aggregation, and deduplication semantics when supplied. — FINAL REAL-WORKBOOK INPUT REQUIRED; NO ACTION NEEDED YET
+- [x] P6.2 Use the existing atomic importer for measured inputs up to 10 MB / 100,000 rows; add private storage, jobs, chunks, or resume only if real measurement requires them.
+- [ ] P6.3 Add a live connector only from an actual Raptive API contract, sharing canonical normalization/deduplication with historical imports. — FINAL API CONTRACT/AUTHORIZATION INPUT REQUIRED; SPECULATIVE CONNECTOR CORRECTLY NOT BUILT
+- [ ] P6.4 Keep necessary credentials server-only and provide enable/disable, health, retry, reconciliation, and a nontechnical administrator flow. — HISTORICAL FLOW COMPLETE; LIVE CONTROLS DEPEND ON P6.3
+- [x] P6.5 Preserve financial-data authorization and test malformed, duplicate, overlap, replay, partial, and secret-boundary cases.
+- [x] P6.6 Remove the finance-application contract unless a real consumer is identified.
 
-Gate: realistic fixtures and mocked live responses pass; only Nick's real files and live authorization remain.
+Gate: bounded historical fixtures, authorization, recovery, reconciliation, and the explicit no-speculation live boundary pass; only Nick's real workbook and actual live API contract/authorization remain.
+
+Phase 6 gate status: **LOCAL PASS; FINAL REAL-WORKBOOK AND LIVE-CONTRACT VALIDATION IS INPUT-GATED FOR P7.4.**
 
 ## Phase 7 — Full-system verification, deployment, and Raptive handoff
 
@@ -629,7 +631,16 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - The existing standalone title generator was inspected from its live source and ported locally with its deterministic glyph widths, 100-point rubric, article types, player/week/date/list inputs, ranked candidates, explanations, Pitcher List suffix, SERP preview, copy, and apply-to-dashboard-title behavior.
 - On-demand analysis is participant/manager scoped, reads current WordPress/Yoast data without write-back, covers keyphrase/title/meta/slug/opening/headings/distribution/stuffing/image-alt/sentence/paragraph/voice/transition/structure checks, and shows a short prioritized improvement list plus read-only publication readiness.
 - The complete local Phase 5 gate passes: runbook contract, ESLint, TypeScript, 82 Vitest files / 352 tests with coverage, dependency audit (zero vulnerabilities), clean production build, 14 database files / 363 pgTAP assertions, generated-type drift, database lint, 11 browser journeys, and all 40 route/role/viewport quality checks. The combined gate's build worker had one transient exit; the affected production build was rerun alone and passed cleanly, followed by targeted type/component/browser checks after the final ownership copy adjustment.
-- Exact-head GitHub CI and the single Vercel preview remain the Phase 5 boundary gate. Earlier webhook/conflict/write-back evidence is superseded and must not be treated as release proof.
+- Exact head `429b395a6d00df5fea0870f607e173e3293134fb` passed GitHub Actions run `29893718221`: Application, Database, Dependencies, Browser, all 11 browser journeys, and all 40 quality checks are green. The single Vercel preview (`9DuNedCGEZeN79b3LA5p8X8wKJQm`) also passed on PR #41. Phase 5 boundary gate: **PASS**. Earlier webhook/conflict/write-back evidence is superseded and must not be treated as release proof.
+
+### 2026-07-22 — Consolidated Phase 6 Raptive preparation
+
+- Confirmed the current Operations-only importer already processes every qualifying sheet, previews reconciliation, collapses exact duplicates, rejects conflicting/malformed rows, matches canonical URLs, commits one date-range replacement atomically, records durable running/success/failure state, and reconciles an interrupted response before retrying.
+- Centralized and enforced the measured synchronous envelope at 10 MB and 100,000 valid rows in both browser and server boundaries. Storage/jobs/chunk/resume infrastructure remains conditional on Nick's real workbook exceeding that envelope or measured request duration.
+- Added the real-workbook validation procedure and the exact live-connector prerequisites. The application now plainly reports that live sync is disabled pending an actual account API contract and accepts/stores no speculative Raptive credential.
+- Confirmed there is no external finance consumer or daily-aggregate API in source. No speculative finance contract was added; financial reads/imports retain EIC/Operations authorization plus server/RLS boundaries.
+- Targeted parser, limit, route-authorization, failure/replay, uploads, and financial-data boundary tests pass.
+- The complete local Phase 6 gate passes: runbook contract, ESLint, TypeScript, 83 Vitest files / 355 tests with coverage, zero-vulnerability dependency audit, production build, 14 database files / 363 pgTAP assertions, generated-type drift, database lint, 11 browser journeys, and all 40 route/role/viewport quality checks. Exact-head CI and the single Vercel preview remain the Phase 6 boundary gate.
 
 ## Phase 0 prioritized defect and risk inventory
 
@@ -638,7 +649,7 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 3. **High — scheduled jobs do not match Vercel (P1.12, P2.6):** all eight configured cron handlers export POST while Vercel invokes configured cron paths with GET, so scheduled execution receives 405.
 4. **High — dependency vulnerabilities (P1.14):** production audit reports 3 high and 6 moderate vulnerabilities across Next.js, Discord/Undici/WebSocket, PostCSS, Resend/Svix/UUID chains.
 5. **Medium — CI checks are advisory at merge (P2.9):** complete Application, Database, Dependencies, and Browser jobs now run on every pull request and `main` push. The private repository's current account plan does not expose branch protection or rulesets, so GitHub cannot make those green checks merge-required until the repository becomes public or the plan is upgraded.
-6. **High — Raptive production ingestion remains incomplete (P6.1–P6.15):** P2.7 now parses every qualifying sheet, rejects malformed/conflicting rows, bounds uploads to 10 MB, and commits range replacement atomically. The route still buffers the workbook inside a 60-second request and has no durable job/checkpoint/restart model; the real Raptive workbook contract and measured runtime remain unverified until Nick's final input.
+6. **Input-gated — Raptive production validation (P6.1–P6.4/P7.4):** the bounded synchronous importer is complete for files up to 10 MB / 100,000 rows. Nick's real workbook must validate its actual format, timezone, aggregation, dedupe semantics, size, and runtime. A live connector must wait for the actual Raptive account API contract and authorization; storage/jobs/chunk/resume infrastructure is required only if those measured inputs demand it.
 7. **Medium — profile overrides are inconsistent (P1.11):** scheduled profile sync honors `display_name_override`, but login, manual import, and manual resync overwrite the name without honoring the flag.
 8. **Medium — database typing is placeholder-only (P1.7):** every table, view, function, enum, and composite resolves through `any`, so current TypeScript success does not prove schema compatibility.
 9. **Medium — bulk work is not atomic (P1.9):** bulk create fires up to 25 independent client requests; bulk update writes entries and audit rows in separate operations, allowing partial audit/data state.
