@@ -50,12 +50,17 @@ type Props = {
   tiers: EntryTier[];
 };
 
-export function AdminChecklistsPanel({ initialItems, tiers: initialTiers }: Props) {
+export function AdminChecklistsPanel({
+  initialItems,
+  tiers: initialTiers,
+}: Props) {
   const router = useRouter();
   const [tiers, setTiers] = React.useState<EntryTier[]>(initialTiers);
   const [items, setItems] = React.useState(initialItems);
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [editing, setEditing] = React.useState<ChecklistItemRecord | null>(null);
+  const [editing, setEditing] = React.useState<ChecklistItemRecord | null>(
+    null,
+  );
   const [activeTierId, setActiveTierId] = React.useState<string>(
     initialTiers[0]?.id ?? "",
   );
@@ -66,7 +71,11 @@ export function AdminChecklistsPanel({ initialItems, tiers: initialTiers }: Prop
     if (!res.ok) return;
     const data = (await res.json()) as { tiers: EntryTier[] };
     setTiers(data.tiers ?? []);
-    if (data.tiers && data.tiers.length > 0 && !data.tiers.find((t) => t.id === activeTierId)) {
+    if (
+      data.tiers &&
+      data.tiers.length > 0 &&
+      !data.tiers.find((t) => t.id === activeTierId)
+    ) {
       setActiveTierId(data.tiers[0].id);
     }
     router.refresh();
@@ -95,7 +104,10 @@ export function AdminChecklistsPanel({ initialItems, tiers: initialTiers }: Prop
     }
   }
 
-  async function handleToggleRequired(item: ChecklistItemRecord, required: boolean) {
+  async function handleToggleRequired(
+    item: ChecklistItemRecord,
+    required: boolean,
+  ) {
     setBusy(item.id);
     try {
       await fetch(`/api/settings/checklist-items/${item.id}`, {
@@ -116,126 +128,126 @@ export function AdminChecklistsPanel({ initialItems, tiers: initialTiers }: Prop
   return (
     <div className="space-y-6">
       <TiersCard tiers={tiers} onChange={refreshTiers} />
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
-        <div>
-          <CardTitle className="flex items-center gap-2">
-            <CheckSquare className="h-4 w-4" />
-            Pre-submission checklists
-          </CardTitle>
-          <CardDescription>
-            Per-tier items that writers must tick off before submitting. New
-            entries get the current item list seeded onto them automatically.
-            Required items block submission; optional items are advisory.
-          </CardDescription>
-        </div>
-        <Button
-          size="sm"
-          onClick={() => {
-            setEditing(null);
-            setDialogOpen(true);
-          }}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          New item
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Tier tabs */}
-        <div className="flex items-center gap-1 rounded-md border border-border bg-surface-3/40 p-1">
-          {tiers.map((t) => {
-            const active = activeTierId === t.id;
-            const count = items.filter((i) => i.tier_id === t.id).length;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setActiveTierId(t.id)}
-                className={
-                  active
-                    ? "flex items-center gap-2 rounded-sm bg-cyan-dim px-3 py-1.5 text-xs font-semibold text-cyan"
-                    : "flex items-center gap-2 rounded-sm px-3 py-1.5 text-xs text-text-zero hover:text-text-cell"
-                }
-              >
-                <span>
-                  {t.name} — {t.label}
-                </span>
-                <Badge variant="outline">{count}</Badge>
-              </button>
-            );
-          })}
-        </div>
+      <Card>
+        <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <CheckSquare className="h-4 w-4" />
+              Pre-submission checklists
+            </CardTitle>
+            <CardDescription>
+              Per-tier items that writers must tick off before submitting. New
+              entries get the current item list seeded onto them automatically.
+              Required items block submission; optional items are advisory.
+            </CardDescription>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditing(null);
+              setDialogOpen(true);
+            }}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New item
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Tier tabs */}
+          <div className="flex flex-wrap items-center gap-1 rounded-md border border-border bg-surface-3/40 p-1">
+            {tiers.map((t) => {
+              const active = activeTierId === t.id;
+              const count = items.filter((i) => i.tier_id === t.id).length;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setActiveTierId(t.id)}
+                  className={
+                    active
+                      ? "flex items-center gap-2 rounded-sm bg-cyan-dim px-3 py-1.5 text-xs font-semibold text-cyan"
+                      : "flex items-center gap-2 rounded-sm px-3 py-1.5 text-xs text-text-zero hover:text-text-cell"
+                  }
+                >
+                  <span>
+                    {t.name} — {t.label}
+                  </span>
+                  <Badge variant="outline">{count}</Badge>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Items for the active tier */}
-        {tierItems.length === 0 ? (
-          <EmptyState
-            icon={<CheckSquare className="h-5 w-5" />}
-            title="No items yet for this tier"
-            description="Add a checklist item to enforce pre-submission checks for entries in this tier."
-          />
-        ) : (
-          <ul className="space-y-1">
-            {tierItems.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2"
-              >
-                <span className="font-data text-[10px] text-text-zero">
-                  #{item.sort_order}
-                </span>
-                <span className="flex-1 text-sm text-text-cell">
-                  {item.label}
-                </span>
-                <div className="flex items-center gap-2 text-[11px] text-text-zero">
-                  <span>Required</span>
-                  <Switch
-                    checked={item.is_required}
-                    onCheckedChange={(checked) =>
-                      handleToggleRequired(item, checked)
-                    }
+          {/* Items for the active tier */}
+          {tierItems.length === 0 ? (
+            <EmptyState
+              icon={<CheckSquare className="h-5 w-5" />}
+              title="No items yet for this tier"
+              description="Add a checklist item to enforce pre-submission checks for entries in this tier."
+            />
+          ) : (
+            <ul className="space-y-1">
+              {tierItems.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2"
+                >
+                  <span className="font-data text-[10px] text-text-zero">
+                    #{item.sort_order}
+                  </span>
+                  <span className="flex-1 text-sm text-text-cell">
+                    {item.label}
+                  </span>
+                  <div className="flex items-center gap-2 text-[11px] text-text-zero">
+                    <span>Required</span>
+                    <Switch
+                      checked={item.is_required}
+                      onCheckedChange={(checked) =>
+                        handleToggleRequired(item, checked)
+                      }
+                      disabled={busy === item.id}
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setEditing(item);
+                      setDialogOpen(true);
+                    }}
+                    aria-label="Edit"
+                  >
+                    <Edit3 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(item)}
                     disabled={busy === item.id}
-                  />
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setEditing(item);
-                    setDialogOpen(true);
-                  }}
-                  aria-label="Edit"
-                >
-                  <Edit3 className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(item)}
-                  disabled={busy === item.id}
-                  aria-label="Delete"
-                  className="text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
+                    aria-label="Delete"
+                    className="text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
 
-      <ChecklistItemDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        item={editing}
-        tiers={tiers}
-        defaultTierId={activeTierId}
-        onSaved={() => {
-          setDialogOpen(false);
-          setEditing(null);
-          void refresh();
-        }}
-      />
-    </Card>
+        <ChecklistItemDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          item={editing}
+          tiers={tiers}
+          defaultTierId={activeTierId}
+          onSaved={() => {
+            setDialogOpen(false);
+            setEditing(null);
+            void refresh();
+          }}
+        />
+      </Card>
     </div>
   );
 }
@@ -303,16 +315,16 @@ function TiersCard({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div>
           <CardTitle className="flex items-center gap-2">
             <Layers className="h-4 w-4" />
             Tiers
           </CardTitle>
           <CardDescription>
-            Tiers group entries by cadence (annual, daily, weekly,
-            unscheduled). They drive the checklist below and the tier filter
-            in the content table.
+            Tiers group entries by cadence (annual, daily, weekly, unscheduled).
+            They drive the checklist below and the tier filter in the content
+            table.
           </CardDescription>
         </div>
         <Button size="sm" onClick={() => setCreating(true)}>
@@ -343,7 +355,9 @@ function TiersCard({
                 <span className="font-data text-[10px] text-text-zero">
                   #{tier.sort_order}
                 </span>
-                <Badge variant="outline" className="font-data">{tier.name}</Badge>
+                <Badge variant="outline" className="font-data">
+                  {tier.name}
+                </Badge>
                 <span className="flex-1 text-sm text-text-cell">
                   {tier.label}
                 </span>
@@ -445,7 +459,11 @@ function TierDialog({
     setError(null);
     try {
       const body = isEdit
-        ? JSON.stringify({ id: tier!.id, name: name.trim(), label: label.trim() })
+        ? JSON.stringify({
+            id: tier!.id,
+            name: name.trim(),
+            label: label.trim(),
+          })
         : JSON.stringify({ name: name.trim(), label: label.trim() });
       const res = await fetch("/api/tiers", {
         method: isEdit ? "PATCH" : "POST",
@@ -628,8 +646,7 @@ function ChecklistItemDialog({
             {isEdit ? "Edit checklist item" : "New checklist item"}
           </DialogTitle>
           <DialogDescription>
-            Per-tier — only entries in the selected tier will include this
-            item.
+            Per-tier — only entries in the selected tier will include this item.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -646,7 +663,11 @@ function ChecklistItemDialog({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Tier *</Label>
-              <Select value={tierId} onValueChange={setTierId} disabled={isEdit}>
+              <Select
+                value={tierId}
+                onValueChange={setTierId}
+                disabled={isEdit}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Pick a tier…" />
                 </SelectTrigger>

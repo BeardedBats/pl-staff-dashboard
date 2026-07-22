@@ -36,7 +36,9 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
     });
   }
 
-  const visibleItems = NAV_ITEMS.filter((item) => isNavVisible(item, userRoles));
+  const visibleItems = NAV_ITEMS.filter((item) =>
+    isNavVisible(item, userRoles),
+  );
 
   return (
     <aside
@@ -54,7 +56,9 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
         )}
       >
         {collapsed ? (
-          <span className="font-data text-sm font-bold tracking-[0.3px] text-cyan">PL</span>
+          <span className="font-data text-sm font-bold tracking-[0.3px] text-cyan">
+            PL
+          </span>
         ) : (
           <Link href="/home" className="flex items-center gap-2">
             <span className="font-data text-sm font-bold uppercase tracking-[0.3px] text-cyan">
@@ -87,7 +91,7 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
       {/* Collapse toggle */}
       <div className="flex h-12 shrink-0 items-center justify-end px-2">
         {!collapsed && (
-          <span className="flex-1 truncate px-2 text-xs text-text-zero">
+          <span className="min-w-0 flex-1 break-words px-2 text-xs text-text-zero">
             {userDisplayName}
           </span>
         )}
@@ -98,7 +102,11 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
+          {collapsed ? (
+            <ChevronsRight className="h-4 w-4" />
+          ) : (
+            <ChevronsLeft className="h-4 w-4" />
+          )}
         </Button>
       </div>
     </aside>
@@ -126,7 +134,7 @@ function NavLink({
         title={collapsed ? item.label : undefined}
       >
         <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-white")} />
-        {!collapsed && <span className="truncate">{item.label}</span>}
+        {!collapsed && <span className="break-words">{item.label}</span>}
       </Link>
     </NavigationItem>
   );

@@ -34,10 +34,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
   const load = React.useCallback(async () => {
     try {
-      const res = await fetch(
-        `/api/users/${userId}/notifications?limit=10`,
-        { cache: "no-store" },
-      );
+      const res = await fetch(`/api/users/${userId}/notifications?limit=10`, {
+        cache: "no-store",
+      });
       if (!res.ok) return;
       const data = (await res.json()) as {
         rows: NotificationRow[];
@@ -96,6 +95,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
           <Bell className="h-4 w-4" />
           {unreadCount > 0 ? (
             <span
+              data-plpd-compact-label
               className={cn(
                 "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan px-1 font-sans text-[9px] font-bold text-surface-1",
               )}
@@ -198,7 +198,7 @@ function NotificationListItem({
             {notification.title}
           </p>
           {notification.body ? (
-            <p className="mt-0.5 line-clamp-2 text-xs text-text-team">
+            <p className="mt-0.5 break-words text-xs text-text-team">
               {notification.body}
             </p>
           ) : null}

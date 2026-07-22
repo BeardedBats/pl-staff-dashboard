@@ -39,7 +39,9 @@ const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
  * comparison) to render time-series and tier-breakdown charts.
  */
 export function AnalyticsTrendsTab({ query }: Props) {
-  const [overview, setOverview] = React.useState<AnalyticsOverview | null>(null);
+  const [overview, setOverview] = React.useState<AnalyticsOverview | null>(
+    null,
+  );
   const [articles, setArticles] = React.useState<AnalyticsArticleRow[] | null>(
     null,
   );
@@ -57,17 +59,19 @@ export function AnalyticsTrendsTab({ query }: Props) {
       fetch(`/api/analytics/articles?${query}`).then((r) => r.json()),
       fetch(`/api/analytics/publish-to-peak?${query}`).then((r) => r.json()),
     ])
-      .then(([ov, art, ptp]: [
-        { overview: AnalyticsOverview },
-        { rows: AnalyticsArticleRow[] },
-        { curve: PublishToPeakPoint[]; heat: DayOfWeekHeatPoint[] },
-      ]) => {
-        if (cancelled) return;
-        setOverview(ov.overview);
-        setArticles(art.rows);
-        setCurve(ptp.curve);
-        setHeat(ptp.heat);
-      })
+      .then(
+        ([ov, art, ptp]: [
+          { overview: AnalyticsOverview },
+          { rows: AnalyticsArticleRow[] },
+          { curve: PublishToPeakPoint[]; heat: DayOfWeekHeatPoint[] },
+        ]) => {
+          if (cancelled) return;
+          setOverview(ov.overview);
+          setArticles(art.rows);
+          setCurve(ptp.curve);
+          setHeat(ptp.heat);
+        },
+      )
       .catch((e) => {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : "Failed to load");
@@ -141,28 +145,35 @@ export function AnalyticsTrendsTab({ query }: Props) {
                 initialDimension={RESPONSIVE_CHART_INITIAL_DIMENSION}
               >
                 <LineChart data={overview.daily}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="date" stroke="var(--color-text-zero)" fontSize={11} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--color-border)"
+                  />
+                  <XAxis
+                    dataKey="date"
+                    stroke="var(--color-text-zero)"
+                    fontSize={14}
+                  />
                   <YAxis
                     yAxisId="left"
                     stroke="var(--color-cyan)"
-                    fontSize={11}
+                    fontSize={14}
                   />
                   <YAxis
                     yAxisId="right"
                     orientation="right"
                     stroke="var(--color-amber)"
-                    fontSize={11}
+                    fontSize={14}
                     tickFormatter={(v) => `$${v}`}
                   />
                   <Tooltip
                     contentStyle={{
                       background: "var(--color-card)",
                       border: "1px solid var(--color-border)",
-                      fontSize: 12,
+                      fontSize: 14,
                     }}
                   />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Legend wrapperStyle={{ fontSize: 14 }} />
                   <Line
                     yAxisId="left"
                     type="monotone"
@@ -211,22 +222,36 @@ export function AnalyticsTrendsTab({ query }: Props) {
                 initialDimension={RESPONSIVE_CHART_INITIAL_DIMENSION}
               >
                 <BarChart data={tierData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="tier" stroke="var(--color-text-zero)" fontSize={11} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--color-border)"
+                  />
+                  <XAxis
+                    dataKey="tier"
+                    stroke="var(--color-text-zero)"
+                    fontSize={14}
+                  />
                   <YAxis
                     stroke="var(--color-amber)"
-                    fontSize={11}
+                    fontSize={14}
                     tickFormatter={(v) => `$${v}`}
                   />
                   <Tooltip
                     contentStyle={{
                       background: "var(--color-card)",
                       border: "1px solid var(--color-border)",
-                      fontSize: 12,
+                      fontSize: 14,
                     }}
-                    formatter={(v) => [`$${Number(v ?? 0).toFixed(2)}`, "Earnings"]}
+                    formatter={(v) => [
+                      `$${Number(v ?? 0).toFixed(2)}`,
+                      "Earnings",
+                    ]}
                   />
-                  <Bar dataKey="earnings" fill="var(--color-amber)" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="earnings"
+                    fill="var(--color-amber)"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -243,7 +268,9 @@ export function AnalyticsTrendsTab({ query }: Props) {
       <Card>
         <CardHeader>
           <CardTitle>Pageviews by tier</CardTitle>
-          <CardDescription>Traffic distribution across content types.</CardDescription>
+          <CardDescription>
+            Traffic distribution across content types.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {hasTier ? (
@@ -255,18 +282,32 @@ export function AnalyticsTrendsTab({ query }: Props) {
                 initialDimension={RESPONSIVE_CHART_INITIAL_DIMENSION}
               >
                 <BarChart data={tierData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="tier" stroke="var(--color-text-zero)" fontSize={11} />
-                  <YAxis stroke="var(--color-cyan)" fontSize={11} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--color-border)"
+                  />
+                  <XAxis
+                    dataKey="tier"
+                    stroke="var(--color-text-zero)"
+                    fontSize={14}
+                  />
+                  <YAxis stroke="var(--color-cyan)" fontSize={14} />
                   <Tooltip
                     contentStyle={{
                       background: "var(--color-card)",
                       border: "1px solid var(--color-border)",
-                      fontSize: 12,
+                      fontSize: 14,
                     }}
-                    formatter={(v) => [Number(v ?? 0).toLocaleString(), "Pageviews"]}
+                    formatter={(v) => [
+                      Number(v ?? 0).toLocaleString(),
+                      "Pageviews",
+                    ]}
                   />
-                  <Bar dataKey="pageviews" fill="var(--color-cyan)" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="pageviews"
+                    fill="var(--color-cyan)"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -284,8 +325,8 @@ export function AnalyticsTrendsTab({ query }: Props) {
         <CardHeader>
           <CardTitle>Publish-to-peak curve</CardTitle>
           <CardDescription>
-            Average pageviews per article on each day after publish.
-            Reveals the natural decay shape across the filtered set.
+            Average pageviews per article on each day after publish. Reveals the
+            natural decay shape across the filtered set.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -297,8 +338,8 @@ export function AnalyticsTrendsTab({ query }: Props) {
         <CardHeader>
           <CardTitle>Pageviews heatmap</CardTitle>
           <CardDescription>
-            Pageviews bucketed by week × day-of-week. Spot weekday vs
-            weekend patterns. Darker cyan = more traffic.
+            Pageviews bucketed by week × day-of-week. Spot weekday vs weekend
+            patterns. Darker cyan = more traffic.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -314,7 +355,11 @@ export function AnalyticsTrendsTab({ query }: Props) {
 // --------------------------------------------------------------------------
 
 function PublishToPeakChart({ curve }: { curve: PublishToPeakPoint[] | null }) {
-  if (!curve || curve.length === 0 || curve.every((p) => p.avgPageviews === 0)) {
+  if (
+    !curve ||
+    curve.length === 0 ||
+    curve.every((p) => p.avgPageviews === 0)
+  ) {
     return (
       <EmptyState
         icon={<TrendingUp className="h-5 w-5" />}
@@ -336,21 +381,21 @@ function PublishToPeakChart({ curve }: { curve: PublishToPeakPoint[] | null }) {
           <XAxis
             dataKey="day"
             stroke="var(--color-text-zero)"
-            fontSize={11}
+            fontSize={14}
             label={{
               value: "Days since publish",
               position: "insideBottom",
               offset: -5,
               fill: "var(--color-text-zero)",
-              fontSize: 10,
+              fontSize: 14,
             }}
           />
-          <YAxis stroke="var(--color-cyan)" fontSize={11} />
+          <YAxis stroke="var(--color-cyan)" fontSize={14} />
           <Tooltip
             contentStyle={{
               background: "var(--color-card)",
               border: "1px solid var(--color-border)",
-              fontSize: 12,
+              fontSize: 14,
             }}
             formatter={(value, _name, item) => {
               const v = Number(value ?? 0);

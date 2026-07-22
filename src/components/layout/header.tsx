@@ -74,7 +74,7 @@ export function Header({
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-tab bg-card/75 px-6">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-tab bg-card/75 px-3 sm:px-4 lg:px-6">
       {/* Left — hamburger on mobile, brand echo on desktop */}
       <div className="flex items-center gap-2 text-sm">
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -82,13 +82,13 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="lg:hidden"
               aria-label="Open menu"
             >
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-4 md:hidden">
+          <SheetContent side="left" className="w-64 p-4 lg:hidden">
             <SheetTitle className="sr-only">Application navigation</SheetTitle>
             <span className="mb-4 font-data text-sm font-bold uppercase tracking-[0.3px] text-cyan">
               Pitcher List
@@ -128,7 +128,7 @@ export function Header({
             ) : null}
           </SheetContent>
         </Sheet>
-        <span className="hidden font-sans text-[10px] font-semibold uppercase tracking-wider text-text-zero md:inline">
+        <span className="hidden font-sans text-[10px] font-semibold uppercase tracking-wider text-text-zero lg:inline">
           Staff Dashboard
         </span>
       </div>
@@ -158,7 +158,9 @@ export function Header({
           <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuLabel>Signed in as</DropdownMenuLabel>
             <div className="px-2 pb-2 pt-0">
-              <p className="text-sm font-medium text-foreground">{displayName}</p>
+              <p className="text-sm font-medium text-foreground">
+                {displayName}
+              </p>
               <p className="text-xs text-text-zero">{email}</p>
               {roles.length > 0 ? (
                 <p className="mt-1 font-data text-[10px] uppercase tracking-wider text-text-zero">

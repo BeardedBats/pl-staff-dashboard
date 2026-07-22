@@ -40,13 +40,15 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
 function Badge({ className, variant, ...props }: BadgeProps) {
   return (
     <div
       data-slot="badge"
+      data-plpd-compact-label
       className={cn(badgeVariants({ variant }), className)}
       {...props}
     />

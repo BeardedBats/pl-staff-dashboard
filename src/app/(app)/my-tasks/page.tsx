@@ -1,10 +1,5 @@
 import Link from "next/link";
-import {
-  AlertTriangle,
-  ClipboardEdit,
-  Clock,
-  Pencil,
-} from "lucide-react";
+import { AlertTriangle, ClipboardEdit, Clock, Pencil } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { listEntries, type EntrySummary } from "@/lib/entries/queries";
 import {
@@ -202,13 +197,17 @@ function TaskRow({
             {entry.priority ? (
               <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber" />
             ) : null}
-            <h3 className="truncate text-sm font-medium text-text-cell">
+            <h3 className="break-words text-sm font-medium text-text-cell">
               {entry.title}
             </h3>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <Badge variant="outline" className="font-data">{entry.tier.name}</Badge>
-            <Badge variant="outline" className="font-data">{entry.site.toUpperCase()}</Badge>
+            <Badge variant="outline" className="font-data">
+              {entry.tier.name}
+            </Badge>
+            <Badge variant="outline" className="font-data">
+              {entry.site.toUpperCase()}
+            </Badge>
             {showEditorStatus ? (
               <EditorStatusBadge status={entry.editor_status} />
             ) : (
@@ -277,10 +276,12 @@ function DeadlineItem({
         className="block rounded-sm px-2 py-1.5 hover:bg-surface-3"
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-xs font-medium text-text-cell">
+          <span className="break-words text-xs font-medium text-text-cell">
             {entry.title}
           </span>
-          <Badge variant="outline" className="font-data">{entry.tier.name}</Badge>
+          <Badge variant="outline" className="font-data">
+            {entry.tier.name}
+          </Badge>
         </div>
         <div
           className={

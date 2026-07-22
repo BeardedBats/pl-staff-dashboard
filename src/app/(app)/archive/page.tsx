@@ -215,10 +215,7 @@ export default function ArchivePage() {
             site={siteHistorical}
             onSite={setSiteHistorical}
           />
-          <HistoricalTable
-            entries={historical}
-            loading={loadingHistorical}
-          />
+          <HistoricalTable entries={historical} loading={loadingHistorical} />
           <PaginationControls
             page={pageHistorical}
             total={totalHistorical}
@@ -323,9 +320,7 @@ function ArchivedTable({
       />
     );
   }
-  const showUnarchiveColumn = entries.some((entry) =>
-    canUnarchive(entry.site),
-  );
+  const showUnarchiveColumn = entries.some((entry) => canUnarchive(entry.site));
   return (
     <div className="plpd-table-shell overflow-auto">
       <table className="plpd-table font-data">
@@ -368,10 +363,14 @@ function ArchivedTable({
                 )}
               </td>
               <td className="px-3 py-3 align-top">
-                <Badge variant="outline" className="font-data">{entry.tier.name}</Badge>
+                <Badge variant="outline" className="font-data">
+                  {entry.tier.name}
+                </Badge>
               </td>
               <td className="px-3 py-3 align-top">
-                <Badge variant="outline" className="font-data">{entry.site.toUpperCase()}</Badge>
+                <Badge variant="outline" className="font-data">
+                  {entry.site.toUpperCase()}
+                </Badge>
               </td>
               <td className="px-3 py-3 align-top text-xs text-text-team">
                 {entry.publish_date
@@ -379,7 +378,7 @@ function ArchivedTable({
                   : "—"}
               </td>
               <td className="px-3 py-3 align-top">
-                <span className="line-clamp-2 max-w-md text-xs text-text-team">
+                <span className="max-w-md break-words text-xs text-text-team">
                   {entry.archive_reason ?? (
                     <span className="text-text-zero">—</span>
                   )}
@@ -476,7 +475,9 @@ function HistoricalTable({
                 )}
               </td>
               <td className="px-3 py-3 align-top">
-                <Badge variant="outline" className="font-data">{entry.site.toUpperCase()}</Badge>
+                <Badge variant="outline" className="font-data">
+                  {entry.site.toUpperCase()}
+                </Badge>
               </td>
               <td className="px-3 py-3 align-top text-xs text-text-team">
                 {entry.publish_date

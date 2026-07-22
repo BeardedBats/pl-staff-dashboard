@@ -50,10 +50,8 @@ export function EntryList({
               href={`/content?entry=${e.id}`}
               className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-xs hover:border-border hover:bg-surface-3/30"
             >
-              <span className="flex-1 truncate font-medium text-text-cell">
-                {e.priority ? (
-                  <span className="mr-1 text-amber">★</span>
-                ) : null}
+              <span className="min-w-0 flex-1 break-words font-medium text-text-cell">
+                {e.priority ? <span className="mr-1 text-amber">★</span> : null}
                 {e.title}
               </span>
               <Badge variant="outline" className="font-data text-[9px]">

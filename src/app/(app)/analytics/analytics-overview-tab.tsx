@@ -1,7 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { DollarSign, Eye, FileText, Gauge, TrendingUp, Users } from "lucide-react";
+import {
+  DollarSign,
+  Eye,
+  FileText,
+  Gauge,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -118,25 +125,32 @@ export function AnalyticsOverviewTab({ query }: Props) {
                 initialDimension={RESPONSIVE_CHART_INITIAL_DIMENSION}
               >
                 <AreaChart data={data.daily}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="date" stroke="var(--color-text-zero)" fontSize={11} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--color-border)"
+                  />
+                  <XAxis
+                    dataKey="date"
+                    stroke="var(--color-text-zero)"
+                    fontSize={14}
+                  />
                   <YAxis
                     yAxisId="left"
                     stroke="var(--color-cyan)"
-                    fontSize={11}
+                    fontSize={14}
                   />
                   <YAxis
                     yAxisId="right"
                     orientation="right"
                     stroke="var(--color-amber)"
-                    fontSize={11}
+                    fontSize={14}
                     tickFormatter={(v) => `$${v}`}
                   />
                   <Tooltip
                     contentStyle={{
                       background: "var(--color-card)",
                       border: "1px solid var(--color-border)",
-                      fontSize: 12,
+                      fontSize: 14,
                     }}
                     formatter={(value, name) => {
                       const num = Number(value ?? 0);

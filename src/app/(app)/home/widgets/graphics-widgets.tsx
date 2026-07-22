@@ -32,7 +32,7 @@ function GraphicList({
             href={`/graphics?request=${g.id}`}
             className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-xs hover:border-border hover:bg-surface-3/30"
           >
-            <span className="flex-1 truncate">
+            <span className="min-w-0 flex-1 break-words">
               <span className="font-medium text-text-cell">{g.title}</span>
               <span className="mx-1 text-text-zero">·</span>
               <span className="text-text-team">{g.entry_title}</span>

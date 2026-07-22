@@ -22,9 +22,9 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
-      {/* Sidebar hidden on mobile, visible on md+ */}
-      <div className="hidden md:block">
+    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
+      {/* Persistent navigation is desktop-only; mobile and tablet use the drawer. */}
+      <div className="hidden lg:block">
         <Sidebar userRoles={user.roles} userDisplayName={user.display_name} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -38,7 +38,9 @@ export default async function AppLayout({
           userDisplayName={user.display_name}
         />
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1600px] p-6">{children}</div>
+          <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-5 lg:p-6">
+            {children}
+          </div>
         </main>
       </div>
       <OnboardingTour enabled={!user.onboarding_completed} />
