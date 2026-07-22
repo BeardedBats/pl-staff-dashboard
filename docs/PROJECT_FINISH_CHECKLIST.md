@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.8/P1.9/P1.12 — Apply verified migrations when DDL access arrives; package P1.12 and continue P1.13
-- Branch: `codex/production-readiness-p1-12`
-- Stack base: `c152289` (green draft PR #12, based on green draft PRs #11, #10, and #9).
+- Current action: P1.8/P1.9/P1.12/P1.13 — Apply verified migrations when DDL access arrives; package P1.13 and continue P1.14
+- Branch: `codex/production-readiness-p1-13`
+- Stack base: `cbd2935` (green draft PR #13, based on green draft PRs #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -44,8 +44,8 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
 - [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules. — GREEN DRAFT PR #11; STACKED RELEASE PENDING P1.8/P1.9
 - [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8–P1.10
-- [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
-- [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries.
+- [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability. — GREEN DRAFT PR #13; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
+- [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
 - [ ] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities.
 - [ ] P1.15 Either implement unfinished notification/settings behavior or remove misleading UI, types, tables, and code paths.
 - [ ] P1.16 Add regression tests for every repaired security or integrity defect.
@@ -335,6 +335,14 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - A two-connection filesystem-independent probe held the first claim transaction open; the second claimant blocked and then returned `overlap`. Application regressions cover unavailable control, duplicate/overlap/exhaustion no-ops, success/failure persistence, finish failure, and exception redaction.
 - Reminder jobs now use database-enforced per-recipient keys instead of check-then-insert races. A partial unclaimed-alert attempt can retry missing managers without suppressing them, and site-only managers no longer receive the other site's alerts. Unique-key behavior, null-key compatibility, hostile keys, caller wiring, and PL/QB/both recipient selection are covered.
 - Final P1.12 gate: cold reset through `0015`; 105 pgTAP probes; real two-connection overlap probe; generated-type drift and database lint clean; 17 Vitest files / 88 tests; ESLint, TypeScript, and production build pass. Actual email/Discord delivery remains intentionally outside this claim because those adapters are still stubs tracked by P1.15.
+
+### 2026-07-21 — P1.13 database and private-storage boundary gate
+
+- Catalog inspection found two server-only privilege drifts: the new `cron_runs` table was not forced through RLS, and public functions still inherited execution from `PUBLIC`. Migration `0016_reassert_server_only_data_boundary.sql` reasserts enabled and forced RLS for every public table, removes direct anon/authenticated table and function privileges, and preserves service-role function execution.
+- A clean-database reset exposed a second drift: earlier migrations only updated an already-existing `graphics` bucket. Migration `0016` now idempotently creates or updates the exact private bucket with a 10 MB limit and the image MIME allowlist. The reset through `0016`, database lint, generated-type drift check, and all 120 pgTAP probes pass.
+- Runtime denial probes verified all 30 public tables and three representative server-only RPCs reject the anonymous role. The source boundary contains no browser Supabase client or public-object URL call; signing remains in server-only modules after resource authorization.
+- A disposable production object probe verified upload, public denial (HTTP 400), signed read (HTTP 200), expiry denial (HTTP 400), and cleanup without emitting object paths or tokens. The one historical expiring signed URL stored in `graphic_requests.file_url` is cleared by migration; new uploads persist only the durable private path and mint bounded-lifetime URLs on authorized reads.
+- Final local P1.13 gate: 18 Vitest files / 98 tests; 120 pgTAP probes; anonymous table/RPC denial; disposable production private-object lifecycle; database lint and generated-type drift clean; ESLint, TypeScript, and production build pass.
 
 ## Phase 0 prioritized defect and risk inventory
 

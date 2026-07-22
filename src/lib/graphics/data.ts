@@ -118,7 +118,7 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
     .from("graphic_requests")
     .select(
       `id, entry_id, title, description, urgency_date, graphic_status,
-       claimed_by, created_by, file_url, file_name, file_size, mime_type,
+       claimed_by, created_by, file_name, file_size, mime_type,
        storage_path, wp_media_id, flag_reason, is_featured, created_at, updated_at,
        entries!inner(id, title, site, publish_date, wp_post_id, is_archived)`,
     )
@@ -145,7 +145,6 @@ export async function listGraphicRequests(viewer: CurrentUser, filters: {
     graphic_status: GraphicStatus;
     claimed_by: string | null;
     created_by: string | null;
-    file_url: string | null;
     file_name: string | null;
     file_size: number | null;
     mime_type: string | null;
@@ -273,7 +272,7 @@ export async function getGraphicRequestById(
     .from("graphic_requests")
     .select(
       `id, entry_id, title, description, urgency_date, graphic_status,
-       claimed_by, created_by, file_url, file_name, file_size, mime_type,
+       claimed_by, created_by, file_name, file_size, mime_type,
        storage_path, wp_media_id, flag_reason, is_featured, created_at, updated_at,
        entries!inner(id, title, site, publish_date, wp_post_id, is_archived)`,
     )
@@ -291,7 +290,6 @@ export async function getGraphicRequestById(
     graphic_status: GraphicStatus;
     claimed_by: string | null;
     created_by: string | null;
-    file_url: string | null;
     file_name: string | null;
     file_size: number | null;
     mime_type: string | null;
