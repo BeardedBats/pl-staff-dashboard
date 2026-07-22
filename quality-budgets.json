@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "measurement": {
+    "runtime": "Next.js production server with local Supabase fixtures",
+    "browser": "Playwright Chromium desktop unless the profile says mobile",
+    "runsPerProfile": 1,
+    "fieldDataClaimed": false
+  },
+  "profiles": {
+    "login-mobile": {
+      "maxFcpMs": 1800,
+      "maxLcpMs": 2500,
+      "maxCls": 0.1,
+      "maxTotalBlockingTimeMs": 300,
+      "maxEncodedBodyBytes": 400000,
+      "maxScriptEncodedBodyBytes": 250000,
+      "maxRequests": 20,
+      "maxDomNodes": 100
+    },
+    "writer-content": {
+      "maxFcpMs": 1800,
+      "maxLcpMs": 2500,
+      "maxCls": 0.1,
+      "maxTotalBlockingTimeMs": 300,
+      "maxEncodedBodyBytes": 600000,
+      "maxScriptEncodedBodyBytes": 400000,
+      "maxRequests": 60,
+      "maxDomNodes": 650
+    },
+    "admin-settings": {
+      "maxFcpMs": 1800,
+      "maxLcpMs": 2500,
+      "maxCls": 0.1,
+      "maxTotalBlockingTimeMs": 300,
+      "maxEncodedBodyBytes": 600000,
+      "maxScriptEncodedBodyBytes": 400000,
+      "maxRequests": 60,
+      "maxDomNodes": 500
+    }
+  }
+}

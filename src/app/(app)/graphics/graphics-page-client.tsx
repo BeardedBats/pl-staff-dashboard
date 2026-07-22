@@ -98,7 +98,7 @@ export function GraphicsPageClient({
             setStatusFilter(v === ALL ? "" : (v as GraphicStatus))
           }
         >
-          <SelectTrigger className="h-8 w-[150px] text-xs">
+          <SelectTrigger aria-label="Filter graphic requests by status" className="h-8 w-[150px] text-xs">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -114,7 +114,7 @@ export function GraphicsPageClient({
           value={siteFilter || ALL}
           onValueChange={(v) => setSiteFilter(v === ALL ? "" : (v as AppSite))}
         >
-          <SelectTrigger className="h-8 w-[130px] text-xs">
+          <SelectTrigger aria-label="Filter graphic requests by site" className="h-8 w-[130px] text-xs">
             <SelectValue placeholder="Site" />
           </SelectTrigger>
           <SelectContent>

@@ -940,7 +940,7 @@ function EntriesToolbar({
           value={filters.site || ALL}
           onValueChange={(v) => update("site", v === ALL ? "" : (v as AppSite))}
         >
-          <SelectTrigger className="h-8 w-[110px] text-xs">
+          <SelectTrigger aria-label="Filter by site" className="h-8 w-[110px] text-xs">
             <SelectValue placeholder="Site" />
           </SelectTrigger>
           <SelectContent>
@@ -954,7 +954,7 @@ function EntriesToolbar({
           value={filters.tierId || ALL}
           onValueChange={(v) => update("tierId", v === ALL ? "" : v)}
         >
-          <SelectTrigger className="h-8 w-[140px] text-xs">
+          <SelectTrigger aria-label="Filter by tier" className="h-8 w-[140px] text-xs">
             <SelectValue placeholder="Tier" />
           </SelectTrigger>
           <SelectContent>
@@ -973,7 +973,7 @@ function EntriesToolbar({
             update("contentStatus", v === ALL ? "" : (v as ContentStatus))
           }
         >
-          <SelectTrigger className="h-8 w-[150px] text-xs">
+          <SelectTrigger aria-label="Filter by content status" className="h-8 w-[150px] text-xs">
             <SelectValue placeholder="Content status" />
           </SelectTrigger>
           <SelectContent>
@@ -992,7 +992,7 @@ function EntriesToolbar({
             update("editorStatus", v === ALL ? "" : (v as EditorStatus))
           }
         >
-          <SelectTrigger className="h-8 w-[150px] text-xs">
+          <SelectTrigger aria-label="Filter by editor status" className="h-8 w-[150px] text-xs">
             <SelectValue placeholder="Editor status" />
           </SelectTrigger>
           <SelectContent>
@@ -1010,7 +1010,7 @@ function EntriesToolbar({
             update("priority", v === ALL ? "" : (v as "true" | "false"))
           }
         >
-          <SelectTrigger className="h-8 w-[130px] text-xs">
+          <SelectTrigger aria-label="Filter by priority" className="h-8 w-[130px] text-xs">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -1030,7 +1030,7 @@ function EntriesToolbar({
             onFiltersChange({ ...filters, sortBy, sortDir });
           }}
         >
-          <SelectTrigger className="h-8 w-[170px] text-xs">
+          <SelectTrigger aria-label="Sort entries" className="h-8 w-[170px] text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

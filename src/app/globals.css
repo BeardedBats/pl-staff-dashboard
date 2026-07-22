@@ -32,6 +32,10 @@
   --text-player: rgba(246, 248, 255, 0.96);
   --text-team: rgba(180, 187, 215, 0.82);
   --text-zero: rgba(164, 170, 202, 0.7);
+  /* Accessibility presentation override for small/body muted text. The source
+     PLPD text-zero token remains above for reference, but its translucent
+     value does not reach WCAG AA on every approved surface. */
+  --text-zero-accessible: rgba(190, 196, 224, 0.78);
   --text-bn: rgba(226, 230, 244, 0.76);
   --text-bn-player: rgba(238, 241, 250, 0.82);
   --text-bn-team: rgba(166, 172, 202, 0.54);
@@ -78,7 +82,7 @@
   --secondary: var(--surface-3);
   --secondary-foreground: var(--text-cell);
   --muted: var(--surface-3);
-  --muted-foreground: var(--text-zero);
+  --muted-foreground: var(--text-zero-accessible);
   --accent: var(--amber);
   --accent-foreground: var(--surface-1);
   --destructive: var(--red);
@@ -96,9 +100,9 @@
    (mesh background, translucent rows) necessarily degrades here:
    the mesh is dropped for a flat light gradient (Q3), and the
    translucent surfaces read as near-opaque on a light canvas.
-   Only the surface ramp, text ramp, and borders are re-derived —
-   every semantic/brand color (green/red/blue/violet/gold/cyan/
-   amber/val-pos/val-neg) is shared with the dark canon above.
+   The surface ramp, text ramp, borders, and semantic foregrounds are
+   re-derived. Bright dark-mode brand colors do not reach WCAG contrast on
+   white, so light mode uses darker equivalents for text, controls, and rings.
    =========================================================== */
 .light {
   /* Surface ramp (light) */
@@ -115,10 +119,23 @@
   --text-player: #0f1426;
   --text-team: rgba(60, 68, 98, 0.82);
   --text-zero: rgba(110, 118, 148, 0.8);
+  --text-zero-accessible: #525a78;
   --text-bn: rgba(60, 68, 98, 0.8);
   --text-bn-player: rgba(40, 48, 80, 0.85);
   --text-bn-team: rgba(110, 118, 148, 0.7);
   --text-bn-zero: rgba(130, 138, 165, 0.7);
+
+  /* Accessible light-mode semantic/brand foregrounds */
+  --cyan: #00677a;
+  --cyan-header: #00616f;
+  --amber: #7a4300;
+  --green: #08744f;
+  --red: #a61b2b;
+  --blue: #005ca8;
+  --violet: #5b21b6;
+  --gold: #704c00;
+  --val-pos: #2b6f59;
+  --val-neg: #9e3945;
 
   /* Borders (light) */
   --border-sidebar: rgba(20, 40, 80, 0.12);
@@ -148,7 +165,7 @@
   --secondary: var(--surface-3);
   --secondary-foreground: var(--text-cell);
   --muted: var(--surface-3);
-  --muted-foreground: var(--text-zero);
+  --muted-foreground: var(--text-zero-accessible);
   --accent: var(--amber);
   --accent-foreground: #3a2400;
   --destructive: var(--red);
@@ -184,7 +201,7 @@
   --color-text-cell: var(--text-cell);
   --color-text-player: var(--text-player);
   --color-text-team: var(--text-team);
-  --color-text-zero: var(--text-zero);
+  --color-text-zero: var(--text-zero-accessible);
   --color-text-bn: var(--text-bn);
   --color-text-bn-player: var(--text-bn-player);
   --color-text-bn-team: var(--text-bn-team);
