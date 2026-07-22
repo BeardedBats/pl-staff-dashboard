@@ -73,7 +73,9 @@ const dateBoundsSchema = z.object({
 });
 
 const pagePerformanceRowSchema = z.object({
-  pageUrl: z.string().url(),
+  // Creator API page-performance rows may contain either an absolute URL or
+  // the hostless article path consumed by normalizeAnalyticsPath().
+  pageUrl: z.string().trim().min(1).max(4096),
   earnings: apiNumberSchema,
   pageviews: apiNonnegativeIntegerSchema,
   rpm: apiNumberSchema,
