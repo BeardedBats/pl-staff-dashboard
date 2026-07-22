@@ -229,7 +229,7 @@ export function AnalyticsMiniWidget({ data }: { data: MiniAnalytics }) {
                   <DollarSign className="h-3 w-3" />
                   Revenue
                 </div>
-                <div className="font-data text-lg font-semibold tabular-nums text-amber">
+                <div className="font-data text-lg font-semibold tabular-nums text-text-cell">
                   ${data.revenue.toFixed(2)}
                 </div>
               </CardContent>

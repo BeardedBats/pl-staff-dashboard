@@ -117,8 +117,8 @@ export function NotificationPrefsPanel({ userId }: Props) {
               <h3 className="mb-2 font-sans text-[10px] font-semibold uppercase tracking-wider text-text-zero">
                 {group.label}
               </h3>
-              <div className="overflow-hidden rounded-md border border-border">
-                <table className="w-full font-data text-sm">
+              <div className="plpd-table-shell overflow-hidden">
+                <table className="plpd-table font-data">
                   <thead className="bg-surface-3">
                     <tr>
                       <th className="w-full px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-text-zero">

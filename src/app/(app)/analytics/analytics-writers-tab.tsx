@@ -9,6 +9,7 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
+import { TableValue } from "@/components/ui/table";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import type { AnalyticsWriterRow } from "@/lib/analytics/queries";
 
@@ -96,15 +97,15 @@ export function AnalyticsWritersTab({ query }: Props) {
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
               <div className="flex justify-between">
                 <span className="text-text-zero">Revenue</span>
-                <span className="font-data tabular-nums font-medium text-amber">
+                <TableValue value={r.earnings} className="font-medium">
                   ${r.earnings.toFixed(2)}
-                </span>
+                </TableValue>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-zero">Pageviews</span>
-                <span className="font-data tabular-nums text-text-cell">
+                <TableValue value={r.pageviews} className="text-text-cell">
                   {r.pageviews.toLocaleString()}
-                </span>
+                </TableValue>
               </div>
             </div>
           </div>
@@ -116,15 +117,15 @@ export function AnalyticsWritersTab({ query }: Props) {
   return (
     <Card>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full font-data text-sm">
+        <div className="plpd-table-shell overflow-x-auto">
+          <table className="plpd-table font-data">
             <thead className="plpd-thead text-[12px] uppercase tracking-wide text-cyan-header">
               <tr className="border-b border-border">
                 <th className="px-3 py-2 text-left">Writer</th>
-                <th className="px-3 py-2 text-right">Articles</th>
-                <th className="px-3 py-2 text-right">Pageviews</th>
-                <th className="px-3 py-2 text-right">Revenue</th>
-                <th className="px-3 py-2 text-right">Revenue / Word</th>
+                <th data-numeric="true" className="px-3 py-2 text-right">Articles</th>
+                <th data-numeric="true" className="px-3 py-2 text-right">Pageviews</th>
+                <th data-numeric="true" className="px-3 py-2 text-right">Revenue</th>
+                <th data-numeric="true" className="px-3 py-2 text-right">Revenue / Word</th>
               </tr>
             </thead>
             <tbody>
@@ -146,16 +147,16 @@ export function AnalyticsWritersTab({ query }: Props) {
                       </span>
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  <td data-numeric="true" data-zero={r.articles === 0} className="px-3 py-2 text-right tabular-nums">
                     {r.articles.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  <td data-numeric="true" data-zero={r.pageviews === 0} className="px-3 py-2 text-right tabular-nums">
                     {r.pageviews.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums font-medium text-amber">
+                  <td data-numeric="true" data-zero={r.earnings === 0} className="px-3 py-2 text-right tabular-nums font-medium">
                     ${r.earnings.toFixed(2)}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-text-team">
+                  <td data-numeric="true" data-zero={r.revenue_per_word === 0} className="px-3 py-2 text-right tabular-nums text-text-team">
                     ${r.revenue_per_word.toFixed(4)}
                   </td>
                 </tr>

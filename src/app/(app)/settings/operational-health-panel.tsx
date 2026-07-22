@@ -164,8 +164,8 @@ export function OperationalHealthPanel({ initialHealth }: Props) {
 
         <section className="space-y-2" aria-label="Scheduled job health">
           <h3 className="text-sm font-medium text-text-cell">Scheduled jobs</h3>
-          <div className="overflow-x-auto rounded-md border border-border">
-            <table className="w-full font-data text-xs">
+          <div className="plpd-table-shell overflow-x-auto">
+            <table className="plpd-table font-data">
               <thead className="bg-card text-[10px] uppercase tracking-wide text-text-zero">
                 <tr className="border-b border-border">
                   <th className="px-3 py-2 text-left">Job</th>

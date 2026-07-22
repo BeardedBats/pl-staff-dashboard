@@ -14,13 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
 import { UserAvatar } from "@/components/users/user-avatar";
 import { formatDate } from "@/lib/utils";
 import type { EntrySummary } from "@/lib/entries/queries";
 import type { AppRole, AppSite } from "@/lib/auth/current-user";
 
 const SITE_ALL = "__all__";
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 type SiteFilter = AppSite | "";
 
@@ -244,27 +245,13 @@ function PaginationControls({
   if (total === 0) return null;
   const totalPages = Math.max(Math.ceil(total / pageSize), 1);
   return (
-    <div className="mt-3 flex items-center justify-center gap-3 text-xs text-text-team">
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={page <= 1}
-        onClick={() => onPageChange(page - 1)}
-      >
-        ← Previous
-      </Button>
-      <span>
-        Page {page} of {totalPages}
-      </span>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={page >= totalPages}
-        onClick={() => onPageChange(page + 1)}
-      >
-        Next →
-      </Button>
-    </div>
+    <Pagination
+      page={page}
+      pageCount={totalPages}
+      onPageChange={onPageChange}
+      className="mt-3"
+      aria-label="Archive pages"
+    />
   );
 }
 
@@ -340,8 +327,8 @@ function ArchivedTable({
     canUnarchive(entry.site),
   );
   return (
-    <div className="overflow-auto rounded-lg border border-border bg-card">
-      <table className="w-full font-data text-sm">
+    <div className="plpd-table-shell overflow-auto">
+      <table className="plpd-table font-data">
         <thead className="plpd-thead border-b border-border-thead">
           <tr className="text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
             <th className="px-3 py-2">Title</th>
@@ -449,8 +436,8 @@ function HistoricalTable({
     );
   }
   return (
-    <div className="overflow-auto rounded-lg border border-border bg-card">
-      <table className="w-full font-data text-sm">
+    <div className="plpd-table-shell overflow-auto">
+      <table className="plpd-table font-data">
         <thead className="plpd-thead border-b border-border-thead">
           <tr className="text-left font-data text-[13px] font-semibold uppercase tracking-wide text-cyan-header">
             <th className="px-3 py-2">Title</th>

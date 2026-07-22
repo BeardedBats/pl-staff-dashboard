@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 3 — PLPD design-system foundation
-- Current action: P3.7 — Bring tables, alignment, zero styling, row fills, hover, pagination, and data colors into exact guide compliance.
-- Branch: `codex/production-readiness-p3-6`
-- Stack base: `568bd29` (green draft PR #34, based on green draft PRs #33, #32, #31, #30, #29, #28, #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P3.8 — Remove Never List violations.
+- Branch: `codex/production-readiness-p3-7`
+- Stack base: `e6695be` (P3.6 exact-evidence head on green draft PR #35, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -79,7 +79,7 @@ Gate: a clean checkout can prove correctness in CI, and production failures are 
 - [x] P3.4 Preserve the subtle-glass-over-mesh doctrine without opaque panels or heavy frosted glass.
 - [x] P3.5 Implement all required component states: default, hover, active, loading, error, empty, and gated.
 - [x] P3.6 Ensure gated data is withheld on the server rather than sent to the client and visually blurred.
-- [ ] P3.7 Bring tables, numeric alignment, zero styling, row fills, hover behavior, pagination, and data colors into exact guide compliance.
+- [x] P3.7 Bring tables, numeric alignment, zero styling, row fills, hover behavior, pagination, and data colors into exact guide compliance.
 - [ ] P3.8 Remove Never List violations.
 - [ ] P3.9 Create responsive desktop, tablet, and mobile behavior without inventing new brand colors or visual language.
 - [ ] P3.10 Add automated accessibility checks and keyboard/focus verification.
@@ -540,6 +540,18 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Retained EIC/admin captures were visually inspected. The EIC home clearly renders `$731.29` with an intact one-point chart; the admin content page shows the same sentinel entry but no analytics surface or financial value, with no clipping, overflow, framework overlay, or visual masking.
 - Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 61 Vitest files / 282 tests; 10 database files / 306 pgTAP assertions including direct-client privilege denial; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 17 production-quality checks pass.
 - Clean GitHub run [29881193576](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29881193576) independently passed Application, Database, Dependencies, all 10 Browser journeys, all 17 production-quality checks, and retained quality evidence at implementation head `55eac4c`. The Vercel preview passed, and draft PR #35 was merge-clean and mergeable at that tested head.
+- Exact evidence-head run [29881483493](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29881483493) independently passed all four jobs on retry after the first GitHub-hosted Database runner encountered an already-occupied local port before project code ran. Attempt two passed Application, Database, Dependencies, all 10 Browser journeys, and all 17 quality checks at `e6695be`; Vercel passed and draft PR #35 remained merge-clean and mergeable.
+
+### 2026-07-21 — P3.7 exact table-system gate
+
+- Reverified the complete visual authority at SHA-256 `DB7CDC395BD380FECA6DBFA0D687D7AB577BF9B9D80D79CF96388A64E804C98B` and documented one shared table/data-value construction. All 12 literal tables across 10 application files now use `plpd-table-shell`, `plpd-table`, and explicit Work Sans ownership.
+- Corrected the table-header token from the nearby `#2E3150` surface color to the guide's exact `#2E3658`. Shared CSS now owns the 34.5px header, 16px/600 cyan labels, 62px rows, 14px data, tabular numerals, right-aligned numeric columns, zebra fills, and the actual 120ms cell-background hover transition.
+- Row states use dedicated fills and text ramps without opacity. Selected and expanded Content rows, priority editor work, inactive templates, and the guide's bench/injured/best vocabulary compose through inspectable attributes; expanded detail rows have an explicit escape from fixed row geometry.
+- Added `TableValue` for literal-zero and optional signed-delta presentation. Zeros use the documented AA-safe muted override; positive/negative deltas use the guide's softer value colors. Revenue totals remain neutral data and no longer borrow the amber active-state accent.
+- Replaced Archive's bespoke text pager with the shared 32px chevron construction and exact 25-row page size. A database-backed production-Chromium fixture creates 26 archived records and proves first/second-page membership, both disabled endpoints, 14px spacing, 40% disabled opacity, and 1.2 hover brightness.
+- Two new production-Chromium checks prove exact computed header/row geometry, Work Sans, numeric alignment, literal-zero color, 120ms hover, cyan hover fill, and pagination endpoint behavior. Retained Analytics and Archive captures were visually inspected; hierarchy, table depth, row density, zero subordination, and the one-row second page are intact with no clipping or overflow.
+- React review found no new effects, requests, state synchronization, client boundary, or unstable render allocation. The shared primitive props remain colocated and typed; the database fixture is deterministic and cleanup-safe.
+- Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 62 Vitest files / 289 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 19 production-quality checks pass.
 
 ## Phase 0 prioritized defect and risk inventory
 

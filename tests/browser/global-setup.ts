@@ -7,6 +7,11 @@ import jwt from "jsonwebtoken";
 
 const ACCESS_SECRET = "browser-test-access-secret-at-least-32-characters";
 const AUTH_DIRECTORY = path.join(process.cwd(), "test-results", "auth");
+const tableArchiveEntryIds = Array.from(
+  { length: 26 },
+  (_, index) =>
+    `28700000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`,
+);
 
 export const browserActors = {
   writer: {
@@ -58,6 +63,7 @@ export const browserRecords = {
   analyticsRowId: "28500000-0000-0000-0000-000000000001",
   revenueRowId: "28600000-0000-0000-0000-000000000001",
   financialSentinel: 731.2942,
+  tableArchiveEntryIds,
 } as const;
 
 function localServiceRoleKey(): string {
@@ -140,6 +146,10 @@ export default async function globalSetup() {
   await expectWrite(
     supabase.from("entries").delete().like("title", "E2E P2.8%"),
     "remove prior generated browser entries",
+  );
+  await expectWrite(
+    supabase.from("entries").delete().like("title", "E2E P3.7 table row%"),
+    "remove prior table browser entries",
   );
   await expectWrite(
     supabase.from("users").delete().in("id", userIds),
@@ -255,6 +265,26 @@ export default async function globalSetup() {
     ]),
     "insert browser entries",
   );
+  await expectWrite(
+    supabase.from("entries").insert(
+      browserRecords.tableArchiveEntryIds.map((id, index) => ({
+        id,
+        title: `E2E P3.7 table row ${String(index + 1).padStart(2, "0")}`,
+        site: "pl",
+        tier_id: tier.id,
+        created_by: browserActors.admin.userId,
+        content_status: "published",
+        editor_status: "published",
+        publish_date: new Date(
+          Date.now() - index * 60 * 60 * 1000,
+        ).toISOString(),
+        publish_date_precision: "exact",
+        is_archived: true,
+        archive_reason: "P3.7 pagination and table-system proof",
+      })),
+    ),
+    "insert table browser entries",
+  );
   const analyticsDate = new Date().toISOString().slice(0, 10);
   await expectWrite(
     supabase.from("article_analytics").insert({
@@ -262,7 +292,7 @@ export default async function globalSetup() {
       entry_id: browserRecords.analyticsEntryId,
       date: analyticsDate,
       pageviews: 1_337,
-      sessions: 911,
+      sessions: 0,
       avg_time_on_page: 73.6,
     }),
     "insert browser analytics sentinel",
@@ -351,6 +381,10 @@ export default async function globalSetup() {
       .delete()
       .eq("id", browserRecords.revenueRowId);
     await cleanup.from("entries").delete().like("title", "E2E P2.8%");
+    await cleanup
+      .from("entries")
+      .delete()
+      .like("title", "E2E P3.7 table row%");
     await cleanup
       .from("entries")
       .delete()

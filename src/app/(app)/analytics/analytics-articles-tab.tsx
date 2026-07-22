@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { TableValue } from "@/components/ui/table";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import type { AnalyticsArticleRow } from "@/lib/analytics/queries";
 
@@ -124,27 +125,27 @@ export function AnalyticsArticlesTab({ query }: Props) {
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
               <div className="flex justify-between">
                 <span className="text-text-zero">Pageviews</span>
-                <span className="font-data tabular-nums text-text-cell">
+                <TableValue value={r.pageviews} className="text-text-cell">
                   {r.pageviews.toLocaleString()}
-                </span>
+                </TableValue>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-zero">Sessions</span>
-                <span className="font-data tabular-nums text-text-cell">
+                <TableValue value={r.sessions} className="text-text-cell">
                   {r.sessions.toLocaleString()}
-                </span>
+                </TableValue>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-zero">Revenue</span>
-                <span className="font-data tabular-nums font-medium text-amber">
+                <TableValue value={r.earnings} className="font-medium">
                   ${r.earnings.toFixed(2)}
-                </span>
+                </TableValue>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-zero">Page RPM</span>
-                <span className="font-data tabular-nums text-text-team">
+                <TableValue value={r.page_rpm} className="text-text-team">
                   ${r.page_rpm.toFixed(2)}
-                </span>
+                </TableValue>
               </div>
             </div>
           </div>
@@ -153,7 +154,9 @@ export function AnalyticsArticlesTab({ query }: Props) {
           <span className="text-text-zero">
             {rows.length} article{rows.length === 1 ? "" : "s"}
           </span>
-          <span className="font-data tabular-nums text-amber">${totalEarnings.toFixed(2)}</span>
+          <TableValue value={totalEarnings} className="font-semibold">
+            ${totalEarnings.toFixed(2)}
+          </TableValue>
         </div>
       </div>
     );
@@ -162,8 +165,8 @@ export function AnalyticsArticlesTab({ query }: Props) {
   return (
     <Card>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full font-data text-sm">
+        <div className="plpd-table-shell overflow-x-auto">
+          <table className="plpd-table font-data">
             <thead className="plpd-thead sticky top-0 text-[12px] uppercase tracking-wide text-cyan-header">
               <tr className="border-b border-border">
                 <th className="px-3 py-2 text-left">Article</th>
@@ -223,21 +226,21 @@ export function AnalyticsArticlesTab({ query }: Props) {
                       ? new Date(r.publish_date).toLocaleDateString()
                       : "—"}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  <td data-numeric="true" data-zero={r.pageviews === 0} className="px-3 py-2 text-right tabular-nums">
                     {r.pageviews.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  <td data-numeric="true" data-zero={r.sessions === 0} className="px-3 py-2 text-right tabular-nums">
                     {r.sessions.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-text-team">
+                  <td data-numeric="true" className="px-3 py-2 text-right tabular-nums text-text-team">
                     {r.avg_time_on_page > 0
                       ? `${r.avg_time_on_page.toFixed(0)}s`
                       : "—"}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums font-medium text-amber">
+                  <td data-numeric="true" data-zero={r.earnings === 0} className="px-3 py-2 text-right tabular-nums font-medium">
                     ${r.earnings.toFixed(2)}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-text-team">
+                  <td data-numeric="true" data-zero={r.page_rpm === 0} className="px-3 py-2 text-right tabular-nums text-text-team">
                     ${r.page_rpm.toFixed(2)}
                   </td>
                 </tr>
@@ -248,11 +251,11 @@ export function AnalyticsArticlesTab({ query }: Props) {
                 <td colSpan={4} className="px-3 py-2 text-text-zero">
                   Totals across {rows.length} article{rows.length === 1 ? "" : "s"}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums">
+                <td data-numeric="true" data-zero={totalPageviews === 0} className="px-3 py-2 text-right tabular-nums">
                   {totalPageviews.toLocaleString()}
                 </td>
                 <td colSpan={2} />
-                <td className="px-3 py-2 text-right tabular-nums text-amber">
+                <td data-numeric="true" data-zero={totalEarnings === 0} className="px-3 py-2 text-right tabular-nums font-semibold">
                   ${totalEarnings.toFixed(2)}
                 </td>
                 <td />
@@ -277,14 +280,14 @@ function SortableTh({
   onClick: () => void;
 }) {
   return (
-    <th className="px-3 py-2 text-right">
+    <th data-numeric="true" className="px-3 py-2 text-right">
       <button
         type="button"
         onClick={onClick}
         className={
           active
-            ? "flex items-center gap-1 text-right text-cyan"
-            : "flex items-center gap-1 text-right text-text-zero hover:text-text-cell"
+            ? "ml-auto flex items-center gap-1 text-right text-cyan"
+            : "ml-auto flex items-center gap-1 text-right text-text-zero hover:text-text-cell"
         }
       >
         {label}

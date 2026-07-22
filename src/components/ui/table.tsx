@@ -43,7 +43,10 @@ const TableFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
-    className={cn("border-t border-border-thead bg-surface-4 font-semibold", className)}
+    className={cn(
+      "border-t border-border-thead bg-surface-4 font-semibold",
+      className,
+    )}
     {...props}
   />
 ));
@@ -91,6 +94,40 @@ const TableCell = React.forwardRef<
 ));
 TableCell.displayName = "TableCell";
 
+type TableValueProps = React.HTMLAttributes<HTMLSpanElement> & {
+  value: number | null;
+  delta?: boolean;
+};
+
+function TableValue({
+  value,
+  delta = false,
+  className,
+  children,
+  ...props
+}: TableValueProps) {
+  const tone =
+    value === 0
+      ? "zero"
+      : delta && value !== null
+        ? value > 0
+          ? "positive"
+          : value < 0
+            ? "negative"
+            : "neutral"
+        : "neutral";
+
+  return (
+    <span
+      className={cn("plpd-data-value", className)}
+      data-value-tone={tone}
+      {...props}
+    >
+      {children ?? (value === null ? "—" : value.toLocaleString())}
+    </span>
+  );
+}
+
 const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
   React.HTMLAttributes<HTMLTableCaptionElement>
@@ -112,4 +149,6 @@ export {
   TableHead,
   TableHeader,
   TableRow,
+  TableValue,
 };
+export type { TableValueProps };

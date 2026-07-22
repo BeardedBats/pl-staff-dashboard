@@ -23,7 +23,7 @@ type PageControlProps = {
 };
 
 const controlClass =
-  "plpd-hover-surface inline-flex h-9 min-w-9 items-center justify-center rounded-sm border border-border-tab bg-surface-3 px-2 text-plpd-body font-semibold text-text-nav transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "plpd-pagination-control inline-flex shrink-0 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function PageControl({
   page,
@@ -68,7 +68,7 @@ function Pagination({
   return (
     <nav
       aria-label={ariaLabel}
-      className={cn("flex items-center justify-center gap-2", className)}
+      className={cn("flex items-center justify-center gap-3.5", className)}
     >
       <PageControl
         page={safePage - 1}
@@ -81,7 +81,7 @@ function Pagination({
       </PageControl>
       <span
         aria-current="page"
-        className="plpd-pagination-current inline-flex h-9 min-w-9 items-center justify-center rounded-sm border px-2 font-data text-plpd-body font-bold tabular-nums"
+        className="plpd-pagination-current inline-flex items-center justify-center font-data"
       >
         {safePage}
       </span>

@@ -193,8 +193,8 @@ export function AdminTemplatesPanel({
             }
           />
         ) : (
-          <div className="overflow-hidden rounded-md border border-border">
-            <table className="w-full font-data text-sm">
+          <div className="plpd-table-shell overflow-hidden">
+            <table className="plpd-table font-data">
               <thead className="bg-surface-3">
                 <tr>
                   <th className="px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-text-zero">
@@ -222,7 +222,7 @@ export function AdminTemplatesPanel({
               </thead>
               <tbody className="divide-y divide-border">
                 {templates.map((t) => (
-                  <tr key={t.id} className="hover:bg-surface-3/40">
+                  <tr key={t.id} data-row-state={t.is_active ? undefined : "bench"}>
                     <td className="px-3 py-2">
                       <div className="font-medium text-text-cell">
                         {t.title_pattern}

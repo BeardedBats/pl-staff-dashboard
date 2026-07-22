@@ -84,6 +84,7 @@
   --plpd-fill-row-hover: rgba(85, 232, 255, 0.06);
   --plpd-fill-row-best: rgba(85, 232, 255, 0.05);
   --plpd-fill-row-il: rgba(28, 20, 38, 0.32);
+  --plpd-fill-table-header: #2E3658;
   --plpd-text-row-il-position: rgba(255, 140, 140, 0.75);
   --plpd-fill-panel: rgba(33, 36, 58, 0.35);
   --plpd-fill-state: rgba(33, 36, 58, 0.4);
@@ -142,6 +143,7 @@
   --plpd-shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.45);
   --plpd-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.3);
   --plpd-shadow-inset-soft: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --plpd-shadow-table-header: inset 0 -1px 0 rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --plpd-shadow-panel-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   /* Canonical sizing and spacing roles. */
@@ -190,6 +192,7 @@
   --plpd-tracking-chip: 0.05em;
 
   --plpd-duration-hover: 150ms;
+  --plpd-duration-row-hover: 120ms;
   --plpd-duration-row: 120ms;
   --plpd-cyan-rgb: 85 232 255;
   --plpd-mesh-image: url("data:image/svg+xml,%3Csvg%20width%3D%222364%22%20height%3D%222589%22%20viewBox%3D%220%200%202364%202589%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22base%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%222364%22%20y2%3D%222589%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23171A2B%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2248%25%22%20stop-color%3D%22%2321243A%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23181B2C%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r1%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%28425.52%20207.12%29%20scale%281702.08%201190.94%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23BED7FF%22%20stop-opacity%3D%220.085%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2252%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r2%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%281796.64%20466.02%29%20scale%281371.12%20984.82%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2378A5EB%22%20stop-opacity%3D%220.055%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2254%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r3%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%28472.8%202278.32%29%20scale%281654.8%201346.28%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2391B9F5%22%20stop-opacity%3D%220.06%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2256%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3CradialGradient%20id%3D%22r4%22%20cx%3D%220%22%20cy%3D%220%22%20r%3D%221%22%20gradientUnits%3D%22userSpaceOnUse%22%0A%20%20%20%20%20%20gradientTransform%3D%22translate%282080.32%202122.98%29%20scale%281087.44%201605.18%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23D2E4FF%22%20stop-opacity%3D%220.052%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%0A%20%20%20%20%3ClinearGradient%20id%3D%22l1%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%222364%22%20y2%3D%222589%22%0A%20%20%20%20%20%20gradientUnits%3D%22userSpaceOnUse%22%20gradientTransform%3D%22rotate%28-17%201182%201294.5%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23FFFFFF%22%20stop-opacity%3D%220.045%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2218%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2238%25%22%20stop-color%3D%22%2387AFF0%22%20stop-opacity%3D%220.052%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2261%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23D2E4FF%22%20stop-opacity%3D%220.04%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%0A%20%20%20%20%3ClinearGradient%20id%3D%22l2%22%20x1%3D%220%22%20y1%3D%222589%22%20x2%3D%222364%22%20y2%3D%220%22%0A%20%20%20%20%20%20gradientUnits%3D%22userSpaceOnUse%22%20gradientTransform%3D%22rotate%289%201182%201294.5%29%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2228%25%22%20stop-color%3D%22%236E91D7%22%20stop-opacity%3D%220.045%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2249%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2273%25%22%20stop-color%3D%22%23E6F0FF%22%20stop-opacity%3D%220.032%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%3C/defs%3E%0A%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23base%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23l2%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23l1%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r4%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r3%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r2%29%22/%3E%0A%20%20%3Crect%20width%3D%222364%22%20height%3D%222589%22%20fill%3D%22url%28%23r1%29%22/%3E%0A%3C/svg%3E%0A");
@@ -305,6 +308,7 @@
   --plpd-fill-row-selected: rgba(0, 103, 122, 0.12);
   --plpd-fill-row-priority: rgba(122, 67, 0, 0.08);
   --plpd-fill-row-il: rgba(166, 27, 43, 0.06);
+  --plpd-fill-table-header: var(--plpd-light-table-header);
   --plpd-text-row-il-position: #a61b2b;
   --plpd-fill-panel: rgba(238, 241, 246, 0.88);
   --plpd-fill-state: rgba(238, 241, 246, 0.92);
@@ -816,8 +820,76 @@ code, kbd, pre, samp {
   pointer-events: none;
 }
 
+.plpd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-data);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.plpd-table th {
+  height: var(--plpd-table-header-height);
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border-thead);
+  background: var(--plpd-fill-table-header);
+  color: var(--cyan-header);
+  font-family: var(--font-data);
+  font-size: 16px;
+  font-weight: var(--plpd-weight-semibold);
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  box-shadow: var(--plpd-shadow-table-header);
+}
+
+.light .plpd-table th {
+  background: var(--plpd-light-table-header);
+}
+
+.plpd-table td {
+  height: var(--plpd-table-row-height);
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border-row);
+  color: var(--text-cell);
+  font-family: var(--font-data);
+  font-size: 14px;
+  font-weight: var(--plpd-weight-regular);
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+}
+
+.plpd-table [data-numeric="true"] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.plpd-table [data-zero="true"] {
+  color: var(--text-zero-accessible);
+}
+
+.plpd-data-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.plpd-data-value[data-value-tone="zero"] {
+  color: var(--text-zero-accessible);
+}
+
+.plpd-data-value[data-value-tone="positive"] {
+  color: var(--val-pos);
+}
+
+.plpd-data-value[data-value-tone="negative"] {
+  color: var(--val-neg);
+}
+
 .plpd-table tbody tr:nth-child(odd) td {
   background: var(--row-a);
+}
+
+.plpd-table tbody td {
+  transition: background-color var(--plpd-duration-row-hover);
 }
 
 .plpd-table tbody tr:nth-child(even) td {
@@ -832,10 +904,76 @@ code, kbd, pre, samp {
   background: var(--plpd-fill-row-selected);
 }
 
+.plpd-table tbody tr[data-row-state="bench"] td {
+  background: var(--row-bn);
+  color: var(--text-bn);
+}
+
+.plpd-table tbody tr[data-row-state="bench"] [data-row-primary],
+.plpd-table tbody tr[data-row-state="injured"] [data-row-primary] {
+  color: var(--text-bn-player);
+}
+
+.plpd-table tbody tr[data-row-state="bench"] [data-row-secondary],
+.plpd-table tbody tr[data-row-state="injured"] [data-row-secondary] {
+  color: var(--text-bn-team);
+}
+
+.plpd-table tbody tr[data-row-state="injured"] td {
+  background: var(--plpd-fill-row-il);
+  color: var(--text-bn);
+}
+
+.plpd-table tbody tr[data-row-state="injured"] [data-row-position] {
+  color: var(--plpd-text-row-il-position);
+}
+
+.plpd-table tbody tr[data-row-state="best"] td {
+  background: var(--plpd-fill-row-best);
+}
+
+.plpd-table tbody tr[data-row-state="best"] [data-row-position] {
+  color: var(--cyan);
+}
+
+.plpd-table tbody tr[data-row-state="priority"] td {
+  background: var(--plpd-fill-row-priority);
+}
+
+.plpd-table tbody tr[data-row-detail="true"] td {
+  height: auto;
+  padding: 0;
+  background: color-mix(in srgb, var(--surface-2) 50%, transparent);
+}
+
+.plpd-pagination-control {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-tab);
+  border-radius: var(--plpd-radius-control);
+  background: var(--surface-3);
+  color: var(--cyan);
+  box-shadow: var(--plpd-shadow-inset-soft);
+  transition: filter 150ms;
+}
+
+.plpd-pagination-control:hover:not(:disabled) {
+  filter: brightness(1.2);
+}
+
+.plpd-pagination-control:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
 .plpd-pagination-current {
-  border-color: var(--cyan);
-  background: var(--cyan);
-  color: var(--plpd-on-bright);
+  min-width: 28px;
+  color: var(--text-cell);
+  font-family: var(--font-data);
+  font-size: 16px;
+  font-weight: var(--plpd-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 @keyframes plpd-spin {
@@ -895,7 +1033,7 @@ code, kbd, pre, samp {
 
 /* Table header band — 34.5px #2E3658, Work Sans 600 16px cyan-header */
 .plpd-thead {
-  background: var(--surface-5);
+  background: var(--plpd-fill-table-header);
 }
 .light .plpd-thead {
   background: var(--plpd-light-table-header);
