@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, Loader2, MessageSquare, Mail, Bell } from "lucide-react";
+import { Bell, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -70,8 +70,6 @@ export function NotificationPrefsPanel({ userId }: Props) {
     const preferences = NOTIFICATION_EVENT_TYPES.map((type) => ({
       event_type: type,
       in_app_enabled: prefs[type].in_app_enabled,
-      discord_enabled: prefs[type].discord_enabled,
-      email_enabled: prefs[type].email_enabled,
     }));
 
     try {
@@ -109,8 +107,8 @@ export function NotificationPrefsPanel({ userId }: Props) {
         <CardHeader>
           <CardTitle>Notification preferences</CardTitle>
           <CardDescription>
-            Choose how you get notified for each kind of event. Defaults are
-            based on your role — tweak any row you want.
+            Choose which events appear in your dashboard. Defaults are based
+            on your role — tweak any row you want.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -130,14 +128,6 @@ export function NotificationPrefsPanel({ userId }: Props) {
                         <Bell className="mx-auto h-3 w-3" />
                         <span className="sr-only">In-app</span>
                       </th>
-                      <th className="px-3 py-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
-                        <MessageSquare className="mx-auto h-3 w-3" />
-                        <span className="sr-only">Discord</span>
-                      </th>
-                      <th className="px-3 py-2 font-mono text-[10px] font-medium uppercase tracking-wider text-text-zero">
-                        <Mail className="mx-auto h-3 w-3" />
-                        <span className="sr-only">Email</span>
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -155,24 +145,6 @@ export function NotificationPrefsPanel({ userId }: Props) {
                             aria-label={`In-app: ${EVENT_TYPE_LABELS[type]}`}
                           />
                         </td>
-                        <td className="px-3 py-2 text-center">
-                          <Switch
-                            checked={prefs[type].discord_enabled}
-                            onCheckedChange={(v) =>
-                              setChannel(type, "discord_enabled", v)
-                            }
-                            aria-label={`Discord: ${EVENT_TYPE_LABELS[type]}`}
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <Switch
-                            checked={prefs[type].email_enabled}
-                            onCheckedChange={(v) =>
-                              setChannel(type, "email_enabled", v)
-                            }
-                            aria-label={`Email: ${EVENT_TYPE_LABELS[type]}`}
-                          />
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -180,12 +152,6 @@ export function NotificationPrefsPanel({ userId }: Props) {
               </div>
             </section>
           ))}
-
-          <p className="rounded-sm border border-dashed border-border bg-surface-3/30 px-3 py-2 text-xs text-text-zero">
-            Discord DMs and email delivery are currently stubbed — notifications
-            still create in-app rows and log intended deliveries. They&apos;ll
-            send for real once the Discord bot and Resend account are wired up.
-          </p>
         </CardContent>
       </Card>
 

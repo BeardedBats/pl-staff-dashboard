@@ -56,7 +56,6 @@ type FormState = {
   bio: string;
   twitter_handle: string;
   bluesky_handle: string;
-  discord_id: string;
   timezone: string;
   auto_approve_drafts: boolean;
 };
@@ -68,7 +67,6 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     bio: profile.bio ?? "",
     twitter_handle: profile.twitter_handle ?? "",
     bluesky_handle: profile.bluesky_handle ?? "",
-    discord_id: profile.discord_id ?? "",
     timezone: profile.timezone,
     auto_approve_drafts: profile.auto_approve_drafts,
   });
@@ -91,7 +89,6 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       bio: form.bio.trim() || null,
       twitter_handle: form.twitter_handle.trim() || null,
       bluesky_handle: form.bluesky_handle.trim() || null,
-      discord_id: form.discord_id.trim() || null,
       timezone: form.timezone,
       auto_approve_drafts: form.auto_approve_drafts,
     };
@@ -259,20 +256,6 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                 placeholder="nick.bsky.social"
               />
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="discord_id">Discord user ID</Label>
-            <Input
-              id="discord_id"
-              value={form.discord_id}
-              onChange={(e) => update("discord_id", e.target.value)}
-              placeholder="123456789012345678"
-            />
-            <p className="text-xs text-text-zero">
-              Your numeric Discord user ID (not your username). Needed for DM
-              notifications. Enable Developer Mode in Discord, right-click your
-              name, and &quot;Copy User ID&quot;.
-            </p>
           </div>
         </CardContent>
       </Card>

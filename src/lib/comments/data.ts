@@ -124,7 +124,7 @@ export async function listCommentsForEntry(
 /**
  * Create a new comment. Parses @mentions, resolves them to user IDs,
  * stores them on the row, and emits in-app notification rows for each
- * mentioned user (Step 7 will surface those as Discord/email).
+ * mentioned user.
  *
  * Also updates the entry's `recent_activity` cache.
  */
@@ -199,7 +199,7 @@ export async function createComment(
   });
 
   // Emit notifications for each mentioned user (skip self-mentions).
-  // triggerMention handles preference resolution + channel dispatch.
+  // triggerMention handles preference resolution and in-app dispatch.
   if (resolvedMentions.length > 0) {
     const { data: entryRow } = await supabase
       .from("entries")

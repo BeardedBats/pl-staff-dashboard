@@ -787,24 +787,18 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
-          discord_enabled: boolean
-          email_enabled: boolean
           event_type: string
           id: string
           in_app_enabled: boolean
           user_id: string
         }
         Insert: {
-          discord_enabled?: boolean
-          email_enabled?: boolean
           event_type: string
           id?: string
           in_app_enabled?: boolean
           user_id: string
         }
         Update: {
-          discord_enabled?: boolean
-          email_enabled?: boolean
           event_type?: string
           id?: string
           in_app_enabled?: boolean
@@ -825,8 +819,6 @@ export type Database = {
           body: string | null
           created_at: string
           dedupe_key: string | null
-          discord_sent: boolean
-          email_sent: boolean
           entry_id: string | null
           id: string
           is_read: boolean
@@ -838,8 +830,6 @@ export type Database = {
           body?: string | null
           created_at?: string
           dedupe_key?: string | null
-          discord_sent?: boolean
-          email_sent?: boolean
           entry_id?: string | null
           id?: string
           is_read?: boolean
@@ -851,8 +841,6 @@ export type Database = {
           body?: string | null
           created_at?: string
           dedupe_key?: string | null
-          discord_sent?: boolean
-          email_sent?: boolean
           entry_id?: string | null
           id?: string
           is_read?: boolean
@@ -1352,7 +1340,6 @@ export type Database = {
           bluesky_handle: string | null
           can_publish: boolean
           created_at: string
-          discord_id: string | null
           display_name: string
           display_name_override: boolean
           email: string | null
@@ -1373,7 +1360,6 @@ export type Database = {
           bluesky_handle?: string | null
           can_publish?: boolean
           created_at?: string
-          discord_id?: string | null
           display_name: string
           display_name_override?: boolean
           email?: string | null
@@ -1394,7 +1380,6 @@ export type Database = {
           bluesky_handle?: string | null
           can_publish?: boolean
           created_at?: string
-          discord_id?: string | null
           display_name?: string
           display_name_override?: boolean
           email?: string | null

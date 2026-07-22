@@ -213,8 +213,6 @@ function NotificationListRow({
             dateStyle: "medium",
             timeStyle: "short",
           })}
-          {notification.discord_sent ? " · Discord sent" : ""}
-          {notification.email_sent ? " · Email sent" : ""}
         </p>
       </Link>
       <Button

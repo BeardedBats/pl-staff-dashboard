@@ -40,13 +40,6 @@ export const userProfileUpdateSchema = z.object({
     .max(100)
     .nullable()
     .optional(),
-  discord_id: z
-    .string()
-    .trim()
-    .max(40)
-    .regex(/^[0-9]+$/, "Discord user IDs are numeric")
-    .nullable()
-    .optional(),
   timezone: z.string().trim().min(1).max(64).optional(),
   theme: z.enum(["dark", "light"]).optional(),
   auto_approve_drafts: z.boolean().optional(),

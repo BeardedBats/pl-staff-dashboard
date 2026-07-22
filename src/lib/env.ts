@@ -41,14 +41,6 @@ const optionalSchema = z.object({
   WP_QB_USERNAME: z.string().optional().or(z.literal("")),
   WP_QB_APP_PASSWORD: z.string().optional().or(z.literal("")),
 
-  // Discord
-  DISCORD_BOT_TOKEN: z.string().optional().or(z.literal("")),
-  DISCORD_GUILD_ID: z.string().optional().or(z.literal("")),
-
-  // Resend
-  RESEND_API_KEY: z.string().optional().or(z.literal("")),
-  EMAIL_FROM: z.string().optional().or(z.literal("")),
-
   // Google Analytics 4
   GA4_CLIENT_ID: z.string().optional().or(z.literal("")),
   GA4_CLIENT_SECRET: z.string().optional().or(z.literal("")),
