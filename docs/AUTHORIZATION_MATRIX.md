@@ -1,7 +1,7 @@
 # API authorization matrix
 
 Audited: 2026-07-21  
-Scope: all 108 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
+Scope: all 110 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
 Status vocabulary: **OK** was enforced at the audit baseline; **GAP** was a baseline defect; **P1.12** marked the then-broken Vercel cron method contract. The closure table below is authoritative for post-audit repair state, and an automated parity test now rejects undocumented handlers.
 
 ## Policy vocabulary
@@ -99,6 +99,7 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | PATCH | `/api/entries/[id]/editor-status` | Editor/Manager+ for entry site | Flat editor/Manager+ role | **GAP AUTH-01** |
 | POST | `/api/entries/[id]/wp-refresh` | Session except drafts; draft visibility applies | Session only | **GAP AUTH-09** |
 | POST | `/api/entries/bulk` | Manager+ for affected entry sites | Flat Manager+ only | **GAP AUTH-01** |
+| POST | `/api/entries/bulk-claim-edits` | Editor or Manager+ for every selected entry site | Route authorizes every visible resource; transactional RPC repeats site-role, state, and conflict checks | OK |
 | POST | `/api/entries/bulk-create` | Manager+ for every affected entry site | Site-aware Manager+ check plus transactional RPC | OK |
 | GET | `/api/ga4/callback` | Operations | `isOperations` | OK |
 | POST | `/api/ga4/connect` | Operations | `isOperations` | OK |
@@ -119,6 +120,7 @@ Roles are stored with a site (`pl`, `qb`, or `both`). A role row authorizes a si
 | POST | `/api/graphic-requests/[id]/upload` | Claimed graphics worker or Admin+ for site | Session plus state only | **GAP AUTH-01/02** |
 | POST | `/api/raptive/upload` | Operations | `isOperations` | OK |
 | GET | `/api/raptive/uploads` | Analytics | `canViewAnalytics` | OK |
+| GET | `/api/search` | Session; results use each resource's existing visibility boundary | Server queries only projected staff, visible entries, authorized graphics, and schedules | OK |
 | GET | `/api/season-modes` | Session | `getCurrentUser` | OK |
 | PATCH | `/api/season-modes/[id]` | Admin+ | `isAdminPlus` | OK |
 | PATCH | `/api/season-modes/[id]/activate` | Admin+ | `isAdminPlus` | OK |

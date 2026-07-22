@@ -174,7 +174,7 @@ export function EditingQueueClient({
                       <td className="px-3 py-3 align-top"><Badge variant={signal.variant}>{signal.label}</Badge></td>
                       <td className="px-3 py-3 align-top">
                         <Link href={`/content?entry=${entry.id}`} className="font-medium text-text-cell hover:text-cyan">{entry.title}</Link>
-                        <div className="mt-1 flex gap-1"><Badge variant="outline">{entry.site.toUpperCase()}</Badge>{entry.priority ? <Badge variant="amber"><AlertTriangle className="h-3 w-3" />Priority</Badge> : null}</div>
+                        <div className="mt-1 flex gap-1"><Badge variant="outline" className="font-data">{entry.site.toUpperCase()}</Badge>{entry.priority ? <Badge variant="amber"><AlertTriangle className="h-3 w-3" />Priority</Badge> : null}</div>
                       </td>
                       <td className="px-3 py-3 align-top text-xs text-text-team">
                         {entry.authors[0] ? <span className="flex items-center gap-1.5"><UserAvatar displayName={entry.authors[0].display_name} avatarUrl={entry.authors[0].avatar_url} size="xs" />{entry.authors[0].display_name}</span> : "Unassigned"}
