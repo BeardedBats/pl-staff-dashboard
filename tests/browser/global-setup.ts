@@ -301,7 +301,6 @@ export default async function globalSetup() {
         wp_modified_at: "2026-07-22T00:00:00Z",
         wp_sync_status: "synced",
         wp_last_synced_at: "2026-07-22T00:00:00Z",
-        wp_synced_title: "E2E P2.8 manager approval",
       })
       .eq("id", browserRecords.managerEntryId),
     "connect browser SEO entry",

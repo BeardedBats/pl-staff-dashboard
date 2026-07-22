@@ -7,8 +7,6 @@ SELECT no_plan();
 SELECT has_column('public', 'entries', 'wp_sync_status', 'entries expose synchronization status');
 SELECT has_column('public', 'entries', 'wp_last_synced_at', 'entries store last successful synchronization');
 SELECT has_column('public', 'entries', 'wp_last_sync_error', 'entries store sanitized recovery detail');
-SELECT has_column('public', 'entries', 'wp_synced_title', 'entries store a three-way title baseline');
-
 SELECT ok(
   EXISTS (
     SELECT 1
@@ -16,10 +14,11 @@ SELECT ok(
     WHERE conrelid = 'public.entries'::regclass
       AND contype = 'c'
       AND pg_get_constraintdef(oid) LIKE '%wp_sync_status%'
-      AND pg_get_constraintdef(oid) LIKE '%conflict%'
+      AND pg_get_constraintdef(oid) NOT LIKE '%conflict%'
   ),
-  'synchronization status has a database check constraint'
+  'synchronization states exclude generalized content conflicts'
 );
+SELECT has_index('public', 'entries', 'entries_wp_sync_attention_idx', 'stale and failed syncs have an attention index');
 
 SELECT * FROM finish();
 ROLLBACK;

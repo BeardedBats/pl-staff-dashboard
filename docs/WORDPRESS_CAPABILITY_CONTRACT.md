@@ -3,45 +3,44 @@
 Verified read-only against Pitcher List WordPress on 2026-07-22. No post,
 media, taxonomy, user, or metadata value was changed during verification.
 
-## Verified surface
+## Product boundary
+
+WordPress is the source of truth for article content, publication metadata,
+status, and Yoast values. The dashboard reads those fields; it is not an
+article editor, revision merger, or two-way content synchronization system.
+The only WordPress writes retained are the existing narrow draft-creation and
+graphics-submission workflows.
+
+## Verified read surface
 
 - Application-password authentication succeeds at `/wp/v2/users/me` with the
-  dedicated integration account. The account currently reports the
-  `administrator` role.
-- Core REST edit-context reads succeed for posts, pages, attachments, users,
-  categories, tags, and post statuses.
-- Supported statuses include `draft`, `pending`, `future`, `publish`,
-  `private`, and `trash`; the dashboard synchronization contract intentionally
-  processes only the statuses used by its editorial workflow.
-- Post edit-context responses expose author, status, permalink, modified time,
-  content, taxonomy IDs, featured media, and revision-relevant fields.
-- Yoast is installed (`yoast/v1`). Core post responses expose read-only
-  rendered `yoast_head` and `yoast_head_json` values. The authenticated core
-  post `meta` schema separately registers exactly three writable strings used
-  by this dashboard: `_yoast_wpseo_focuskw`, `_yoast_wpseo_title`, and
-  `_yoast_wpseo_metadesc`. No other Yoast write is supported. These fields are
-  sent only through a manager-approved, revision-checked core post update with
-  a recorded before/after audit.
+  dedicated integration account.
+- Authenticated edit-context reads expose posts, pages, attachments, users,
+  categories, tags, statuses, author, permalink, modified time, slug, excerpt,
+  content, taxonomy IDs, featured media, and scheduling fields.
+- Yoast is installed and core post responses expose rendered `yoast_head` and
+  `yoast_head_json` values. The dashboard treats all Yoast values as read-only
+  and offers copy/instructions instead of write-back.
+- QB List is unconfigured. QB-dependent behavior remains unavailable and never
+  borrows Pitcher List credentials.
 
-QB List is not configured in the current application environment. All QB
-capability-dependent behavior must remain disabled or clearly unavailable
-rather than borrowing Pitcher List credentials.
+## Reconciliation contract
 
-## Synchronization contract
+Authenticated five-minute polling is the primary recovery mechanism. Manual
+refresh uses the same WordPress read path for authorized entry viewers.
 
-Scheduled five-minute reconciliation remains authoritative and is the recovery
-backstop. An optional inbound webhook reduces latency when configured:
+1. The poll uses a retained watermark, paginates every changed row, and advances
+   the watermark only when the complete run succeeds.
+2. Matching is idempotent on site plus WordPress post ID.
+3. WordPress-owned status, permalink, and modified time replace cached values
+   on refresh. Dashboard-owned workflow fields are not merged into article
+   content.
+4. Last successful sync, stale state, and a bounded sanitized error remain
+   visible. Failed rows stay inside the next retry window.
+5. Public/preview links use the WordPress permalink; the authenticated edit
+   link is derived from the configured site and post ID.
 
-1. WordPress sends only `site`, positive `post_id`, and a stable `event_id`.
-2. `X-PL-Signature` is an HMAC-SHA256 over the exact raw JSON body using
-   `WP_WEBHOOK_SECRET` (minimum 32 characters).
-3. The dashboard stores one server-only attempt row per site/event ID, allows
-   at most three attempts, and deduplicates completed or concurrent delivery.
-4. The signed payload never supplies trusted content. It triggers an
-   authenticated WordPress edit-context read and the normal reconciliation
-   path.
-5. When the secret is absent, the webhook returns unavailable while scheduled
-   reconciliation continues normally.
-
-Never place the WordPress application password or webhook secret in browser
-code, webhook bodies, logs, operational metadata, or client-readable tables.
+There is no deployed inbound WordPress webhook, event ledger, generalized
+content-conflict state, body editor, or Yoast/content write-back. Never place a
+WordPress application password in browser code, logs, operational metadata, or
+client-readable tables.

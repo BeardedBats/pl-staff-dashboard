@@ -24,14 +24,31 @@ describe("Pitcher List SEO analysis", () => {
   });
 
   it("ranks generated candidates by score without duplicates", () => {
-    const candidates = generateTitleCandidates(
-      "Fantasy Baseball Rankings",
-      "Fantasy Baseball Rankings",
-    );
+    const candidates = generateTitleCandidates({
+      keyword: "streaming pitchers",
+      articleType: "fantasy",
+      players: ["Payton Tolle"],
+      week: "15",
+      date: "7/5/26",
+      listSize: "10",
+      year: 2026,
+    });
     expect(new Set(candidates.map((item) => item.title.toLowerCase())).size).toBe(candidates.length);
     expect(candidates.map((item) => item.total)).toEqual(
       [...candidates.map((item) => item.total)].sort((a, b) => b - a),
     );
+    expect(candidates.some((item) => item.title.includes("Payton Tolle"))).toBe(true);
+    expect(candidates.some((item) => item.title.includes("7/5/26"))).toBe(true);
+  });
+
+  it("matches the standalone generator's calibrated pixel and scoring rules", () => {
+    expect(estimateTitlePixels("W1 i")).toBe(17 + 11 + 6 + 6);
+    const score = scoreTitle(
+      "Top 10 Streaming Pitchers for Week 15 (2026)",
+      "streaming pitchers",
+    );
+    expect(score.categories.map((category) => category.score)).toEqual([25, 20, 15, 10, 6, 15]);
+    expect(score.total).toBe(91);
   });
 
   it("prioritizes specific keyphrase, structure, stuffing, voice, and readability advice", () => {
@@ -48,7 +65,10 @@ describe("Pitcher List SEO analysis", () => {
       "meta-length",
       "heading-keyphrase",
       "density",
+      "slug",
       "structure",
+      "image-alt",
+      "paragraph-length",
       "sentence-length",
       "passive-voice",
       "transitions",

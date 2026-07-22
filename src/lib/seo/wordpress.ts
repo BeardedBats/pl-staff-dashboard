@@ -1,7 +1,6 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { writeAuditRow } from "@/lib/entries/status-transitions";
 import { getWordPressSiteConfig, wordPressBasicAuth, type WpSiteKey } from "@/lib/wordpress/config";
 import { analyzeSeoDocument, scoreTitle } from "./analysis";
 
@@ -11,6 +10,13 @@ type WpSeoPost = {
   content: { raw?: string; rendered?: string } | string;
   excerpt?: { raw?: string; rendered?: string } | string;
   modified_gmt: string;
+  slug?: string;
+  author?: number;
+  categories?: number[];
+  featured_media?: number;
+  status?: string;
+  date_gmt?: string | null;
+  _embedded?: { author?: Array<{ name?: string }> };
   meta?: Record<string, unknown>;
   yoast_head_json?: {
     title?: string;
@@ -26,6 +32,9 @@ export type SeoWorkspaceData = {
   headings: string[];
   focusKeyphrase: string;
   metaDescription: string;
+  slug: string;
+  imageAlts: string[];
+  paragraphWordCounts: number[];
   wpModifiedAt: string;
   titleScore: ReturnType<typeof scoreTitle>;
   findings: ReturnType<typeof analyzeSeoDocument>;
@@ -35,8 +44,9 @@ export type SeoWorkspaceData = {
     canonical: string | null;
     robots: Record<string, string> | null;
     focusKeyphrase: string | null;
-    writable: true;
+    writable: false;
   };
+  readiness: Array<{ label: string; ready: boolean; detail: string }>;
 };
 
 function text(value: { raw?: string; rendered?: string } | string | undefined): string {
@@ -63,6 +73,18 @@ function headings(html: string): string[] {
     .filter(Boolean);
 }
 
+function imageAlts(html: string): string[] {
+  return Array.from(html.matchAll(/<img\b[^>]*>/gi)).map((match) =>
+    match[0].match(/\balt=["']([^"']*)["']/i)?.[1] ?? "",
+  );
+}
+
+function paragraphWordCounts(html: string): number[] {
+  return Array.from(html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)).map(
+    (match) => plainText(match[1]).split(/\s+/).filter(Boolean).length,
+  );
+}
+
 async function loadEntry(entryId: string) {
   const { data } = await getSupabaseAdmin()
     .from("entries")
@@ -76,7 +98,7 @@ async function fetchPost(site: WpSiteKey, postId: number): Promise<WpSeoPost | n
   const config = getWordPressSiteConfig(site);
   if (!config) return null;
   try {
-    const response = await fetch(`${config.url}/wp-json/wp/v2/posts/${postId}?context=edit`, {
+    const response = await fetch(`${config.url}/wp-json/wp/v2/posts/${postId}?context=edit&_embed=author`, {
       headers: {
         Authorization: wordPressBasicAuth(config.appUsername, config.appPassword),
         Accept: "application/json",
@@ -108,7 +130,12 @@ export async function getSeoWorkspace(entryId: string): Promise<SeoWorkspaceData
     headings: headings(html),
     focusKeyphrase,
     metaDescription,
+    slug: post.slug ?? "",
+    imageAlts: imageAlts(html),
+    paragraphWordCounts: paragraphWordCounts(html),
   };
+  const scheduled = post.status === "future";
+  const seoAvailable = Boolean(post.yoast_head_json || focusKeyphrase || metaDescription);
   return {
     ...document,
     wpModifiedAt: `${post.modified_gmt}Z`,
@@ -120,84 +147,17 @@ export async function getSeoWorkspace(entryId: string): Promise<SeoWorkspaceData
       canonical: post.yoast_head_json?.canonical ?? null,
       robots: post.yoast_head_json?.robots ?? null,
       focusKeyphrase: focusKeyphrase || null,
-      writable: true,
+      writable: false,
     },
+    readiness: [
+      { label: "Author", ready: Boolean(post.author), detail: post._embedded?.author?.[0]?.name || (post.author ? `Assigned in WordPress (#${post.author})` : "Author missing") },
+      { label: "Category", ready: Boolean(post.categories?.length), detail: post.categories?.length ? `${post.categories.length} assigned` : "Category missing" },
+      { label: "Slug", ready: Boolean(post.slug), detail: post.slug || "Slug missing" },
+      { label: "Excerpt", ready: Boolean(plainText(text(post.excerpt))), detail: plainText(text(post.excerpt)) ? "Present" : "Excerpt missing" },
+      { label: "Featured image", ready: Boolean(post.featured_media), detail: post.featured_media ? "Assigned" : "Featured image missing" },
+      { label: "Scheduled time", ready: !scheduled || Boolean(post.date_gmt), detail: scheduled ? (post.date_gmt ? `${post.date_gmt}Z` : "Scheduled time missing") : "Not a scheduled post" },
+      { label: "Content", ready: contentText.split(/\s+/).filter(Boolean).length >= 100, detail: `${contentText.split(/\s+/).filter(Boolean).length} words available` },
+      { label: "SEO data", ready: seoAvailable, detail: seoAvailable ? "Yoast data available" : "Yoast data unavailable" },
+    ],
   };
-}
-
-export async function applyApprovedSeoTitle(
-  entryId: string,
-  actorId: string,
-  input: {
-    title: string;
-    focusKeyphrase: string;
-    metaDescription: string;
-    expectedWpModifiedAt: string;
-  },
-): Promise<{ ok: true; modifiedAt: string } | { ok: false; error: string; conflict?: boolean }> {
-  const entry = await loadEntry(entryId);
-  if (!entry?.wp_post_id) return { ok: false, error: "Entry has no WordPress post" };
-  if (entry.wp_modified_at !== input.expectedWpModifiedAt) {
-    return { ok: false, error: "The saved WordPress revision changed. Refresh analysis.", conflict: true };
-  }
-  const site = entry.site as WpSiteKey;
-  const post = await fetchPost(site, entry.wp_post_id);
-  if (!post) return { ok: false, error: "Could not read WordPress" };
-  const liveModified = `${post.modified_gmt}Z`;
-  if (liveModified !== input.expectedWpModifiedAt) {
-    return { ok: false, error: "WordPress changed after analysis. Refresh before applying.", conflict: true };
-  }
-
-  const supabase = getSupabaseAdmin();
-  const { data: lease } = await supabase
-    .from("entries")
-    .update({ wp_sync_status: "pending", wp_last_sync_error: "Approved SEO title write in progress" })
-    .eq("id", entryId)
-    .eq("wp_modified_at", input.expectedWpModifiedAt)
-    .neq("wp_sync_status", "pending")
-    .select("id")
-    .maybeSingle();
-  if (!lease) return { ok: false, error: "Another WordPress update is in progress", conflict: true };
-
-  const config = getWordPressSiteConfig(site)!;
-  let response: Response;
-  try {
-    response = await fetch(`${config.url}/wp-json/wp/v2/posts/${entry.wp_post_id}`, {
-      method: "POST",
-      headers: {
-        Authorization: wordPressBasicAuth(config.appUsername, config.appPassword),
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title: input.title,
-        meta: {
-          _yoast_wpseo_focuskw: input.focusKeyphrase,
-          _yoast_wpseo_title: input.title,
-          _yoast_wpseo_metadesc: input.metaDescription,
-        },
-      }),
-      cache: "no-store",
-    });
-  } catch {
-    await supabase.from("entries").update({ wp_sync_status: "error", wp_last_sync_error: "Could not reach WordPress" }).eq("id", entryId);
-    return { ok: false, error: "Could not reach WordPress" };
-  }
-  if (!response.ok) {
-    const error = `WordPress title update failed (${response.status})`;
-    await supabase.from("entries").update({ wp_sync_status: "error", wp_last_sync_error: error }).eq("id", entryId);
-    return { ok: false, error };
-  }
-  const updated = (await response.json()) as { modified_gmt?: string };
-  const modifiedAt = updated.modified_gmt ? `${updated.modified_gmt}Z` : liveModified;
-  await supabase.from("entries").update({
-    title: input.title,
-    wp_synced_title: input.title,
-    wp_modified_at: modifiedAt,
-    wp_sync_status: "synced",
-    wp_last_synced_at: new Date().toISOString(),
-    wp_last_sync_error: null,
-  }).eq("id", entryId).eq("wp_sync_status", "pending");
-  await writeAuditRow(entryId, actorId, "field_edit", "seo_title", text(post.title), input.title);
-  return { ok: true, modifiedAt };
 }

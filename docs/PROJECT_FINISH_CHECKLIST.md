@@ -5,12 +5,12 @@ Last updated: 2026-07-22
 ## Recovery state
 
 - Current phase: Phase 5 — WordPress and SEO
-- Current action: Phase 5 boundary gate — run the complete local suite once, then publish one exact-head CI run and one Vercel preview.
+- Current action: publish the corrected Phase 5 exact head for one GitHub CI run and one Vercel preview.
 - Branch: `codex/production-readiness-p5`
 - Stack base: `9115bd6` (combined Phase 4 exact head on green draft PR #40, based on the completed Phase 3 stack).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blockers: production application of the stacked migrations through `0027` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable. QB WordPress and inbound WordPress webhooks are unconfigured; scheduled PL reconciliation remains available.
+- Known blocker: production application of the ordered migrations through `0026` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is available. This is a deployment blocker, not unfinished local development; Nick does not need to apply it now. QB WordPress remains unconfigured.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -58,7 +58,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 
 - [x] P2.1 Establish a practical unit, integration, database, API, and browser-test architecture.
 - [x] P2.2 Test authentication, session rotation, role permissions, membership boundaries, and negative authorization cases.
-- [x] P2.3 Test WordPress synchronization, webhooks, scheduled reconciliation, conflict handling, retries, and idempotency.
+- [x] P2.3 Test WordPress scheduled/manual reconciliation, missed-update recovery, retries, idempotency, stale/error states, and resource boundaries.
 - [x] P2.4 Test editorial claims, assignments, state transitions, bulk actions, deadlines, and concurrent operations.
 - [x] P2.5 Test graphics submission, review, versioning, authorization, and storage behavior.
 - [x] P2.6 Test cron jobs with the same method and headers used by Vercel.
@@ -116,65 +116,31 @@ Gate: each role can complete primary work with minimal instruction, and managers
 
 ## Phase 5 — WordPress and SEO
 
-- [x] P5.1 Verify actual WordPress authentication, REST, content types, taxonomy, author, media, status, and Yoast capabilities.
-- [x] P5.2 Combine webhooks with scheduled reconciliation.
-- [x] P5.3 Add idempotency, retries, conflict detection, staleness, and manual recovery.
-- [x] P5.4 Add preview/edit links and revision/synchronization status.
-- [x] P5.5 Add prepublication validation.
-- [x] P5.6 Add safe dashboard/WordPress conflict resolution.
-- [x] P5.7 Add evergreen-refresh identification where supported.
-- [x] P5.8 Implement the best maintainable title-generator integration.
-- [x] P5.9 Embed title generation/scoring without duplicate data entry.
-- [x] P5.10 Preserve explanations, SERP preview, suffix calculation, and copy/apply actions.
-- [x] P5.11 Test scoring, pixels, ranking, and regressions.
-- [x] P5.12 Determine supported Yoast read/write values and analysis.
-- [x] P5.13 Separate Yoast-reported results from Pitcher List analysis.
-- [x] P5.14 Analyze focus-keyphrase placement.
-- [x] P5.15 Analyze length, distribution, stuffing, structure, voice, transitions, and readability.
-- [x] P5.16 Provide prioritized, specific recommendations.
-- [x] P5.17 Allow permissioned analysis, approval, and supported WordPress write-back.
-- [x] P5.18 Require intentional before/after approval before overwrites.
-- [x] P5.19 Test SEO analysis, permissions, write-back, conflicts, and recovery.
+- [x] P5-A Complete five-minute authenticated reconciliation, watermark/idempotency/retry recovery, visible last-sync/modified/stale/error state, authorized manual refresh, correct public/admin links, and concise read-only publication readiness.
+- [x] P5-B Port the existing deterministic PL title generator into a typed local module, preserving article inputs, exact scoring/keyword/pixel rules, explanations, SERP preview, ranking, copy, and apply-to-dashboard-title behavior.
+- [x] P5-C Provide authorized on-demand read-only WordPress/Yoast analysis for keyphrase placement, title/meta/slug, introduction, headings, distribution/stuffing, image alt, sentence/paragraph length, voice, transitions, structure, and readability with short prioritized improvements.
+- [x] P5-D Prove participant/manager access, negative resource boundaries, WordPress read failures, stale/recovery behavior, scoring/analysis regressions, and the absence of unsupported WordPress/Yoast write-back.
 
-Gate: staff can optimize articles, understand recommendations, and safely sync supported fields with WordPress.
+Gate: one complete local Phase 5 suite, one exact-head GitHub CI run, and one Vercel preview prove the corrected read-only product boundary.
 
 ## Phase 6 — Raptive-ready data system
 
-- [ ] P6.1 Confirm workbook formats, sheet roles, columns, dates, timezones, aggregation, and dedupe keys.
-- [ ] P6.2 Design normalized, indexed aggregate, URL-performance, job, checkpoint, hash, and live-sync tables.
-- [ ] P6.3 Build rollback-capable, large-table-safe migrations.
-- [ ] P6.4 Build direct-to-private-storage upload with validation, progress, cancellation, and retry.
-- [ ] P6.5 Build resumable, chunked, checkpointed, restart-safe processing.
-- [ ] P6.6 Process every required sheet.
-- [ ] P6.7 Add reconciliation totals, rejected rows, sample inspection, and completion state.
-- [ ] P6.8 Load-test realistic generated fixtures.
-- [ ] P6.9 Build a typed live adapter with test, enable, disable, backfill, retry, rate limit, and health behavior.
-- [ ] P6.10 Keep API credentials only in managed secret storage.
-- [ ] P6.11 Share canonical normalization and deduplication across historical and live ingestion.
-- [ ] P6.12 Expose role-appropriate analytics without leaking restricted financial data.
-- [ ] P6.13 Provide a stable authenticated daily aggregate contract to the finance application.
-- [ ] P6.14 Build a nontechnical administrator setup and health flow.
-- [ ] P6.15 Test partial/repeated/overlapping/malformed imports and connector failure/replay cases.
+- [ ] P6.1 Validate Nick's real workbook format, size, rows, timezone, aggregation, and deduplication semantics when supplied.
+- [ ] P6.2 Use the existing atomic importer for measured inputs up to 10 MB / 100,000 rows; add private storage, jobs, chunks, or resume only if real measurement requires them.
+- [ ] P6.3 Add a live connector only from an actual Raptive API contract, sharing canonical normalization/deduplication with historical imports.
+- [ ] P6.4 Keep necessary credentials server-only and provide enable/disable, health, retry, reconciliation, and a nontechnical administrator flow.
+- [ ] P6.5 Preserve financial-data authorization and test malformed, duplicate, overlap, replay, partial, and secret-boundary cases.
+- [ ] P6.6 Remove the finance-application contract unless a real consumer is identified.
 
 Gate: realistic fixtures and mocked live responses pass; only Nick's real files and live authorization remain.
 
 ## Phase 7 — Full-system verification, deployment, and Raptive handoff
 
-- [ ] P7.1 Run the full clean-checkout quality and security gate.
-- [ ] P7.2 Run role browser journeys against a production-like deployment.
-- [ ] P7.3 Visually inspect every route at desktop, tablet, and mobile widths.
-- [ ] P7.4 Verify keyboard, focus, contrast, labels, reduced motion, and error announcements.
-- [ ] P7.5 Verify WordPress synchronization and SEO on non-destructive real content.
-- [ ] P7.6 Verify cron execution, retries, logs, health, and alerting.
-- [ ] P7.7 Verify migrations, backups, rollback, secrets, and incident runbooks.
-- [ ] P7.8 Remove obsolete code, dead dependencies, misleading UI, diagnostics, and safe-to-remove stale planning artifacts.
-- [ ] P7.9 Align setup, architecture, operations, deployment, and user documentation.
-- [ ] P7.10 Deploy through the normal workflow and confirm production commit/version.
-- [ ] P7.11 Present Nick with only the two Raptive input actions.
-- [ ] P7.12 Validate the real historical import after upload.
-- [ ] P7.13 Validate live Raptive sync, dedupe, totals, health, permissions, and finance aggregates.
-- [ ] P7.14 Run final regression and production smoke suites.
-- [ ] P7.15 Produce the final evidence-linked checklist and residual-risk record.
+- [ ] P7.1 Run one release-candidate clean-checkout quality, security, database, browser, accessibility, and complete route/role/viewport visual gate.
+- [ ] P7.2 Execute one production migration/deployment procedure with verified backup and rollback readiness.
+- [ ] P7.3 Run one production smoke covering roles, WordPress/SEO, cron, integrations, and health.
+- [ ] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health.
+- [ ] P7.5 Finish aligned documentation, evidence-linked checklist, residual-risk record, and one final release smoke after affected-gate repairs.
 
 Gate: the release is deployed and verified; real Raptive data is validated; every completion has concrete evidence.
 
@@ -655,28 +621,15 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Exact head `9115bd6` passed GitHub Actions run `29891371506`: Application, Database, Dependencies, Browser, all 10 role journeys, and all 40 quality checks are green.
 - The single Vercel preview for draft PR #40 completed successfully against the same head. No evidence-only follow-up commit or duplicate CI run was created.
 
-### 2026-07-22 — P5.1–P5.2 WordPress capability and webhook foundation
+### 2026-07-22 — Corrected Phase 5 WordPress and SEO batch
 
-- A read-only live Pitcher List probe verified application-password authentication, administrator integration authority, core REST edit-context access, supported post types, taxonomy, authors, media, statuses, and post schema. QB remains explicitly unconfigured.
-- Yoast is installed and exposes reportable `yoast_head` and `yoast_head_json` fields. The initial top-level post-field probe found no direct writable Yoast fields; the later nested-meta schema probe documented the three registered strings supported by the guarded write-back flow. Dashboard analysis remains separate from Yoast-reported results.
-- Added an optional HMAC-authenticated WordPress webhook that accepts only site/post/event identifiers. It never trusts inbound content; it records a server-only, unique, bounded three-attempt event and triggers the existing authenticated reconciliation path. Duplicate and concurrent completed events do not repeat WordPress work; the five-minute scheduled poll remains the recovery backstop when the webhook or secret is unavailable.
-- Migration `0026_wordpress_sync_recovery.sql` cold-applies through the ordered stack. All 14 database files / 368 pgTAP assertions pass, generated types match, and database lint has no warnings. Targeted webhook unit/API tests, ESLint, and TypeScript pass.
-
-### 2026-07-22 — P5.3–P5.7 synchronization recovery batch
-
-- Entry synchronization now stores a status, last successful time, sanitized error, and last common title. The reconciliation path uses that baseline for a real three-way comparison: one-sided or matching edits remain safe, while divergent dashboard and WordPress title edits become an explicit conflict instead of silently overwriting either side.
-- Entry detail separates the public Preview link from the authenticated WordPress Edit link, shows current synchronization status/time, retains manual refresh recovery, and includes synchronization in the prepublication readiness checks.
-- Conflict resolution is manager-scoped and confirmation-required. It acquires a database lease, re-reads WordPress, refuses a changed revision timestamp, records an intentional before/after audit, and either accepts WordPress locally or writes the dashboard title through the verified core post endpoint. Network/upstream failures remain visible and recoverable rather than reporting success.
-- Added an age-based evergreen queue for published posts at least one year old and unchanged in WordPress for six months. It is deliberately described as an editorial prompt and never uses or reveals traffic, revenue, or employee-performance data.
-- Migration `0027_wordpress_entry_sync_state.sql` cold-applies through the ordered stack. All 15 database files / 373 pgTAP assertions pass, generated types match, and database lint has no warnings. Targeted conflict, evergreen, route-authorization, webhook, and reconciliation tests plus ESLint and TypeScript pass.
-
-### 2026-07-22 — P5.8–P5.19 title and SEO batch
-
-- Embedded a deterministic, dependency-free title studio in the existing entry detail. It starts from the live WordPress title, never creates a second title record, ranks unique candidates with the verified 100-point rubric, estimates pixel width with the Pitcher List suffix, explains every category, renders a SERP preview, and provides copy, use, and manager-approved apply actions.
-- Added independent Pitcher List analysis for focus-keyphrase placement, description length, distribution/stuffing, headings, sentence length, likely passive voice, transitions, and readability. Findings are ordered, specific, and visibly separate from Yoast-reported title, description, canonical, robots, and focus keyphrase values.
-- A second read-only live schema probe confirmed that Yoast rendered fields are read-only while the authenticated core post meta schema registers exactly three writable strings: focus keyphrase, SEO title, and meta description. The dashboard supports only those fields plus the verified core title field; no broader Yoast capability is claimed.
-- Analysis is limited to entry participants and site managers. Write-back is site-Manager+ only, requires an explicit confirmation and exact analyzed WordPress revision, acquires a database lease, writes one bounded title/meta payload, checkpoints synchronization state, and records the before/after title audit. Changed revisions and concurrent work return conflicts without reporting success.
-- Targeted unit, integration, API, component, ESLint, and TypeScript checks pass. A manager-authenticated Chromium journey covers the complete workspace, approval boundary, suffix presentation, Pitcher List/Yoast separation, and a WCAG A/AA scan with zero violations.
+- A read-only live Pitcher List probe verified application-password authentication, core REST edit-context access, supported content/taxonomy/author/media/status fields, and rendered Yoast values. QB remains explicitly unconfigured.
+- The product boundary was corrected before deployment: WordPress remains authoritative for article content and publication metadata. The speculative webhook/event ledger, generalized title-conflict merge, and WordPress/Yoast SEO write-back were removed. Five-minute authenticated polling plus authorized manual refresh is the complete recovery design.
+- Entry detail retains public preview, authenticated admin edit, last-successful/modified/stale/error state, and manual recovery. Migration `0026_wordpress_entry_sync_state.sql` contains only the sync status/time/error columns and attention index.
+- The existing standalone title generator was inspected from its live source and ported locally with its deterministic glyph widths, 100-point rubric, article types, player/week/date/list inputs, ranked candidates, explanations, Pitcher List suffix, SERP preview, copy, and apply-to-dashboard-title behavior.
+- On-demand analysis is participant/manager scoped, reads current WordPress/Yoast data without write-back, covers keyphrase/title/meta/slug/opening/headings/distribution/stuffing/image-alt/sentence/paragraph/voice/transition/structure checks, and shows a short prioritized improvement list plus read-only publication readiness.
+- The complete local Phase 5 gate passes: runbook contract, ESLint, TypeScript, 82 Vitest files / 352 tests with coverage, dependency audit (zero vulnerabilities), clean production build, 14 database files / 363 pgTAP assertions, generated-type drift, database lint, 11 browser journeys, and all 40 route/role/viewport quality checks. The combined gate's build worker had one transient exit; the affected production build was rerun alone and passed cleanly, followed by targeted type/component/browser checks after the final ownership copy adjustment.
+- Exact-head GitHub CI and the single Vercel preview remain the Phase 5 boundary gate. Earlier webhook/conflict/write-back evidence is superseded and must not be treated as release proof.
 
 ## Phase 0 prioritized defect and risk inventory
 

@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { browserRecords } from "./global-setup";
 
-test("manager reviews explainable SEO and reaches explicit approval", async ({ browser }, testInfo) => {
+test("manager reviews explainable SEO and can apply a dashboard title", async ({ browser }) => {
   test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "role fixtures are local-only");
   const context = await browser.newContext({
     baseURL: test.info().project.use.baseURL,
@@ -23,6 +23,9 @@ test("manager reviews explainable SEO and reaches explicit approval", async ({ b
             headings: ["Fantasy Baseball Rankings", "Pitcher Targets"],
             focusKeyphrase: "fantasy baseball rankings",
             metaDescription: "A practical fantasy baseball rankings guide with pitcher targets, values, sleepers, and draft advice for the complete 2026 season.",
+            slug: "fantasy-baseball-rankings",
+            imageAlts: ["Pitcher rankings"],
+            paragraphWordCounts: [24],
             wpModifiedAt: "2026-07-22T00:00:00.000Z",
             titleScore: { total: 80 },
             findings: [],
@@ -32,8 +35,9 @@ test("manager reviews explainable SEO and reaches explicit approval", async ({ b
               canonical: "https://pitcherlist.com/e2e-seo-preview/",
               robots: { index: "index", follow: "follow" },
               focusKeyphrase: "fantasy baseball rankings",
-              writable: true,
+              writable: false,
             },
+            readiness: [{ label: "Author", ready: true, detail: "WordPress author #1" }],
           },
         }),
       });
@@ -44,7 +48,7 @@ test("manager reviews explainable SEO and reaches explicit approval", async ({ b
     await expect(page.getByRole("heading", { name: "Pitcher List title studio" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Pitcher List analysis" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Yoast-reported values" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Approve and apply" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Apply to dashboard title" })).toBeEnabled();
     await expect(page.getByText(/including .*Pitcher List/)).toBeVisible();
 
     const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();

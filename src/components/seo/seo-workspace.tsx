@@ -6,13 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { readApiError } from "@/lib/api/client";
 import {
   analyzeSeoDocument,
   generateTitleCandidates,
   scoreTitle,
   type SeoFinding,
+  type TitleGeneratorInput,
   type TitleScore,
 } from "@/lib/seo/analysis";
 import type { SeoWorkspaceData } from "@/lib/seo/wordpress";
@@ -20,18 +20,23 @@ import type { SeoWorkspaceData } from "@/lib/seo/wordpress";
 export function SeoWorkspace({
   entryId,
   fallbackTitle,
-  canApprove,
+  canApplyDashboardTitle,
   onApplied,
 }: {
   entryId: string;
   fallbackTitle: string;
-  canApprove: boolean;
+  canApplyDashboardTitle: boolean;
   onApplied: () => void;
 }) {
   const [workspace, setWorkspace] = React.useState<SeoWorkspaceData | null>(null);
   const [title, setTitle] = React.useState(fallbackTitle);
   const [keyphrase, setKeyphrase] = React.useState("");
   const [metaDescription, setMetaDescription] = React.useState("");
+  const [articleType, setArticleType] = React.useState<NonNullable<TitleGeneratorInput["articleType"]>>("fantasy");
+  const [players, setPlayers] = React.useState("");
+  const [week, setWeek] = React.useState("");
+  const [date, setDate] = React.useState("");
+  const [listSize, setListSize] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [applying, setApplying] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -74,33 +79,41 @@ export function SeoWorkspace({
           headings: workspace.headings,
           focusKeyphrase: keyphrase,
           metaDescription,
+          slug: workspace.slug,
+          imageAlts: workspace.imageAlts,
+          paragraphWordCounts: workspace.paragraphWordCounts,
         })
       : [],
     [workspace, title, keyphrase, metaDescription],
   );
   const candidates = React.useMemo<TitleScore[]>(
-    () => generateTitleCandidates(title, keyphrase),
-    [title, keyphrase],
+    () => generateTitleCandidates({
+      keyword: keyphrase || title,
+      articleType,
+      players: players.split(","),
+      week,
+      date,
+      listSize,
+    }),
+    [title, keyphrase, articleType, players, week, date, listSize],
+  );
+
+  const prioritizedFindings = React.useMemo(
+    () => findings.filter((finding) => finding.status !== "good").slice(0, 5),
+    [findings],
   );
 
   async function applyTitle() {
-    if (!workspace || !window.confirm(`Replace the current WordPress title with “${title}”? The current revision will be checked again first.`)) return;
+    if (!window.confirm(`Use “${title}” as the dashboard title? WordPress content will not be changed.`)) return;
     setApplying(true);
     setError(null);
     try {
-      const response = await fetch(`/api/entries/${entryId}/seo`, {
-        method: "POST",
+      const response = await fetch(`/api/entries/${entryId}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          focus_keyphrase: keyphrase,
-          meta_description: metaDescription,
-          expected_wp_modified_at: workspace.wpModifiedAt,
-          confirm: true,
-        }),
+        body: JSON.stringify({ title }),
       });
       if (!response.ok) throw new Error(await readApiError(response, "Title was not applied"));
-      await load();
       onApplied();
     } catch (applyError) {
       setError(applyError instanceof Error ? applyError.message : "Title was not applied");
@@ -145,12 +158,11 @@ export function SeoWorkspace({
         <div className="mt-3 rounded-sm border border-border bg-surface-3/40 p-3">
           <p className="font-data text-xs text-text-zero">Google preview · {titleScore.fullPixelWidth}px including {titleScore.suffix.trim()}</p>
           <p className="mt-1 text-base text-cyan">{title}{titleScore.suffix}</p>
-          <p className="mt-1 line-clamp-2 text-xs text-text-team">{metaDescription || "Add a useful meta description in WordPress."}</p>
+          <p className="mt-1 text-xs text-text-team">{metaDescription || "Add a useful meta description in WordPress."}</p>
         </div>
-        <div className="mt-3 space-y-1.5">
-          <Label htmlFor="seo-description">Meta description</Label>
-          <Textarea id="seo-description" value={metaDescription} onChange={(event) => setMetaDescription(event.target.value)} rows={3} />
-          <p className="font-data text-[10px] text-text-zero">{metaDescription.length}/160 recommended characters</p>
+        <div className="mt-3 rounded-sm border border-border p-3 text-xs">
+          <div className="flex items-center justify-between gap-2"><span className="text-text-zero">WordPress meta description · {metaDescription.length}/160</span><Button variant="ghost" size="sm" onClick={() => void navigator.clipboard.writeText(metaDescription)}><Clipboard className="h-3.5 w-3.5" />Copy</Button></div>
+          <p className="mt-2 text-text-cell">{metaDescription || "No meta description reported by WordPress."}</p>
         </div>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {titleScore.categories.map((category) => (
@@ -162,13 +174,20 @@ export function SeoWorkspace({
         </ul>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => void navigator.clipboard.writeText(title)}><Clipboard className="h-3.5 w-3.5" />Copy</Button>
-          {canApprove ? <Button size="sm" onClick={() => void applyTitle()} disabled={applying || title.trim().length < 10 || keyphrase.trim().length < 2 || metaDescription.trim().length < 50}>{applying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}Approve and apply</Button> : <Badge variant="outline">Manager approval required</Badge>}
+          {canApplyDashboardTitle ? <Button size="sm" onClick={() => void applyTitle()} disabled={applying || title.trim().length < 10}>{applying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}Apply to dashboard title</Button> : <Badge variant="outline">View only</Badge>}
         </div>
         {error ? <p className="mt-3 text-xs text-destructive">{error}</p> : null}
       </section>
 
       <section className="rounded-md border border-border bg-card p-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-text-cell"><Search className="h-4 w-4" />Ranked title ideas</h3>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+          <label className="space-y-1 text-xs text-text-zero">Article type<select className="h-9 w-full rounded-md border border-border bg-surface-3 px-2 text-text-cell" value={articleType} onChange={(event) => setArticleType(event.target.value as typeof articleType)}><optgroup label="Columns / Series"><option value="goingdeep">Going Deep</option><option value="hitterrecap">Hitter Recap</option><option value="morningnews">MLB Morning News</option><option value="plvweekly">PLV Weekly</option><option value="seams">Across the Seams</option><option value="welovebaseball">We Love Baseball</option></optgroup><optgroup label="General"><option value="fantasy">Fantasy</option><option value="dynasty">Dynasty</option><option value="baseball">Baseball</option><option value="other">Other</option></optgroup></select></label>
+          <label className="space-y-1 text-xs text-text-zero">Players<Input value={players} onChange={(event) => setPlayers(event.target.value)} placeholder="Name, Name" /></label>
+          <label className="space-y-1 text-xs text-text-zero">Week<Input value={week} onChange={(event) => setWeek(event.target.value)} placeholder="15" /></label>
+          <label className="space-y-1 text-xs text-text-zero">Date<Input value={date} onChange={(event) => setDate(event.target.value)} placeholder="7/5/26" /></label>
+          <label className="space-y-1 text-xs text-text-zero">List size<Input value={listSize} onChange={(event) => setListSize(event.target.value)} placeholder="10" /></label>
+        </div>
         <ol className="mt-3 space-y-2">
           {candidates.slice(0, 5).map((candidate, index) => (
             <li key={candidate.title} className="flex flex-wrap items-center gap-2 rounded-sm border border-border p-2 text-xs">
@@ -183,16 +202,22 @@ export function SeoWorkspace({
           <h3 className="text-sm font-semibold text-text-cell">Pitcher List analysis</h3>
           <p className="mt-1 text-xs text-text-team">Independent, explainable checks—not a Yoast score.</p>
           <ul className="mt-3 space-y-2">
-            {findings.map((finding) => (
+            {(prioritizedFindings.length > 0 ? prioritizedFindings : findings.slice(0, 3)).map((finding) => (
               <li key={finding.key} className="rounded-sm border border-border p-2 text-xs"><div className="flex gap-2"><Badge variant={finding.status === "good" ? "cyan" : finding.status === "problem" ? "danger" : "amber"}>{finding.status}</Badge><span className="text-text-cell">{finding.label}</span></div><p className="mt-1 text-text-zero">{finding.detail}</p></li>
             ))}
           </ul>
         </div>
         <div className="rounded-md border border-border bg-card p-4">
           <h3 className="text-sm font-semibold text-text-cell">Yoast-reported values</h3>
-          <p className="mt-1 text-xs text-text-team">Read from WordPress. Manager approval may write only the three schema-registered Yoast strings: focus keyphrase, SEO title, and meta description.</p>
+          <p className="mt-1 text-xs text-text-team">Read from WordPress. This dashboard does not write Yoast or article content; copy values and paste them in WordPress when needed.</p>
           <dl className="mt-3 space-y-2 text-xs"><div><dt className="text-text-zero">Focus keyphrase</dt><dd className="text-text-cell">{workspace.yoast.focusKeyphrase || "Not reported"}</dd></div><div><dt className="text-text-zero">SEO title</dt><dd className="text-text-cell">{workspace.yoast.title || "Not reported"}</dd></div><div><dt className="text-text-zero">Meta description</dt><dd className="text-text-cell">{workspace.yoast.description || "Not reported"}</dd></div><div><dt className="text-text-zero">Canonical</dt><dd className="break-all text-text-cell">{workspace.yoast.canonical || "Not reported"}</dd></div></dl>
         </div>
+      </section>
+
+      <section className="rounded-md border border-border bg-card p-4">
+        <h3 className="text-sm font-semibold text-text-cell">WordPress publication readiness</h3>
+        <p className="mt-1 text-xs text-text-team">WordPress owns article content and publication metadata. These are read-only checks from the current revision.</p>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{workspace.readiness.map((item) => <li key={item.label} className="rounded-sm border border-border p-2 text-xs"><div className="flex items-center gap-2"><Badge variant={item.ready ? "cyan" : "amber"}>{item.ready ? "ready" : "check"}</Badge><span className="text-text-cell">{item.label}</span></div><p className="mt-1 text-text-zero">{item.detail}</p></li>)}</ul>
       </section>
     </div>
   );

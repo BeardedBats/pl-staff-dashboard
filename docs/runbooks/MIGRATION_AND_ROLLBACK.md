@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0027_wordpress_entry_sync_state.sql`. The
-current application stack depends on migrations `0013`–`0027`; apply those
+`0001_initial_schema.sql` through `0026_wordpress_entry_sync_state.sql`. The
+current application stack depends on migrations `0013`–`0026`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,7 +44,7 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0027_wordpress_entry_sync_state.sql`. Apply once:
+`0026_wordpress_entry_sync_state.sql`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -157,30 +157,10 @@ After application deployment, do not reverse `0025`; deploy a compatible forward
 
 ### Migration 0026 contingency
 
-Migration `0026` adds the server-only WordPress event ledger and its bounded,
-idempotent attempt functions. It executes transactionally. A failed apply must
-leave no event table or functions. The scheduled poll does not depend on the
-table, so before the Phase 5 application is deployed—and only after a verified
-backup—the release operator may reverse it in one transaction:
-
-```sql
-BEGIN;
-DROP FUNCTION IF EXISTS public.finish_wordpress_sync_event(uuid, boolean, text);
-DROP FUNCTION IF EXISTS public.begin_wordpress_sync_event(text, integer, text, text);
-DROP TABLE IF EXISTS public.wordpress_sync_events;
-COMMIT;
-```
-
-After Phase 5 deployment, disable inbound webhook delivery first and prefer a
-compatible forward repair. Never delete the ledger while webhook requests can
-still arrive.
-
-### Migration 0027 contingency
-
-Migration `0027` adds WordPress synchronization and three-way title-baseline
-columns to entries. It executes transactionally. After Phase 5 application
-deployment, prefer a forward repair because entry detail and conflict recovery
-read these fields.
+Migration `0026` adds the entry-level WordPress synchronization status, last
+successful time, bounded error, and attention index. It executes
+transactionally. After Phase 5 application deployment, prefer a forward repair
+because entry detail and operational health read these fields.
 
 Only before Phase 5 deployment, and only after a verified backup, reverse it
 in one transaction:
@@ -189,15 +169,14 @@ in one transaction:
 BEGIN;
 DROP INDEX IF EXISTS public.entries_wp_sync_attention_idx;
 ALTER TABLE public.entries
-  DROP COLUMN IF EXISTS wp_synced_title,
   DROP COLUMN IF EXISTS wp_last_sync_error,
   DROP COLUMN IF EXISTS wp_last_synced_at,
   DROP COLUMN IF EXISTS wp_sync_status;
 COMMIT;
 ```
 
-After deployment, disable webhook delivery and ship a compatible forward
-migration or restore the database and application together.
+After deployment, ship a compatible forward migration or restore the database
+and application together.
 
 ## Stop conditions
 

@@ -7,7 +7,6 @@ const mocks = vi.hoisted(() => ({
   participant: vi.fn(),
   manager: vi.fn(),
   workspace: vi.fn(),
-  apply: vi.fn(),
 }));
 vi.mock("@/lib/auth/current-user", () => ({ getCurrentUser: mocks.user }));
 vi.mock("@/lib/auth/authorization", () => ({
@@ -18,20 +17,12 @@ vi.mock("@/lib/auth/authorization", () => ({
 }));
 vi.mock("@/lib/seo/wordpress", () => ({
   getSeoWorkspace: mocks.workspace,
-  applyApprovedSeoTitle: mocks.apply,
 }));
 
-import { GET, POST } from "./route";
+import { GET } from "./route";
 
 const context = { params: Promise.resolve({ id: "entry-1" }) };
 const getRequest = new Request("http://localhost/api/entries/entry-1/seo");
-function postRequest(body: unknown) {
-  return new Request("http://localhost/api/entries/entry-1/seo", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
 
 describe("SEO workspace API", () => {
   beforeEach(() => {
@@ -42,7 +33,6 @@ describe("SEO workspace API", () => {
     mocks.participant.mockReturnValue(true);
     mocks.manager.mockReturnValue(false);
     mocks.workspace.mockResolvedValue({ title: "Current title" });
-    mocks.apply.mockResolvedValue({ ok: true, modifiedAt: "2026-07-22T00:00:00Z" });
   });
 
   it("allows an entry participant to analyze", async () => {
@@ -51,49 +41,33 @@ describe("SEO workspace API", () => {
     expect(mocks.workspace).toHaveBeenCalledWith("entry-1");
   });
 
+  it("allows a site manager to analyze a non-participant entry", async () => {
+    mocks.participant.mockReturnValue(false);
+    mocks.manager.mockReturnValue(true);
+    const response = await GET(getRequest, context);
+    expect(response.status).toBe(200);
+  });
+
+  it("requires an authenticated session", async () => {
+    mocks.user.mockResolvedValue(null);
+    const response = await GET(getRequest, context);
+    expect(response.status).toBe(401);
+    expect(mocks.workspace).not.toHaveBeenCalled();
+  });
+
   it("hides analysis from an unrelated viewer", async () => {
     mocks.participant.mockReturnValue(false);
     const response = await GET(getRequest, context);
     expect(response.status).toBe(404);
   });
 
-  it("requires manager authority and explicit approval for write-back", async () => {
-    const body = {
-      title: "A deliberately approved title",
-      focus_keyphrase: "fantasy baseball rankings",
-      meta_description: "A detailed fantasy baseball rankings guide with targets, sleepers, and draft-day advice for the full season.",
-      expected_wp_modified_at: "2026-07-22T00:00:00.000Z",
-      confirm: true,
-    };
-    const denied = await POST(postRequest(body), context);
-    expect(denied.status).toBe(404);
-
-    mocks.manager.mockReturnValue(true);
-    const unconfirmed = await POST(postRequest({ ...body, confirm: false }), context);
-    expect(unconfirmed.status).toBe(400);
-    const approved = await POST(postRequest(body), context);
-    expect(approved.status).toBe(200);
-    expect(mocks.apply).toHaveBeenCalledWith("entry-1", "viewer", {
-      title: body.title,
-      focusKeyphrase: body.focus_keyphrase,
-      metaDescription: body.meta_description,
-      expectedWpModifiedAt: body.expected_wp_modified_at,
+  it("reports an upstream read failure without exposing WordPress details", async () => {
+    mocks.workspace.mockResolvedValue(null);
+    const response = await GET(getRequest, context);
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toEqual({
+      code: "UPSTREAM_ERROR",
+      error: "WordPress SEO data is unavailable",
     });
-  });
-
-  it("returns conflict when the WordPress revision changed", async () => {
-    mocks.manager.mockReturnValue(true);
-    mocks.apply.mockResolvedValue({ ok: false, error: "changed", conflict: true });
-    const response = await POST(
-      postRequest({
-        title: "A deliberately approved title",
-        focus_keyphrase: "fantasy baseball rankings",
-        meta_description: "A detailed fantasy baseball rankings guide with targets, sleepers, and draft-day advice for the full season.",
-        expected_wp_modified_at: "2026-07-22T00:00:00.000Z",
-        confirm: true,
-      }),
-      context,
-    );
-    expect(response.status).toBe(409);
   });
 });

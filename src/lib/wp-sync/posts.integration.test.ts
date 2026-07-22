@@ -74,4 +74,31 @@ describe("WordPress post reconciliation retries", () => {
     ]);
     expect(settingsReads).toBe(1);
   });
+
+  it("marks connected entries stale when the scheduled WordPress read fails", async () => {
+    mocks.fetchAllWpPages.mockResolvedValue({ ok: false, error: "WordPress returned 503" });
+    const update = vi.fn();
+    const eq = vi.fn();
+    const not = vi.fn().mockResolvedValue({ error: null });
+    const entriesQuery = { update, eq, not };
+    update.mockReturnValue(entriesQuery);
+    eq.mockReturnValue(entriesQuery);
+    mocks.from.mockImplementation((table) => {
+      if (table === "global_settings") {
+        return maybeSingleQuery({ data: { value: "2026-07-21T11:00:00Z" } });
+      }
+      if (table === "entries") return entriesQuery;
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    const report = await syncWpPostsForSite("pl", "system-user");
+
+    expect(report.errors).toEqual([{ wpPostId: 0, message: "WordPress returned 503" }]);
+    expect(update).toHaveBeenCalledWith({
+      wp_sync_status: "stale",
+      wp_last_sync_error: "WordPress returned 503",
+    });
+    expect(eq).toHaveBeenCalledWith("site", "pl");
+    expect(not).toHaveBeenCalledWith("wp_post_id", "is", null);
+  });
 });

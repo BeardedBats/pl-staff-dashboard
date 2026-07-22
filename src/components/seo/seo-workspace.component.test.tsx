@@ -15,6 +15,9 @@ describe("SEO workspace", () => {
           headings: ["Fantasy Baseball Rankings"],
           focusKeyphrase: "fantasy baseball rankings",
           metaDescription: "A practical fantasy baseball rankings guide with pitcher targets, values, and draft advice for the 2026 season.",
+          slug: "fantasy-baseball-rankings",
+          imageAlts: ["Pitcher rankings"],
+          paragraphWordCounts: [18],
           wpModifiedAt: "2026-07-22T00:00:00.000Z",
           titleScore: { total: 80 },
           findings: [],
@@ -26,6 +29,7 @@ describe("SEO workspace", () => {
             focusKeyphrase: "fantasy baseball rankings",
             writable: false,
           },
+          readiness: [{ label: "Author", ready: true, detail: "WordPress author #1" }],
         },
       }),
     }));
@@ -34,7 +38,7 @@ describe("SEO workspace", () => {
       <SeoWorkspace
         entryId="entry-1"
         fallbackTitle="Fallback"
-        canApprove={false}
+        canApplyDashboardTitle={false}
         onApplied={vi.fn()}
       />,
     );
@@ -42,7 +46,8 @@ describe("SEO workspace", () => {
     expect(await screen.findByRole("heading", { name: "Pitcher List title studio" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Pitcher List analysis" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Yoast-reported values" })).toBeInTheDocument();
-    expect(screen.getByText("Manager approval required")).toBeInTheDocument();
-    expect(screen.getByText(/three schema-registered Yoast strings/)).toBeInTheDocument();
+    expect(screen.getByText("View only")).toBeInTheDocument();
+    expect(screen.getByText(/does not write Yoast or article content/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "WordPress publication readiness" })).toBeInTheDocument();
   });
 });
