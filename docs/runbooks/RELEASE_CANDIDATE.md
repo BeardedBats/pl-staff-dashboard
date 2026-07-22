@@ -12,7 +12,7 @@ merge or Yoast write-back.
   last known-good production deployment, and Supabase project
   `ovnwmayhbmbdzbxrfrul`.
 - The committed migration history is contiguous through
-  `0027_raptive_creator_api_sync.sql` and the Phase 6 boundary is green.
+  `0029_compact_raptive_history.sql` and the Phase 6 boundary is green.
 - Use a new clean checkout of the immutable release commit. Never copy the
   current worktree's `.env.local`, `.vercel`, Supabase link state, or user files
   into it.
@@ -79,6 +79,8 @@ known-missing Supabase DDL access.
 0025_notification_delivery_controls.sql
 0026_wordpress_entry_sync_state.sql
 0027_raptive_creator_api_sync.sql
+0028_site_safe_raptive_import.sql
+0029_compact_raptive_history.sql
 ```
 
    If production already contains a verified prefix, apply only the remaining
@@ -105,7 +107,7 @@ article data.
 | Cron/recovery | Each configured job has an explainable fresh durable run after its next schedule window; overlap/retry state is healthy; one authorized manual recovery is allowed only for a stale/failed job. |
 | Graphics/storage | The `graphics` bucket is private; a public object URL fails and an authorized signed read succeeds; approval boundaries remain enforced. |
 | Integrations/health | Settings > Sync > System health loads for both-site Admin+; WordPress, GA4, notifications, Raptive import/live status, and cron states are explainable; no new critical alert or 5xx spike appears. |
-| Raptive historical | Before Nick's input, confirm upload remains Operations-only and the 10 MB / 100,000-row envelope is visible. Do not use synthetic data as final business validation. |
+| Raptive historical | Confirm browser upload remains Operations-only. Import the immutable compact manifest only after its hashes, 98 MB measured footprint, exact PL/QB totals, entry/site boundaries, and backup are verified; raw URL-level history must not enter the no-spend database. |
 | Raptive live | Credentials remain server-only; EIC has read-only status; only Operations can discover/map/enable/sync. Confirm an active authorized site is host-matched and disabled by default, then enable and reconcile one complete day. Negative-role and cross-site requests remain denied. |
 
 After any repair, rerun only failed or affected gates, then run one final smoke
@@ -115,24 +117,20 @@ integration status.
 
 ## Nick's Raptive actions
 
-The original handoff contained two real inputs. Action 2 was supplied on
-2026-07-22 and is now represented by the published contract, server-only
-Vercel credentials, and implemented connector. Action 1 remains deferred until
-the release candidate, production migration/deployment, and initial smoke are
-green:
+Both original real inputs were supplied on 2026-07-22: five aggregate
+workbooks (also present in the linked Drive folder) and the published contract
+plus server-only Vercel credentials. No additional Nick action is pending.
 
 The Raptive API contract is the published Creator API v1 contract linked in
 `docs/RAPTIVE_INGESTION_CONTRACT.md`; no undocumented endpoint is used.
 
-1. Provide the real Raptive workbook. Validate format, sheets, file size, row
-   count, timezone, aggregation, URL identity, duplicates, totals, preview,
-   atomic commit, reconciliation, authorization, and health. If it exceeds
-   10 MB / 100,000 rows or the request duration is unsafe, measure first and add
-   only the storage/job/chunk/resume mechanism the measurement requires.
+1. **Supplied:** five historical aggregate workbooks. The verified compact
+   manifest covers 2019-02-06 through 2026-05-10 and must be imported only by
+   the ordered, hash-checking, resumable service procedure after `0028`/`0029`.
 2. **Supplied:** Raptive Creator API v1 plus `RAPTIVE_CLIENT_ID` and
    `RAPTIVE_CLIENT_SECRET` in Vercel Preview/Production. Validate them without
    exposing values using `node scripts/verify-raptive-api.mjs`; production
-   enablement still waits for migration `0027`, deployment, host mapping, and a
+   enablement still waits for the release deployment, host mapping, and a
    reconciled one-day Operations smoke.
 
 ## Stop conditions
@@ -151,7 +149,7 @@ The Raptive API contract is the published Creator API v1 contract linked in
 ## Verification
 
 - The clean checkout, GitHub Actions, and preview all identify the same commit.
-- Production migration history ends at `0027`; schema, grants, RLS, constraints,
+- Production migration history ends at `0029`; schema, grants, RLS, constraints,
   generated types, private Storage, and backup evidence match the release.
 - Production resolves to the intended release and every smoke boundary passes.
 - The real Raptive workbook reconciles exactly. The live connector follows the

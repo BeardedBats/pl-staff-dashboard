@@ -13,6 +13,7 @@ import { MAX_RAPTIVE_IMPORT_ROWS } from "@/lib/analytics/raptive-contract";
 // --------------------------------------------------------------------------
 
 export type RaptiveParsedRow = {
+  wp_site: "pl" | "qb";
   /** YYYY-MM-DD */
   date: string;
   page_url: string;
@@ -98,6 +99,7 @@ function resolveColumns(
   };
 
   return {
+    wp_site: findBy("site name", "site"),
     date: findBy("date", "day"),
     page_url: findBy("page url", "url", "page path", "path", "permalink"),
     earnings: findBy("earnings", "total earnings", "revenue", "gross earnings"),
@@ -106,6 +108,20 @@ function resolveColumns(
     sessions: findBy("sessions"),
     pageviews: findBy("pageviews", "page views", "views"),
   };
+}
+
+function coerceWpSite(value: unknown, pageUrl: string): "pl" | "qb" | null {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (normalized === "pl" || normalized.includes("pitcher list")) return "pl";
+  if (normalized === "qb" || normalized.includes("qb list")) return "qb";
+  try {
+    const hostname = new URL(pageUrl).hostname.toLowerCase().replace(/^www\./, "");
+    if (hostname === "pitcherlist.com") return "pl";
+    if (hostname === "football.pitcherlist.com") return "qb";
+  } catch {
+    // Relative paths require an explicit Site Name column.
+  }
+  return null;
 }
 
 function coerceNumber(v: unknown, allowBlank = true): number | null {
@@ -242,9 +258,18 @@ export function parseRaptiveWorkbook(buffer: Buffer): RaptiveParseResult {
     for (const [rowIndex, record] of raw.entries()) {
       const excelRow = headerIndex + rowIndex + 2;
       const date = coerceDate(record[cols.date]);
-      const url = String(record[cols.page_url] ?? "").trim();
-      if (!date || !url) {
-        reject(sheetName, excelRow, "Missing or invalid Date or Page URL");
+      const sourceUrl = String(record[cols.page_url] ?? "").trim();
+      const url = sourceUrl || "urn:raptive:unattributed";
+      if (!date) {
+        reject(sheetName, excelRow, "Missing or invalid Date");
+        continue;
+      }
+      const wpSite = coerceWpSite(
+        cols.wp_site ? record[cols.wp_site] : null,
+        url,
+      );
+      if (!wpSite) {
+        reject(sheetName, excelRow, "Missing or unsupported Site Name");
         continue;
       }
 
@@ -282,6 +307,7 @@ export function parseRaptiveWorkbook(buffer: Buffer): RaptiveParseResult {
       }
 
       const parsedRow: RaptiveParsedRow = {
+        wp_site: wpSite,
         date,
         page_url: url,
         earnings,
@@ -291,7 +317,7 @@ export function parseRaptiveWorkbook(buffer: Buffer): RaptiveParseResult {
         pageviews,
       };
       const normalizedUrl = normalizeAnalyticsPath(url) || url.toLowerCase();
-      const key = `${date}\u0000${normalizedUrl}`;
+      const key = `${wpSite}\u0000${date}\u0000${normalizedUrl}`;
       const existing = rowsByKey.get(key);
       if (existing) {
         if (
@@ -361,23 +387,38 @@ export async function matchRaptiveRowsToEntries(
   sampleUnmatched: string[];
 }> {
   const supabase = getSupabaseAdmin();
-  let query = supabase
-    .from("entries")
-    .select("id, wp_post_url")
-    .not("wp_post_url", "is", null);
-  if (site) query = query.eq("site", site);
-  const { data, error } = await query;
-  if (error) {
-    throw Object.assign(new Error("Raptive entry matching is unavailable"), {
-      code: "entry_match_unavailable",
-    });
+  const rowsBySite: Array<{
+    id: string;
+    wp_post_url: string | null;
+    site: "pl" | "qb";
+  }> = [];
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    let query = supabase
+      .from("entries")
+      .select("id, wp_post_url, site")
+      .not("wp_post_url", "is", null)
+      .order("id")
+      .range(offset, offset + pageSize - 1);
+    if (site) query = query.eq("site", site);
+    const { data, error } = await query;
+    if (error) {
+      throw Object.assign(new Error("Raptive entry matching is unavailable"), {
+        code: "entry_match_unavailable",
+      });
+    }
+    rowsBySite.push(...((data ?? []) as typeof rowsBySite));
+    if ((data ?? []).length < pageSize) break;
   }
-
-  const entryUrlMap = buildAnalyticsPathIndex(
-    ((data ?? []) as Array<{
-      id: string;
-      wp_post_url: string | null;
-    }>).map((row) => ({ id: row.id, url: row.wp_post_url })),
+  const entryUrlMaps = new Map(
+    (["pl", "qb"] as const).map((wpSite) => [
+      wpSite,
+      buildAnalyticsPathIndex(
+        rowsBySite
+          .filter((row) => row.site === wpSite)
+          .map((row) => ({ id: row.id, url: row.wp_post_url })),
+      ),
+    ]),
   );
 
   const matched: Array<RaptiveParsedRow & { entry_id: string | null }> = [];
@@ -387,7 +428,7 @@ export async function matchRaptiveRowsToEntries(
 
   for (const r of rows) {
     const norm = normalizeAnalyticsPath(r.page_url);
-    const entryId = entryUrlMap.get(norm) ?? null;
+    const entryId = entryUrlMaps.get(r.wp_site)?.get(norm) ?? null;
     if (entryId) {
       matchedCount += 1;
     } else {
@@ -423,6 +464,7 @@ export async function commitRaptiveRows(
   const supabase = getSupabaseAdmin();
 
   const payload = rows.map((r) => ({
+    wp_site: r.wp_site,
     entry_id: r.entry_id,
     date: r.date,
     page_url: r.page_url,

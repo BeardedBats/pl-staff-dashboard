@@ -1129,6 +1129,41 @@ export type Database = {
           },
         ]
       }
+      raptive_history_daily: {
+        Row: {
+          date: string
+          earnings: number
+          entry_id: string | null
+          pageviews: number
+          sessions: number
+          wp_site: string
+        }
+        Insert: {
+          date: string
+          earnings?: number
+          entry_id?: string | null
+          pageviews?: number
+          sessions?: number
+          wp_site: string
+        }
+        Update: {
+          date?: string
+          earnings?: number
+          entry_id?: string | null
+          pageviews?: number
+          sessions?: number
+          wp_site?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raptive_history_daily_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       raptive_revenue: {
         Row: {
           date: string
@@ -1888,6 +1923,27 @@ export type Database = {
           word_count: number
         }[]
       }
+      get_raptive_entry_rollup: {
+        Args: { p_date_from: string; p_date_to: string; p_site?: string }
+        Returns: {
+          earnings: number
+          entry_id: string
+          pageviews: number
+          sessions: number
+        }[]
+      }
+      get_raptive_history_summary: {
+        Args: never
+        Returns: {
+          date_end: string
+          date_start: string
+          earnings: number
+          pageviews: number
+          rows: number
+          sessions: number
+          wp_site: string
+        }[]
+      }
       record_graphic_upload: {
         Args: {
           p_actor_id: string
@@ -1985,6 +2041,7 @@ export type Database = {
         Args: { p_actor_id: string; p_entry_id: string; p_payload: Json }
         Returns: boolean
       }
+      upsert_raptive_history_batch: { Args: { p_rows: Json }; Returns: number }
     }
     Enums: {
       [_ in never]: never

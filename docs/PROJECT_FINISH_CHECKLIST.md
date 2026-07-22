@@ -4,13 +4,11 @@ Last updated: 2026-07-22
 
 ## Recovery state
 
-- Current phase: Phase 7 — release candidate, production deployment, and Raptive handoff
-- Current action: publish the completed Raptive Creator API release-candidate head for one exact-head GitHub CI run and one Vercel preview.
-- Branch: `codex/production-readiness-p7`
-- Stack base: `9115bd6` (combined Phase 4 exact head on green draft PR #40, based on the completed Phase 3 stack).
-- Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
-- Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blocker: production application of the ordered migrations through `0027` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is available. This is a deployment blocker, not unfinished local development; Nick does not need to apply it now. QB WordPress remains unconfigured.
+- Current phase: Phase 7 — compact historical Raptive release and final production verification
+- Current action: complete the one affected local gate, exact-head preview, ordered `0028`/`0029` migration, compact history import, and final production reconciliation.
+- Branch: `codex/raptive-live-schema-fix`
+- Deployment: the current production Raptive Creator API release is healthy; the compact-history release is not deployed yet.
+- Known blocker: none requiring Nick. GitHub-hosted CI is waived because the account billing gate conflicts with the explicit no-spend requirement; local, database, preview, and production gates remain mandatory. QB WordPress remains unconfigured.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -125,7 +123,7 @@ Gate: one complete local Phase 5 suite, one exact-head GitHub CI run, and one Ve
 
 ## Phase 6 — Raptive-ready data system
 
-- [ ] P6.1 Validate Nick's real workbook format, size, rows, timezone, aggregation, and deduplication semantics when supplied. — FINAL REAL-WORKBOOK INPUT REQUIRED; NO ACTION NEEDED YET
+- [x] P6.1 Validate Nick's real workbook format, size, rows, timezone, aggregation, and deduplication semantics when supplied. — FIVE REAL AGGREGATE WORKBOOKS VERIFIED; PRODUCTION COMPACT IMPORT REMAINS IN P7.4
 - [x] P6.2 Use the existing atomic importer for measured inputs up to 10 MB / 100,000 rows; add private storage, jobs, chunks, or resume only if real measurement requires them.
 - [x] P6.3 Add a live connector only from an actual Raptive API contract, sharing canonical normalization/deduplication with historical imports. — CREATOR API V1 CONTRACT SUPPLIED 2026-07-22; AFFECTED PHASE 7 GATE PENDING
 - [x] P6.4 Keep necessary credentials server-only and provide enable/disable, health, retry, reconciliation, and a nontechnical administrator flow. — VERCEL KEY PRESENCE AND LOCAL SECURITY/DB CONTRACT VERIFIED; LIVE ENABLEMENT WAITS FOR 0027/DEPLOYMENT
@@ -141,7 +139,7 @@ Phase 6 gate status: **PASS.** Exact head `a37698f02f110dda625811f05d499dfe6f7d8
 - [ ] P7.1 Run one release-candidate clean-checkout quality, security, database, browser, accessibility, and complete route/role/viewport visual gate. — LOCAL CLEAN-CHECKOUT PASS; EXACT-HEAD CI/PREVIEW PENDING
 - [ ] P7.2 Execute one production migration/deployment procedure with verified backup and rollback readiness.
 - [ ] P7.3 Run one production smoke covering roles, WordPress/SEO, cron, integrations, and health.
-- [ ] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health. — API CONTRACT/CREDENTIAL ACTION RECEIVED; REAL WORKBOOK AND POST-DEPLOY ONE-DAY RECONCILIATION REMAIN
+- [ ] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health. — BOTH INPUTS RECEIVED; LIVE DAY PASSED; COMPACT HISTORICAL PRODUCTION IMPORT/RECONCILIATION REMAINS
 - [ ] P7.5 Finish aligned documentation, evidence-linked checklist, residual-risk record, and one final release smoke after affected-gate repairs.
 
 Gate: the release is deployed and verified; real Raptive data is validated; every completion has concrete evidence.
@@ -659,7 +657,17 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Targeted gate: 6 Vitest files / 47 connector, pagination, retry, negative-role, resource-boundary, component, cron, and importer tests pass; the complete database suite passes 15 files / 388 pgTAP assertions including forced RLS, privilege denial, disabled writes, historical site attribution, ambiguous-overlap refusal, cross-site preservation, rollback, and reconciliation.
 - The affected complete local release gate passes: seven-runbook contract through `0027`; ESLint with zero warnings; TypeScript; 87 Vitest files / 376 tests with coverage; zero-vulnerability dependency audit; production build with all new routes; 15 database files / 388 pgTAP assertions; generated-type drift; warning-failing database lint; all 11 role/anonymous browser journeys; and all 40 accessibility, performance, responsive, route/role/viewport, and visual checks. The first coverage pass identified three new-route inventory/style contract omissions; only those affected contracts were fixed and rerun before the clean final suite.
 - Vercel confirms both Raptive variables exist as encrypted Preview/Production values. The local CLI correctly did not export those encrypted values, so the safe token/site/date-bound verifier remains for the deployed Operations-authorized runtime; no secret was weakened or exposed for local testing.
-- The earlier Phase 7 CI run was cancelled after this new release scope arrived and is not final evidence. The affected exact-head local/CI/preview gate remains pending. Production DDL remains blocked and was not rechecked.
+- The earlier Phase 7 CI run was cancelled after this new release scope arrived and is not final evidence. That connector release was subsequently deployed and verified; the new compact-history head requires its own affected local/preview/production gate.
+
+### 2026-07-22 — Real historical Raptive compact-data gate
+
+- The five supplied aggregates are the same five files present in Nick's Drive folder, so they are one source set, not ten inputs. Source hashes and sizes are recorded without exposing financial row contents. The aggregates cover every calendar day from 2019-02-06 through 2026-05-10; the Drive folder also contains 71 consecutive daily files from 2026-05-13 through 2026-07-22.
+- Real format validation found separate Organization, Site, and Top Earning URL sheets; both PL and QB can share the same path, and blank paths are legitimate unattributed traffic. Site identity is now part of parsing, deduplication, matching, persistence, and replacement. Cross-site entry attribution is rejected.
+- The raw source contains 2,759,782 canonical URL rows and would exceed the no-spend database limit. The reconciler preserves every matched article/day plus one explicit unmatched site/day total, producing 738,035 rows across 38 chunks. Exact Site Level earnings, sessions, and pageviews are preserved for all 3,273 site-days.
+- The immutable compact payload is 18.39 MB compressed. A full equivalent local PostgreSQL load measured 48 MB of table data plus 50 MB of indexes (98 MB total), projecting the current 151 MB production database to about 249 MB, below the free project's 500 MB read-only threshold.
+- All 38 generated XLSX chunks and compact payloads passed SHA-256 verification and round-tripped 738,035 rows through the production parser with zero rejected or duplicate rows. Every parsed row resolved to the manifest's exact site, date, entry, earnings, sessions, and pageviews. No production historical write has occurred yet.
+- Migrations `0028` and `0029` add site-safe raw imports plus a forced-RLS compact history table, service-only idempotent batch upsert/summary, entry/site validation, and analytics union. Targeted lint, TypeScript, importer/component tests, clean migration reset, generated types, and the new pgTAP security/reconciliation tests pass; the one complete affected release gate remains next.
+- Affected Phase 7 local gate: **PASS**. Runbook contract through `0029`, ESLint, TypeScript, 87 Vitest files / 386 tests with coverage, zero-vulnerability low-threshold audit, production build, 17 database files / 406 pgTAP assertions, generated-type drift, warning-failing database lint, all 11 role/anonymous Chromium journeys, and all 40 accessibility/performance/responsive/visual checks pass. The final head includes a service-only database article rollup so multi-year writer/article reports do not page through hundreds of daily batches.
 
 ## Phase 0 prioritized defect and risk inventory
 
@@ -668,7 +676,7 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 3. **High — scheduled jobs do not match Vercel (P1.12, P2.6):** all eight configured cron handlers export POST while Vercel invokes configured cron paths with GET, so scheduled execution receives 405.
 4. **High — dependency vulnerabilities (P1.14):** production audit reports 3 high and 6 moderate vulnerabilities across Next.js, Discord/Undici/WebSocket, PostCSS, Resend/Svix/UUID chains.
 5. **Medium — CI checks are advisory at merge (P2.9):** complete Application, Database, Dependencies, and Browser jobs now run on every pull request and `main` push. The private repository's current account plan does not expose branch protection or rulesets, so GitHub cannot make those green checks merge-required until the repository becomes public or the plan is upgraded.
-6. **Input-gated — Raptive production validation (P6.1/P7.4):** the bounded synchronous importer is complete for files up to 10 MB / 100,000 rows, and the supplied Creator API contract now has a server-only daily connector. Nick's real workbook must still validate actual format, timezone, aggregation, dedupe semantics, size, and runtime. Live production validation waits for migration `0027`, deployment, Operations host mapping, and one reconciled day; storage/jobs/chunk/resume infrastructure is required only if measured inputs demand it.
+6. **Release-gated — Raptive historical production validation (P7.4):** all five real workbooks and the live Creator API input are supplied. Source validation, compact preparation, capacity measurement, parser round-trip, site boundaries, and live one-day reconciliation pass. Only ordered `0028`/`0029` deployment, immutable manifest import, idempotent replay, and production totals/health verification remain.
 7. **Medium — profile overrides are inconsistent (P1.11):** scheduled profile sync honors `display_name_override`, but login, manual import, and manual resync overwrite the name without honoring the flag.
 8. **Medium — database typing is placeholder-only (P1.7):** every table, view, function, enum, and composite resolves through `any`, so current TypeScript success does not prove schema compatibility.
 9. **Medium — bulk work is not atomic (P1.9):** bulk create fires up to 25 independent client requests; bulk update writes entries and audit rows in separate operations, allowing partial audit/data state.

@@ -209,6 +209,7 @@ function latestCompleteDate(
 function canonicalizeApiRows(
   date: string,
   rows: Awaited<ReturnType<typeof getRaptivePagePerformance>>,
+  wpSite: "pl" | "qb",
 ): RaptiveParsedRow[] {
   const byPath = new Map<string, RaptiveParsedRow>();
   for (const row of rows) {
@@ -222,6 +223,7 @@ function canonicalizeApiRows(
     // it in the daily totals as an unmatched row and deduplicate root variants.
     const canonicalPath = path || "\0homepage";
     const canonical: RaptiveParsedRow = {
+      wp_site: wpSite,
       date,
       page_url: row.pageUrl,
       earnings: row.earnings,
@@ -360,7 +362,11 @@ export async function syncRaptiveConnection(
       connection.raptiveSiteId,
       syncDate,
     );
-    const canonicalRows = canonicalizeApiRows(syncDate, apiRows);
+    const canonicalRows = canonicalizeApiRows(
+      syncDate,
+      apiRows,
+      connection.wpSite,
+    );
     const matched = await matchRaptiveRowsToEntries(
       canonicalRows,
       connection.wpSite,

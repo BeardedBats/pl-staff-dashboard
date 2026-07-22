@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0027_raptive_creator_api_sync.sql`. The
-current application stack depends on migrations `0013`–`0027`; apply those
+`0001_initial_schema.sql` through `0029_compact_raptive_history.sql`. The
+current application stack depends on migrations `0013`–`0029`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,7 +44,7 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0027_raptive_creator_api_sync.sql`. Apply once:
+`0029_compact_raptive_history.sql`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -207,6 +207,16 @@ connection/reconciliation state and site attribution. Disable the connector,
 preserve the affected daily rows, and ship a compatible forward repair or
 restore database and application together.
 
+### Migrations 0028–0029 contingency
+
+Migration `0028` makes workbook identity site-safe and migration `0029` adds
+the compact service-only historical table, batch upsert, summary, and analytics
+union. Apply them before importing the immutable history manifest. Before any
+history write, they may be reversed by dropping the `0029` table/functions and
+restoring `commit_raptive_import` from `0022`; after a history write, preserve
+the manifest and table, then use a forward repair or restore. Never drop the
+compact table as an incident shortcut.
+
 ## Stop conditions
 
 - Production DB access is absent. Management access that only lists backups is
@@ -248,6 +258,10 @@ restore database and application together.
   selected PL/QB day, preserve the other site, reject duplicates/invalid rows,
   refuse unattributed historical overlap, and reconcile row count, earnings,
   date, and safe failure state atomically.
+- Compact Raptive history has forced RLS; anon/authenticated roles have no
+  table or RPC access. Batch upserts reject missing entries and cross-site
+  attribution, remain idempotent for matched and null-entry site/day keys, and
+  the summary must reconcile the immutable manifest exactly.
 - The both-site Admin+ health endpoint loads, all integration probes are
   explainable, and no new critical alert appears.
 - Continue to the [Deployment](./DEPLOYMENT.md) gate; do not reopen release
