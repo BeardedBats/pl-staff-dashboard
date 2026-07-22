@@ -1,5 +1,6 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 /**
@@ -9,7 +10,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
  * happen via short-lived signed URLs generated server-side by the data
  * fetchers. We never expose `getPublicUrl` results to the browser.
  *
- * Naming convention: {entryId}/{timestamp}-{sanitized-filename}
+ * Naming convention: {entryId}/{timestamp}-{uuid}-{sanitized-filename}
  * This lets us find all graphics for a given entry by prefix and avoid
  * collisions when the same filename is uploaded twice.
  */
@@ -41,7 +42,8 @@ export function normalizeSignedUrlTtl(ttl: number): number {
 export type UploadValidationError =
   | { kind: "too_large"; message: string }
   | { kind: "bad_mime"; message: string }
-  | { kind: "empty_file"; message: string };
+  | { kind: "empty_file"; message: string }
+  | { kind: "content_mismatch"; message: string };
 
 export function validateUpload(
   fileSize: number,
@@ -60,6 +62,36 @@ export function validateUpload(
     return {
       kind: "bad_mime",
       message: `Unsupported file type (${mimeType}). Upload a PNG, JPEG, WebP, or GIF.`,
+    };
+  }
+  return null;
+}
+
+export function validateImageBytes(
+  data: ArrayBuffer,
+  mimeType: string,
+): UploadValidationError | null {
+  const bytes = new Uint8Array(data);
+  const mime = mimeType.toLowerCase();
+  const startsWith = (signature: number[], offset = 0) =>
+    signature.every((value, index) => bytes[offset + index] === value);
+
+  const matches =
+    (mime === "image/png" &&
+      startsWith([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) ||
+    ((mime === "image/jpeg" || mime === "image/jpg") &&
+      startsWith([0xff, 0xd8, 0xff])) ||
+    (mime === "image/gif" &&
+      (startsWith([0x47, 0x49, 0x46, 0x38, 0x37, 0x61]) ||
+        startsWith([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]))) ||
+    (mime === "image/webp" &&
+      startsWith([0x52, 0x49, 0x46, 0x46]) &&
+      startsWith([0x57, 0x45, 0x42, 0x50], 8));
+
+  if (!matches) {
+    return {
+      kind: "content_mismatch",
+      message: "File contents do not match the declared image type.",
     };
   }
   return null;
@@ -92,8 +124,7 @@ export function sanitizeFilename(name: string): string {
 
 export function buildStoragePath(entryId: string, fileName: string): string {
   const safe = sanitizeFilename(fileName);
-  const ts = Date.now();
-  return `${entryId}/${ts}-${safe}`;
+  return `${entryId}/${Date.now()}-${randomUUID()}-${safe}`;
 }
 
 // --------------------------------------------------------------------------
@@ -121,6 +152,13 @@ export async function uploadGraphicFile(
   if (validation) {
     return { ok: false, error: validation.message };
   }
+  const signatureError = validateImageBytes(data, mimeType);
+  if (signatureError) {
+    return {
+      ok: false,
+      error: "File contents do not match the declared image type.",
+    };
+  }
 
   const supabase = getSupabaseAdmin();
   const storagePath = buildStoragePath(entryId, fileName);
@@ -131,7 +169,7 @@ export async function uploadGraphicFile(
     .upload(storagePath, data, {
       contentType: mimeType,
       upsert: false,
-      cacheControl: "31536000", // 1 year; filename is timestamped so uniqueness is guaranteed
+      cacheControl: "31536000", // 1 year; UUID-backed paths are immutable
     });
 
   if (error) {
@@ -204,10 +242,18 @@ export async function getSignedGraphicUrls(
 export async function deleteStoredGraphic(
   storagePath: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  return deleteStoredGraphics([storagePath]);
+}
+
+export async function deleteStoredGraphics(
+  storagePaths: string[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const uniquePaths = Array.from(new Set(storagePaths.filter(Boolean)));
+  if (uniquePaths.length === 0) return { ok: true };
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.storage
     .from(GRAPHICS_BUCKET)
-    .remove([storagePath]);
+    .remove(uniquePaths);
 
   if (error) return { ok: false, error: "Stored graphic deletion failed" };
   return { ok: true };

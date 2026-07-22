@@ -267,7 +267,11 @@ export function GraphicRequestCard({
           {request.file_name ? (
             <div className="flex items-center gap-1 font-mono">
               <Upload className="h-3 w-3" />
-              {request.file_name} ·{" "}
+              {request.file_name}
+              {request.current_version_number
+                ? ` · v${request.current_version_number}`
+                : ""}{" "}
+              ·{" "}
               {request.file_size
                 ? `${Math.round(request.file_size / 1024)} KB`
                 : ""}

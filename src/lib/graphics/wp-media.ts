@@ -5,6 +5,7 @@ import {
   wordPressBasicAuth,
   type WpSiteKey,
 } from "@/lib/wordpress/config";
+import { sanitizeFilename } from "@/lib/graphics/storage";
 
 /**
  * WordPress media library helpers.
@@ -42,6 +43,10 @@ export async function uploadMediaToWp(
       error: `WordPress ${site.toUpperCase()} is not configured`,
     };
   }
+  const safeFileName = sanitizeFilename(params.fileName).replace(
+    /["\r\n]/g,
+    "-",
+  );
 
   let response: Response;
   try {
@@ -53,7 +58,7 @@ export async function uploadMediaToWp(
           config.appPassword,
         ),
         "Content-Type": params.mimeType,
-        "Content-Disposition": `attachment; filename="${params.fileName}"`,
+        "Content-Disposition": `attachment; filename="${safeFileName}"`,
       },
       // Node's fetch accepts ArrayBuffer as body.
       body: params.bytes,
@@ -73,15 +78,24 @@ export async function uploadMediaToWp(
     };
   }
 
-  const data = (await response.json()) as {
-    id: number;
-    source_url: string;
-  };
+  let data: { id?: unknown; source_url?: unknown };
+  try {
+    data = (await response.json()) as { id?: unknown; source_url?: unknown };
+  } catch {
+    return { ok: false, error: "WordPress returned an invalid media response" };
+  }
+  if (
+    !Number.isInteger(data.id) ||
+    (data.id as number) < 1 ||
+    typeof data.source_url !== "string"
+  ) {
+    return { ok: false, error: "WordPress returned an invalid media response" };
+  }
 
   return {
     ok: true,
     media: {
-      mediaId: data.id,
+      mediaId: data.id as number,
       sourceUrl: data.source_url,
     },
   };
@@ -96,6 +110,14 @@ export async function setFeaturedMedia(
   wpPostId: number,
   mediaId: number,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (
+    !Number.isInteger(wpPostId) ||
+    wpPostId < 1 ||
+    !Number.isInteger(mediaId) ||
+    mediaId < 1
+  ) {
+    return { ok: false, error: "Invalid WordPress post or media ID" };
+  }
   const config = getWordPressSiteConfig(site);
   if (!config) {
     return {

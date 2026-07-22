@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.5 — Test graphics submission, review, versioning, authorization, and storage behavior while preserving the Supabase DDL release block.
-- Branch: `codex/production-readiness-p2-4`
-- Stack base: `d6651f0` (green draft PR #20, based on green draft PRs #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P2.6 — Test cron jobs with the same method and headers used by Vercel while preserving the Supabase DDL release block.
+- Branch: `codex/production-readiness-p2-5`
+- Stack base: `1093931` (green draft PR #21, based on green draft PRs #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -60,7 +60,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 - [x] P2.2 Test authentication, session rotation, role permissions, membership boundaries, and negative authorization cases.
 - [x] P2.3 Test WordPress synchronization, webhooks, scheduled reconciliation, conflict handling, retries, and idempotency.
 - [x] P2.4 Test editorial claims, assignments, state transitions, bulk actions, deadlines, and concurrent operations.
-- [ ] P2.5 Test graphics submission, review, versioning, authorization, and storage behavior.
+- [x] P2.5 Test graphics submission, review, versioning, authorization, and storage behavior.
 - [ ] P2.6 Test cron jobs with the same method and headers used by Vercel.
 - [ ] P2.7 Add representative Raptive importer tests with multi-sheet fixtures, duplicates, malformed rows, interruptions, and large files.
 - [ ] P2.8 Add role-based end-to-end journeys for managers, writers, editors, graphics staff, and administrators.
@@ -398,6 +398,15 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Added a publish-deadline coherence constraint plus paired Zod validation, so timestamp and precision cannot be torn. Transactional field updates serialize concurrent before-state reads and audit the committed old/new values. Single-entry tier changes now use the same completed-checklist guard and atomic checklist reseed as bulk tier changes. Existing transactional bulk-create/update pgTAP coverage remains the bulk-action proof.
 - Added deterministic two-session database concurrency coverage: worker one locks and claims an entry, worker two blocks on the same row, then re-checks committed state and fails with `entry_not_claimable`; exactly one claim remains. Claims, approvals, denials, auto-approval, writer submission/resubmission, polishing, editor claiming, graphic/checklist gates, idempotent edited state, deadlines, privileges, audits, tier reseeding, and negative races are covered by 67 new pgTAP assertions.
 - Final gate: 38 Vitest files / 178 tests; coverage increased to 14.68% statements, 12.69% branches, 18.16% functions, and 15.21% lines. All 191 pgTAP assertions, generated database-type drift, zero-vulnerability audit, ESLint, TypeScript, the Next.js 16.2.11 production build, and three Chromium anonymous-boundary tests pass.
+
+### 2026-07-21 — P2.5 transactional graphics workflow gate
+
+- The graphics audit found destructive replacement ordering, read-then-write claim/review races, duplicate concurrent WordPress uploads, no durable version history, browser-MIME-only validation, same-millisecond path collisions, and an unvalidated WordPress media response. Submit retries also re-uploaded media despite comments promising reuse.
+- Migration `0019_transactional_graphic_versions.sql` adds private immutable upload versions, current/rejected-version pointers, a submission lease, retryable WordPress media checkpoints, service-role-only row-locking RPCs, and one-featured-graphic-per-entry enforcement. Upload metadata commits before any old object can be discarded; request deletion returns every immutable path for best-effort storage cleanup.
+- Claims, review transitions, uploads, media checkpoints, completion, and deletion now re-check authoritative state under database locks. A rejected version cannot be cleared by its artist until a newer version exists. Same-entry completions serialize on the parent entry before locking individual requests, preventing the cross-request deadlock while retaining one final featured winner.
+- Uploads validate PNG, JPEG, GIF, or WebP magic bytes, use UUID-backed immutable paths, and reject stale metadata writes while deleting only the losing new object. WordPress filenames are header-safe, media JSON and IDs are validated, and a retry reuses a checkpointed media ID rather than creating a duplicate library object. Graphics mutation routes now distinguish validation, authorization, missing-resource, concurrency, upstream, and database failures with 400/403/404/409/502/500 responses.
+- Deterministic two-session database probes cover competing submission leases and two different same-entry completions. Focused application tests cover signature spoofing, path uniqueness, version cleanup, unauthorized history signing, stale upload cleanup, WordPress response hardening, media checkpoint ordering, retry reuse, lease release, audit behavior, and notification suppression after failure.
+- Final gate: 43 Vitest files / 199 tests; coverage increased to 17.04% statements, 14.95% branches, 20% functions, and 17.76% lines. All 257 pgTAP assertions, generated database-type drift, authorization-matrix parity for 107 handlers, zero-vulnerability audit, ESLint, TypeScript, the Next.js 16.2.11 production build, and three Chromium anonymous-boundary tests pass.
 
 ## Phase 0 prioritized defect and risk inventory
 
