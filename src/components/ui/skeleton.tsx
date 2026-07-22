@@ -15,6 +15,7 @@ export function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
+      data-plpd-state="loading"
       className={cn(
         "plpd-state-frame animate-pulse rounded-sm border border-border-row",
         className,

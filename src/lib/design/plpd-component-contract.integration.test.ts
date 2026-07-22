@@ -41,6 +41,15 @@ describe("PLPD component contract", () => {
     expect(source).not.toContain("dangerouslySetInnerHTML");
   });
 
+  it("keeps error-state callers structurally unable to pass raw exceptions", () => {
+    const source = readFileSync(path.join(uiRoot, "state.tsx"), "utf8");
+    const props = source.match(/type StateProps = \{([\s\S]*?)\n\};/);
+
+    expect(props, "StateProps declaration").not.toBeNull();
+    expect(props?.[1]).not.toMatch(/\berror\s*[?:]/i);
+    expect(props?.[1]).not.toContain("Error");
+  });
+
   it("records canonical versus derived component boundaries", () => {
     const documentation = readFileSync(
       path.join(root, "docs/PLPD_COMPONENTS.md"),
@@ -66,5 +75,39 @@ describe("PLPD component contract", () => {
     expect(table).toContain("h-[34.5px]");
     expect(table).toContain("h-[62px]");
     expect(sheet).toContain("plpd-modal-surface");
+  });
+
+  it("pins the complete seven-state widget vocabulary and visual rules", () => {
+    const stateContract = readFileSync(
+      path.join(uiRoot, "component-state.ts"),
+      "utf8",
+    );
+    const card = readFileSync(path.join(uiRoot, "card.tsx"), "utf8");
+    const badge = readFileSync(path.join(uiRoot, "badge.tsx"), "utf8");
+    const emptyState = readFileSync(
+      path.join(uiRoot, "empty-state.tsx"),
+      "utf8",
+    );
+    const css = readFileSync(path.join(root, "src/app/globals.css"), "utf8");
+
+    for (const state of [
+      "default",
+      "hover",
+      "active",
+      "loading",
+      "error",
+      "empty",
+      "gated",
+    ]) {
+      expect(stateContract, state).toContain(`"${state}"`);
+    }
+    expect(card).toContain("data-plpd-state={state}");
+    expect(badge).toContain('data-slot="badge"');
+    expect(css).toContain("var(--plpd-duration-hover)");
+    expect(css).toContain("var(--plpd-fill-nav-hover)");
+    expect(css).toContain("opacity: 0.88");
+    expect(css).toContain("box-shadow: var(--plpd-shadow-nav-active)");
+    expect(emptyState).toContain("plpd-state-frame");
+    expect(emptyState).toContain('data-plpd-state="empty"');
   });
 });

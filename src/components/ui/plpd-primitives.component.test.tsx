@@ -3,6 +3,10 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { PLPD_COMPONENT_STATES } from "@/components/ui/component-state";
+import { EmptyState } from "@/components/ui/empty-state";
 import { GatedValue } from "@/components/ui/gated-value";
 import { NavigationItem } from "@/components/ui/navigation";
 import {
@@ -91,5 +95,39 @@ describe("PLPD component primitives", () => {
     expect(
       screen.getByLabelText("Projected revenue requires access"),
     ).toHaveTextContent("••• USD");
+    expect(
+      screen.getByLabelText("Projected revenue requires access"),
+    ).toHaveAttribute("data-plpd-state", "gated");
+  });
+
+  it("exposes all seven PLPD widget states through one typed contract", () => {
+    render(
+      <>
+        {PLPD_COMPONENT_STATES.slice(0, 3).map((state) => (
+          <Card key={state} state={state} stateful data-testid={`card-${state}`}>
+            <Badge>{state}</Badge>
+          </Card>
+        ))}
+        <LoadingState title="Loading widget" />
+        <ErrorState title="Widget unavailable" description="Try again." />
+        <EmptyState title="No results" />
+        <GatedValue label="Restricted metric" />
+      </>,
+    );
+
+    for (const state of PLPD_COMPONENT_STATES.slice(0, 3)) {
+      expect(screen.getByTestId(`card-${state}`)).toHaveAttribute(
+        "data-plpd-state",
+        state,
+      );
+    }
+    expect(screen.getByText("Loading widget").closest("[data-plpd-state]"))
+      .toHaveAttribute("data-plpd-state", "loading");
+    expect(screen.getByText("Widget unavailable").closest("[data-plpd-state]"))
+      .toHaveAttribute("data-plpd-state", "error");
+    expect(screen.getByText("No results").closest("[data-plpd-state]"))
+      .toHaveAttribute("data-plpd-state", "empty");
+    expect(screen.getByLabelText("Restricted metric requires access"))
+      .toHaveAttribute("data-plpd-state", "gated");
   });
 });

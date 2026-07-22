@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 3 — PLPD design-system foundation
-- Current action: P3.5 — Implement every required default, hover, active, loading, error, empty, and gated component state.
-- Branch: `codex/production-readiness-p3-4`
-- Stack base: `e3cccad` (green draft PR #32, based on green draft PRs #31, #30, #29, #28, #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P3.6 — Prove gated data is withheld on the server rather than delivered and visually obscured.
+- Branch: `codex/production-readiness-p3-5`
+- Stack base: `92e162d` (green draft PR #33, based on green draft PRs #32, #31, #30, #29, #28, #27, #26, #25, #24, #23, #22, #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -77,7 +77,7 @@ Gate: a clean checkout can prove correctness in CI, and production failures are 
 - [x] P3.2 Implement reusable PLPD primitives for navigation, headers, tabs, buttons, fields, dropdowns, cards, chips, tables, pagination, alerts, dialogs, drawers, loading states, empty states, errors, and gated values.
 - [x] P3.3 Apply Work Sans to data and DM Sans to application chrome as defined by the guide.
 - [x] P3.4 Preserve the subtle-glass-over-mesh doctrine without opaque panels or heavy frosted glass.
-- [ ] P3.5 Implement all required component states: default, hover, active, loading, error, empty, and gated.
+- [x] P3.5 Implement all required component states: default, hover, active, loading, error, empty, and gated.
 - [ ] P3.6 Ensure gated data is withheld on the server rather than sent to the client and visually blurred.
 - [ ] P3.7 Bring tables, numeric alignment, zero styling, row fills, hover behavior, pagination, and data colors into exact guide compliance.
 - [ ] P3.8 Remove Never List violations.
@@ -517,7 +517,17 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Visual inspection of the retained mobile login and desktop Calendar captures found intact hierarchy, readable controls/data, subtle depth, and no opaque-panel or frosted-glass regression. The component review found no new effects, requests, state, or render-boundary changes.
 - Production-mode quality remains green across the two glass/mesh checks, eight dark/light WCAG A/AA scenarios, keyboard focus order, three performance profiles, and both typography checks. Latest lab measurements are login FCP/LCP 56 ms and 268,854 encoded bytes; writer content FCP/LCP 128 ms, CLS 0.0231, and 407,750 encoded bytes; admin settings FCP/LCP 200 ms and 391,429 encoded bytes; all TBT values are zero and all budgets pass.
 - Final local gate: diff hygiene; runbook contract; ESLint; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 60 Vitest files / 274 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all eight role/anonymous Chromium journeys; and all 16 production-quality checks pass.
-- Clean GitHub run [29878929258](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29878929258) independently passed Application, Database, Dependencies, all eight Browser journeys, all 16 quality checks, and the retained quality-evidence upload on Linux. The Vercel preview passed, and draft PR #33 was merge-clean and mergeable at the tested head `dc86d5b`.
+- Clean exact-head GitHub run [29879316031](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29879316031) independently passed Application, Database, Dependencies, all eight Browser journeys, all 16 quality checks, and the retained quality-evidence upload on Linux. The Vercel preview passed, and draft PR #33 was merge-clean and mergeable at the tested head `92e162d`.
+
+### 2026-07-21 — P3.5 complete seven-state component gate
+
+- Added one typed `default`, `hover`, `active`, `loading`, `error`, `empty`, and `gated` vocabulary shared by cards and home widgets. Each rendered primitive exposes its state through `data-plpd-state`, making the current presentation inspectable without client-side state or hydration work.
+- Default widgets retain the translucent pointed-card construction. Hover uses the exact 4% guide wash, a 1px lift, `.88` contained-badge opacity, and the canonical 150ms timing. Active alone applies the guide's warm-amber glow. Loading/error/empty/gated surfaces do not inherit the interactive lift.
+- Loading presents an announced busy region using the canonical spinner or documented skeleton extension; the guide's stand-in bars remain excluded. Empty content keeps its frame. Error-state props accept only caller-authored product copy, not an exception object. Gated values remain lock-and-placeholder only with no real-value prop.
+- A six-test source contract pins the complete state union, safe error and gated APIs, state attributes, exact hover/active tokens, timing, badge opacity, and persistent empty frame. Four rendered component tests exercise all seven states and their semantics.
+- A production-Chromium check opens the database-backed home page, observes a real default widget and empty frame, executes the actual hover transition, verifies `.88` badge opacity, switches the same built surface to active, and confirms the computed warm-amber shadow. The retained capture was visually inspected; hierarchy, mesh visibility, empty frames, and active depth remain intact. The inspection also found and fixed a wrapped `View all` action at narrow card widths.
+- React review: no new hooks, effects, requests, state synchronization, or client boundary were introduced; props remain colocated and typed, links remain semantic, and the state contract composes the existing Card/Badge/state primitives.
+- Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 60 Vitest files / 277 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all eight role/anonymous Chromium journeys; and all 17 production-quality checks pass.
 
 ## Phase 0 prioritized defect and risk inventory
 

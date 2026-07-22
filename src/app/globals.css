@@ -717,6 +717,38 @@ code, kbd, pre, samp {
   filter: blur(13px);
 }
 
+/* Every dashboard widget uses this shared seven-state surface contract.
+   Hover layers the guide's 4% wash over the resting fill; active is the
+   only state that adds a glow, using the canonical warm-amber stack. */
+.plpd-stateful-card {
+  transition:
+    transform var(--plpd-duration-hover),
+    background-color var(--plpd-duration-hover),
+    box-shadow var(--plpd-duration-hover);
+}
+
+.plpd-stateful-card[data-plpd-state="default"]:hover,
+.plpd-stateful-card[data-plpd-state="hover"] {
+  transform: translateY(-1px);
+  background-image: linear-gradient(
+    var(--plpd-fill-nav-hover),
+    var(--plpd-fill-nav-hover)
+  );
+}
+
+.plpd-stateful-card [data-slot="badge"] {
+  transition: opacity var(--plpd-duration-hover);
+}
+
+.plpd-stateful-card[data-plpd-state="default"]:hover [data-slot="badge"],
+.plpd-stateful-card[data-plpd-state="hover"] [data-slot="badge"] {
+  opacity: 0.88;
+}
+
+.plpd-stateful-card[data-plpd-state="active"] {
+  box-shadow: var(--plpd-shadow-nav-active);
+}
+
 .plpd-modal-surface {
   background: var(--plpd-fill-state);
   box-shadow: var(--plpd-shadow-panel), var(--plpd-shadow-panel-inset);
