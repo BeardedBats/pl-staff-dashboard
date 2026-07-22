@@ -249,7 +249,7 @@ export function EntryDetailPanel({
 
   if (loading && !entry) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex min-h-[70vh] items-center justify-center py-8">
         <Loader2 className="h-4 w-4 animate-spin text-text-zero" />
       </div>
     );

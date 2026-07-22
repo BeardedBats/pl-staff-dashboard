@@ -5,7 +5,7 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 4 — Role-focused workflow and usability
-- Current action: Phase 4 boundary gate — one complete local suite, exact-head CI run, and Vercel preview.
+- Current action: Phase 4 boundary gate — publish the exact local head, obtain one green GitHub CI run, and verify its single Vercel preview.
 - Branch: `codex/production-readiness-p4`
 - Stack base: `feb4f12` (combined Phase 3 exact head on green draft PR #39, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
@@ -640,6 +640,15 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Migration `0025_notification_delivery_controls.sql` cold-applies through the full ordered stack. All 13 database files / 358 pgTAP assertions pass, generated types match, and database lint reports no warnings.
 - Targeted verification: 9 notification scheduling/delivery contract tests, the operational-health component test, ESLint, TypeScript, and two production-Chromium journeys pass. The browser gate saves and reloads real daily/quiet-hour settings, proves fake external choices remain absent, renders delivery health, and completes WCAG A/AA scanning with no exclusions.
 - React review: delivery form state is local and persisted in one request; no effect derives server state, the existing preference load remains cancellation-safe, and no notification polling or per-event save loop was added.
+
+### 2026-07-22 — Phase 4 local boundary gate
+
+- Locked install, full ESLint, TypeScript, runbook verification, production build, and dependency audit pass; the audit reports zero vulnerabilities. The complete Vitest coverage run passes 77 files / 339 tests.
+- A clean Supabase reset applies the ordered stack through `0025`; all 13 database files / 358 pgTAP assertions pass, generated types match, and database lint reports no warnings.
+- All 10 anonymous and role-based browser journeys pass. The complete route/role/viewport quality matrix passes all 40 checks, including WCAG A/AA, keyboard/focus, responsive containment, component states, PLPD screenshots, and performance budgets.
+- The first boundary run correctly rejected two stale contracts (missing authorization-matrix rows and a site pill without the Work Sans marker) plus stale Today readiness selectors. Those exact contracts were repaired and rerun before the clean matrix.
+- The writer content-detail performance gate exposed a real layout shift when the asynchronously loaded expanded panel displaced later table rows. Reserving the panel's loading footprint reduced measured CLS from `0.1574` to `0.0041`; the quality artifact now records contributing layout-shift sources for future diagnosis.
+- Local Phase 4 gate: **PASS**. Remaining phase-boundary work is the one exact-head GitHub CI run and one Vercel preview required by the release protocol.
 
 ## Phase 0 prioritized defect and risk inventory
 

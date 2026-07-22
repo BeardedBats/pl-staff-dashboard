@@ -667,7 +667,10 @@ export function EntriesTable({
       ) : (
         <div
           ref={tableContainerRef}
-          className="plpd-table-shell max-h-[70vh] overflow-auto bg-transparent"
+          className={cn(
+            "plpd-table-shell max-h-[70vh] overflow-auto bg-transparent",
+            initialEntryId && "min-h-[70vh]",
+          )}
         >
           {/* font-data → Work Sans for table DATA; badges keep DM Sans */}
           <table className="plpd-table font-data">
