@@ -53,17 +53,17 @@ SELECT is(
 INSERT INTO public.raptive_revenue (
   entry_id, wp_site, date, page_url, earnings, sessions, pageviews
 ) VALUES (
-  '29000000-0000-0000-0000-000000000003', 'pl', '2025-01-01',
+  '29000000-0000-0000-0000-000000000003', 'pl', '2025-01-02',
   '/live-probe/', 1, 2, 3
 );
 SELECT results_eq(
   $$SELECT entry_id, earnings, sessions, pageviews
-    FROM public.get_raptive_entry_rollup('2025-01-01', '2025-01-01', 'pl')$$,
+    FROM public.get_raptive_entry_rollup('2025-01-01', '2025-01-02', 'pl')$$,
   $$VALUES (
     '29000000-0000-0000-0000-000000000003'::uuid,
     3.5000::numeric, 12::bigint, 23::bigint
   )$$,
-  'entry rollup combines live and compact history without unmatched totals'
+  'entry rollup combines non-overlapping live and compact days without unmatched totals'
 );
 SELECT throws_ok(
   $$SELECT public.upsert_raptive_history_batch('[

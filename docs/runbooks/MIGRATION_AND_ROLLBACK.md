@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0029_compact_raptive_history.sql`. The
-current application stack depends on migrations `0013`–`0029`; apply those
+`0001_initial_schema.sql` through `0030_prevent_raptive_history_overlap.sql`. The
+current application stack depends on migrations `0013`–`0030`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,7 +44,7 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0029_compact_raptive_history.sql`. Apply once:
+`0030_prevent_raptive_history_overlap.sql`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -216,6 +216,16 @@ history write, they may be reversed by dropping the `0029` table/functions and
 restoring `commit_raptive_import` from `0022`; after a history write, preserve
 the manifest and table, then use a forward repair or restore. Never drop the
 compact table as an incident shortcut.
+
+### Migration 0030 contingency
+
+Migration `0030` serializes writes for each Raptive site/day and rejects both
+raw-over-compact and compact-over-raw overlap. Before deploying application
+code that relies on this invariant, it can be reversed by dropping
+`trg_raptive_revenue_prevent_history_overlap`,
+`trg_raptive_history_prevent_revenue_overlap`, and
+`prevent_raptive_history_overlap()`. After deployment, preserve the invariant
+and use a forward repair or restore instead.
 
 ## Stop conditions
 

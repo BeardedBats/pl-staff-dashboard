@@ -91,7 +91,12 @@ const completeBounds = {
   },
 };
 
-function apiRow(pageUrl: string, earnings: number, pageviews = 100) {
+function apiRow(
+  pageUrl: string,
+  earnings: number,
+  pageviews = 100,
+  rpm: number | null = 5,
+) {
   return {
     pageUrl,
     siteUrl: "https://pitcherlist.com",
@@ -99,7 +104,7 @@ function apiRow(pageUrl: string, earnings: number, pageviews = 100) {
     earnings,
     pageviews,
     pageviewsPercent: 10,
-    rpm: 5,
+    rpm,
     viewability: { value: 70 },
     cpm: { value: 2, score: 50 },
     impressionsPerPageview: { value: 2, score: 50 },
@@ -285,21 +290,40 @@ describe("Raptive live synchronization", () => {
     expect(mocks.getPerformance).not.toHaveBeenCalled();
   });
 
-  it("rejects conflicting canonical page duplicates before any commit", async () => {
+  it("aggregates conflicting normalized page variants before one atomic commit", async () => {
     mocks.getPerformance.mockResolvedValue([
-      apiRow("https://pitcherlist.com/a/", 1),
-      apiRow("https://www.pitcherlist.com/a", 2),
+      apiRow("https://pitcherlist.com/a/", 1, 100, null),
+      apiRow("https://www.pitcherlist.com/a", 2, 400, 5),
     ]);
+    mocks.rpc.mockResolvedValueOnce({ data: 1, error: null });
 
     const result = await syncRaptiveConnection(connection, "2026-07-20");
 
     expect(result).toMatchObject({
-      ok: false,
-      errorCode: "raptive_duplicate_conflict",
+      ok: true,
+      apiRows: 2,
+      insertedRows: 1,
+      totalEarnings: 3,
     });
-    expect(
-      mocks.rpc.mock.calls.some(([name]) => name === "commit_raptive_live_sync"),
-    ).toBe(false);
+    expect(mocks.matchRows).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          earnings: 3,
+          pageviews: 500,
+          rpm: 6,
+          page_rpm: 6,
+        }),
+      ],
+      "pl",
+    );
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      "commit_raptive_live_sync",
+      expect.objectContaining({
+        p_rows: [
+          expect.objectContaining({ earnings: 3, pageviews: 500, rpm: 6 }),
+        ],
+      }),
+    );
   });
 
   it("reports migration readiness without exposing a database error", async () => {

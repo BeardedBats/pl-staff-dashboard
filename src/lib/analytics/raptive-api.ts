@@ -78,7 +78,9 @@ const pagePerformanceRowSchema = z.object({
   pageUrl: z.string().trim().min(1).max(4096),
   earnings: apiNumberSchema,
   pageviews: apiNonnegativeIntegerSchema,
-  rpm: apiNumberSchema,
+  // Raptive emits null/omits RPM for zero-traffic rows on some historical
+  // dates. Canonicalization derives it from earnings/pageviews when possible.
+  rpm: apiNumberSchema.nullish().transform((value) => value ?? null),
 }).passthrough();
 
 const pageTraversalMetadataSchema = z.object({

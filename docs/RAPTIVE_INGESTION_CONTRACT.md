@@ -49,10 +49,15 @@ For supplied real workbooks, Operations will:
 3. Use `scripts/prepare-raptive-history.mjs` when the browser envelope is
    exceeded. Never import its raw URL-level form when the capacity projection
    crosses the no-spend ceiling.
-4. Apply migrations `0028` and `0029`, run
+4. Apply migrations `0028`, `0029`, and `0030`, run
    `scripts/import-raptive-history.mjs` against the immutable manifest, verify
    the database summary, then repeat one chunk to prove resumability without a
-   duplicate or total change.
+  duplicate or total change.
+
+The compact and raw/live tables must never contain the same site/day. Migration
+`0030` enforces that boundary in both directions and serializes concurrent
+writes for the same site/day. A live retry of a compact historical date fails
+atomically instead of double-counting analytics.
 
 ## Live Creator API contract
 
@@ -71,9 +76,10 @@ The implemented connector follows Raptive's published Creator API v1 contract:
 - `GET /sites/{siteId}/pages/performance` is requested for one inclusive
   calendar day. Every numbered page is read and reconciled to `recordCount`,
   with a 100,000-row safety limit.
-- The response provides page URL, earnings, pageviews, and RPM, but not sessions.
-  Live rows therefore store `sessions = 0` and map API RPM to both legacy `rpm`
-  fields. This limitation is explicit rather than inferred.
+- The response provides page URL, earnings, and pageviews, but not sessions;
+  RPM may be null or omitted on historical zero-traffic rows. Live rows store
+  `sessions = 0`, derive missing RPM from earnings/pageviews when possible, and
+  aggregate provider URL variants that normalize to the same article path.
 - HTTP 429 honors `Retry-After`; transient 5xx/network failures use bounded
   exponential backoff. One 401 clears and replaces the cached bearer token.
   Provider bodies, client credentials, bearer tokens, and site IDs never enter

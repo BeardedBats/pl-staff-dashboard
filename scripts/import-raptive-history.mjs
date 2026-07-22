@@ -20,6 +20,7 @@ const supabase = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
 let imported = 0;
+const expectedStored = new Map();
 
 for (const [chunkIndex, chunk] of manifest.chunks.entries()) {
   const filePath = path.join(directory, chunk.compactFileName);
@@ -32,6 +33,19 @@ for (const [chunkIndex, chunk] of manifest.chunks.entries()) {
   if (!Array.isArray(rows) || rows.length !== chunk.rows) {
     throw new Error(`Compact chunk row mismatch: ${chunk.compactFileName}`);
   }
+  for (const row of rows) {
+    const total = expectedStored.get(row.wp_site) ?? {
+      rows: 0, dateStart: row.date, dateEnd: row.date,
+      earnings: 0, sessions: 0, pageviews: 0,
+    };
+    total.rows += 1;
+    total.dateStart = row.date < total.dateStart ? row.date : total.dateStart;
+    total.dateEnd = row.date > total.dateEnd ? row.date : total.dateEnd;
+    total.earnings = Number((total.earnings + row.earnings).toFixed(4));
+    total.sessions += row.sessions;
+    total.pageviews += row.pageviews;
+    expectedStored.set(row.wp_site, total);
+  }
   for (let offset = 0; offset < rows.length; offset += 1000) {
     const batch = rows.slice(offset, offset + 1000);
     const { data, error } = await supabase.rpc("upsert_raptive_history_batch", { p_rows: batch });
@@ -42,11 +56,33 @@ for (const [chunkIndex, chunk] of manifest.chunks.entries()) {
   console.log(JSON.stringify({ chunk: chunkIndex + 1, chunks: manifest.chunks.length, imported }));
 }
 
-const { data: summary, error: summaryError } = await supabase.rpc("get_raptive_history_summary");
-if (summaryError) throw new Error(`History summary failed: ${summaryError.code ?? "unknown"}`);
+const summary = [];
 for (const site of ["pl", "qb"]) {
-  const actual = summary.find((row) => row.wp_site === site);
-  const expected = manifest.historyTotals[site];
+  const expected = expectedStored.get(site);
+  const actual = {
+    wp_site: site, rows: 0, date_start: null, date_end: null,
+    earnings: 0, sessions: 0, pageviews: 0,
+  };
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase.from("raptive_history_daily")
+      .select("date,entry_id,earnings,sessions,pageviews")
+      .eq("wp_site", site)
+      .gte("date", expected.dateStart)
+      .lte("date", expected.dateEnd)
+      .order("date").order("entry_id")
+      .range(offset, offset + 999);
+    if (error) throw new Error(`History summary failed: ${error.code ?? "unknown"}`);
+    for (const row of data ?? []) {
+      actual.rows += 1;
+      actual.date_start ??= row.date;
+      actual.date_end = row.date;
+      actual.earnings = Number((actual.earnings + Number(row.earnings)).toFixed(4));
+      actual.sessions += row.sessions;
+      actual.pageviews += row.pageviews;
+    }
+    if ((data ?? []).length < 1000) break;
+  }
+  summary.push(actual);
   if (!actual || Number(actual.rows) !== expected.rows ||
       Math.abs(Number(actual.earnings) - expected.earnings) > 0.001 ||
       Number(actual.sessions) !== expected.sessions ||

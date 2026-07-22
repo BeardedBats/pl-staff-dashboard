@@ -222,31 +222,35 @@ function canonicalizeApiRows(
     // The site homepage legitimately normalizes to an empty article path. Keep
     // it in the daily totals as an unmatched row and deduplicate root variants.
     const canonicalPath = path || "\0homepage";
+    const rpm = row.rpm ?? (
+      row.pageviews > 0 ? (row.earnings / row.pageviews) * 1000 : 0
+    );
     const canonical: RaptiveParsedRow = {
       wp_site: wpSite,
       date,
       page_url: row.pageUrl,
       earnings: row.earnings,
-      rpm: row.rpm,
-      page_rpm: row.rpm,
+      rpm,
+      page_rpm: rpm,
       sessions: 0,
       pageviews: row.pageviews,
     };
     const existing = byPath.get(canonicalPath);
     if (existing) {
-      if (
+      const metricsDiffer =
         existing.earnings !== canonical.earnings ||
         existing.rpm !== canonical.rpm ||
-        existing.pageviews !== canonical.pageviews
-      ) {
-        throw Object.assign(
-          new Error("Raptive returned conflicting rows for one page"),
-          { code: "raptive_duplicate_conflict" },
-        );
-      }
-      continue;
+        existing.pageviews !== canonical.pageviews;
+      if (!metricsDiffer) continue;
+      existing.earnings += canonical.earnings;
+      existing.pageviews += canonical.pageviews;
+      existing.rpm = existing.pageviews > 0
+        ? (existing.earnings / existing.pageviews) * 1000
+        : 0;
+      existing.page_rpm = existing.rpm;
+    } else {
+      byPath.set(canonicalPath, canonical);
     }
-    byPath.set(canonicalPath, canonical);
   }
   return [...byPath.values()];
 }
