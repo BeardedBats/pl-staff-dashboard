@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AlertTriangle, CalendarDays, ClipboardCheck, Gauge } from "lucide-react";
-import type { PipelineHealth } from "@/lib/home/widgets";
+import type { CapacitySummary, PipelineHealth } from "@/lib/home/widgets";
 import type { ManagerSignals, WeeklyOperationalDigest } from "@/lib/home/manager-operations";
 import { WidgetShell } from "./widget-shell";
 
@@ -8,10 +8,12 @@ export function ManagerControlCenter({
   health,
   signals,
   pendingApprovals,
+  capacity,
 }: {
   health: PipelineHealth;
   signals: ManagerSignals;
   pendingApprovals: number;
+  capacity: CapacitySummary | null;
 }) {
   const risks = [
     { label: "Pending decisions", count: pendingApprovals, href: "#manager-inbox" },
@@ -40,6 +42,19 @@ export function ManagerControlCenter({
           </Link>
         ))}
       </div>
+      {capacity ? (
+        <div className="mt-2 rounded-md border border-border bg-card/60 px-3 py-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            <span className="font-medium text-text-cell">Self-reported capacity</span>
+            <span className="text-cyan">{capacity.available} available</span>
+            <span className="text-amber">{capacity.limited} limited</span>
+            <span className="text-text-zero">{capacity.unavailable} unavailable</span>
+          </div>
+          <p className="mt-1 text-[10px] text-text-zero">
+            Staff choose these signals themselves; no productivity or activity score is used.
+          </p>
+        </div>
+      ) : null}
     </WidgetShell>
   );
 }

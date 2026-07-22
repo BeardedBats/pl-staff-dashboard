@@ -27,6 +27,9 @@ export function sanitizeUserForViewer(
     primary_team: target.primary_team,
     created_at: target.created_at,
     last_wp_sync: target.last_wp_sync,
+    availability_status: target.availability_status,
+    availability_note: target.availability_note,
+    availability_until: target.availability_until,
   };
 
   if (!isPrivileged) return directoryFields;

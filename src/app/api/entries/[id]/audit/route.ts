@@ -30,7 +30,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
   const supabase = getSupabaseAdmin();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("audit_log")
     .select(
       "id, action, field_name, old_value, new_value, created_at, users!audit_log_user_id_fkey(id, display_name, avatar_url)",
@@ -38,6 +38,9 @@ export async function GET(_request: Request, context: RouteContext) {
     .eq("entry_id", id)
     .order("created_at", { ascending: false })
     .limit(200);
+  if (error) {
+    return errorResponse(500, "Unable to load entry history");
+  }
 
   const events = ((data ?? []) as Array<{
     id: string;

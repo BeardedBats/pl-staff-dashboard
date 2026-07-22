@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { UserAvatar } from "@/components/users/user-avatar";
 import type { StaffUserSummary } from "@/lib/users/queries";
+import type { AvailabilityStatus } from "@/lib/users/queries";
 
 // Curated short timezone list. Most PL staff are US-based; international
 // contributors can extend as needed.
@@ -58,6 +59,9 @@ type FormState = {
   bluesky_handle: string;
   timezone: string;
   auto_approve_drafts: boolean;
+  availability_status: AvailabilityStatus;
+  availability_note: string;
+  availability_until: string;
 };
 
 export function ProfileForm({ profile }: ProfileFormProps) {
@@ -69,6 +73,9 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     bluesky_handle: profile.bluesky_handle ?? "",
     timezone: profile.timezone,
     auto_approve_drafts: profile.auto_approve_drafts,
+    availability_status: profile.availability_status,
+    availability_note: profile.availability_note ?? "",
+    availability_until: profile.availability_until ?? "",
   });
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = React.useState<string | null>(null);
@@ -91,6 +98,9 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       bluesky_handle: form.bluesky_handle.trim() || null,
       timezone: form.timezone,
       auto_approve_drafts: form.auto_approve_drafts,
+      availability_status: form.availability_status,
+      availability_note: form.availability_note.trim() || null,
+      availability_until: form.availability_until || null,
     };
 
     try {
@@ -135,6 +145,51 @@ export function ProfileForm({ profile }: ProfileFormProps) {
 
   return (
     <form onSubmit={handleSave} className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Availability</CardTitle>
+          <CardDescription>
+            Share your own capacity signal with teammates. This is visible in the staff directory and is not inferred from output or activity.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="availability-status">Current availability</Label>
+            <Select
+              value={form.availability_status}
+              onValueChange={(value) => update("availability_status", value as AvailabilityStatus)}
+            >
+              <SelectTrigger id="availability-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="limited">Limited capacity</SelectItem>
+                <SelectItem value="unavailable">Unavailable</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="availability-until">Through (optional)</Label>
+            <Input
+              id="availability-until"
+              type="date"
+              value={form.availability_until}
+              onChange={(event) => update("availability_until", event.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="availability-note">Short note (optional)</Label>
+            <Input
+              id="availability-note"
+              maxLength={160}
+              value={form.availability_note}
+              onChange={(event) => update("availability_note", event.target.value)}
+              placeholder="For example: Limited through Friday; one short edit is okay."
+            />
+          </div>
+        </CardContent>
+      </Card>
       {/* Identity card */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">

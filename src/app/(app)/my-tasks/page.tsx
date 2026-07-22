@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ClipboardEdit, Clock, Pencil } from "lucide-react";
+import { AlertTriangle, ClipboardEdit, Clock, MessageSquareText, Pencil } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { listEntries, type EntrySummary } from "@/lib/entries/queries";
 import {
@@ -16,9 +16,13 @@ import {
   EditorStatusBadge,
 } from "@/components/entries/status-badges";
 import { formatDate } from "@/lib/utils";
+import {
+  getLatestPolishingFeedback,
+  type PolishingFeedback,
+} from "@/lib/entries/recent-activity";
 
 export const metadata = {
-  title: "My Tasks",
+  title: "My Work",
 };
 
 export default async function MyTasksPage() {
@@ -46,6 +50,11 @@ export default async function MyTasksPage() {
 
   // Deadline summary = the union of all my tasks with a publish date.
   const allTasks = [...writing.entries, ...editing.entries];
+  const polishingFeedback = await getLatestPolishingFeedback(
+    writing.entries
+      .filter((entry) => entry.content_status === "polishing")
+      .map((entry) => entry.id),
+  );
   const upcoming = allTasks
     .filter((e) => e.publish_date)
     .sort(
@@ -64,7 +73,7 @@ export default async function MyTasksPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-cell">My Tasks</h1>
+        <h1 className="text-2xl font-semibold text-text-cell">My Work</h1>
         <p className="mt-1 text-sm text-text-team">
           Your court. Articles you&apos;re writing, edits you&apos;re owning,
           and upcoming deadlines.
@@ -91,7 +100,11 @@ export default async function MyTasksPage() {
               <ul className="space-y-2">
                 {writing.entries.map((e) => (
                   <li key={e.id}>
-                    <TaskRow entry={e} nowTs={nowTs} />
+                    <TaskRow
+                      entry={e}
+                      nowTs={nowTs}
+                      polishingFeedback={polishingFeedback.get(e.id)}
+                    />
                   </li>
                 ))}
               </ul>
@@ -172,10 +185,12 @@ function TaskRow({
   entry,
   nowTs,
   showEditorStatus,
+  polishingFeedback,
 }: {
   entry: EntrySummary;
   nowTs: number;
   showEditorStatus?: boolean;
+  polishingFeedback?: PolishingFeedback;
 }) {
   const publishTs = entry.publish_date
     ? new Date(entry.publish_date).getTime()
@@ -219,6 +234,17 @@ function TaskRow({
               </span>
             ) : null}
           </div>
+          {polishingFeedback ? (
+            <div className="mt-2 rounded-sm border border-violet/30 bg-violet/5 px-3 py-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-violet">
+                <MessageSquareText className="h-3.5 w-3.5" />
+                Revision requested by {polishingFeedback.actorName}
+              </div>
+              <p className="mt-1 text-xs text-text-team">
+                {polishingFeedback.reason}
+              </p>
+            </div>
+          ) : null}
         </div>
         <div className="shrink-0 text-right">
           {entry.publish_date ? (

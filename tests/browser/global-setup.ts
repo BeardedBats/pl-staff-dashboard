@@ -66,6 +66,7 @@ export const browserRecords = {
   managerClaimId: "28300000-0000-0000-0000-000000000001",
   graphicRequestId: "28400000-0000-0000-0000-000000000001",
   analyticsEntryId: "28200000-0000-0000-0000-000000000005",
+  polishingEntryId: "28200000-0000-0000-0000-000000000006",
   analyticsRowId: "28500000-0000-0000-0000-000000000001",
   revenueRowId: "28600000-0000-0000-0000-000000000001",
   financialSentinel: 731.2942,
@@ -128,6 +129,7 @@ export default async function globalSetup() {
     browserRecords.editorEntryId,
     browserRecords.graphicsEntryId,
     browserRecords.analyticsEntryId,
+    browserRecords.polishingEntryId,
   ];
 
   await expectWrite(
@@ -268,6 +270,25 @@ export default async function globalSetup() {
         publish_date_precision: "exact",
         wp_post_url: "https://pitcherlist.com/e2e-p3-6-financial-sentinel/",
       },
+      {
+        id: browserRecords.polishingEntryId,
+        title: "E2E P4 polishing feedback",
+        site: "pl",
+        tier_id: tier.id,
+        created_by: browserActors.admin.userId,
+        content_status: "polishing",
+        editor_status: "ready_for_edit",
+        publish_date_precision: "none",
+        recent_activity: [
+          {
+            type: "status_change",
+            actor_id: browserActors.editor.userId,
+            actor_name: browserActors.editor.displayName,
+            label: "sent back for polishing: Clarify the conclusion and verify the final statistic.",
+            at: new Date().toISOString(),
+          },
+        ],
+      },
     ]),
     "insert browser entries",
   );
@@ -329,8 +350,25 @@ export default async function globalSetup() {
         user_id: browserActors.writer.userId,
         role: "primary",
       },
+      {
+        entry_id: browserRecords.polishingEntryId,
+        user_id: browserActors.writer.userId,
+        role: "primary",
+      },
     ]),
     "insert browser authors",
+  );
+  await expectWrite(
+    supabase.from("audit_log").insert({
+      entry_id: browserRecords.polishingEntryId,
+      user_id: browserActors.editor.userId,
+      action: "status_change",
+      field_name: "content_status",
+      old_value: "submitted",
+      new_value:
+        "polishing: Clarify the conclusion and verify the final statistic.",
+    }),
+    "insert polishing handoff audit",
   );
   await expectWrite(
     supabase.from("claims").insert({

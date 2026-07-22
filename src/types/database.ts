@@ -1526,6 +1526,9 @@ export type Database = {
       users: {
         Row: {
           auto_approve_drafts: boolean
+          availability_note: string | null
+          availability_status: string
+          availability_until: string | null
           avatar_url: string | null
           bio: string | null
           bluesky_handle: string | null
@@ -1546,6 +1549,9 @@ export type Database = {
         }
         Insert: {
           auto_approve_drafts?: boolean
+          availability_note?: string | null
+          availability_status?: string
+          availability_until?: string | null
           avatar_url?: string | null
           bio?: string | null
           bluesky_handle?: string | null
@@ -1566,6 +1572,9 @@ export type Database = {
         }
         Update: {
           auto_approve_drafts?: boolean
+          availability_note?: string | null
+          availability_status?: string
+          availability_until?: string | null
           avatar_url?: string | null
           bio?: string | null
           bluesky_handle?: string | null
@@ -1615,6 +1624,10 @@ export type Database = {
           p_requested_by: string
         }
         Returns: string
+      }
+      bulk_claim_editor_entries: {
+        Args: { p_actor_id: string; p_entry_ids: string[] }
+        Returns: number
       }
       bulk_create_entries: {
         Args: { p_actor_id: string; p_entries: Json }

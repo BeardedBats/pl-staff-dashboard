@@ -14,6 +14,7 @@ import {
   getOpenGraphicRequests,
   getPipelineHealth,
   getManagerSignals,
+  getCapacitySummary,
   getStaleEntries,
   getUnclaimedWriterSlots,
   getWpSyncHealth,
@@ -118,6 +119,7 @@ export default async function HomePage() {
     pendingClaims,
     pendingArchives,
     managerSignals,
+    capacitySummary,
   ] = await Promise.all([
     writerFit ? getMyActiveClaims(user.id) : Promise.resolve([]),
     writerFit ? getMySubmittedInFlight(user.id) : Promise.resolve([]),
@@ -137,6 +139,7 @@ export default async function HomePage() {
     managerFit ? listPendingClaims(user) : Promise.resolve([]),
     managerFit ? listPendingArchiveRequests(user) : Promise.resolve([]),
     managerScope ? getManagerSignals(managerScope) : Promise.resolve(null),
+    managerScope ? getCapacitySummary(managerScope) : Promise.resolve(null),
   ]);
 
   const weeklyDigest =
@@ -201,6 +204,7 @@ export default async function HomePage() {
             health={pipelineHealth}
             signals={managerSignals}
             pendingApprovals={pendingClaims.length + pendingArchives.length}
+            capacity={capacitySummary}
           />
           <WeeklyDigestWidget digest={weeklyDigest} />
         </div>

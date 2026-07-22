@@ -1,8 +1,12 @@
 import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Browser } from "@playwright/test";
+import { browserRecords } from "../browser/global-setup";
 
-async function actorPage(browser: Browser, actor: "admin" | "onboarding") {
+async function actorPage(
+  browser: Browser,
+  actor: "admin" | "onboarding" | "writer" | "editor",
+) {
   const context = await browser.newContext({
     baseURL: test.info().project.use.baseURL,
     storageState: path.join(process.cwd(), "test-results", "auth", `${actor}.json`),
@@ -131,5 +135,71 @@ test("managers get risk-first operations, useful presets, and confirmed bulk act
     ).toEqual([]);
   } finally {
     await context.close();
+  }
+});
+
+test("writers and editors get focused handoffs, readiness, templates, and safe multi-claiming", async ({
+  browser,
+}) => {
+  const writer = await actorPage(browser, "writer");
+  try {
+    await writer.page.goto("/my-tasks", { waitUntil: "networkidle" });
+    await expect(writer.page.getByRole("heading", { name: "My Work" })).toBeVisible();
+    await expect(writer.page.getByText("Revision requested by Editor Journey")).toBeVisible();
+    await expect(
+      writer.page.getByText("Clarify the conclusion and verify the final statistic."),
+    ).toBeVisible();
+    await writer.page.getByRole("link", { name: /E2E P4 polishing feedback/ }).click();
+    await expect(
+      writer.page.getByRole("heading", { name: "Publication readiness" }),
+    ).toBeVisible();
+    await writer.page.getByRole("tab", { name: "Audit" }).click();
+    await expect(
+      writer.page.getByText(
+        "Sent to the writer for polishing — Clarify the conclusion and verify the final statistic.",
+      ),
+    ).toBeVisible();
+  } finally {
+    await writer.context.close();
+  }
+
+  const editor = await actorPage(browser, "editor");
+  try {
+    await editor.page.goto("/editing-queue", { waitUntil: "networkidle" });
+    await editor.page.getByRole("button", { name: "Unclaimed" }).click();
+    await editor.page
+      .getByRole("checkbox", { name: "Select E2E P2.8 editor completion" })
+      .click();
+    const claimSelected = editor.page.getByRole("button", { name: "Claim selected" });
+    editor.page.once("dialog", async (dialog) => {
+      expect(dialog.message()).toBe("Claim 1 selected edit?");
+      await dialog.dismiss();
+    });
+    await claimSelected.click();
+    await expect(claimSelected).toBeVisible();
+
+    await editor.page.goto(`/content?entry=${browserRecords.editorEntryId}`, {
+      waitUntil: "networkidle",
+    });
+    await expect(
+      editor.page.getByRole("heading", { name: "Publication readiness" }),
+    ).toBeVisible();
+    await editor.page.getByRole("button", { name: "Send to polishing" }).click();
+    await editor.page.getByRole("button", { name: "Fact check" }).click();
+    await expect(editor.page.getByLabel("What needs fixing?")).toHaveValue(
+      "Verify the facts, links, names, and statistics called out in the draft.",
+    );
+
+    const axe = await new AxeBuilder({ page: editor.page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+      .analyze();
+    expect(
+      axe.violations.map((violation) => ({
+        id: violation.id,
+        targets: violation.nodes.map((node) => node.target),
+      })),
+    ).toEqual([]);
+  } finally {
+    await editor.context.close();
   }
 });

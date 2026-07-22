@@ -70,6 +70,25 @@ type AuditEvent = {
   actor: { id: string; display_name: string; avatar_url: string | null } | null;
 };
 
+const POLISHING_TEMPLATES = [
+  {
+    label: "Editor comments",
+    text: "Address the editor comments and resubmit with the requested revisions.",
+  },
+  {
+    label: "Opening",
+    text: "Strengthen the opening and make the main takeaway clear earlier.",
+  },
+  {
+    label: "Fact check",
+    text: "Verify the facts, links, names, and statistics called out in the draft.",
+  },
+  {
+    label: "Structure",
+    text: "Tighten the structure, remove repetition, and clarify the conclusion.",
+  },
+] as const;
+
 export function EntryDetailPanel({
   entryId,
   onClose,
@@ -294,6 +313,7 @@ export function EntryDetailPanel({
     isEditorLike && entry.content_status === "submitted";
   const canClaimEdit =
     isEditorLike &&
+    entry.content_status === "submitted" &&
     entry.editor_status === "ready_for_edit" &&
     !entry.editors.some((e) => e.user_id === me?.id);
   const canMarkEdited =
@@ -619,7 +639,9 @@ function PipelineTab({
   onChecklistToggle: (itemId: string, nextCompleted: boolean) => Promise<void>;
 }) {
   return (
-    <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
+    <div className="space-y-5">
+      <ReadinessPanel entry={entry} graphicRequests={graphicRequests} />
+      <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
       <div className="space-y-5">
         <div className="rounded-md border border-border bg-card p-4">
           <h4 className="mb-3 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">
@@ -806,7 +828,91 @@ function PipelineTab({
         </section>
 
       </div>
+      </div>
     </div>
+  );
+}
+
+function ReadinessPanel({
+  entry,
+  graphicRequests,
+}: {
+  entry: EntryDetail;
+  graphicRequests: GraphicRequestRecord[];
+}) {
+  const requiredChecklist = entry.checklist.filter((item) => item.is_required);
+  const checks = [
+    {
+      label: "Writer assigned",
+      ready: entry.authors.length > 0,
+      detail: entry.authors.length > 0 ? "Assigned" : "Needs a writer",
+    },
+    {
+      label: "Required checklist",
+      ready: requiredChecklist.every((item) => item.is_completed),
+      detail: `${requiredChecklist.filter((item) => item.is_completed).length}/${requiredChecklist.length} complete`,
+    },
+    {
+      label: "Editorial review",
+      ready: ["edited", "scheduled", "published"].includes(entry.editor_status),
+      detail: entry.editor_status === "edited" ? "Edited" : entry.editor_status.replaceAll("_", " "),
+    },
+    {
+      label: "Graphics",
+      ready:
+        graphicRequests.length === 0 ||
+        graphicRequests.every((request) => request.graphic_status === "submitted"),
+      detail:
+        graphicRequests.length === 0
+          ? "Not requested"
+          : `${graphicRequests.filter((request) => request.graphic_status === "submitted").length}/${graphicRequests.length} approved`,
+    },
+    {
+      label: "Publish date",
+      ready: Boolean(entry.publish_date),
+      detail: entry.publish_date ? "Scheduled target set" : "Date needed",
+    },
+    {
+      label: "WordPress draft",
+      ready: Boolean(entry.wp_post_id),
+      detail: entry.wp_post_id ? "Connected" : "Draft needed",
+    },
+  ];
+  const blockers = checks.filter((check) => !check.ready);
+
+  return (
+    <section className="rounded-md border border-border bg-card p-4" aria-labelledby="readiness-heading">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 id="readiness-heading" className="text-sm font-semibold text-text-cell">
+            Publication readiness
+          </h3>
+          <p className="mt-0.5 text-xs text-text-team">
+            {blockers.length === 0
+              ? "All tracked handoff requirements are ready."
+              : `${blockers.length} ${blockers.length === 1 ? "blocker" : "blockers"} before publication.`}
+          </p>
+        </div>
+        <Badge variant={blockers.length === 0 ? "cyan" : "amber"}>
+          {blockers.length === 0 ? "Ready" : `Next: ${blockers[0].label}`}
+        </Badge>
+      </div>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {checks.map((check) => (
+          <li key={check.label} className="flex items-start gap-2 rounded-sm border border-border px-2 py-2">
+            {check.ready ? (
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan" />
+            ) : (
+              <Circle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber" />
+            )}
+            <div>
+              <p className="text-xs font-medium text-text-cell">{check.label}</p>
+              <p className="text-[10px] text-text-zero">{check.detail}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -816,18 +922,37 @@ function PipelineTab({
 
 function AuditTab({ entryId }: { entryId: string }) {
   const [events, setEvents] = React.useState<AuditEvent[] | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
-    fetch(`/api/entries/${entryId}/audit`)
-      .then((r) => r.json())
-      .then((data: { events: AuditEvent[] }) => {
+    void (async () => {
+      try {
+        const response = await fetch(`/api/entries/${entryId}/audit`);
+        if (!response.ok) {
+          if (!cancelled) {
+            setError(await readApiError(response, "Unable to load handoff history"));
+          }
+          return;
+        }
+        const data = (await response.json()) as { events: AuditEvent[] };
         if (!cancelled) setEvents(data.events ?? []);
-      });
+      } catch {
+        if (!cancelled) setError("Unable to load handoff history. Try again.");
+      }
+    })();
     return () => {
       cancelled = true;
     };
   }, [entryId]);
+
+  if (error) {
+    return (
+      <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        {error}
+      </p>
+    );
+  }
 
   if (events === null) {
     return (
@@ -861,7 +986,7 @@ function AuditTab({ entryId }: { entryId: string }) {
             <span className="font-medium text-text-cell">
               {evt.actor?.display_name ?? "System"}
             </span>
-            <Badge variant="outline">{evt.action}</Badge>
+            <Badge variant="outline">{auditActionLabel(evt.action)}</Badge>
             <span className="text-xs text-text-zero">
               {formatDate(evt.created_at, {
                 dateStyle: "short",
@@ -869,22 +994,33 @@ function AuditTab({ entryId }: { entryId: string }) {
               })}
             </span>
           </div>
-          {evt.field_name ? (
-            <p className="mt-1 font-data text-xs text-text-team">
-              <span className="text-text-zero">{evt.field_name}:</span>{" "}
-              {evt.old_value ? (
-                <>
-                  <span className="line-through opacity-60">{evt.old_value}</span>
-                  {" → "}
-                </>
-              ) : null}
-              <span>{evt.new_value ?? "—"}</span>
-            </p>
-          ) : null}
+          <p className="mt-1 text-xs text-text-team">
+            {auditEventSummary(evt)}
+          </p>
         </li>
       ))}
     </ol>
   );
+}
+
+function auditActionLabel(action: string): string {
+  return action.replaceAll("_", " ");
+}
+
+function auditEventSummary(event: AuditEvent): string {
+  if (
+    event.field_name === "content_status" &&
+    event.new_value?.startsWith("polishing:")
+  ) {
+    return `Sent to the writer for polishing — ${event.new_value.replace(/^polishing:\s*/, "")}`;
+  }
+  const field = event.field_name?.replaceAll("_", " ");
+  const before = event.old_value?.replaceAll("_", " ");
+  const after = event.new_value?.replaceAll("_", " ");
+  if (field && before && after) return `${field}: ${before} → ${after}`;
+  if (field && after) return `${field}: ${after}`;
+  if (after) return after;
+  return "Recorded in the entry handoff history.";
 }
 
 // --------------------------------------------------------------------------
@@ -918,6 +1054,22 @@ function PolishingDialog({
             entry will return to the writer&apos;s queue.
           </DialogDescription>
         </DialogHeader>
+        <div className="space-y-1.5">
+          <Label>Start with a feedback template</Label>
+          <div className="flex flex-wrap gap-1.5">
+            {POLISHING_TEMPLATES.map((template) => (
+              <Button
+                key={template.label}
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setReason(template.text)}
+              >
+                {template.label}
+              </Button>
+            ))}
+          </div>
+        </div>
         <div className="space-y-1.5">
           <Label htmlFor="polishing-reason">What needs fixing?</Label>
           <Textarea

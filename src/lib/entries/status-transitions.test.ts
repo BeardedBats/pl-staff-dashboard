@@ -126,7 +126,11 @@ describe("transactional editorial state transitions", () => {
 
   it("reports a competing editor claim instead of pretending both succeeded", async () => {
     mocks.from.mockReturnValue(
-      singleQuery({ editor_status: "ready_for_edit", site: "pl" }),
+      singleQuery({
+        content_status: "submitted",
+        editor_status: "ready_for_edit",
+        site: "pl",
+      }),
     );
     mocks.rpc.mockResolvedValue({
       data: null,
@@ -140,5 +144,24 @@ describe("transactional editorial state transitions", () => {
         message: "Entry changed while this request was being processed.",
       },
     });
+  });
+
+  it("does not claim an edit while revisions are still with the writer", async () => {
+    mocks.from.mockReturnValue(
+      singleQuery({
+        content_status: "polishing",
+        editor_status: "ready_for_edit",
+        site: "pl",
+      }),
+    );
+
+    await expect(claimEdit(viewer, entryId)).resolves.toEqual({
+      ok: false,
+      error: {
+        kind: "invalid_transition",
+        message: "The writer must submit an entry before an editor can claim it.",
+      },
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 });

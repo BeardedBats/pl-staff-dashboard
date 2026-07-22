@@ -494,6 +494,32 @@ export async function getManagerSignals(
   };
 }
 
+export type CapacitySummary = {
+  available: number;
+  limited: number;
+  unavailable: number;
+};
+
+/** Self-declared availability only; never inferred from activity or output. */
+export async function getCapacitySummary(
+  userSite: AppSite,
+): Promise<CapacitySummary> {
+  let query = getSupabaseAdmin()
+    .from("users")
+    .select("availability_status")
+    .in("availability_status", ["available", "limited", "unavailable"]);
+  if (userSite !== "both") query = query.in("wp_site", [userSite, "both"]);
+  const { data } = await query;
+  const statuses = (data ?? []) as Array<{
+    availability_status: "available" | "limited" | "unavailable";
+  }>;
+  return {
+    available: statuses.filter((row) => row.availability_status === "available").length,
+    limited: statuses.filter((row) => row.availability_status === "limited").length,
+    unavailable: statuses.filter((row) => row.availability_status === "unavailable").length,
+  };
+}
+
 export type WpSyncHealth = {
   pl: string | null;
   qb: string | null;

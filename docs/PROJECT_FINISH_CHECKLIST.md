@@ -5,12 +5,12 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 4 — Role-focused workflow and usability
-- Current action: P4.10–P4.15 — focused work, humane capacity, polishing, editor-risk, readiness, and handoff-history batch.
+- Current action: P4.16–P4.19 — complete graphics requirements, review states, asset library, and least-information batch.
 - Branch: `codex/production-readiness-p4`
 - Stack base: `feb4f12` (combined Phase 3 exact head on green draft PR #39, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
+- Known blockers: production application of the stacked migrations through `0023` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -98,12 +98,12 @@ Gate: new feature work can be built entirely from verified PLPD primitives.
 - [x] P4.7 Add useful saved views and presets.
 - [x] P4.8 Add a concise weekly operational digest.
 - [x] P4.9 Add safe bulk actions.
-- [ ] P4.10 Build a focused My Work view.
-- [ ] P4.11 Make availability and capacity visible without employee surveillance.
-- [ ] P4.12 Present polishing requests as actionable feedback.
-- [ ] P4.13 Add risk-first editor queues, SLA indicators, bulk actions, and saved queues.
-- [ ] P4.14 Add polishing-reason templates and a readiness panel.
-- [ ] P4.15 Preserve editorial handoff and state-transition history.
+- [x] P4.10 Build a focused My Work view.
+- [x] P4.11 Make availability and capacity visible without employee surveillance.
+- [x] P4.12 Present polishing requests as actionable feedback.
+- [x] P4.13 Add risk-first editor queues, SLA indicators, bulk actions, and saved queues.
+- [x] P4.14 Add polishing-reason templates and a readiness panel.
+- [x] P4.15 Preserve editorial handoff and state-transition history.
 - [ ] P4.16 Capture complete graphics-request requirements.
 - [ ] P4.17 Add asset versioning and Submit, Approve, and Request Changes states.
 - [ ] P4.18 Add an asset library with usage and featured-image status.
@@ -608,6 +608,17 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Every bulk archive, restore, priority, and tier operation now confirms the exact selected count, uses only currently visible selected resource IDs, reports the server's atomic updated count, and retains explicit safe failure feedback. The API still rejects the whole operation unless every entry exists, is visible, and is within the manager's site authority; status transitions remain deliberately excluded.
 - Targeted verification: ten manager-digest and transactional-bulk unit tests, four bulk-route API authorization/atomicity tests, ESLint, and TypeScript pass. Three production-Chromium workflow journeys pass against seeded data, including manager operations, a real preset, cancelled bulk confirmation, semantic widget headings, and a selected-action WCAG A/AA scan with no exclusions. The scan found and repaired the previously hidden bulk-tier control's missing accessible name.
 - React review: the new manager widgets remain server-rendered; digest derivation is pure; no request waterfall, broad client boundary, mirrored server state, or unstable key was introduced. Existing table-local state owns confirmations and feedback, and selection is derived from TanStack's current row model so stale filtered IDs cannot be submitted.
+
+### 2026-07-21 — P4.10–P4.15 editorial-workflow batch
+
+- Renamed and sharpened My Tasks into My Work while preserving its route. Writers see owned writing and editing work, deadlines, and the newest polishing request directly on the affected card; editor identity and actionable revision text come from the bounded recent-activity cache for already-authorized entries.
+- Added self-declared Available, Limited capacity, and Unavailable signals with an optional public note/date. Staff own their signal in Profile, directory cards expose it, and managers see only aggregate site-scoped counts with explicit “no productivity or activity score” copy. No availability is inferred from output, speed, presence, or tracking.
+- Rebuilt Editing Queue around risk-first ordering and built-in saved views for past-deadline, due-within-24-hours, unclaimed, and personally claimed work. SLA badges distinguish past deadline, due soon, waiting over 24 hours, and on track.
+- Added confirmed multi-select editor claiming backed by one database transaction. The route authorizes every resource and site before mutation; the database repeats the site-role boundary, locks all selected entries, rejects missing/duplicate/already-claimed/non-ready batches, and creates assignments plus matching handoff audits atomically. Direct anon/authenticated RPC execution remains revoked.
+- Added four polishing feedback starters and a publication-readiness panel covering writer assignment, required checklist, editorial review, graphics, publish date, and WordPress draft. The full authorized audit feed now reports load failures safely and translates polishing/state handoffs into readable history while preserving exact actors and timestamps.
+- Migration `0023_humane_capacity_and_editor_bulk_claims.sql` applied cleanly to a cold local stack. An over-broad readiness-trigger attempt was rejected by the immediate database gate and removed before commit; the final migration enforces submitted-state readiness only inside the new bulk transaction. The runbook provides the exact ordered apply gate plus a pre-deployment-only transactional reversal. Generated types match and database lint has no warnings.
+- Targeted verification: 12 unit tests, 8 bulk API authorization/atomicity tests, all 11 database files / 322 pgTAP assertions, generated-type drift, database lint, ESLint, and TypeScript pass. Four production-Chromium workflow journeys pass, including real writer polishing feedback, readable audit handoff, readiness, editor saved queue selection, cancelled bulk confirmation, feedback templates, and open-dialog WCAG A/AA scanning with no exclusions.
+- React review: the editing client owns only view, selection, request, and feedback state; risk derivation is memoized from server props and a stable server timestamp; no effect-based state synchronization or per-row request loop exists. Static template keys and queue identifiers are stable, and the new database reads remain server-only.
 
 ## Phase 0 prioritized defect and risk inventory
 

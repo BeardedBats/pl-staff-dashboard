@@ -30,7 +30,54 @@ export type RecentActivityEvent = {
   at: string; // ISO timestamp
 };
 
+export type PolishingFeedback = {
+  reason: string;
+  actorName: string;
+  requestedAt: string;
+};
+
 const MAX_EVENTS = 10;
+
+/** Latest actionable polishing request for each requested entry. */
+export async function getLatestPolishingFeedback(
+  entryIds: string[],
+): Promise<Map<string, PolishingFeedback>> {
+  if (entryIds.length === 0) return new Map();
+  const { data } = await getSupabaseAdmin()
+    .from("entries")
+    .select("id, recent_activity")
+    .in("id", entryIds);
+
+  const result = new Map<string, PolishingFeedback>();
+  for (const row of (data ?? []) as Array<{
+    id: string;
+    recent_activity: unknown;
+  }>) {
+    if (!Array.isArray(row.recent_activity)) continue;
+    const feedback = latestPolishingFeedback(
+      row.recent_activity as RecentActivityEvent[],
+    );
+    if (feedback) result.set(row.id, feedback);
+  }
+  return result;
+}
+
+export function latestPolishingFeedback(
+  events: RecentActivityEvent[],
+): PolishingFeedback | null {
+  const event = events.find(
+    (candidate) =>
+      candidate.type === "status_change" &&
+      candidate.label.startsWith("sent back for polishing:"),
+  );
+  return event
+    ? {
+        reason: event.label.replace(/^sent back for polishing:\s*/, ""),
+        actorName: event.actor_name,
+        requestedAt: event.at,
+      }
+    : null;
+}
 
 /**
  * Prepend an event onto an entry's recent_activity array.

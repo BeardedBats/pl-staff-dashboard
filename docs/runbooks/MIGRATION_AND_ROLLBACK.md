@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0022_operational_observability.sql`. The
-current application stack depends on migrations `0013`–`0022`; apply those
+`0001_initial_schema.sql` through `0023_humane_capacity_and_editor_bulk_claims.sql`. The
+current application stack depends on migrations `0013`–`0023`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,7 +44,7 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0022_operational_observability.sql`. Apply once:
+`0023_humane_capacity_and_editor_bulk_claims.sql`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -78,6 +78,32 @@ npx supabase migration repair --linked --status reverted VERSION
    may expect pre-migration grants/functions while the database is already new.
    Restore to a new project or create a forward compatibility migration first.
 
+### Migration 0023 contingency
+
+Migration `0023` adds availability and a submitted-only bulk editor-claim
+transaction. It executes transactionally. A failed apply must leave no
+availability columns or bulk-claim function. After a successful apply, the
+preferred recovery is a forward repair because the Phase 4 application reads
+the new columns.
+
+Only before the Phase 4 application is deployed, and only after a verified
+backup, the release operator may reverse `0023` in one transaction:
+
+```sql
+BEGIN;
+DROP FUNCTION IF EXISTS public.bulk_claim_editor_entries(uuid, uuid[]);
+ALTER TABLE public.users
+  DROP CONSTRAINT IF EXISTS users_availability_note_length_check,
+  DROP CONSTRAINT IF EXISTS users_availability_status_check,
+  DROP COLUMN IF EXISTS availability_until,
+  DROP COLUMN IF EXISTS availability_note,
+  DROP COLUMN IF EXISTS availability_status;
+COMMIT;
+```
+
+After application deployment, do not run that reversal; keep the compatible
+schema and ship a forward fix or restore the database and application together.
+
 ## Stop conditions
 
 - Production DB access is absent. Management access that only lists backups is
@@ -94,6 +120,10 @@ npx supabase migration repair --linked --status reverted VERSION
 - `supabase migration list --linked` shows every committed migration once.
 - Read-only schema checks confirm new tables/functions/grants and forced RLS.
 - Anon/authenticated probes remain denied for server-only tables.
+- Availability values and note length constraints reject invalid writes;
+  authenticated clients cannot execute `bulk_claim_editor_entries`, while the
+  service role can. A disposable editor batch must create matching assignment
+  and audit rows or roll back completely on one conflict.
 - The both-site Admin+ health endpoint loads, all integration probes are
   explainable, and no new critical alert appears.
 - Continue to the [Deployment](./DEPLOYMENT.md) gate; do not reopen release
