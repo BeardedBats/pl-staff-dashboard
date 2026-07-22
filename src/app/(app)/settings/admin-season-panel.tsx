@@ -105,6 +105,8 @@ function SeasonRow({
   const [start, setStart] = React.useState(mode.auto_switch_start ?? "");
   const [end, setEnd] = React.useState(mode.auto_switch_end ?? "");
   const [dirty, setDirty] = React.useState(false);
+  const startId = `season-${mode.id}-start`;
+  const endId = `season-${mode.id}-end`;
 
   React.useEffect(() => {
     setStart(mode.auto_switch_start ?? "");
@@ -135,10 +137,14 @@ function SeasonRow({
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <div className="space-y-1">
-          <Label className="text-[10px] uppercase text-text-zero">
+          <Label
+            htmlFor={startId}
+            className="text-[10px] uppercase text-text-zero"
+          >
             Starts
           </Label>
           <Input
+            id={startId}
             type="date"
             value={start}
             onChange={(e) => {
@@ -149,8 +155,14 @@ function SeasonRow({
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px] uppercase text-text-zero">Ends</Label>
+          <Label
+            htmlFor={endId}
+            className="text-[10px] uppercase text-text-zero"
+          >
+            Ends
+          </Label>
           <Input
+            id={endId}
             type="date"
             value={end}
             onChange={(e) => {

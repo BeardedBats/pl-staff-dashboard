@@ -201,6 +201,7 @@ export function AdminChecklistsPanel({
                   <div className="flex items-center gap-2 text-[11px] text-text-zero">
                     <span>Required</span>
                     <Switch
+                      aria-label={`Required: ${item.label}`}
                       checked={item.is_required}
                       onCheckedChange={(checked) =>
                         handleToggleRequired(item, checked)
@@ -710,7 +711,11 @@ function ChecklistItemDialog({
                 are advisory only.
               </p>
             </div>
-            <Switch checked={isRequired} onCheckedChange={setIsRequired} />
+            <Switch
+              aria-label="Checklist item required"
+              checked={isRequired}
+              onCheckedChange={setIsRequired}
+            />
           </div>
           {error ? (
             <p className="flex items-center gap-1 text-sm text-destructive">

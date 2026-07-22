@@ -77,7 +77,7 @@ export function StaffFilters({
         value={initialRole || ALL}
         onValueChange={(value) => pushParam("role", value)}
       >
-        <SelectTrigger className="w-[140px]">
+        <SelectTrigger aria-label="Filter staff by role" className="w-[140px]">
           <SelectValue placeholder="Role" />
         </SelectTrigger>
         <SelectContent>
@@ -96,7 +96,7 @@ export function StaffFilters({
         value={initialSite || ALL}
         onValueChange={(value) => pushParam("site", value)}
       >
-        <SelectTrigger className="w-[120px]">
+        <SelectTrigger aria-label="Filter staff by site" className="w-[120px]">
           <SelectValue placeholder="Site" />
         </SelectTrigger>
         <SelectContent>
@@ -112,7 +112,7 @@ export function StaffFilters({
           value={initialTeam || ALL}
           onValueChange={(value) => pushParam("team", value)}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger aria-label="Filter staff by team" className="w-[180px]">
             <SelectValue placeholder="Team" />
           </SelectTrigger>
           <SelectContent>

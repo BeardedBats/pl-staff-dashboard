@@ -39,6 +39,7 @@ type Props = {
   tiers: EntryTier[];
   assignableUsers: StaffUserSummary[];
   allowedSites: Array<"pl" | "qb">;
+  returnFocusRef: React.RefObject<HTMLElement | null>;
   onSaved: () => void;
 };
 
@@ -62,6 +63,7 @@ export function TemplateDialog({
   tiers,
   assignableUsers,
   allowedSites,
+  returnFocusRef,
   onSaved,
 }: Props) {
   const isEdit = Boolean(template);
@@ -213,7 +215,13 @@ export function TemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          returnFocusRef.current?.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Edit template" : "New recurring template"}
@@ -252,7 +260,7 @@ export function TemplateDialog({
             <div className="space-y-1.5">
               <Label>Site *</Label>
               <Select value={site} onValueChange={(v) => setSite(v as AppSite)}>
-                <SelectTrigger>
+                <SelectTrigger aria-label="Site">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,7 +276,7 @@ export function TemplateDialog({
             <div className="space-y-1.5">
               <Label>Tier *</Label>
               <Select value={tierId} onValueChange={setTierId}>
-                <SelectTrigger>
+                <SelectTrigger aria-label="Tier">
                   <SelectValue placeholder="Pick a tier…" />
                 </SelectTrigger>
                 <SelectContent>
@@ -286,7 +294,7 @@ export function TemplateDialog({
             <div className="space-y-1.5">
               <Label>Season *</Label>
               <Select value={seasonModeId} onValueChange={setSeasonModeId}>
-                <SelectTrigger>
+                <SelectTrigger aria-label="Season">
                   <SelectValue placeholder="Pick a season…" />
                 </SelectTrigger>
                 <SelectContent>
@@ -304,7 +312,7 @@ export function TemplateDialog({
                 value={assignedUserId || NONE}
                 onValueChange={(v) => setAssignedUserId(v === NONE ? "" : v)}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Assigned writer">
                   <SelectValue placeholder="Unassigned" />
                 </SelectTrigger>
                 <SelectContent>
@@ -341,7 +349,7 @@ export function TemplateDialog({
               value={frequency}
               onValueChange={(v) => setFrequency(v as Frequency)}
             >
-              <SelectTrigger className="max-w-[200px]">
+              <SelectTrigger aria-label="Schedule frequency" className="max-w-[200px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -373,7 +381,7 @@ export function TemplateDialog({
 
             {frequency === "weekly" ? (
               <Select value={weeklyDay} onValueChange={(v) => setWeeklyDay(v as DayCode)}>
-                <SelectTrigger className="max-w-[200px]">
+                <SelectTrigger aria-label="Weekly day" className="max-w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -390,6 +398,7 @@ export function TemplateDialog({
               <div className="flex items-center gap-2">
                 <Label className="shrink-0">Day of month:</Label>
                 <Input
+                  aria-label="Day of month"
                   type="number"
                   min={1}
                   max={28}
@@ -404,6 +413,7 @@ export function TemplateDialog({
               <div className="flex items-center gap-2">
                 <Label className="shrink-0">Month:</Label>
                 <Input
+                  aria-label="Yearly month"
                   type="number"
                   min={1}
                   max={12}
@@ -413,6 +423,7 @@ export function TemplateDialog({
                 />
                 <Label className="shrink-0">Day:</Label>
                 <Input
+                  aria-label="Yearly day"
                   type="number"
                   min={1}
                   max={28}
@@ -431,7 +442,11 @@ export function TemplateDialog({
                 Inactive templates are skipped by the generator.
               </p>
             </div>
-            <Switch checked={isActive} onCheckedChange={setIsActive} />
+            <Switch
+              aria-label="Template active"
+              checked={isActive}
+              onCheckedChange={setIsActive}
+            />
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}

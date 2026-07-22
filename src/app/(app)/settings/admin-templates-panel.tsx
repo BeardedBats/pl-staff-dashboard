@@ -53,6 +53,7 @@ export function AdminTemplatesPanel({
     React.useState<RecurringTemplateRecord | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
   const [runResult, setRunResult] = React.useState<string | null>(null);
+  const dialogReturnFocusRef = React.useRef<HTMLElement | null>(null);
 
   async function refresh() {
     const res = await fetch("/api/templates");
@@ -157,7 +158,8 @@ export function AdminTemplatesPanel({
           ) : null}
           <Button
             size="sm"
-            onClick={() => {
+            onClick={(event) => {
+              dialogReturnFocusRef.current = event.currentTarget;
               setEditingTemplate(null);
               setDialogOpen(true);
             }}
@@ -182,7 +184,8 @@ export function AdminTemplatesPanel({
             action={
               <Button
                 size="sm"
-                onClick={() => {
+                onClick={(event) => {
+                  dialogReturnFocusRef.current = event.currentTarget;
                   setEditingTemplate(null);
                   setDialogOpen(true);
                 }}
@@ -279,7 +282,8 @@ export function AdminTemplatesPanel({
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
+                        onClick={(event) => {
+                          dialogReturnFocusRef.current = event.currentTarget;
                           setEditingTemplate(t);
                           setDialogOpen(true);
                         }}
@@ -319,6 +323,7 @@ export function AdminTemplatesPanel({
         tiers={tiers}
         assignableUsers={assignableUsers}
         allowedSites={allowedSites}
+        returnFocusRef={dialogReturnFocusRef}
         onSaved={() => {
           setDialogOpen(false);
           setEditingTemplate(null);

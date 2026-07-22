@@ -5,6 +5,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: "./tests/quality",
+  snapshotPathTemplate: "{testDir}/__snapshots__/{testFilePath}/{arg}{ext}",
   globalSetup: "./tests/browser/global-setup.ts",
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
@@ -12,6 +13,14 @@ export default defineConfig({
   workers: 1,
   reporter: process.env.CI ? "github" : "list",
   outputDir: "test-results/quality",
+  expect: {
+    toHaveScreenshot: {
+      animations: "disabled",
+      caret: "hide",
+      maxDiffPixelRatio: 0.03,
+      threshold: 0.3,
+    },
+  },
   use: {
     baseURL,
     trace: "on-first-retry",
