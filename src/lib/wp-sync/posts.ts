@@ -7,6 +7,7 @@ import {
   wordPressBasicAuth,
   type WpSiteKey,
 } from "@/lib/wordpress/config";
+import { fetchAllWpPages } from "@/lib/wp-sync/pagination";
 
 /**
  * WordPress → dashboard post sync.
@@ -200,48 +201,24 @@ export async function syncWpPostsForSite(
     orderby: "modified",
     order: "asc",
   });
-
-  let response: Response;
-  try {
-    response = await fetch(
-      `${config.url}/wp-json/wp/v2/posts?${params.toString()}`,
-      {
-        headers: {
-          Authorization: wordPressBasicAuth(
-            config.appUsername,
-            config.appPassword,
-          ),
-          Accept: "application/json",
-        },
-        cache: "no-store",
-      },
-    );
-  } catch {
-    report.errors.push({
-      wpPostId: 0,
-      message: "Could not reach WordPress",
-    });
+  const fetched = await fetchAllWpPages<WpPost>({
+    urlForPage: (page) => {
+      params.set("page", String(page));
+      return `${config.url}/wp-json/wp/v2/posts?${params.toString()}`;
+    },
+    headers: {
+      Authorization: wordPressBasicAuth(
+        config.appUsername,
+        config.appPassword,
+      ),
+      Accept: "application/json",
+    },
+  });
+  if (!fetched.ok) {
+    report.errors.push({ wpPostId: 0, message: fetched.error });
     return report;
   }
-
-  if (!response.ok) {
-    report.errors.push({
-      wpPostId: 0,
-      message: `WP returned ${response.status}`,
-    });
-    return report;
-  }
-
-  let posts: WpPost[];
-  try {
-    posts = (await response.json()) as WpPost[];
-  } catch {
-    report.errors.push({
-      wpPostId: 0,
-      message: "WordPress returned an invalid response",
-    });
-    return report;
-  }
+  const posts = fetched.rows;
 
   report.postsFetched = posts.length;
 
@@ -373,14 +350,17 @@ export async function syncWpPostsForSite(
     }
   }
 
-  // Update the watermark to the time we started the fetch.
-  try {
-    await writeLastSyncIso(site, syncStartedAt);
-  } catch {
-    report.errors.push({
-      wpPostId: 0,
-      message: "Failed to update the WordPress sync watermark",
-    });
+  // Any failed row stays inside the next retry window. Successful rows are
+  // safe to see again because matching is keyed by (site, wp_post_id).
+  if (report.errors.length === 0) {
+    try {
+      await writeLastSyncIso(site, syncStartedAt);
+    } catch {
+      report.errors.push({
+        wpPostId: 0,
+        message: "Failed to update the WordPress sync watermark",
+      });
+    }
   }
 
   return report;

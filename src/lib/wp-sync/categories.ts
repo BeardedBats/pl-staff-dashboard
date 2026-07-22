@@ -7,6 +7,7 @@ import {
   type WordPressSiteConfig,
   type WpSiteKey,
 } from "@/lib/wordpress/config";
+import { fetchAllWpPages } from "@/lib/wp-sync/pagination";
 
 /**
  * WordPress → dashboard category sync.
@@ -31,6 +32,7 @@ export type CategorySyncReport = {
   created: number;
   updated: number;
   deactivated: number;
+  errors: string[];
 };
 
 type WpCategory = {
@@ -42,57 +44,24 @@ type WpCategory = {
 // Paginated fetch
 // --------------------------------------------------------------------------
 
-async function fetchAllCategories(
-  config: WordPressSiteConfig,
-): Promise<WpCategory[]> {
-  const all: WpCategory[] = [];
-  let page = 1;
-  let totalPages = 1;
-
-  do {
-    const params = new URLSearchParams({
-      per_page: "100",
-      hide_empty: "false",
-      page: String(page),
-    });
-    const response = await fetch(
-      `${config.url}/wp-json/wp/v2/categories?${params.toString()}`,
-      {
-        headers: {
-          Authorization: wordPressBasicAuth(
-            config.appUsername,
-            config.appPassword,
-          ),
-          Accept: "application/json",
-        },
-        cache: "no-store",
-      },
-    );
-
-    if (!response.ok) {
-      // Page-1 failure bubbles up; downstream errors for pages 2+ stop
-      // the loop but keep whatever we've collected so far.
-      if (page === 1) {
-        throw new Error(`WP returned ${response.status}`);
-      }
-      break;
-    }
-
-    const totalHeader = response.headers.get("x-wp-totalpages");
-    if (totalHeader) {
-      const parsed = parseInt(totalHeader, 10);
-      if (!Number.isNaN(parsed) && parsed > 0) {
-        totalPages = parsed;
-      }
-    }
-
-    const rows = (await response.json()) as WpCategory[];
-    for (const row of rows) all.push(row);
-
-    page++;
-  } while (page <= totalPages);
-
-  return all;
+async function fetchAllCategories(config: WordPressSiteConfig) {
+  return fetchAllWpPages<WpCategory>({
+    urlForPage: (page) => {
+      const params = new URLSearchParams({
+        per_page: "100",
+        hide_empty: "false",
+        page: String(page),
+      });
+      return `${config.url}/wp-json/wp/v2/categories?${params.toString()}`;
+    },
+    headers: {
+      Authorization: wordPressBasicAuth(
+        config.appUsername,
+        config.appPassword,
+      ),
+      Accept: "application/json",
+    },
+  });
 }
 
 // --------------------------------------------------------------------------
@@ -108,17 +77,18 @@ export async function syncWpCategoriesForSite(
     created: 0,
     updated: 0,
     deactivated: 0,
+    errors: [],
   };
 
   const config = getWordPressSiteConfig(site);
   if (!config) return report;
 
-  let wpCategories: WpCategory[];
-  try {
-    wpCategories = await fetchAllCategories(config);
-  } catch {
+  const fetched = await fetchAllCategories(config);
+  if (!fetched.ok) {
+    report.errors.push(fetched.error);
     return report;
   }
+  const wpCategories = fetched.rows;
 
   report.fetched = wpCategories.length;
 
@@ -159,7 +129,7 @@ export async function syncWpCategoriesForSite(
       if (existing) {
         // Only issue an UPDATE if something actually changed.
         if (existing.name !== cat.name || existing.is_active !== true) {
-          await supabase
+          const { error } = await supabase
             .from("categories")
             .update({
               name: cat.name,
@@ -167,26 +137,38 @@ export async function syncWpCategoriesForSite(
               synced_at: nowIso,
             })
             .eq("id", existing.id);
+          if (error) {
+            report.errors.push(`Failed to update category ${cat.id}`);
+            continue;
+          }
           report.updated++;
         } else {
           // Still refresh synced_at so we can tell when we last saw it.
-          await supabase
+          const { error } = await supabase
             .from("categories")
             .update({ synced_at: nowIso })
             .eq("id", existing.id);
+          if (error) {
+            report.errors.push(`Failed to refresh category ${cat.id}`);
+          }
         }
       } else {
-        await supabase.from("categories").insert({
+        const { error } = await supabase.from("categories").insert({
           site,
           wp_category_id: cat.id,
           name: cat.name,
           is_active: true,
           synced_at: nowIso,
         });
+        if (error) {
+          report.errors.push(`Failed to create category ${cat.id}`);
+          continue;
+        }
         report.created++;
       }
     } catch {
       // Swallow per-row errors — one bad category doesn't kill the sync.
+      report.errors.push(`Failed to process category ${cat.id}`);
       continue;
     }
   }
@@ -196,12 +178,17 @@ export async function syncWpCategoriesForSite(
     if (seenWpIds.has(wpId)) continue;
     if (!row.is_active) continue; // already inactive
     try {
-      await supabase
+      const { error } = await supabase
         .from("categories")
         .update({ is_active: false, synced_at: nowIso })
         .eq("id", row.id);
+      if (error) {
+        report.errors.push(`Failed to deactivate category ${wpId}`);
+        continue;
+      }
       report.deactivated++;
     } catch {
+      report.errors.push(`Failed to deactivate category ${wpId}`);
       continue;
     }
   }

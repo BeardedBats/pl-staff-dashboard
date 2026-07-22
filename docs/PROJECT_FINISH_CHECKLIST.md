@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.3 — Expand WordPress synchronization, reconciliation, conflict, retry, and idempotency coverage while preserving the Supabase DDL release block.
-- Branch: `codex/production-readiness-p2-2`
-- Stack base: `b92ec84` (green draft PR #18, based on green draft PRs #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P2.4 — Expand editorial claim, assignment, state-transition, bulk, deadline, and concurrency coverage while preserving the Supabase DDL release block.
+- Branch: `codex/production-readiness-p2-3`
+- Stack base: `296033e` (green draft PR #19, based on green draft PRs #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -58,7 +58,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 
 - [x] P2.1 Establish a practical unit, integration, database, API, and browser-test architecture.
 - [x] P2.2 Test authentication, session rotation, role permissions, membership boundaries, and negative authorization cases.
-- [ ] P2.3 Test WordPress synchronization, webhooks, scheduled reconciliation, conflict handling, retries, and idempotency.
+- [x] P2.3 Test WordPress synchronization, webhooks, scheduled reconciliation, conflict handling, retries, and idempotency.
 - [ ] P2.4 Test editorial claims, assignments, state transitions, bulk actions, deadlines, and concurrent operations.
 - [ ] P2.5 Test graphics submission, review, versioning, authorization, and storage behavior.
 - [ ] P2.6 Test cron jobs with the same method and headers used by Vercel.
@@ -381,6 +381,14 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Added route-level API contracts for login, refresh, logout, and current-user resolution. They cover validation-before-authentication, safe failure envelopes, missing/invalid/stale credentials, every refresh outcome, successful rotation, refresh-backed logout, family deduplication, revocation failure cleanup, live access-hash checks, and role-row projection.
 - Added an exhaustive seven-role hierarchy/site table plus both-site scope, checklist participation, draft visibility, graphics assignment, and cross-site negative cases. Added exact-team-manager API coverage proving cross-site admins, managers of another team, and single-site managers of a both-site team cannot mutate membership.
 - Final gate: 29 Vitest files / 146 tests (114 unit, eight integration, 22 API, and two component); coverage increased from the P2.1 baseline to 8.77% statements, 8.89% branches, 13.12% functions, and 9% lines. All 124 pgTAP assertions, zero-vulnerability audit, ESLint, TypeScript, production build, and three Chromium boundary tests pass; owned database and browser servers stop cleanly.
+
+### 2026-07-21 — P2.3 WordPress reconciliation test gate
+
+- The only implemented inbound WordPress architecture is authenticated scheduled/manual polling; there is no webhook route or webhook claim to test. The audit found two polling data-loss hazards: posts fetched only the first 100 changed rows before advancing the watermark, and a later-page category failure retained a partial snapshot that could falsely deactivate unseen categories.
+- Added one all-or-nothing WordPress pagination contract shared by post and category sync. It fetches every advertised page and discards partial rows on HTTP, network, shape, or JSON failure. Post reconciliation now withholds its watermark after any row failure, so the next bounded run retries the same window; successful rows remain idempotent through the existing `(site, wp_post_id)` identity.
+- Category reconciliation now counts only successful writes and records safe per-row create/update/refresh/deactivation failures. Post, profile, and category cron tasks return 502 on incomplete reports so the existing cron execution controller records failure instead of a false success.
+- Added coverage for multi-page aggregation, partial-page refusal, invalid/network outcomes, post-watermark retention, category no-mutation/write accounting, PL-to-QB profile fallback, missing users, local display-name conflict preservation, and cron success/failure translation.
+- Final gate: 34 Vitest files / 158 tests; coverage increased to 11.81% statements, 10.25% branches, 15.81% functions, and 12.19% lines. All 124 pgTAP assertions, zero-vulnerability audit, ESLint, TypeScript, production build, and three Chromium boundary tests pass; owned database and browser servers stop cleanly.
 
 ## Phase 0 prioritized defect and risk inventory
 

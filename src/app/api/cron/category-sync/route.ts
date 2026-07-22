@@ -24,6 +24,9 @@ async function handle(request: Request) {
     intervalSeconds: 7 * 24 * 60 * 60,
   }, async () => {
     const reports = await syncWpCategoriesForBothSites();
+    if (reports.some((report) => report.errors.length > 0)) {
+      return errorResponse(502, "WordPress category sync incomplete");
+    }
     return NextResponse.json({ ok: true, reports });
   });
 }

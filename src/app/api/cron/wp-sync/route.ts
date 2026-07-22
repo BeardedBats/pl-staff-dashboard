@@ -39,6 +39,9 @@ async function handle(request: Request) {
     }
 
     const reports = await syncWpPostsForBothSites(systemUserId);
+    if (reports.some((report) => report.errors.length > 0)) {
+      return errorResponse(502, "WordPress post sync incomplete");
+    }
     return NextResponse.json({ ok: true, reports });
   });
 }
