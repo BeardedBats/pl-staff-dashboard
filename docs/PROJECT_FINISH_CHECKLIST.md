@@ -1,16 +1,16 @@
 # Pitcher List Staff Content Dashboard — Production Readiness
 
-Last updated: 2026-07-21
+Last updated: 2026-07-22
 
 ## Recovery state
 
-- Current phase: Phase 4 — Role-focused workflow and usability
-- Current action: Phase 4 boundary gate — publish the exact local head, obtain one green GitHub CI run, and verify its single Vercel preview.
-- Branch: `codex/production-readiness-p4`
-- Stack base: `feb4f12` (combined Phase 3 exact head on green draft PR #39, based on the green stacked production-readiness pull requests).
+- Current phase: Phase 5 — WordPress and SEO
+- Current action: P5.3–P5.7 — finish synchronization conflict, staleness, recovery, link/status, validation, and evergreen behavior.
+- Branch: `codex/production-readiness-p5`
+- Stack base: `9115bd6` (combined Phase 4 exact head on green draft PR #40, based on the completed Phase 3 stack).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blockers: production application of the stacked migrations through `0025` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
+- Known blockers: production application of the stacked migrations through `0026` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable. QB WordPress and inbound WordPress webhooks are unconfigured; scheduled PL reconciliation remains available.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -116,8 +116,8 @@ Gate: each role can complete primary work with minimal instruction, and managers
 
 ## Phase 5 — WordPress and SEO
 
-- [ ] P5.1 Verify actual WordPress authentication, REST, content types, taxonomy, author, media, status, and Yoast capabilities.
-- [ ] P5.2 Combine webhooks with scheduled reconciliation.
+- [x] P5.1 Verify actual WordPress authentication, REST, content types, taxonomy, author, media, status, and Yoast capabilities.
+- [x] P5.2 Combine webhooks with scheduled reconciliation.
 - [ ] P5.3 Add idempotency, retries, conflict detection, staleness, and manual recovery.
 - [ ] P5.4 Add preview/edit links and revision/synchronization status.
 - [ ] P5.5 Add prepublication validation.
@@ -649,6 +649,18 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - The first boundary run correctly rejected two stale contracts (missing authorization-matrix rows and a site pill without the Work Sans marker) plus stale Today readiness selectors. Those exact contracts were repaired and rerun before the clean matrix.
 - The writer content-detail performance gate exposed a real layout shift when the asynchronously loaded expanded panel displaced later table rows. Reserving the panel's loading footprint reduced measured CLS from `0.1574` to `0.0041`; the quality artifact now records contributing layout-shift sources for future diagnosis.
 - Local Phase 4 gate: **PASS**. Remaining phase-boundary work is the one exact-head GitHub CI run and one Vercel preview required by the release protocol.
+
+### 2026-07-22 — Phase 4 exact-head boundary gate
+
+- Exact head `9115bd6` passed GitHub Actions run `29891371506`: Application, Database, Dependencies, Browser, all 10 role journeys, and all 40 quality checks are green.
+- The single Vercel preview for draft PR #40 completed successfully against the same head. No evidence-only follow-up commit or duplicate CI run was created.
+
+### 2026-07-22 — P5.1–P5.2 WordPress capability and webhook foundation
+
+- A read-only live Pitcher List probe verified application-password authentication, administrator integration authority, core REST edit-context access, supported post types, taxonomy, authors, media, statuses, and post schema. QB remains explicitly unconfigured.
+- Yoast is installed and exposes reportable `yoast_head` and `yoast_head_json` fields, but does not register writable fields in the core post schema. Dashboard analysis must stay separate from Yoast-reported results, and no Yoast write-back may be claimed without a later supported endpoint probe and intentional before/after approval.
+- Added an optional HMAC-authenticated WordPress webhook that accepts only site/post/event identifiers. It never trusts inbound content; it records a server-only, unique, bounded three-attempt event and triggers the existing authenticated reconciliation path. Duplicate and concurrent completed events do not repeat WordPress work; the five-minute scheduled poll remains the recovery backstop when the webhook or secret is unavailable.
+- Migration `0026_wordpress_sync_recovery.sql` cold-applies through the ordered stack. All 14 database files / 368 pgTAP assertions pass, generated types match, and database lint has no warnings. Targeted webhook unit/API tests, ESLint, and TypeScript pass.
 
 ## Phase 0 prioritized defect and risk inventory
 

@@ -1622,6 +1622,48 @@ export type Database = {
         }
         Relationships: []
       }
+      wordpress_sync_events: {
+        Row: {
+          attempt_count: number
+          completed_at: string | null
+          event_key: string
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          requested_at: string
+          site: string
+          source: string
+          status: string
+          wp_post_id: number
+        }
+        Insert: {
+          attempt_count?: number
+          completed_at?: string | null
+          event_key: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          requested_at?: string
+          site: string
+          source: string
+          status?: string
+          wp_post_id: number
+        }
+        Update: {
+          attempt_count?: number
+          completed_at?: string | null
+          event_key?: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          requested_at?: string
+          site?: string
+          source?: string
+          status?: string
+          wp_post_id?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1651,6 +1693,19 @@ export type Database = {
           p_requested_by: string
         }
         Returns: string
+      }
+      begin_wordpress_sync_event: {
+        Args: {
+          p_event_key: string
+          p_site: string
+          p_source: string
+          p_wp_post_id: number
+        }
+        Returns: {
+          attempt_count: number
+          event_id: string
+          should_process: boolean
+        }[]
       }
       bulk_claim_editor_entries: {
         Args: { p_actor_id: string; p_entry_ids: string[] }
@@ -1741,6 +1796,10 @@ export type Database = {
           p_succeeded: boolean
           p_summary?: Json
         }
+        Returns: boolean
+      }
+      finish_wordpress_sync_event: {
+        Args: { p_error?: string; p_event_id: string; p_succeeded: boolean }
         Returns: boolean
       }
       get_analytics_overview: {

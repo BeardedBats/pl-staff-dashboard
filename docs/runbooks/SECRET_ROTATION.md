@@ -14,6 +14,7 @@ changes affect only new deployments, so every rotation requires a new build.
 | `WP_PL_USERNAME`, `WP_PL_APP_PASSWORD` | PL WordPress credential | Create a dashboard-specific application password, deploy/verify `/users/me` plus a non-destructive REST read, then revoke the old password. |
 | `WP_QB_USERNAME`, `WP_QB_APP_PASSWORD` | QB WordPress credential | Same as PL; if QB is unconfigured, keep all QB fields empty rather than partial. |
 | `WP_PL_URL`, `WP_QB_URL` | Public endpoints | Verify HTTPS and REST identity/capabilities before changing; deploy with the matching credentials. |
+| `WP_WEBHOOK_SECRET` | Optional inbound webhook HMAC secret | Create a random value of at least 32 characters, update the dashboard and WordPress sender in one window, verify one signed disposable event plus replay deduplication, then revoke the old sender value. Leave unset when no sender is configured. |
 | `GA4_CLIENT_ID`, `GA4_CLIENT_SECRET` | Google OAuth client | Create/add the replacement client or secret with the exact callback, deploy, reconnect in Settings > Analytics, sync one bounded day, then retire the old credential. |
 | `GA4_PROPERTY_ID` | Non-secret identifier | Verify the intended property before changing; a wrong value can write valid-looking data for the wrong property. |
 | `CRON_SECRET` | Critical request secret | Update Vercel Cron authentication and application env in the same deployment window; verify one Vercel-shaped request, then invalidate the old value. |
@@ -70,6 +71,15 @@ Create a separate application password in the integration user's WordPress
 profile, update the matching username/password pair, deploy, verify HTTPS REST
 identity/capability and a read-only post/category/profile call, then revoke the
 old application password. Never rotate or share the user's interactive login.
+
+### WordPress webhook HMAC secret
+
+Pause or queue the WordPress sender, deploy the replacement
+`WP_WEBHOOK_SECRET`, update the sender, then send one signed event for a known
+non-destructive draft/status read. Replaying the same event ID must be
+deduplicated. Resume delivery only after the scheduled poll and webhook health
+are both green. Do not place the secret in a URL, payload, browser setting, or
+log field.
 
 ### GA4 OAuth client
 

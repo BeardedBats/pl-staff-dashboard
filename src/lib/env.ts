@@ -41,6 +41,10 @@ const optionalSchema = z.object({
   WP_QB_USERNAME: z.string().optional().or(z.literal("")),
   WP_QB_APP_PASSWORD: z.string().optional().or(z.literal("")),
 
+  // Optional inbound WordPress webhook. Scheduled reconciliation remains
+  // active when this is unset.
+  WP_WEBHOOK_SECRET: z.string().min(32).optional().or(z.literal("")),
+
   // Google Analytics 4
   GA4_CLIENT_ID: z.string().optional().or(z.literal("")),
   GA4_CLIENT_SECRET: z.string().optional().or(z.literal("")),
