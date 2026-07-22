@@ -5,12 +5,12 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 4 — Role-focused workflow and usability
-- Current action: P4.20–P4.22 — finish supported notification delivery, digest controls, and understandable system health.
+- Current action: Phase 4 boundary gate — one complete local suite, exact-head CI run, and Vercel preview.
 - Branch: `codex/production-readiness-p4`
 - Stack base: `feb4f12` (combined Phase 3 exact head on green draft PR #39, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
-- Known blockers: production application of the stacked migrations through `0024` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
+- Known blockers: production application of the stacked migrations through `0025` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -108,9 +108,9 @@ Gate: new feature work can be built entirely from verified PLPD primitives.
 - [x] P4.17 Add asset versioning and Submit, Approve, and Request Changes states.
 - [x] P4.18 Add an asset library with usage and featured-image status.
 - [x] P4.19 Restrict graphics users to relevant information and actions.
-- [ ] P4.20 Implement real supported notification delivery or remove unsupported choices.
-- [ ] P4.21 Add digests, quiet hours, timezone delivery, retry status, and delivery health.
-- [ ] P4.22 Add an understandable system-health page.
+- [x] P4.20 Implement real supported notification delivery or remove unsupported choices.
+- [x] P4.21 Add digests, quiet hours, timezone delivery, retry status, and delivery health.
+- [x] P4.22 Add an understandable system-health page.
 
 Gate: each role can complete primary work with minimal instruction, and managers can identify risks and decisions without raw tables.
 
@@ -629,6 +629,17 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Migration `0024_graphics_review_requirements.sql` was rebuilt from a clean local reset after a pre-commit trigger-column defect was caught. The final stack through `0024` cold-applies, generated types match, database lint has no warnings, and all 12 database files / 341 pgTAP assertions pass.
 - Targeted verification: 9 graphics unit tests, 3 upload API tests, ESLint, TypeScript, and two production-Chromium quality journeys pass. The browser gate covers complete brief display, required form fields, the focused asset view, least-information response fields, and WCAG A/AA scanning with no exclusions.
 - React review: workflow state remains local to each card/dialog, remote refresh remains parent-owned, version history loads only on explicit demand, stable database IDs key every list, and no new effect-based request waterfall or broad client boundary was introduced.
+
+### 2026-07-22 — P4.20–P4.22 notification and health batch
+
+- Kept the previously verified delivery boundary: the dashboard offers durable in-app notifications only, and exposes no email or Discord settings or success flags. Event-level role defaults and personal opt-outs remain intact.
+- Added immediate or daily-batch delivery, a staff-local batch time, and optional local quiet hours. Visibility is calculated from the staff member's saved IANA timezone; held notifications remain private and unread until their scheduled time, and “mark all read” cannot consume future items.
+- Delivery writes use one stable notification ID across a bounded three-attempt retry. Dedupe keys remain authoritative, the successful attempt count is stored, and exhausted failures continue into sanitized active operational alerts.
+- Preference rows and delivery settings now replace atomically through a server-only transaction. Database constraints reject unsupported modes, incomplete quiet-hour pairs, invalid events, and retry counts outside the supported bound; authenticated clients cannot execute the RPC directly.
+- Expanded System health with a plain-language overall summary and in-app delivery health showing scheduled items, active failure alerts, and one concrete recovery action. Existing cron, WordPress, GA4, Raptive, and alert detail remains available.
+- Migration `0025_notification_delivery_controls.sql` cold-applies through the full ordered stack. All 13 database files / 358 pgTAP assertions pass, generated types match, and database lint reports no warnings.
+- Targeted verification: 9 notification scheduling/delivery contract tests, the operational-health component test, ESLint, TypeScript, and two production-Chromium journeys pass. The browser gate saves and reloads real daily/quiet-hour settings, proves fake external choices remain absent, renders delivery health, and completes WCAG A/AA scanning with no exclusions.
+- React review: delivery form state is local and persisted in one request; no effect derives server state, the existing preference load remains cancellation-safe, and no notification polling or per-event save loop was added.
 
 ## Phase 0 prioritized defect and risk inventory
 

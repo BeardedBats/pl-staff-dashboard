@@ -958,9 +958,11 @@ export type Database = {
       }
       notifications: {
         Row: {
+          available_at: string
           body: string | null
           created_at: string
           dedupe_key: string | null
+          delivery_attempts: number
           entry_id: string | null
           id: string
           is_read: boolean
@@ -969,9 +971,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          available_at?: string
           body?: string | null
           created_at?: string
           dedupe_key?: string | null
+          delivery_attempts?: number
           entry_id?: string | null
           id?: string
           is_read?: boolean
@@ -980,9 +984,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          available_at?: string
           body?: string | null
           created_at?: string
           dedupe_key?: string | null
+          delivery_attempts?: number
           entry_id?: string | null
           id?: string
           is_read?: boolean
@@ -1548,6 +1554,10 @@ export type Database = {
           email: string | null
           id: string
           last_wp_sync: string | null
+          notification_delivery_mode: string
+          notification_digest_time: string
+          notification_quiet_end: string | null
+          notification_quiet_start: string | null
           onboarding_completed: boolean
           theme: string
           timezone: string
@@ -1571,6 +1581,10 @@ export type Database = {
           email?: string | null
           id?: string
           last_wp_sync?: string | null
+          notification_delivery_mode?: string
+          notification_digest_time?: string
+          notification_quiet_end?: string | null
+          notification_quiet_start?: string | null
           onboarding_completed?: boolean
           theme?: string
           timezone?: string
@@ -1594,6 +1608,10 @@ export type Database = {
           email?: string | null
           id?: string
           last_wp_sync?: string | null
+          notification_delivery_mode?: string
+          notification_digest_time?: string
+          notification_quiet_end?: string | null
+          notification_quiet_start?: string | null
           onboarding_completed?: boolean
           theme?: string
           timezone?: string
@@ -1789,6 +1807,17 @@ export type Database = {
       }
       release_graphic_submission: {
         Args: { p_request_id: string; p_submission_token: string }
+        Returns: boolean
+      }
+      replace_notification_preferences: {
+        Args: {
+          p_delivery_mode: string
+          p_digest_time: string
+          p_preferences: Json
+          p_quiet_end: string
+          p_quiet_start: string
+          p_user_id: string
+        }
         Returns: boolean
       }
       resolve_operational_alert: {

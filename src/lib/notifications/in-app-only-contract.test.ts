@@ -25,18 +25,26 @@ describe("in-app-only notification contract", () => {
       event_type: "mention",
       in_app_enabled: true,
     } as const;
+    const delivery_settings = {
+      mode: "immediate",
+      digest_time: "09:00",
+      quiet_hours_start: null,
+      quiet_hours_end: null,
+    } as const;
 
     expect(
-      updatePreferencesSchema.safeParse({ preferences: [preference] }).success,
+      updatePreferencesSchema.safeParse({ preferences: [preference], delivery_settings }).success,
     ).toBe(true);
     expect(
       updatePreferencesSchema.safeParse({
         preferences: [{ ...preference, discord_enabled: true }],
+        delivery_settings,
       }).success,
     ).toBe(false);
     expect(
       updatePreferencesSchema.safeParse({
         preferences: [{ ...preference, email_enabled: true }],
+        delivery_settings,
       }).success,
     ).toBe(false);
   });

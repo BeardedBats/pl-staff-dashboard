@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0024_graphics_review_requirements.sql`. The
-current application stack depends on migrations `0013`–`0024`; apply those
+`0001_initial_schema.sql` through `0025_notification_delivery_controls.sql`. The
+current application stack depends on migrations `0013`–`0025`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,7 +44,7 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0024_graphics_review_requirements.sql`. Apply once:
+`0025_notification_delivery_controls.sql`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -129,6 +129,32 @@ COMMIT;
 
 After application deployment, do not reverse `0024`; deploy a compatible forward migration or restore the database and application together.
 
+### Migration 0025 contingency
+
+Migration `0025` adds in-app notification scheduling, bounded attempt metadata, and an atomic preference/settings transaction. A failed apply must leave no partial columns or function. After a successful apply, prefer a forward repair because the Phase 4 application reads the scheduling fields.
+
+Only before the Phase 4 application is deployed, and only after a verified backup, the release operator may reverse `0025` in one transaction:
+
+```sql
+BEGIN;
+DROP FUNCTION IF EXISTS public.replace_notification_preferences(uuid, jsonb, text, time, time, time);
+DROP INDEX IF EXISTS public.idx_notifications_user_available;
+ALTER TABLE public.notifications
+  DROP CONSTRAINT IF EXISTS notifications_delivery_attempts_check,
+  DROP COLUMN IF EXISTS delivery_attempts,
+  DROP COLUMN IF EXISTS available_at;
+ALTER TABLE public.users
+  DROP CONSTRAINT IF EXISTS users_notification_quiet_pair_check,
+  DROP CONSTRAINT IF EXISTS users_notification_delivery_mode_check,
+  DROP COLUMN IF EXISTS notification_quiet_end,
+  DROP COLUMN IF EXISTS notification_quiet_start,
+  DROP COLUMN IF EXISTS notification_digest_time,
+  DROP COLUMN IF EXISTS notification_delivery_mode;
+COMMIT;
+```
+
+After application deployment, do not reverse `0025`; deploy a compatible forward migration or restore the database and application together.
+
 ## Stop conditions
 
 - Production DB access is absent. Management access that only lists backups is
@@ -153,6 +179,10 @@ After application deployment, do not reverse `0024`; deploy a compatible forward
   `submit_graphic_for_review`; a replacement asset clears review state; and a
   WordPress approval lease is impossible until the assigned worker submits the
   current immutable version for review.
+- Notification delivery modes and quiet-hour pairs reject invalid values;
+  authenticated clients cannot execute `replace_notification_preferences`;
+  and one invalid event must roll back both the preference set and delivery
+  settings. Future scheduled items must remain outside unread counts until due.
 - The both-site Admin+ health endpoint loads, all integration probes are
   explainable, and no new critical alert appears.
 - Continue to the [Deployment](./DEPLOYMENT.md) gate; do not reopen release

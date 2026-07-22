@@ -1,8 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { Bell, Check, Loader2 } from "lucide-react";
+import { Bell, Check, Clock3, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   Card,
@@ -18,6 +27,7 @@ import {
   type ChannelPrefs,
   type NotificationEventType,
 } from "@/lib/notifications/defaults";
+import type { NotificationDeliverySettings } from "@/lib/notifications/schedule";
 
 type Props = {
   userId: string;
@@ -27,6 +37,7 @@ type PreferenceMatrix = Record<NotificationEventType, ChannelPrefs>;
 
 export function NotificationPrefsPanel({ userId }: Props) {
   const [prefs, setPrefs] = React.useState<PreferenceMatrix | null>(null);
+  const [delivery, setDelivery] = React.useState<NotificationDeliverySettings | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [savedAt, setSavedAt] = React.useState<Date | null>(null);
@@ -36,8 +47,14 @@ export function NotificationPrefsPanel({ userId }: Props) {
     let cancelled = false;
     fetch(`/api/users/${userId}/notification-prefs`)
       .then((r) => r.json())
-      .then((data: { preferences: PreferenceMatrix }) => {
-        if (!cancelled) setPrefs(data.preferences);
+      .then((data: {
+        preferences: PreferenceMatrix;
+        deliverySettings: NotificationDeliverySettings;
+      }) => {
+        if (!cancelled) {
+          setPrefs(data.preferences);
+          setDelivery(data.deliverySettings);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -63,7 +80,11 @@ export function NotificationPrefsPanel({ userId }: Props) {
   }
 
   async function save() {
-    if (!prefs) return;
+    if (!prefs || !delivery) return;
+    if (Boolean(delivery.quiet_hours_start) !== Boolean(delivery.quiet_hours_end)) {
+      setError("Set both quiet-hour times, or leave both blank.");
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -76,7 +97,15 @@ export function NotificationPrefsPanel({ userId }: Props) {
       const res = await fetch(`/api/users/${userId}/notification-prefs`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ preferences }),
+        body: JSON.stringify({
+          preferences,
+          delivery_settings: {
+            mode: delivery.mode,
+            digest_time: delivery.digest_time.slice(0, 5),
+            quiet_hours_start: delivery.quiet_hours_start?.slice(0, 5) ?? null,
+            quiet_hours_end: delivery.quiet_hours_end?.slice(0, 5) ?? null,
+          },
+        }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -91,7 +120,7 @@ export function NotificationPrefsPanel({ userId }: Props) {
     }
   }
 
-  if (loading || !prefs) {
+  if (loading || !prefs || !delivery) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-10">
@@ -103,6 +132,83 @@ export function NotificationPrefsPanel({ userId }: Props) {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock3 className="h-4 w-4" />
+            Delivery schedule
+          </CardTitle>
+          <CardDescription>
+            Notifications are delivered only inside this dashboard. Choose immediate delivery or a daily batch in your {delivery.timezone} timezone. Failed database writes retry up to three times and appear in System health for administrators.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="notification-delivery-mode">Delivery</Label>
+            <Select
+              value={delivery.mode}
+              onValueChange={(mode) =>
+                setDelivery((current) =>
+                  current
+                    ? { ...current, mode: mode as NotificationDeliverySettings["mode"] }
+                    : current,
+                )
+              }
+            >
+              <SelectTrigger id="notification-delivery-mode">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="immediate">Immediately</SelectItem>
+                <SelectItem value="daily_digest">Daily batch</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="notification-digest-time">Daily batch time</Label>
+            <Input
+              id="notification-digest-time"
+              type="time"
+              value={delivery.digest_time.slice(0, 5)}
+              onChange={(event) =>
+                setDelivery({ ...delivery, digest_time: event.target.value })
+              }
+              disabled={delivery.mode !== "daily_digest"}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="notification-quiet-start">Quiet hours start</Label>
+            <Input
+              id="notification-quiet-start"
+              type="time"
+              value={delivery.quiet_hours_start?.slice(0, 5) ?? ""}
+              onChange={(event) =>
+                setDelivery({
+                  ...delivery,
+                  quiet_hours_start: event.target.value || null,
+                })
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="notification-quiet-end">Quiet hours end</Label>
+            <Input
+              id="notification-quiet-end"
+              type="time"
+              value={delivery.quiet_hours_end?.slice(0, 5) ?? ""}
+              onChange={(event) =>
+                setDelivery({
+                  ...delivery,
+                  quiet_hours_end: event.target.value || null,
+                })
+              }
+            />
+          </div>
+          <p className="text-xs text-text-zero md:col-span-2">
+            Leave both quiet-hour fields blank to disable them. Items held for a daily batch or quiet hours remain private and appear together after the scheduled local time.
+          </p>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Notification preferences</CardTitle>

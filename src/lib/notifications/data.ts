@@ -9,6 +9,10 @@ import {
   type NotificationEventType,
 } from "./defaults";
 import type { AppRole } from "@/lib/auth/current-user";
+import {
+  notificationAvailableAt,
+  type NotificationDeliverySettings,
+} from "./schedule";
 
 // --------------------------------------------------------------------------
 // Types
@@ -22,6 +26,8 @@ export type NotificationRow = {
   title: string;
   body: string | null;
   is_read: boolean;
+  available_at: string;
+  delivery_attempts: number;
   created_at: string;
 };
 
@@ -66,7 +72,9 @@ export async function dispatchNotification(
   // 1. Confirm the recipient exists and load their role-based preference.
   const { data: user } = await supabase
     .from("users")
-    .select("id")
+    .select(
+      "id, timezone, notification_delivery_mode, notification_digest_time, notification_quiet_start, notification_quiet_end",
+    )
     .eq("id", input.userId)
     .maybeSingle();
   if (!user) return { ok: false };
@@ -82,7 +90,22 @@ export async function dispatchNotification(
     return { ok: true, deduplicated: false };
   }
 
+  const deliverySettings: NotificationDeliverySettings = {
+    mode: user.notification_delivery_mode as NotificationDeliverySettings["mode"],
+    digest_time: user.notification_digest_time,
+    quiet_hours_start: user.notification_quiet_start,
+    quiet_hours_end: user.notification_quiet_end,
+    timezone: user.timezone || "UTC",
+  };
+  let availableAt: Date;
+  try {
+    availableAt = notificationAvailableAt(new Date(), deliverySettings);
+  } catch {
+    availableAt = new Date();
+  }
+
   const payload = {
+    id: crypto.randomUUID(),
     user_id: input.userId,
     entry_id: input.entryId,
     type: input.type,
@@ -90,22 +113,32 @@ export async function dispatchNotification(
     body: input.body,
     is_read: false,
     dedupe_key: input.dedupeKey ?? null,
+    available_at: availableAt.toISOString(),
   };
-  const { data: inserted, error: insertError } = input.dedupeKey
-    ? await supabase
-        .from("notifications")
-        .upsert(payload, {
-          onConflict: "user_id,dedupe_key",
-          ignoreDuplicates: true,
-        })
-        .select("id")
-        .maybeSingle()
-    : await supabase.from("notifications").insert(payload).select("id").single();
-  if (insertError) return { ok: false };
-  if (input.dedupeKey && !inserted) {
-    return { ok: true, deduplicated: true };
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const attemptPayload = { ...payload, delivery_attempts: attempt };
+    const { data: inserted, error: insertError } = input.dedupeKey
+      ? await supabase
+          .from("notifications")
+          .upsert(attemptPayload, {
+            onConflict: "user_id,dedupe_key",
+            ignoreDuplicates: true,
+          })
+          .select("id")
+          .maybeSingle()
+      : await supabase
+          .from("notifications")
+          .upsert(attemptPayload, { onConflict: "id" })
+          .select("id")
+          .single();
+    if (!insertError) {
+      return {
+        ok: true,
+        deduplicated: Boolean(input.dedupeKey && !inserted),
+      };
+    }
   }
-  return { ok: true, deduplicated: false };
+  return { ok: false };
 }
 
 /**
@@ -177,9 +210,10 @@ export async function listNotificationsForUser(
   let query = supabase
     .from("notifications")
     .select(
-      "id, user_id, entry_id, type, title, body, is_read, created_at",
+      "id, user_id, entry_id, type, title, body, is_read, available_at, delivery_attempts, created_at",
     )
     .eq("user_id", userId)
+    .lte("available_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -192,6 +226,7 @@ export async function listNotificationsForUser(
     .from("notifications")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
+    .lte("available_at", new Date().toISOString())
     .eq("is_read", false);
 
   return {
@@ -223,10 +258,12 @@ export async function setReadStatus(
 }
 
 export async function markAllRead(userId: string): Promise<boolean> {
+  const now = new Date().toISOString();
   const { error } = await getSupabaseAdmin()
     .from("notifications")
     .update({ is_read: true })
     .eq("user_id", userId)
+    .lte("available_at", now)
     .eq("is_read", false);
   return !error;
 }
@@ -266,6 +303,26 @@ export async function getPreferencesForUser(
   return merged;
 }
 
+export async function getDeliverySettingsForUser(
+  userId: string,
+): Promise<NotificationDeliverySettings | null> {
+  const { data } = await getSupabaseAdmin()
+    .from("users")
+    .select(
+      "timezone, notification_delivery_mode, notification_digest_time, notification_quiet_start, notification_quiet_end",
+    )
+    .eq("id", userId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    mode: data.notification_delivery_mode as NotificationDeliverySettings["mode"],
+    digest_time: data.notification_digest_time,
+    quiet_hours_start: data.notification_quiet_start,
+    quiet_hours_end: data.notification_quiet_end,
+    timezone: data.timezone || "UTC",
+  };
+}
+
 export const updatePreferencesSchema = z.object({
   preferences: z.array(
     z.object({
@@ -273,6 +330,21 @@ export const updatePreferencesSchema = z.object({
       in_app_enabled: z.boolean(),
     }).strict(),
   ),
+  delivery_settings: z
+    .object({
+      mode: z.enum(["immediate", "daily_digest"]),
+      digest_time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+      quiet_hours_start: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+      quiet_hours_end: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+    })
+    .refine(
+      (value) =>
+        (value.quiet_hours_start === null && value.quiet_hours_end === null) ||
+        (value.quiet_hours_start !== null &&
+          value.quiet_hours_end !== null &&
+          value.quiet_hours_start !== value.quiet_hours_end),
+      { message: "Quiet hours require different start and end times" },
+    ),
 }).strict();
 
 export async function setPreferencesForUser(
@@ -281,27 +353,16 @@ export async function setPreferencesForUser(
     event_type: NotificationEventType;
     in_app_enabled: boolean;
   }>,
+  settings: z.infer<typeof updatePreferencesSchema>["delivery_settings"],
 ): Promise<boolean> {
   const supabase = getSupabaseAdmin();
-
-  // Upsert each row — the (user_id, event_type) unique index means we can't
-  // batch-replace atomically without delete-then-insert. Delete first for
-  // simplicity; the caller already holds the full intended state.
-  await supabase
-    .from("notification_preferences")
-    .delete()
-    .eq("user_id", userId);
-
-  if (prefs.length === 0) return true;
-
-  const rows = prefs.map((p) => ({
-    user_id: userId,
-    event_type: p.event_type,
-    in_app_enabled: p.in_app_enabled,
-  }));
-
-  const { error } = await supabase
-    .from("notification_preferences")
-    .insert(rows);
+  const { error } = await supabase.rpc("replace_notification_preferences", {
+    p_user_id: userId,
+    p_preferences: prefs,
+    p_delivery_mode: settings.mode,
+    p_digest_time: settings.digest_time,
+    p_quiet_start: settings.quiet_hours_start as string,
+    p_quiet_end: settings.quiet_hours_end as string,
+  });
   return !error;
 }
