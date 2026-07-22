@@ -70,6 +70,7 @@ import type {
 } from "@/lib/entries/queries";
 import type { AppSite } from "@/lib/auth/current-user";
 import type { SavedViewRecord } from "@/lib/views/data";
+import { readApiError } from "@/lib/api/client";
 
 // --------------------------------------------------------------------------
 // Filter state
@@ -148,6 +149,7 @@ export function EntriesTable({
   const [views, setViews] = React.useState<SavedViewRecord[]>(initialViews);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [bulkBusy, setBulkBusy] = React.useState(false);
+  const [bulkError, setBulkError] = React.useState<string | null>(null);
   const isMobile = useIsMobile();
   const tableContainerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -252,17 +254,23 @@ export function EntriesTable({
 
   async function runBulk(body: Record<string, unknown>) {
     setBulkBusy(true);
+    setBulkError(null);
     try {
       const res = await fetch("/api/entries/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...body, entry_ids: selectedIds }),
       });
-      if (res.ok) {
-        setRowSelection({});
-        setFilters((f) => ({ ...f })); // re-fetch
-        router.refresh();
+      if (!res.ok) {
+        setBulkError(await readApiError(res, "Bulk update failed"));
+        return;
       }
+
+      setRowSelection({});
+      setFilters((f) => ({ ...f })); // re-fetch
+      router.refresh();
+    } catch {
+      setBulkError("Bulk update failed. Check your connection and try again.");
     } finally {
       setBulkBusy(false);
     }
@@ -346,10 +354,11 @@ export function EntriesTable({
 
       {/* Bulk actions bar */}
       {selectedCount > 0 ? (
-        <div className="flex items-center gap-3 rounded-md border border-cyan/30 bg-cyan-dim/20 px-4 py-2 text-xs">
-          <span className="font-medium text-text-cell">
-            {selectedCount} selected
-          </span>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 rounded-md border border-cyan/30 bg-cyan-dim/20 px-4 py-2 text-xs">
+            <span className="font-medium text-text-cell">
+              {selectedCount} selected
+            </span>
           <Button
             variant="outline"
             size="sm"
@@ -429,16 +438,28 @@ export function EntriesTable({
               Change tier
             </Button>
           </div>
-          <div className="ml-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setRowSelection({})}
-            >
-              <X className="h-3 w-3" />
-              Clear
-            </Button>
+            <div className="ml-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setRowSelection({});
+                  setBulkError(null);
+                }}
+              >
+                <X className="h-3 w-3" />
+                Clear
+              </Button>
+            </div>
           </div>
+          {bulkError ? (
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+            >
+              {bulkError}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

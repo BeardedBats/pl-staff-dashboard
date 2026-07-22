@@ -5,10 +5,10 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.8 — Apply the locally verified invariant migration to production
-- Branch: `codex/production-readiness`
-- HEAD: `dbab5c2b6c101ba2ef675cb43fed8193fe408eec`
-- Upstream baseline: `origin/main` at the same merge commit after PR #8.
+- Current action: P1.8/P1.9 — Apply verified migrations when DDL access arrives; continue independent P1.10 work
+- Branch: `codex/production-readiness-p1-9`
+- Stack base: `a415b500c5c9919a0aa4571f5474813b6aaf4d9f` (green draft PR #9).
+- Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
@@ -41,7 +41,7 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [x] P1.6 Standardize request and response validation using shared schemas and safe, user-facing error handling.
 - [x] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow.
 - [ ] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants. — LOCAL GATE PASSED; PRODUCTION APPLY BLOCKED ON SUPABASE DDL ACCESS
-- [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops.
+- [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
 - [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules.
 - [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization.
 - [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability.
@@ -296,6 +296,14 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Season activation now uses a service-role-only RPC. A transaction-scoped table lock serializes manual and cron activations, while the partial unique index enforces at most one active mode. A deterministic two-connection probe ended with both calls successful and exactly one final active mode.
 - Cold migration reset applied `0001`–`0013`; 41 pgTAP hostile probes passed; generated types matched; Supabase database lint reported no errors; 9 Vitest files / 35 tests, ESLint, TypeScript, and the Next.js production build passed.
 - Production apply is blocked on credentials, not implementation: the Supabase CLI reports no access token, `db push` has no linked database/password, the Management API requires a bearer token with database-write permission, and the service-role data key cannot perform DDL. No unsupported endpoint or privilege bypass was attempted.
+
+### 2026-07-21 — P1.9 transactional bulk operations local gate
+
+- Replaced the bulk-create dialog's 1–25 parallel HTTP requests with one manager-scoped endpoint and one service-role-only database transaction. Entry rows, seeded checklists, initial authors, creation audits, and recent-activity initialization now commit or roll back together. Single-entry creation uses the same transaction instead of retaining a second partial-write path.
+- Replaced bulk entry update plus asynchronous per-row audit fan-out with one locked transaction. Archive, unarchive, priority, and tier changes audit real before/after values and report only changed rows; repeated no-op actions do not create false audits.
+- Tier changes delete/reseed only incomplete checklist rows. If any selected entry has completed checklist work, the full selection is rejected with `409 CONFLICT`; the UI preserves selection and displays the safe error instead of deleting completion history.
+- Bulk creation is now hidden from non-manager users and only offers sites the viewer can manage. Both RPCs revoke execution from public/anon/authenticated roles and grant only `service_role`.
+- Migration `0014_transactional_bulk_entries.sql` passed a cold reset. Its 39 pgTAP probes deliberately inject invalid assignees, cross-site categories, duplicate authors, missing entries, bad actors/audit foreign keys, duplicate targets, and completed checklist conflicts; every rollback assertion passed. Combined database suite: 80 probes. Application gate: 10 Vitest files / 41 tests, generated-type drift check, database lint, ESLint, TypeScript, and Next.js production build passed.
 
 ## Phase 0 prioritized defect and risk inventory
 
