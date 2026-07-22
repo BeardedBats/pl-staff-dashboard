@@ -61,7 +61,8 @@ describe("PLPD component contract", () => {
     }
     expect(documentation).toContain("no real-value prop");
     expect(documentation).toContain("stand-in loading bars are excluded");
-    expect(documentation).toContain("P3.8");
+    expect(documentation).toContain("PLPD_NEVER_LIST.md");
+    expect(documentation).toContain("P3.9");
   });
 
   it("composes exact guide constructions through named helpers", () => {

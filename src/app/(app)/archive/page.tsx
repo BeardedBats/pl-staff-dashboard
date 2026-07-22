@@ -364,7 +364,7 @@ function ArchivedTable({
                     </span>
                   </div>
                 ) : (
-                  <span className="text-xs italic text-text-zero">—</span>
+                  <span className="text-xs text-text-zero">—</span>
                 )}
               </td>
               <td className="px-3 py-3 align-top">
@@ -381,7 +381,7 @@ function ArchivedTable({
               <td className="px-3 py-3 align-top">
                 <span className="line-clamp-2 max-w-md text-xs text-text-team">
                   {entry.archive_reason ?? (
-                    <span className="italic text-text-zero">—</span>
+                    <span className="text-text-zero">—</span>
                   )}
                 </span>
               </td>
@@ -472,7 +472,7 @@ function HistoricalTable({
                     </span>
                   </div>
                 ) : (
-                  <span className="text-xs italic text-text-zero">—</span>
+                  <span className="text-xs text-text-zero">—</span>
                 )}
               </td>
               <td className="px-3 py-3 align-top">
@@ -485,7 +485,7 @@ function HistoricalTable({
               </td>
               <td className="px-3 py-3 align-top text-xs text-text-team">
                 {entry.category?.name ?? (
-                  <span className="italic text-text-zero">—</span>
+                  <span className="text-text-zero">—</span>
                 )}
               </td>
               <td className="px-3 py-3 align-top">
@@ -500,7 +500,7 @@ function HistoricalTable({
                     Open
                   </a>
                 ) : (
-                  <span className="text-xs italic text-text-zero">—</span>
+                  <span className="text-xs text-text-zero">—</span>
                 )}
               </td>
             </tr>

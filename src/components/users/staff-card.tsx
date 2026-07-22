@@ -38,7 +38,7 @@ export function StaffCard({ user }: { user: StaffUserSummary }) {
               ) : null}
             </p>
           ) : (
-            <p className="mt-0.5 text-xs italic text-text-zero">No team</p>
+            <p className="mt-0.5 text-xs text-text-zero">No team</p>
           )}
           {user.bio ? (
             <p className="mt-2 line-clamp-2 text-xs text-text-team">

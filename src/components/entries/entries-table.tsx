@@ -850,7 +850,7 @@ function EntriesToolbar({
                 </Button>
               </div>
               {views.length === 0 ? (
-                <p className="text-xs italic text-text-zero">
+                <p className="text-xs text-text-zero">
                   No saved views yet. Set some filters, then click &quot;Save
                   current&quot; to remember this configuration.
                 </p>
@@ -1106,7 +1106,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       cell: ({ row }) => {
         const authors = row.original.authors;
         if (authors.length === 0) {
-          return <span className="text-xs italic text-text-zero">—</span>;
+          return <span className="text-xs text-text-zero">—</span>;
         }
         return (
           <div className="flex items-center gap-1.5">
@@ -1177,7 +1177,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       cell: ({ row }) => {
         const { publish_date, publish_date_precision } = row.original;
         if (!publish_date) {
-          return <span className="text-xs italic text-text-zero">Unscheduled</span>;
+          return <span className="text-xs text-text-zero">Unscheduled</span>;
         }
         const showTime =
           publish_date_precision === "exact" ||
@@ -1206,7 +1206,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
         row.original.category ? (
           <span className="text-xs">{row.original.category.name}</span>
         ) : (
-          <span className="text-xs italic text-text-zero">—</span>
+          <span className="text-xs text-text-zero">—</span>
         ),
     },
     {
@@ -1215,7 +1215,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
       cell: ({ row }) => {
         const { checklist_total, checklist_completed } = row.original;
         if (checklist_total === 0) {
-          return <span className="text-xs italic text-text-zero">—</span>;
+          return <span className="text-xs text-text-zero">—</span>;
         }
         const pct = Math.round(
           (checklist_completed / checklist_total) * 100,

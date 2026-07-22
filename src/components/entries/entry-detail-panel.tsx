@@ -789,7 +789,7 @@ function PipelineTab({
             ) : null}
           </div>
           {graphicRequests.length === 0 ? (
-            <p className="rounded-md border border-dashed border-border bg-card/50 p-3 text-center text-xs italic text-text-zero">
+            <p className="rounded-md border border-dashed border-border bg-card/50 p-3 text-center text-xs text-text-zero">
               No graphic requests yet. Click &quot;Request&quot; to add one.
             </p>
           ) : (
@@ -1046,7 +1046,7 @@ function TrackSummary({
           ))}
         </ul>
       ) : (
-        <p className="text-xs italic text-text-zero">{emptyText}</p>
+        <p className="text-xs text-text-zero">{emptyText}</p>
       )}
     </div>
   );

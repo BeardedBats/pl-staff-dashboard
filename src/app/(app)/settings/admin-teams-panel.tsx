@@ -305,7 +305,7 @@ function TeamDetailPanel({
             Members
           </h4>
           {team.members.length === 0 ? (
-            <p className="italic text-text-zero">No members yet.</p>
+            <p className="text-text-zero">No members yet.</p>
           ) : (
             <ul className="divide-y divide-border rounded-md border border-border">
               {team.members.map((m) => (

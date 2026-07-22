@@ -102,7 +102,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
             Claim requests ({claims.length})
           </h4>
           {claims.length === 0 ? (
-            <p className="rounded-md border border-dashed border-border bg-card/50 p-4 text-center text-xs italic text-text-zero">
+            <p className="rounded-md border border-dashed border-border bg-card/50 p-4 text-center text-xs text-text-zero">
               No pending claim requests.
             </p>
           ) : (
@@ -171,7 +171,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
             Archive requests ({archives.length})
           </h4>
           {archives.length === 0 ? (
-            <p className="rounded-md border border-dashed border-border bg-card/50 p-4 text-center text-xs italic text-text-zero">
+            <p className="rounded-md border border-dashed border-border bg-card/50 p-4 text-center text-xs text-text-zero">
               No pending archive requests.
             </p>
           ) : (

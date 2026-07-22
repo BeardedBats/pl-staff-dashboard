@@ -101,7 +101,11 @@ export function PipelineHealthWidget({ health }: { health: PipelineHealth }) {
             </div>
           );
           return r.href ? (
-            <Link key={r.label} href={r.href} className="hover:opacity-80">
+            <Link
+              key={r.label}
+              href={r.href}
+              className="transition-[filter] hover:brightness-110"
+            >
               {inner}
             </Link>
           ) : (

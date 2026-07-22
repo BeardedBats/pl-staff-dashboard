@@ -149,7 +149,7 @@ export function AdminUsersPanel({
                         </p>
                         <p className="truncate font-data text-[10px] text-text-zero">
                           {user.email ?? (
-                            <span className="italic">pending first login</span>
+                            <span>pending first login</span>
                           )}
                         </p>
                       </div>
@@ -167,7 +167,7 @@ export function AdminUsersPanel({
                   </td>
                   <td className="px-3 py-2 text-text-team">
                     {user.primary_team?.team_name ?? (
-                      <span className="italic text-text-zero">none</span>
+                      <span className="text-text-zero">none</span>
                     )}
                   </td>
                   <td
@@ -198,7 +198,7 @@ export function AdminUsersPanel({
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-3 py-6 text-center text-sm italic text-text-zero"
+                    className="px-3 py-6 text-center text-sm text-text-zero"
                   >
                     No users match your search.
                   </td>

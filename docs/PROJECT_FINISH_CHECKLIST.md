@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 3 — PLPD design-system foundation
-- Current action: P3.8 — Remove Never List violations.
-- Branch: `codex/production-readiness-p3-7`
-- Stack base: `e6695be` (P3.6 exact-evidence head on green draft PR #35, based on the green stacked production-readiness pull requests).
+- Current action: P3.9 — Create responsive desktop, tablet, and mobile behavior without inventing new brand colors or visual language.
+- Branch: `codex/production-readiness-p3-8`
+- Stack base: `e077dbc` (P3.7 exact-evidence head on green draft PR #36, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -80,7 +80,7 @@ Gate: a clean checkout can prove correctness in CI, and production failures are 
 - [x] P3.5 Implement all required component states: default, hover, active, loading, error, empty, and gated.
 - [x] P3.6 Ensure gated data is withheld on the server rather than sent to the client and visually blurred.
 - [x] P3.7 Bring tables, numeric alignment, zero styling, row fills, hover behavior, pagination, and data colors into exact guide compliance.
-- [ ] P3.8 Remove Never List violations.
+- [x] P3.8 Remove Never List violations.
 - [ ] P3.9 Create responsive desktop, tablet, and mobile behavior without inventing new brand colors or visual language.
 - [ ] P3.10 Add automated accessibility checks and keyboard/focus verification.
 - [ ] P3.11 Establish screenshot or visual-regression coverage for shared primitives and representative pages.
@@ -553,6 +553,18 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - React review found no new effects, requests, state synchronization, client boundary, or unstable render allocation. The shared primitive props remain colocated and typed; the database fixture is deterministic and cleanup-safe.
 - Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 62 Vitest files / 289 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 19 production-quality checks pass.
 - Clean GitHub run [29882782436](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29882782436) independently passed Application, Database, Dependencies, all 10 Browser journeys, all 19 production-quality checks, and retained quality evidence at implementation head `89cba65`. The Vercel preview passed, and draft PR #36 was clean and mergeable at that tested head.
+- Exact evidence-head run [29883077485](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29883077485) independently passed Application, Database, Dependencies, all 10 Browser journeys, all 19 quality checks, and retained evidence at `e077dbc`; Vercel passed and draft PR #36 remained clean and mergeable.
+
+### 2026-07-21 — P3.8 Never List gate
+
+- Reverified the guide at SHA-256 `DB7CDC395BD380FECA6DBFA0D687D7AB577BF9B9D80D79CF96388A64E804C98B` and mapped all 16 named prohibitions to application-specific enforcement in `docs/PLPD_NEVER_LIST.md`. The mapping distinguishes executable product rules from P3.9's separate viewport/layout validation instead of claiming responsive work early.
+- The audit found and removed 30 italic metadata, null-marker, edited-marker, empty-state, and helper-copy treatments across 13 production files. All application presentation metadata is now upright, and a recursive source gate prohibits reintroducing the italic utility.
+- Replaced the graphics drag overlay's generic `shadow-xl` with the exact canonical PLPD card shadow. Production TSX now rejects generic large/extra-large shadows, raw color/gradient literals, frosted backdrop filters, opaque neutral utility panels, free-form 800/900 weights, and Work Sans headings.
+- Replaced the Pipeline Health link's `hover:opacity-80` fade with a brightness hover. The contract prohibits hover opacity reductions while preserving the guide's exact contained-badge `.88` component-state exception and legitimate hidden-to-visible `opacity-100` action reveals.
+- Pinned the remaining domain rules: no `LEAGUE:` prefix, `Pre` table label, opponent/matchup player copy, centered numeric cells, full-bright zeros, or opacity row states; active tabs remain amber; Import/CTA buttons retain all four borderless shadow-ring layers; `polishing` and `flagged` conflict-equivalent states remain visible, with `flagged` winning aggregate precedence.
+- Two production-Chromium checks prove the real sign-in action computes to the exact borderless gradient/ring/white-fade/inset stack, real Archive metadata is upright, the active tab computes amber 700, and the real Pipeline Health link brightens to 1.1 without losing opacity. Retained Login and Archive captures were visually inspected with intact hierarchy, mesh, table depth, and no clipping or overflow.
+- React review found no new hooks, effects, requests, state, or client boundary. Changes are presentation-only class corrections plus source/browser regression ownership.
+- Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 63 Vitest files / 295 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 21 production-quality checks pass.
 
 ## Phase 0 prioritized defect and risk inventory
 
