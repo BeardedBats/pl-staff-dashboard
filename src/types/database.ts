@@ -313,6 +313,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "comments_parent_entry_fkey"
+            columns: ["parent_id", "entry_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id", "entry_id"]
+          },
+          {
             foreignKeyName: "comments_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: false
@@ -422,6 +429,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "entries_category_site_fkey"
+            columns: ["category_id", "site"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id", "site"]
+          },
+          {
             foreignKeyName: "entries_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -434,6 +448,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "recurring_templates"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entries_series_site_fkey"
+            columns: ["series_id", "site"]
+            isOneToOne: false
+            referencedRelation: "recurring_templates"
+            referencedColumns: ["id", "site"]
           },
           {
             foreignKeyName: "entries_tier_id_fkey"
@@ -1017,6 +1038,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "recurring_templates_category_site_fkey"
+            columns: ["category_id", "site"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id", "site"]
+          },
+          {
             foreignKeyName: "recurring_templates_season_mode_id_fkey"
             columns: ["season_mode_id"]
             isOneToOne: false
@@ -1342,6 +1370,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_season_mode: { Args: { p_mode_id: string }; Returns: boolean }
       get_analytics_overview: {
         Args: {
           p_author_id?: string

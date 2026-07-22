@@ -131,15 +131,27 @@ async function upsertUserFromWp(
   wp: WpUser,
 ): Promise<DbUser | null> {
   const supabase = getSupabaseAdmin();
+  const normalizedEmail = wp.email.trim().toLowerCase();
 
   // 1. Look for an existing user by (wp_user_id, wp_site) OR by email.
   //    An editor who later also writes for QB List might have 'both' as site —
   //    we match on email as the stable identifier.
-  const { data: existing } = await supabase
+  const { data: emailMatch } = await supabase
     .from("users")
     .select("id, wp_site, onboarding_completed, display_name, email")
-    .eq("email", wp.email)
+    .eq("email", normalizedEmail)
     .maybeSingle();
+
+  const { data: identityMatch } = emailMatch
+    ? { data: null }
+    : await supabase
+        .from("users")
+        .select("id, wp_site, onboarding_completed, display_name, email")
+        .eq("wp_user_id", wp.id)
+        .in("wp_site", [site, "both"])
+        .maybeSingle();
+
+  const existing = emailMatch ?? identityMatch;
 
   if (existing) {
     // Merge: if they originally logged in via PL and now hit QB (or vice versa),
@@ -152,6 +164,7 @@ async function upsertUserFromWp(
       .from("users")
       .update({
         wp_site: nextSite,
+        email: normalizedEmail,
         display_name: wp.name,
         avatar_url: wp.avatar_url,
         bio: wp.description || null,
@@ -177,7 +190,7 @@ async function upsertUserFromWp(
     .insert({
       wp_user_id: wp.id,
       wp_site: site,
-      email: wp.email,
+      email: normalizedEmail,
       display_name: wp.name,
       avatar_url: wp.avatar_url,
       bio: wp.description || null,

@@ -96,6 +96,10 @@ export async function updateUserProfile(
 
   const normalized: TablesUpdate<"users"> = {
     ...rest,
+    email:
+      typeof rest.email === "string"
+        ? rest.email.trim().toLowerCase()
+        : rest.email,
     twitter_handle: rest.twitter_handle
       ? rest.twitter_handle.replace(/^@/, "")
       : rest.twitter_handle,
@@ -278,12 +282,24 @@ export async function importWpUser(
   }
 
   const supabase = getSupabaseAdmin();
+  const normalizedEmail = wpUser.email.trim().toLowerCase();
 
-  const { data: existing } = await supabase
+  const { data: emailMatch } = await supabase
     .from("users")
     .select("id, wp_site")
-    .eq("email", wpUser.email)
+    .eq("email", normalizedEmail)
     .maybeSingle();
+
+  const { data: identityMatch } = emailMatch
+    ? { data: null }
+    : await supabase
+        .from("users")
+        .select("id, wp_site")
+        .eq("wp_user_id", wpUser.id)
+        .in("wp_site", [site, "both"])
+        .maybeSingle();
+
+  const existing = emailMatch ?? identityMatch;
 
   if (existing) {
     const currentSite = existing.wp_site as AppSite;
@@ -294,6 +310,7 @@ export async function importWpUser(
       .from("users")
       .update({
         wp_site: nextSite,
+        email: normalizedEmail,
         display_name: wpUser.name,
         avatar_url: wpUser.avatar_url,
         bio: wpUser.description || null,
@@ -309,7 +326,7 @@ export async function importWpUser(
     .insert({
       wp_user_id: wpUser.id,
       wp_site: site,
-      email: wpUser.email,
+      email: normalizedEmail,
       display_name: wpUser.name,
       avatar_url: wpUser.avatar_url,
       bio: wpUser.description || null,

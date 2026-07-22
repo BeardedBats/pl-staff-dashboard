@@ -5,12 +5,12 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 1 — Security, correctness, and data integrity
-- Current action: P1.7 — Restore reliable generated database typing
+- Current action: P1.8 — Apply the locally verified invariant migration to production
 - Branch: `codex/production-readiness`
-- HEAD: `c0deda92819aaf2269c8c41ec384d9ad97b570e1`
-- Upstream baseline: `origin/main` at the same merge commit after PR #7.
-- Deployment: Vercel production status completed successfully from `c0deda9` on 2026-07-21 (`EJnLzUVoGsWnhn4BPzZfnHWV7ZL8`).
-- Known blockers: Vercel project-management access is unavailable; Supabase management CLI access is unavailable; no safe dashboard test-user session is available for live role navigation. These do not block local security implementation and are deferred until their dependent live gates.
+- HEAD: `dbab5c2b6c101ba2ef675cb43fed8193fe408eec`
+- Upstream baseline: `origin/main` at the same merge commit after PR #8.
+- Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
+- Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -39,8 +39,8 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [x] P1.4 Fix graphics, editorial, analytics, administration, and synchronization authorization gaps.
 - [x] P1.5 Reconcile navigation visibility with backend permissions so users never see inaccessible areas or gain access through hidden routes.
 - [x] P1.6 Standardize request and response validation using shared schemas and safe, user-facing error handling.
-- [ ] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow. — IN PROGRESS
-- [ ] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants.
+- [x] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow.
+- [ ] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants. — LOCAL GATE PASSED; PRODUCTION APPLY BLOCKED ON SUPABASE DDL ACCESS
 - [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops.
 - [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules.
 - [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization.
@@ -281,6 +281,21 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Real query typing exposed and closed hidden update/RPC/JSON mismatches in bulk entries, WordPress state/profile sync, analytics, users, and saved views without adding `any` escapes.
 - A read-only OpenAPI comparison found exact parity between the migration-built schema and production: 29 definitions, matching columns, and matching RPC surface with no local-only or remote-only objects.
 - Exact cold workflow passed (`db:stop` → reduced `db:start` → `db:types:check` → `db:stop`). Local gate: 8 Vitest files / 32 tests passed; generated-type check, lint, TypeScript, and Next.js production build all passed.
+
+### 2026-07-21 — P1.7 generated database types production gate
+
+- Commit `b001987` passed the Vercel preview and the new cold database contract job in 3m15s; PR #8 merged as `dbab5c2`; the Vercel production status completed successfully.
+- A disposable global-EIC session exercised the changed runtime boundaries: analytics overview RPC and saved-view JSON create, list, update, and delete all returned HTTP 200 with expected shapes.
+- The disposable view, session, role, and user rows were removed in `finally` cleanup without errors.
+
+### 2026-07-21 — P1.8 verified database invariants local gate
+
+- A privacy-safe, read-only production scan paged every relevant table, including 10,456 entries and 682,811 analytics rows. It found no duplicate identity/email/category/Post/session/workflow keys and no negative metrics. Three duplicate category display names are legitimate because their WordPress IDs differ, and the active season intentionally has a start with no end; neither is constrained.
+- Ten incomplete checklist rows on two entries reference checklist items from an old tier. Their target tiers have no checklist items. The migration does not delete or rewrite them and does not add the still-unsatisfied cross-tier invariant; that cleanup remains a separately recoverable product decision.
+- Migration `0013_verified_database_invariants.sql` adds validated identity/email/Discord, category/post, site-scoped foreign-key, season, session-token, workflow-cardinality, resolution-state, notification-event, range, and nonnegative-metric invariants. Email write paths normalize before lookup/write and recover existing WordPress-identity placeholder rows.
+- Season activation now uses a service-role-only RPC. A transaction-scoped table lock serializes manual and cron activations, while the partial unique index enforces at most one active mode. A deterministic two-connection probe ended with both calls successful and exactly one final active mode.
+- Cold migration reset applied `0001`–`0013`; 41 pgTAP hostile probes passed; generated types matched; Supabase database lint reported no errors; 9 Vitest files / 35 tests, ESLint, TypeScript, and the Next.js production build passed.
+- Production apply is blocked on credentials, not implementation: the Supabase CLI reports no access token, `db push` has no linked database/password, the Management API requires a bearer token with database-write permission, and the service-role data key cannot perform DDL. No unsupported endpoint or privilege bypass was attempted.
 
 ## Phase 0 prioritized defect and risk inventory
 
