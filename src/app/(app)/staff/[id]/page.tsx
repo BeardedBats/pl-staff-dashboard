@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, MapPin, AtSign, Hash } from "lucide-react";
-import {
-  getCurrentUser,
-} from "@/lib/auth/current-user";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { getUserById } from "@/lib/users/queries";
 import { UserAvatar } from "@/components/users/user-avatar";
@@ -15,11 +13,7 @@ import { Separator } from "@/components/ui/separator";
 
 type RouteParams = Promise<{ id: string }>;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: RouteParams;
-}) {
+export async function generateMetadata({ params }: { params: RouteParams }) {
   const { id } = await params;
   const user = await getUserById(id);
   return { title: user?.display_name ?? "Staff member" };
@@ -39,8 +33,7 @@ export default async function StaffMemberPage({
   if (!viewer) return null;
 
   const isSelf = viewer.id === target.id;
-  const isPrivileged =
-    isSelf || isAdminPlusForScope(viewer, target.wp_site);
+  const isPrivileged = isSelf || isAdminPlusForScope(viewer, target.wp_site);
 
   return (
     <div className="space-y-6">
@@ -62,9 +55,9 @@ export default async function StaffMemberPage({
               avatarUrl={target.avatar_url}
               size="xl"
             />
-            <h2 className="mt-4 text-lg font-semibold text-text-cell">
+            <h1 className="mt-4 text-lg font-semibold text-text-cell">
               {target.display_name}
-            </h2>
+            </h1>
             {isPrivileged && target.email ? (
               <p className="mt-1 font-data text-xs text-text-team">
                 {target.email}
@@ -77,15 +70,24 @@ export default async function StaffMemberPage({
 
             <div className="mt-4 flex flex-wrap justify-center gap-1">
               <Badge variant="outline" className="font-data">
-                {target.wp_site === "both" ? "PL + QB" : target.wp_site.toUpperCase()}
+                {target.wp_site === "both"
+                  ? "PL + QB"
+                  : target.wp_site.toUpperCase()}
               </Badge>
               {target.primary_team ? (
-                <Badge variant="cyan" className="font-data">{target.primary_team.team_name}</Badge>
+                <Badge variant="cyan" className="font-data">
+                  {target.primary_team.team_name}
+                </Badge>
               ) : null}
             </div>
 
             {isSelf ? (
-              <Button asChild variant="outline" size="sm" className="mt-6 w-full">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="mt-6 w-full"
+              >
                 <Link href="/settings">Edit profile</Link>
               </Button>
             ) : null}
@@ -178,7 +180,9 @@ export default async function StaffMemberPage({
                           </p>
                         ) : null}
                       </div>
-                      <Badge variant="outline" className="font-data">{t.team_site.toUpperCase()}</Badge>
+                      <Badge variant="outline" className="font-data">
+                        {t.team_site.toUpperCase()}
+                      </Badge>
                       {idx < 0 ? <Separator /> : null}
                     </li>
                   ))}
@@ -209,7 +213,9 @@ function DetailRow({
         {icon}
         <span className="text-xs uppercase tracking-wider">{label}</span>
       </div>
-      <span className="truncate text-text-team">{value}</span>
+      <span className="min-w-0 break-words text-right text-text-team">
+        {value}
+      </span>
     </div>
   );
 

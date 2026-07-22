@@ -144,8 +144,10 @@ export function EntriesTable({
   manageableSites,
 }: EntriesTableProps) {
   const router = useRouter();
-  const [filters, setFilters] = React.useState<EntriesFilterState>(DEFAULT_FILTERS);
-  const [visibility, setVisibility] = React.useState<VisibilityState>(DEFAULT_VISIBILITY);
+  const [filters, setFilters] =
+    React.useState<EntriesFilterState>(DEFAULT_FILTERS);
+  const [visibility, setVisibility] =
+    React.useState<VisibilityState>(DEFAULT_VISIBILITY);
   const [entries, setEntries] = React.useState<EntrySummary[]>([]);
   const [totalCount, setTotalCount] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
@@ -169,11 +171,20 @@ export function EntriesTable({
   }, []);
 
   function applyView(view: SavedViewRecord) {
-    const f = { ...DEFAULT_FILTERS, ...(view.filters as Partial<EntriesFilterState>) };
-    if (view.sort && typeof (view.sort as { sortBy?: string }).sortBy === "string") {
+    const f = {
+      ...DEFAULT_FILTERS,
+      ...(view.filters as Partial<EntriesFilterState>),
+    };
+    if (
+      view.sort &&
+      typeof (view.sort as { sortBy?: string }).sortBy === "string"
+    ) {
       f.sortBy = (view.sort as { sortBy: EntriesFilterState["sortBy"] }).sortBy;
     }
-    if (view.sort && typeof (view.sort as { sortDir?: string }).sortDir === "string") {
+    if (
+      view.sort &&
+      typeof (view.sort as { sortDir?: string }).sortDir === "string"
+    ) {
       f.sortDir = (view.sort as { sortDir: "asc" | "desc" }).sortDir;
     }
     setFilters(f);
@@ -197,8 +208,10 @@ export function EntriesTable({
           if (filters.search) params.set("search", filters.search);
           if (filters.site) params.set("site", filters.site);
           if (filters.tierId) params.set("tierId", filters.tierId);
-          if (filters.contentStatus) params.set("contentStatus", filters.contentStatus);
-          if (filters.editorStatus) params.set("editorStatus", filters.editorStatus);
+          if (filters.contentStatus)
+            params.set("contentStatus", filters.contentStatus);
+          if (filters.editorStatus)
+            params.set("editorStatus", filters.editorStatus);
           if (filters.priority) params.set("priority", filters.priority);
           if (filters.includeArchived) params.set("includeArchived", "true");
           params.set("sortBy", filters.sortBy);
@@ -375,90 +388,87 @@ export function EntriesTable({
       {/* Bulk actions bar */}
       {selectedCount > 0 ? (
         <div className="space-y-2">
-          <div className="flex items-center gap-3 rounded-md border border-cyan/30 bg-cyan-dim/20 px-4 py-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-cyan/30 bg-cyan-dim/20 px-4 py-2 text-xs">
             <span className="font-medium text-text-cell">
               {selectedCount} selected
             </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={bulkBusy}
-            onClick={() => {
-              if (
-                window.confirm(
-                  `Archive ${selectedCount} entries? They'll be soft-deleted and can be restored later.`,
-                )
-              ) {
-                void runBulk({ action: "archive" });
-              }
-            }}
-          >
-            <Archive className="h-3.5 w-3.5" />
-            Archive
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={bulkBusy}
-            onClick={() => {
-              void runBulk({ action: "set_priority", priority: true });
-            }}
-          >
-            <Star className="h-3.5 w-3.5 text-amber" />
-            Set priority
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={bulkBusy}
-            onClick={() => {
-              void runBulk({ action: "set_priority", priority: false });
-            }}
-          >
-            <Star className="h-3.5 w-3.5" />
-            Remove priority
-          </Button>
-          {filters.includeArchived ? (
             <Button
               variant="outline"
               size="sm"
               disabled={bulkBusy}
               onClick={() => {
-                void runBulk({ action: "unarchive" });
+                if (
+                  window.confirm(
+                    `Archive ${selectedCount} entries? They'll be soft-deleted and can be restored later.`,
+                  )
+                ) {
+                  void runBulk({ action: "archive" });
+                }
               }}
             >
-              <Archive className="h-3.5 w-3.5 text-cyan" />
-              Unarchive
+              <Archive className="h-3.5 w-3.5" />
+              Archive
             </Button>
-          ) : null}
-          <div className="flex items-center gap-1.5">
-            <Select
-              value={bulkTierId}
-              onValueChange={setBulkTierId}
-            >
-              <SelectTrigger className="h-8 w-[140px] text-xs">
-                <SelectValue placeholder="Pick tier…" />
-              </SelectTrigger>
-              <SelectContent>
-                {tiers.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name} — {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button
               variant="outline"
               size="sm"
-              disabled={bulkBusy || !bulkTierId}
+              disabled={bulkBusy}
               onClick={() => {
-                void runBulk({ action: "change_tier", tier_id: bulkTierId });
+                void runBulk({ action: "set_priority", priority: true });
               }}
             >
-              Change tier
+              <Star className="h-3.5 w-3.5 text-amber" />
+              Set priority
             </Button>
-          </div>
-            <div className="ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={bulkBusy}
+              onClick={() => {
+                void runBulk({ action: "set_priority", priority: false });
+              }}
+            >
+              <Star className="h-3.5 w-3.5" />
+              Remove priority
+            </Button>
+            {filters.includeArchived ? (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={bulkBusy}
+                onClick={() => {
+                  void runBulk({ action: "unarchive" });
+                }}
+              >
+                <Archive className="h-3.5 w-3.5 text-cyan" />
+                Unarchive
+              </Button>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Select value={bulkTierId} onValueChange={setBulkTierId}>
+                <SelectTrigger className="h-8 w-[140px] text-xs">
+                  <SelectValue placeholder="Pick tier…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiers.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name} — {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={bulkBusy || !bulkTierId}
+                onClick={() => {
+                  void runBulk({ action: "change_tier", tier_id: bulkTierId });
+                }}
+              >
+                Change tier
+              </Button>
+            </div>
+            <div className="sm:ml-auto">
               <Button
                 variant="ghost"
                 size="sm"
@@ -519,7 +529,8 @@ export function EntriesTable({
                     className={cn(
                       "w-full rounded-lg border border-border bg-card p-3 text-left transition-colors",
                       isExpanded && "border-cyan/40 bg-surface-3/50",
-                      entry.content_status === "writer_needed" && "border-amber/30",
+                      entry.content_status === "writer_needed" &&
+                        "border-amber/30",
                     )}
                     onClick={() => setExpandedId(isExpanded ? null : entry.id)}
                   >
@@ -528,22 +539,30 @@ export function EntriesTable({
                         <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber" />
                       ) : null}
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-text-cell">
+                        <p className="break-words text-sm font-medium text-text-cell">
                           {entry.title}
                         </p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <ContentStatusBadge status={entry.content_status} />
                           <EditorStatusBadge status={entry.editor_status} />
-                          <Badge variant="outline" className="font-data text-[9px]">
+                          <Badge
+                            variant="outline"
+                            className="font-data text-[9px]"
+                          >
                             {entry.site.toUpperCase()}
                           </Badge>
-                          <Badge variant="outline" className="font-data text-[9px]">
+                          <Badge
+                            variant="outline"
+                            className="font-data text-[9px]"
+                          >
                             {entry.tier.name}
                           </Badge>
                         </div>
                         {entry.publish_date ? (
                           <p className="mt-1 text-[10px] text-text-zero">
-                            {formatDate(entry.publish_date, { dateStyle: "medium" })}
+                            {formatDate(entry.publish_date, {
+                              dateStyle: "medium",
+                            })}
                           </p>
                         ) : null}
                       </div>
@@ -599,8 +618,7 @@ export function EntriesTable({
                   <th className="w-8 px-2 py-2">
                     <Checkbox
                       checked={
-                        entries.length > 0 &&
-                        table.getIsAllRowsSelected()
+                        entries.length > 0 && table.getIsAllRowsSelected()
                       }
                       onCheckedChange={(checked) =>
                         table.toggleAllRowsSelected(Boolean(checked))
@@ -707,7 +725,9 @@ export function EntriesTable({
                         {row.getVisibleCells().map((cell) => (
                           <td
                             key={cell.id}
-                            data-numeric={NUMERIC_COLUMN_IDS.has(cell.column.id)}
+                            data-numeric={NUMERIC_COLUMN_IDS.has(
+                              cell.column.id,
+                            )}
                             className="px-3 py-3 align-top"
                           >
                             {flexRender(
@@ -752,7 +772,8 @@ export function EntriesTable({
             </span>
           ) : (
             <>
-              {entries.length} of {totalCount} {totalCount === 1 ? "entry" : "entries"}
+              {entries.length} of {totalCount}{" "}
+              {totalCount === 1 ? "entry" : "entries"}
             </>
           )}
         </span>
@@ -816,8 +837,8 @@ function EntriesToolbar({
   return (
     <div className="space-y-3 rounded-lg border border-border bg-card p-3">
       {/* Row 1 — search + create */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+        <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-zero" />
           <Input
             value={filters.search}
@@ -827,116 +848,121 @@ function EntriesToolbar({
           />
         </div>
 
-        {/* Saved views */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Star className="h-3.5 w-3.5" />
-              Views
-              {views.length > 0 ? (
-                <Badge variant="outline" className="ml-1">
-                  {views.length}
-                </Badge>
-              ) : null}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72" align="end">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold">Saved views</h4>
-                <Button size="sm" variant="ghost" onClick={onSaveView}>
-                  <Save className="h-3.5 w-3.5" />
-                  Save current
-                </Button>
-              </div>
-              {views.length === 0 ? (
-                <p className="text-xs text-text-zero">
-                  No saved views yet. Set some filters, then click &quot;Save
-                  current&quot; to remember this configuration.
-                </p>
-              ) : (
-                <ul className="space-y-1">
-                  {views.map((view) => (
-                    <li
-                      key={view.id}
-                      className="flex items-center justify-between gap-1 rounded-sm px-2 py-1 hover:bg-surface-3"
-                    >
-                      <button
-                        type="button"
-                        className="flex-1 truncate text-left text-sm"
-                        onClick={() => onApplyView(view)}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Saved views */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Star className="h-3.5 w-3.5" />
+                Views
+                {views.length > 0 ? (
+                  <Badge variant="outline" className="ml-1">
+                    {views.length}
+                  </Badge>
+                ) : null}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72" align="end">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold">Saved views</h4>
+                  <Button size="sm" variant="ghost" onClick={onSaveView}>
+                    <Save className="h-3.5 w-3.5" />
+                    Save current
+                  </Button>
+                </div>
+                {views.length === 0 ? (
+                  <p className="text-xs text-text-zero">
+                    No saved views yet. Set some filters, then click &quot;Save
+                    current&quot; to remember this configuration.
+                  </p>
+                ) : (
+                  <ul className="space-y-1">
+                    {views.map((view) => (
+                      <li
+                        key={view.id}
+                        className="flex items-center justify-between gap-1 rounded-sm px-2 py-1 hover:bg-surface-3"
                       >
-                        {view.name}
-                        {view.is_default ? (
-                          <Badge variant="cyan" className="ml-2">
-                            Default
-                          </Badge>
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 break-words text-left text-sm"
+                          onClick={() => onApplyView(view)}
+                        >
+                          {view.name}
+                          {view.is_default ? (
+                            <Badge variant="cyan" className="ml-2">
+                              Default
+                            </Badge>
+                          ) : null}
+                        </button>
+                        {!view.is_default ? (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => onSetDefaultView(view.id)}
+                            title="Set as default"
+                            className="h-6 w-6"
+                          >
+                            <Star className="h-3 w-3" />
+                          </Button>
                         ) : null}
-                      </button>
-                      {!view.is_default ? (
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => onSetDefaultView(view.id)}
-                          title="Set as default"
-                          className="h-6 w-6"
+                          onClick={() => onDeleteView(view.id)}
+                          title="Delete view"
+                          className="h-6 w-6 text-destructive"
                         >
-                          <Star className="h-3 w-3" />
+                          <X className="h-3 w-3" />
                         </Button>
-                      ) : null}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => onDeleteView(view.id)}
-                        title="Delete view"
-                        className="h-6 w-6 text-destructive"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
 
-        {/* Column visibility */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Columns3 className="h-3.5 w-3.5" />
-              Columns
+          {/* Column visibility */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Columns3 className="h-3.5 w-3.5" />
+                Columns
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {ALL_COLUMNS.map((col) => (
+                <DropdownMenuCheckboxItem
+                  key={col.id}
+                  checked={visibility[col.id] !== false}
+                  onCheckedChange={(checked) =>
+                    onVisibilityChange({
+                      ...visibility,
+                      [col.id]: Boolean(checked),
+                    })
+                  }
+                >
+                  {col.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {onBulkCreateClick ? (
+            <Button variant="outline" onClick={onBulkCreateClick}>
+              <Plus className="h-3.5 w-3.5" />
+              Bulk
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {ALL_COLUMNS.map((col) => (
-              <DropdownMenuCheckboxItem
-                key={col.id}
-                checked={visibility[col.id] !== false}
-                onCheckedChange={(checked) =>
-                  onVisibilityChange({ ...visibility, [col.id]: Boolean(checked) })
-                }
-              >
-                {col.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          ) : null}
 
-        {onBulkCreateClick ? (
-          <Button variant="outline" onClick={onBulkCreateClick}>
+          <Button onClick={onCreateClick}>
             <Plus className="h-3.5 w-3.5" />
-            Bulk
+            New entry
           </Button>
-        ) : null}
-
-        <Button onClick={onCreateClick}>
-          <Plus className="h-3.5 w-3.5" />
-          New entry
-        </Button>
+        </div>
       </div>
 
       {/* Row 2 — filter controls */}
@@ -945,7 +971,10 @@ function EntriesToolbar({
           value={filters.site || ALL}
           onValueChange={(v) => update("site", v === ALL ? "" : (v as AppSite))}
         >
-          <SelectTrigger aria-label="Filter by site" className="h-8 w-[110px] text-xs">
+          <SelectTrigger
+            aria-label="Filter by site"
+            className="h-8 w-[110px] text-xs"
+          >
             <SelectValue placeholder="Site" />
           </SelectTrigger>
           <SelectContent>
@@ -959,7 +988,10 @@ function EntriesToolbar({
           value={filters.tierId || ALL}
           onValueChange={(v) => update("tierId", v === ALL ? "" : v)}
         >
-          <SelectTrigger aria-label="Filter by tier" className="h-8 w-[140px] text-xs">
+          <SelectTrigger
+            aria-label="Filter by tier"
+            className="h-8 w-[140px] text-xs"
+          >
             <SelectValue placeholder="Tier" />
           </SelectTrigger>
           <SelectContent>
@@ -978,7 +1010,10 @@ function EntriesToolbar({
             update("contentStatus", v === ALL ? "" : (v as ContentStatus))
           }
         >
-          <SelectTrigger aria-label="Filter by content status" className="h-8 w-[150px] text-xs">
+          <SelectTrigger
+            aria-label="Filter by content status"
+            className="h-8 w-[150px] text-xs"
+          >
             <SelectValue placeholder="Content status" />
           </SelectTrigger>
           <SelectContent>
@@ -997,7 +1032,10 @@ function EntriesToolbar({
             update("editorStatus", v === ALL ? "" : (v as EditorStatus))
           }
         >
-          <SelectTrigger aria-label="Filter by editor status" className="h-8 w-[150px] text-xs">
+          <SelectTrigger
+            aria-label="Filter by editor status"
+            className="h-8 w-[150px] text-xs"
+          >
             <SelectValue placeholder="Editor status" />
           </SelectTrigger>
           <SelectContent>
@@ -1015,7 +1053,10 @@ function EntriesToolbar({
             update("priority", v === ALL ? "" : (v as "true" | "false"))
           }
         >
-          <SelectTrigger aria-label="Filter by priority" className="h-8 w-[130px] text-xs">
+          <SelectTrigger
+            aria-label="Filter by priority"
+            className="h-8 w-[130px] text-xs"
+          >
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -1035,16 +1076,15 @@ function EntriesToolbar({
             onFiltersChange({ ...filters, sortBy, sortDir });
           }}
         >
-          <SelectTrigger aria-label="Sort entries" className="h-8 w-[170px] text-xs">
+          <SelectTrigger
+            aria-label="Sort entries"
+            className="h-8 w-[170px] text-xs"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="publish_date:asc">
-              Publish date ↑
-            </SelectItem>
-            <SelectItem value="publish_date:desc">
-              Publish date ↓
-            </SelectItem>
+            <SelectItem value="publish_date:asc">Publish date ↑</SelectItem>
+            <SelectItem value="publish_date:desc">Publish date ↓</SelectItem>
             <SelectItem value="created_at:desc">Newest first</SelectItem>
             <SelectItem value="updated_at:desc">Recently updated</SelectItem>
             <SelectItem value="title:asc">Title A-Z</SelectItem>
@@ -1092,7 +1132,7 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
               <span className="font-medium text-text-cell">{entry.title}</span>
             </div>
             {entry.description ? (
-              <p className="mt-0.5 line-clamp-1 text-xs text-text-zero">
+              <p className="mt-0.5 break-words text-xs text-text-zero">
                 {entry.description}
               </p>
             ) : null}
@@ -1130,12 +1170,16 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
     {
       id: "content_status",
       header: () => "Content",
-      cell: ({ row }) => <ContentStatusBadge status={row.original.content_status} />,
+      cell: ({ row }) => (
+        <ContentStatusBadge status={row.original.content_status} />
+      ),
     },
     {
       id: "editor_status",
       header: () => "Editor",
-      cell: ({ row }) => <EditorStatusBadge status={row.original.editor_status} />,
+      cell: ({ row }) => (
+        <EditorStatusBadge status={row.original.editor_status} />
+      ),
     },
     {
       id: "graphic_status",
@@ -1217,19 +1261,14 @@ function buildColumns(): ColumnDef<EntrySummary>[] {
         if (checklist_total === 0) {
           return <span className="text-xs text-text-zero">—</span>;
         }
-        const pct = Math.round(
-          (checklist_completed / checklist_total) * 100,
-        );
+        const pct = Math.round((checklist_completed / checklist_total) * 100);
         return (
           <div className="flex items-center gap-1.5 text-xs">
             <span className="font-data tabular-nums text-text-team">
               {checklist_completed}/{checklist_total}
             </span>
             <div className="h-1 w-10 overflow-hidden rounded-full bg-surface-4">
-              <div
-                className="h-full bg-cyan"
-                style={{ width: `${pct}%` }}
-              />
+              <div className="h-full bg-cyan" style={{ width: `${pct}%` }} />
             </div>
           </div>
         );

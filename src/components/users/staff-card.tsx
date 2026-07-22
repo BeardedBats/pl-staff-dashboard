@@ -18,7 +18,7 @@ export function StaffCard({ user }: { user: StaffUserSummary }) {
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="truncate text-sm font-semibold text-text-cell">
+            <h3 className="break-words text-sm font-semibold text-text-cell">
               {user.display_name}
             </h3>
             <Badge variant="outline" className="shrink-0 font-data">
@@ -26,11 +26,12 @@ export function StaffCard({ user }: { user: StaffUserSummary }) {
             </Badge>
           </div>
           {user.primary_team ? (
-            <p className="mt-0.5 truncate font-data text-xs text-text-zero">
+            <p className="mt-0.5 break-words font-data text-xs text-text-zero">
               {user.primary_team.team_name}
               {user.primary_team.manager_name ? (
                 <>
-                  {" "}·{" "}
+                  {" "}
+                  ·{" "}
                   <span className="text-text-team">
                     {user.primary_team.manager_name}
                   </span>
@@ -41,7 +42,7 @@ export function StaffCard({ user }: { user: StaffUserSummary }) {
             <p className="mt-0.5 text-xs text-text-zero">No team</p>
           )}
           {user.bio ? (
-            <p className="mt-2 line-clamp-2 text-xs text-text-team">
+            <p className="mt-2 break-words text-xs text-text-team">
               {user.bio}
             </p>
           ) : null}

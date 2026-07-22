@@ -2,12 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import {
-  Check,
-  CheckCheck,
-  Inbox,
-  Loader2,
-} from "lucide-react";
+import { Check, CheckCheck, Inbox, Loader2 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,9 +36,9 @@ export function NotificationsPageClient({
 }: Props) {
   const [rows, setRows] = React.useState(initialRows);
   const [unreadCount, setUnreadCount] = React.useState(initialUnreadCount);
-  const [typeFilter, setTypeFilter] = React.useState<NotificationEventType | "">(
-    "",
-  );
+  const [typeFilter, setTypeFilter] = React.useState<
+    NotificationEventType | ""
+  >("");
   const [onlyUnread, setOnlyUnread] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
@@ -196,7 +191,7 @@ function NotificationListRow({
       </div>
       <Link href={href} className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-medium text-text-cell">
+          <p className="break-words text-sm font-medium text-text-cell">
             {notification.title}
           </p>
           <Badge variant="outline" className="shrink-0">
@@ -204,7 +199,7 @@ function NotificationListRow({
           </Badge>
         </div>
         {notification.body ? (
-          <p className="mt-1 line-clamp-2 text-xs text-text-team">
+          <p className="mt-1 break-words text-xs text-text-team">
             {notification.body}
           </p>
         ) : null}

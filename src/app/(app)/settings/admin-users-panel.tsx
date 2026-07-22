@@ -80,9 +80,7 @@ export function AdminUsersPanel({
     if (!res.ok) {
       // Revert on failure.
       setUsers((prev) =>
-        prev.map((u) =>
-          u.id === user.id ? { ...u, can_publish: !next } : u,
-        ),
+        prev.map((u) => (u.id === user.id ? { ...u, can_publish: !next } : u)),
       );
     }
   }
@@ -124,7 +122,9 @@ export function AdminUsersPanel({
                 <th className="px-3 py-2 text-left font-medium">User</th>
                 <th className="px-3 py-2 text-left font-medium">Roles</th>
                 <th className="px-3 py-2 text-left font-medium">Site</th>
-                <th className="px-3 py-2 text-left font-medium">Primary team</th>
+                <th className="px-3 py-2 text-left font-medium">
+                  Primary team
+                </th>
                 <th className="px-3 py-2 text-center font-medium">Publish</th>
                 <th className="px-3 py-2 text-right font-medium">Actions</th>
               </tr>
@@ -144,13 +144,11 @@ export function AdminUsersPanel({
                         size="sm"
                       />
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-text-cell">
+                        <p className="break-words font-medium text-text-cell">
                           {user.display_name}
                         </p>
-                        <p className="truncate font-data text-[10px] text-text-zero">
-                          {user.email ?? (
-                            <span>pending first login</span>
-                          )}
+                        <p className="break-words font-data text-[10px] text-text-zero">
+                          {user.email ?? <span>pending first login</span>}
                         </p>
                       </div>
                     </div>
@@ -243,9 +241,7 @@ function ImportUserDialog({
   onImported: () => void;
   allowedSites: Array<"pl" | "qb">;
 }) {
-  const [site, setSite] = React.useState<"pl" | "qb">(
-    allowedSites[0] ?? "pl",
-  );
+  const [site, setSite] = React.useState<"pl" | "qb">(allowedSites[0] ?? "pl");
   const [identifier, setIdentifier] = React.useState("");
   const [importing, setImporting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -329,7 +325,10 @@ function ImportUserDialog({
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Site</Label>
-            <Select value={site} onValueChange={(v) => setSite(v as "pl" | "qb")}>
+            <Select
+              value={site}
+              onValueChange={(v) => setSite(v as "pl" | "qb")}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

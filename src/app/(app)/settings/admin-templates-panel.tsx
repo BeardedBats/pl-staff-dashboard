@@ -130,7 +130,7 @@ export function AdminTemplatesPanel({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div>
           <CardTitle>Recurring templates</CardTitle>
           <CardDescription>
@@ -138,7 +138,7 @@ export function AdminTemplatesPanel({
             season — they only run when that season is active.
           </CardDescription>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {canRunGenerator ? (
             <Button
               variant="outline"
@@ -222,13 +222,18 @@ export function AdminTemplatesPanel({
               </thead>
               <tbody className="divide-y divide-border">
                 {templates.map((t) => (
-                  <tr key={t.id} data-row-state={t.is_active ? undefined : "bench"}>
+                  <tr
+                    key={t.id}
+                    data-row-state={t.is_active ? undefined : "bench"}
+                  >
                     <td className="px-3 py-2">
                       <div className="font-medium text-text-cell">
                         {t.title_pattern}
                       </div>
                       <div className="mt-0.5 flex items-center gap-1">
-                        <Badge variant="outline" className="font-data">{t.site.toUpperCase()}</Badge>
+                        <Badge variant="outline" className="font-data">
+                          {t.site.toUpperCase()}
+                        </Badge>
                       </div>
                     </td>
                     <td className="px-3 py-2 text-xs text-text-team">
@@ -240,16 +245,16 @@ export function AdminTemplatesPanel({
                       ) : null}
                     </td>
                     <td className="px-3 py-2">
-                      <Badge variant="outline" className="font-data">{t.tier_name}</Badge>
+                      <Badge variant="outline" className="font-data">
+                        {t.tier_name}
+                      </Badge>
                     </td>
                     <td className="px-3 py-2 text-xs text-text-team">
                       {t.season_mode_name}
                     </td>
                     <td className="px-3 py-2 text-xs text-text-team">
                       {t.assigned_user_name ?? (
-                        <span className="text-text-zero">
-                          Unassigned
-                        </span>
+                        <span className="text-text-zero">Unassigned</span>
                       )}
                     </td>
                     <td className="px-3 py-2 text-center">
@@ -300,9 +305,9 @@ export function AdminTemplatesPanel({
         )}
 
         <p className="rounded-sm border border-dashed border-border bg-surface-3/30 px-3 py-2 text-xs text-text-zero">
-          <Check className="inline h-3 w-3" /> The nightly cron creates
-          entries up to 14 days ahead. You can also hit &quot;Run generator&quot;
-          above to trigger it on demand.
+          <Check className="inline h-3 w-3" /> The nightly cron creates entries
+          up to 14 days ahead. You can also hit &quot;Run generator&quot; above
+          to trigger it on demand.
         </p>
       </CardContent>
 

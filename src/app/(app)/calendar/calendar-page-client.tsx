@@ -196,8 +196,8 @@ export function CalendarPageClient({
           );
         })}
         <span className="text-text-zero">
-          · {events.length}{" "}
-          {events.length === 1 ? "entry" : "entries"} scheduled
+          · {events.length} {events.length === 1 ? "entry" : "entries"}{" "}
+          scheduled
         </span>
       </div>
 
@@ -205,7 +205,12 @@ export function CalendarPageClient({
       <div className="calendar-wrapper rounded-lg border border-border bg-card p-3">
         <FullCalendar
           ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+          plugins={[
+            dayGridPlugin,
+            timeGridPlugin,
+            listPlugin,
+            interactionPlugin,
+          ]}
           initialView={calendarView}
           headerToolbar={{
             left: "prev,next today",
@@ -238,7 +243,7 @@ export function CalendarPageClient({
           .calendar-wrapper .fc-col-header-cell-cushion {
             font-family: var(--font-data);
             color: var(--text-zero);
-            font-size: 10px;
+            font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             padding: 8px 4px;
@@ -246,7 +251,7 @@ export function CalendarPageClient({
           .calendar-wrapper .fc-daygrid-day-number {
             font-family: var(--font-data);
             color: var(--text-team);
-            font-size: 12px;
+            font-size: 14px;
             padding: 4px 6px;
           }
           .calendar-wrapper .fc-day-today {
@@ -261,7 +266,7 @@ export function CalendarPageClient({
             border: 1px solid var(--border);
             color: var(--text-team);
             text-transform: none;
-            font-size: 12px;
+            font-size: 14px;
             padding: 4px 10px;
           }
           .calendar-wrapper .fc-button:hover {
@@ -283,7 +288,7 @@ export function CalendarPageClient({
             font-family: var(--font-data);
             border-radius: 3px;
             padding: 1px 4px;
-            font-size: 11px;
+            font-size: 14px;
             cursor: pointer;
           }
           .calendar-wrapper .fc-list-day-cushion {
@@ -319,9 +324,15 @@ export function CalendarPageClient({
                     onClick={() => router.push(`/content?entry=${e.id}`)}
                     className="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left text-sm hover:bg-surface-3"
                   >
-                    <Badge variant="outline" className="font-data">{e.tier.name}</Badge>
-                    <Badge variant="outline" className="font-data">{e.site.toUpperCase()}</Badge>
-                    <span className="truncate text-text-cell">{e.title}</span>
+                    <Badge variant="outline" className="font-data">
+                      {e.tier.name}
+                    </Badge>
+                    <Badge variant="outline" className="font-data">
+                      {e.site.toUpperCase()}
+                    </Badge>
+                    <span className="break-words text-text-cell">
+                      {e.title}
+                    </span>
                   </button>
                 </li>
               ))}

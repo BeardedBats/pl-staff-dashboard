@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 3 — PLPD design-system foundation
-- Current action: P3.9 — Create responsive desktop, tablet, and mobile behavior without inventing new brand colors or visual language.
-- Branch: `codex/production-readiness-p3-8`
-- Stack base: `e077dbc` (P3.7 exact-evidence head on green draft PR #36, based on the green stacked production-readiness pull requests).
+- Current action: P3.10 — Add automated accessibility checks and keyboard/focus verification.
+- Branch: `codex/production-readiness-p3-9`
+- Stack base: `b6d4765` (P3.8 exact-evidence head on green draft PR #37, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production application of the stacked migrations through `0022` requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -81,7 +81,7 @@ Gate: a clean checkout can prove correctness in CI, and production failures are 
 - [x] P3.6 Ensure gated data is withheld on the server rather than sent to the client and visually blurred.
 - [x] P3.7 Bring tables, numeric alignment, zero styling, row fills, hover behavior, pagination, and data colors into exact guide compliance.
 - [x] P3.8 Remove Never List violations.
-- [ ] P3.9 Create responsive desktop, tablet, and mobile behavior without inventing new brand colors or visual language.
+- [x] P3.9 Create responsive desktop, tablet, and mobile behavior without inventing new brand colors or visual language.
 - [ ] P3.10 Add automated accessibility checks and keyboard/focus verification.
 - [ ] P3.11 Establish screenshot or visual-regression coverage for shared primitives and representative pages.
 
@@ -566,6 +566,18 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - React review found no new hooks, effects, requests, state, or client boundary. Changes are presentation-only class corrections plus source/browser regression ownership.
 - Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 63 Vitest files / 295 tests; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 21 production-quality checks pass.
 - Clean GitHub run [29883807210](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29883807210) independently passed Application, Database, Dependencies, all 10 Browser journeys, all 21 production-quality checks, and retained quality evidence at implementation head `b7d65e5`. The Vercel preview passed, and draft PR #37 was clean and mergeable at that tested head.
+- Exact evidence-head run [29884091890](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29884091890) independently passed Application, Database, Dependencies, all 10 Browser journeys, and all 21 quality checks at `b6d4765`; Vercel passed and draft PR #37 remained clean and mergeable.
+
+### 2026-07-21 — P3.9 responsive and readable-layout gate
+
+- Reserved the persistent 320px sidebar for desktop widths and moved tablet to the full-width drawer shell. Shared content padding now resolves to 16px on mobile, 20px on tablet, and 24px on desktop without changing the PLPD palette or visual language.
+- Reworked Content actions, manager approvals, selected-entry actions, Settings template/checklist headers, and tier selectors to stack or wrap at narrow widths. The staff profile now has a semantic page heading. Visual inspection of retained 390px, 768px, and 1440px captures found intact hierarchy and a natural mobile manager-request reading order.
+- Removed every production `truncate` and `line-clamp` utility so readable copy wraps instead of disappearing. The 14px minimum is enforced at computed-style time for legacy 9–13px utilities and third-party FullCalendar/Recharts labels; only the guide's explicit canonical compact-chip construction is marked as exempt.
+- A four-test recursive source contract pins the no-ellipsis rule, the readable-text enforcement and explicit chip exception, the desktop-only sidebar, responsive padding, and the production viewport matrix.
+- Two production-Chromium checks cover all 54 authenticated actor/route/viewport combinations across 18 routes at 390x844, 768x1024, and 1440x900. Every route has a visible page heading, remains inside the document and main-content width, renders no text below 14px outside canonical compact chips, and computes no ellipsis or line clamp.
+- React review found no new effects, requests, state synchronization, or client boundaries. Changes are responsive presentation, semantic heading, chart/calendar typography props, and regression ownership; existing handlers and data flow remain unchanged.
+- Final local gate: diff hygiene; runbook contract; ESLint with zero warnings; TypeScript; actionlint 1.7.12; zero-vulnerability audit; Next.js 16.2.11 production build; 64 Vitest files / 299 tests with V8 coverage; 10 database files / 306 pgTAP assertions; generated database-type drift; warning-failing database lint; all 10 role/anonymous/gated-data Chromium journeys; and all 23 production-quality checks pass.
+- Clean GitHub run [29885510199](https://github.com/BeardedBats/pl-staff-dashboard/actions/runs/29885510199) independently passed Application, Database, Dependencies, all 10 Browser journeys, all 23 production-quality checks, and retained quality evidence at implementation head `a4f0a16`. The Vercel preview passed, and draft PR #38 was clean and mergeable at the tested head.
 
 ## Phase 0 prioritized defect and risk inventory
 

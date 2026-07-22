@@ -32,7 +32,11 @@ type Props = {
   onCommitted: () => void;
 };
 
-export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) {
+export function RaptiveUploadDialog({
+  open,
+  onOpenChange,
+  onCommitted,
+}: Props) {
   const [file, setFile] = React.useState<File | null>(null);
   const [preview, setPreview] = React.useState<PreviewData | null>(null);
   const [phase, setPhase] = React.useState<
@@ -140,8 +144,8 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
         <DialogHeader>
           <DialogTitle>Upload Raptive Excel</DialogTitle>
           <DialogDescription>
-            Drop in a Raptive export (.xlsx). We&apos;ll parse it, match rows
-            to entries by URL, and show a preview before you commit.
+            Drop in a Raptive export (.xlsx). We&apos;ll parse it, match rows to
+            entries by URL, and show a preview before you commit.
           </DialogDescription>
         </DialogHeader>
 
@@ -172,9 +176,7 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
               onDragLeave={(e) => {
                 // Only flip off when we actually leave the target, not on
                 // child-element transitions (relatedTarget gives us that).
-                if (
-                  !e.currentTarget.contains(e.relatedTarget as Node | null)
-                ) {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
                   setDragging(false);
                 }
               }}
@@ -244,9 +246,9 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
                 </dl>
                 <div className="mt-3 border-t border-border/60 pt-2 text-[10px] text-text-zero">
                   Parsed {preview.dataSheetCount} data sheet
-                  {preview.dataSheetCount === 1 ? "" : "s"}; collapsed {" "}
+                  {preview.dataSheetCount === 1 ? "" : "s"}; collapsed{" "}
                   {preview.duplicateCount.toLocaleString()} exact duplicate
-                  {preview.duplicateCount === 1 ? "" : "s"}; rejected {" "}
+                  {preview.duplicateCount === 1 ? "" : "s"}; rejected{" "}
                   {preview.rejectedCount.toLocaleString()} malformed row
                   {preview.rejectedCount === 1 ? "" : "s"}.
                 </div>
@@ -271,7 +273,7 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
                       {preview.sampleUnmatched.slice(0, 5).map((u) => (
                         <li
                           key={u}
-                          className="truncate text-[10px] text-text-zero"
+                          className="break-words text-[10px] text-text-zero"
                           title={u}
                         >
                           {u}
@@ -280,8 +282,8 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
                     </ul>
                     <p className="mt-1 text-[10px] text-text-zero">
                       Unmatched rows still import — they just have no entry
-                      linked. Usually means the URL changed or the article
-                      was archived.
+                      linked. Usually means the URL changed or the article was
+                      archived.
                     </p>
                   </div>
                 ) : null}
@@ -312,9 +314,7 @@ export function RaptiveUploadDialog({ open, onOpenChange, onCommitted }: Props) 
               {preview ? (
                 <Button
                   onClick={handleCommit}
-                  disabled={
-                    phase === "committing" || preview.rejectedCount > 0
-                  }
+                  disabled={phase === "committing" || preview.rejectedCount > 0}
                 >
                   {phase === "committing" ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />

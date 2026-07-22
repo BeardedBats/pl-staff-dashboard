@@ -2,7 +2,15 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Plus, Trash2, Users2, Star, UserMinus } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  Plus,
+  Trash2,
+  Users2,
+  Star,
+  UserMinus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -102,7 +110,9 @@ export function AdminTeamsPanel({
   }
 
   async function deleteTeamRow(id: string) {
-    const confirmed = window.confirm("Delete this team? Members will be unassigned.");
+    const confirmed = window.confirm(
+      "Delete this team? Members will be unassigned.",
+    );
     if (!confirmed) return;
     const res = await fetch(`/api/teams/${id}`, { method: "DELETE" });
     if (res.ok) {
@@ -157,15 +167,17 @@ export function AdminTeamsPanel({
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p
-                          className={`truncate text-sm font-medium ${active ? "text-cyan" : "text-text-cell"}`}
+                          className={`break-words text-sm font-medium ${active ? "text-cyan" : "text-text-cell"}`}
                         >
                           {team.name}
                         </p>
                         <Badge variant="outline" className="shrink-0 font-data">
-                          {team.site === "both" ? "PL+QB" : team.site.toUpperCase()}
+                          {team.site === "both"
+                            ? "PL+QB"
+                            : team.site.toUpperCase()}
                         </Badge>
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-text-zero">
+                      <p className="mt-0.5 break-words text-xs text-text-zero">
                         {team.manager_name} · {team.member_count}{" "}
                         {team.member_count === 1 ? "member" : "members"}
                       </p>
@@ -250,20 +262,20 @@ function TeamDetailPanel({
   }
 
   async function removeMember(member: TeamMemberRow) {
-    const confirmed = window.confirm(`Remove ${member.display_name} from ${team.name}?`);
-    if (!confirmed) return;
-    const res = await fetch(
-      `/api/teams/${team.id}/members/${member.user_id}`,
-      { method: "DELETE" },
+    const confirmed = window.confirm(
+      `Remove ${member.display_name} from ${team.name}?`,
     );
+    if (!confirmed) return;
+    const res = await fetch(`/api/teams/${team.id}/members/${member.user_id}`, {
+      method: "DELETE",
+    });
     if (res.ok) await onChanged();
   }
 
   async function setPrimary(member: TeamMemberRow) {
-    const res = await fetch(
-      `/api/teams/${team.id}/members/${member.user_id}`,
-      { method: "PATCH" },
-    );
+    const res = await fetch(`/api/teams/${team.id}/members/${member.user_id}`, {
+      method: "PATCH",
+    });
     if (res.ok) await onChanged();
   }
 
@@ -277,10 +289,12 @@ function TeamDetailPanel({
               {team.site === "both" ? "PL + QB" : team.site.toUpperCase()}
             </Badge>
             <span>
-              Managed by <span className="text-text-team">{team.manager_name}</span>
+              Managed by{" "}
+              <span className="text-text-team">{team.manager_name}</span>
             </span>
             <span>
-              · {team.member_count} {team.member_count === 1 ? "member" : "members"}
+              · {team.member_count}{" "}
+              {team.member_count === 1 ? "member" : "members"}
             </span>
           </CardDescription>
           {team.description ? (
@@ -320,10 +334,10 @@ function TeamDetailPanel({
                       size="sm"
                     />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-text-cell">
+                      <p className="break-words text-sm font-medium text-text-cell">
                         {m.display_name}
                       </p>
-                      <p className="truncate font-data text-[10px] text-text-zero">
+                      <p className="break-words font-data text-[10px] text-text-zero">
                         {m.email}
                       </p>
                     </div>
@@ -507,8 +521,8 @@ function CreateTeamDialog({
         <DialogHeader>
           <DialogTitle>Create team</DialogTitle>
           <DialogDescription>
-            Teams are content verticals with a single manager. Writers can belong
-            to multiple teams but have one primary team.
+            Teams are content verticals with a single manager. Writers can
+            belong to multiple teams but have one primary team.
           </DialogDescription>
         </DialogHeader>
 
@@ -563,7 +577,8 @@ function CreateTeamDialog({
                 <SelectContent>
                   {eligibleManagers.length === 0 ? (
                     <div className="px-2 py-1.5 text-xs text-text-zero">
-                      No eligible managers found (need editor / manager / admin role).
+                      No eligible managers found (need editor / manager / admin
+                      role).
                     </div>
                   ) : (
                     eligibleManagers.map((u) => (
@@ -577,9 +592,7 @@ function CreateTeamDialog({
             </div>
           </div>
 
-          {error ? (
-            <p className="text-sm text-destructive">{error}</p>
-          ) : null}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
 
         <DialogFooter>

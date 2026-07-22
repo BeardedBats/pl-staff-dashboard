@@ -552,6 +552,20 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: var(--plpd-weight-hero);
 }
 
+/* The PLPD validation checklist forbids readable interface text below 14px.
+   Keep legacy utility call sites honest at computed-style time while the one
+   canonical exception — the guide's compact status chip — opts out explicitly. */
+:where(
+  .text-xs,
+  .text-\[9px\],
+  .text-\[10px\],
+  .text-\[11px\],
+  .text-\[12px\],
+  .text-\[13px\]
+):not([data-plpd-compact-label]) {
+  font-size: var(--plpd-type-body);
+}
+
 code, kbd, pre, samp {
   font-family: var(--font-mono);
 }
