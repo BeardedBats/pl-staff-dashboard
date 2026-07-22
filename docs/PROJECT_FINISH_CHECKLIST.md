@@ -5,9 +5,9 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 2 — Test system, CI, observability, and operational safety
-- Current action: P2.6 — Test cron jobs with the same method and headers used by Vercel while preserving the Supabase DDL release block.
-- Branch: `codex/production-readiness-p2-5`
-- Stack base: `1093931` (green draft PR #21, based on green draft PRs #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
+- Current action: P2.7 — Add representative Raptive importer tests while preserving the Supabase DDL release block.
+- Branch: `codex/production-readiness-p2-6`
+- Stack base: `b344541` (green draft PR #22, based on green draft PRs #21, #20, #19, #18, #17, #16, #15, #14, #13, #12, #11, #10, and #9).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
 - Deployment: Vercel production status completed successfully from `dbab5c2` on 2026-07-21 (`HLrWTph5hnSf2yf2yN6aNAtYR6Kq`).
 - Known blockers: production P1.8 application requires either a Supabase personal/fine-grained token with database-write permission or the hosted Postgres password/connection URL. Neither is present in process/user/machine environment variables, Supabase native/file credentials, `.env.local`, or GitHub secrets/variables. Vercel project-management access and a safe dashboard test-user session are also unavailable.
@@ -61,7 +61,7 @@ Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUME
 - [x] P2.3 Test WordPress synchronization, webhooks, scheduled reconciliation, conflict handling, retries, and idempotency.
 - [x] P2.4 Test editorial claims, assignments, state transitions, bulk actions, deadlines, and concurrent operations.
 - [x] P2.5 Test graphics submission, review, versioning, authorization, and storage behavior.
-- [ ] P2.6 Test cron jobs with the same method and headers used by Vercel.
+- [x] P2.6 Test cron jobs with the same method and headers used by Vercel.
 - [ ] P2.7 Add representative Raptive importer tests with multi-sheet fixtures, duplicates, malformed rows, interruptions, and large files.
 - [ ] P2.8 Add role-based end-to-end journeys for managers, writers, editors, graphics staff, and administrators.
 - [ ] P2.9 Add GitHub Actions for install, lint, type checking, tests, build, migration checks, dependency checks, and browser tests where appropriate.
@@ -407,6 +407,14 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Uploads validate PNG, JPEG, GIF, or WebP magic bytes, use UUID-backed immutable paths, and reject stale metadata writes while deleting only the losing new object. WordPress filenames are header-safe, media JSON and IDs are validated, and a retry reuses a checkpointed media ID rather than creating a duplicate library object. Graphics mutation routes now distinguish validation, authorization, missing-resource, concurrency, upstream, and database failures with 400/403/404/409/502/500 responses.
 - Deterministic two-session database probes cover competing submission leases and two different same-entry completions. Focused application tests cover signature spoofing, path uniqueness, version cleanup, unauthorized history signing, stale upload cleanup, WordPress response hardening, media checkpoint ordering, retry reuse, lease release, audit behavior, and notification suppression after failure.
 - Final gate: 43 Vitest files / 199 tests; coverage increased to 17.04% statements, 14.95% branches, 20% functions, and 17.76% lines. All 257 pgTAP assertions, generated database-type drift, authorization-matrix parity for 107 handlers, zero-vulnerability audit, ESLint, TypeScript, the Next.js 16.2.11 production build, and three Chromium anonymous-boundary tests pass.
+
+### 2026-07-21 — P2.6 Vercel-shaped cron invocation gate
+
+- Vercel's current official contract was rechecked on 2026-07-21: production Cron Jobs issue `GET`, automatically send `Authorization: Bearer $CRON_SECRET`, identify themselves with `User-Agent: vercel-cron/1.0`, and include the configured expression in `x-vercel-cron-schedule`. Delivery is best effort, failures are not retried by Vercel, duplicates/overlaps can occur, and redirects are not followed. Sources: [Cron Jobs](https://vercel.com/docs/cron-jobs) and [Managing Cron Jobs](https://vercel.com/docs/cron-jobs/manage-cron-jobs).
+- Added request-level coverage for all eight committed `vercel.json` paths. Each real `GET` handler receives its exact committed schedule plus the Vercel user agent and bearer shape, reaches execution control as source `vercel`, and passes the expected job name/interval. Every route rejects a near-miss secret before task execution; a representative authenticated `POST` remains a separate both-site-admin manual run.
+- The schedule contract test now rejects unsupported field counts, named month/day tokens, and simultaneous day-of-month/day-of-week restrictions. The existing database ledger remains the duplicate, overlap, expired-lease, bounded-retry, and outcome source of truth; its deterministic two-connection overlap proof remains green.
+- The audit found one execution-control failure defect: a transport rejection while finishing a successful task fell into the task-exception handler and attempted to finish the same run again as failed. Claim and finish transports now fail closed with safe 503 responses, task failures are isolated from ledger failures, and each claimed run gets at most one finish attempt per invocation.
+- Final gate: 44 Vitest files / 222 tests; coverage increased to 18.25% statements, 15.58% branches, 21.12% functions, and 19.06% lines. All 257 pgTAP assertions, generated database-type drift, zero-vulnerability audit, ESLint, TypeScript, the Next.js 16.2.11 production build, and three Chromium anonymous-boundary tests pass.
 
 ## Phase 0 prioritized defect and risk inventory
 
