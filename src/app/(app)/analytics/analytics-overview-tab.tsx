@@ -14,6 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { AnalyticsOverview } from "@/lib/analytics/queries";
+import { RESPONSIVE_CHART_INITIAL_DIMENSION } from "@/lib/design/chart";
 
 type Props = { query: string };
 
@@ -110,7 +111,12 @@ export function AnalyticsOverviewTab({ query }: Props) {
         <CardContent>
           {hasData ? (
             <div className="h-64 w-full font-data">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                initialDimension={RESPONSIVE_CHART_INITIAL_DIMENSION}
+              >
                 <AreaChart data={data.daily}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="date" stroke="var(--color-text-zero)" fontSize={11} />

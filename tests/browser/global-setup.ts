@@ -39,6 +39,12 @@ export const browserActors = {
     displayName: "Admin Journey",
     role: "admin",
   },
+  eic: {
+    userId: "28000000-0000-0000-0000-000000000006",
+    sessionId: "28100000-0000-0000-0000-000000000006",
+    displayName: "EIC Journey",
+    role: "eic",
+  },
 } as const;
 
 export const browserRecords = {
@@ -48,6 +54,10 @@ export const browserRecords = {
   graphicsEntryId: "28200000-0000-0000-0000-000000000004",
   managerClaimId: "28300000-0000-0000-0000-000000000001",
   graphicRequestId: "28400000-0000-0000-0000-000000000001",
+  analyticsEntryId: "28200000-0000-0000-0000-000000000005",
+  analyticsRowId: "28500000-0000-0000-0000-000000000001",
+  revenueRowId: "28600000-0000-0000-0000-000000000001",
+  financialSentinel: 731.2942,
 } as const;
 
 function localServiceRoleKey(): string {
@@ -105,7 +115,23 @@ export default async function globalSetup() {
     browserRecords.managerEntryId,
     browserRecords.editorEntryId,
     browserRecords.graphicsEntryId,
+    browserRecords.analyticsEntryId,
   ];
+
+  await expectWrite(
+    supabase
+      .from("raptive_revenue")
+      .delete()
+      .eq("id", browserRecords.revenueRowId),
+    "remove stale browser revenue",
+  );
+  await expectWrite(
+    supabase
+      .from("article_analytics")
+      .delete()
+      .eq("id", browserRecords.analyticsRowId),
+    "remove stale browser analytics",
+  );
 
   await expectWrite(
     supabase.from("entries").delete().in("id", entryIds),
@@ -182,6 +208,7 @@ export default async function globalSetup() {
         created_by: browserActors.admin.userId,
         content_status: "claimed",
         editor_status: "none",
+        publish_date_precision: "none",
       },
       {
         id: browserRecords.managerEntryId,
@@ -191,6 +218,7 @@ export default async function globalSetup() {
         created_by: browserActors.admin.userId,
         content_status: "claim_requested",
         editor_status: "none",
+        publish_date_precision: "none",
       },
       {
         id: browserRecords.editorEntryId,
@@ -200,6 +228,7 @@ export default async function globalSetup() {
         created_by: browserActors.admin.userId,
         content_status: "submitted",
         editor_status: "ready_for_edit",
+        publish_date_precision: "none",
       },
       {
         id: browserRecords.graphicsEntryId,
@@ -209,9 +238,48 @@ export default async function globalSetup() {
         created_by: browserActors.admin.userId,
         content_status: "claimed",
         editor_status: "none",
+        publish_date_precision: "none",
+      },
+      {
+        id: browserRecords.analyticsEntryId,
+        title: "E2E P3.6 gated financial sentinel",
+        site: "pl",
+        tier_id: tier.id,
+        created_by: browserActors.admin.userId,
+        content_status: "published",
+        editor_status: "published",
+        publish_date: new Date().toISOString(),
+        publish_date_precision: "exact",
+        wp_post_url: "https://pitcherlist.com/e2e-p3-6-financial-sentinel/",
       },
     ]),
     "insert browser entries",
+  );
+  const analyticsDate = new Date().toISOString().slice(0, 10);
+  await expectWrite(
+    supabase.from("article_analytics").insert({
+      id: browserRecords.analyticsRowId,
+      entry_id: browserRecords.analyticsEntryId,
+      date: analyticsDate,
+      pageviews: 1_337,
+      sessions: 911,
+      avg_time_on_page: 73.6,
+    }),
+    "insert browser analytics sentinel",
+  );
+  await expectWrite(
+    supabase.from("raptive_revenue").insert({
+      id: browserRecords.revenueRowId,
+      entry_id: browserRecords.analyticsEntryId,
+      date: analyticsDate,
+      page_url: "https://pitcherlist.com/e2e-p3-6-financial-sentinel/",
+      earnings: browserRecords.financialSentinel,
+      rpm: 802.7379,
+      page_rpm: 546.9665,
+      sessions: 911,
+      pageviews: 1_337,
+    }),
+    "insert browser revenue sentinel",
   );
   await expectWrite(
     supabase.from("entry_authors").insert([
@@ -278,7 +346,15 @@ export default async function globalSetup() {
 
   return async () => {
     const cleanup = localAdmin();
+    await cleanup
+      .from("raptive_revenue")
+      .delete()
+      .eq("id", browserRecords.revenueRowId);
     await cleanup.from("entries").delete().like("title", "E2E P2.8%");
+    await cleanup
+      .from("entries")
+      .delete()
+      .eq("id", browserRecords.analyticsEntryId);
     await cleanup.from("users").delete().in("id", userIds);
     await rm(AUTH_DIRECTORY, { recursive: true, force: true });
   };
