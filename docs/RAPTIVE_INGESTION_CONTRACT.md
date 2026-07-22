@@ -1,6 +1,6 @@
 # Raptive ingestion contract
 
-## Current supported path
+## Current supported paths
 
 The production-ready path is the existing Operations-only XLSX importer. It
 accepts a workbook up to 10 MB and 100,000 valid rows, reads every sheet that
@@ -21,23 +21,38 @@ canonical URL path as one record identity.
   recorded outcome before reporting failure, so a successful replay is not
   blindly repeated.
 
-Private storage, background jobs, chunking, and checkpoints are deliberately
-not added unless Nick's real workbook exceeds the measured 10 MB / 100,000-row
-envelope or cannot complete within the current request window.
+Nick supplied five aggregate workbooks covering 2019-02-06 through 2026-05-10.
+They exceed the interactive envelope (15.5–35.1 MB; 2,759,782 canonical URL
+rows), so they use the measured offline historical path instead of the browser
+upload route. The preparer verifies source hashes, site identity, consecutive
+dates, duplicate semantics, and exact Site Level earnings/session/pageview
+totals. It retains one daily row per matched entry and one explicit unmatched
+site/day total, producing 738,035 compact daily rows in 38 reversible chunks.
+
+The compact `raptive_history_daily` table omits source URLs and redundant RPM
+values while preserving every dashboard-consumed daily article dimension.
+Local PostgreSQL measurement is 98 MB including indexes for the complete real
+dataset, projecting the 151 MB production database to about 249 MB—well below
+the free project's 500 MB read-only threshold. The raw 2.76-million-row form is
+forbidden because it would exceed that threshold. Each service-role-only batch
+is idempotent, entry/site validated, hash checked, and reconciled to manifest
+row, date, earnings, sessions, and pageview totals.
 
 ## Real-workbook verification procedure
 
-When the final workbook is supplied, Operations will:
+For supplied real workbooks, Operations will:
 
 1. Record its size and hash without logging financial contents.
 2. Preview it without database writes and verify sheet roles, resolved headers,
    row count, calendar-date semantics, date range, duplicate/rejected totals,
    URL domains, match rate, and earnings total against the source export.
-3. Stop if the file exceeds the supported envelope or the real format changes
-   any parsing/deduplication assumption. Measure before designing an alternate
-   storage/job path.
-4. Commit once, verify atomic replacement and upload/run history, then preview
-   and reconcile the same workbook again to prove repeat behavior.
+3. Use `scripts/prepare-raptive-history.mjs` when the browser envelope is
+   exceeded. Never import its raw URL-level form when the capacity projection
+   crosses the no-spend ceiling.
+4. Apply migrations `0028` and `0029`, run
+   `scripts/import-raptive-history.mjs` against the immutable manifest, verify
+   the database summary, then repeat one chunk to prove resumability without a
+   duplicate or total change.
 
 ## Live Creator API contract
 

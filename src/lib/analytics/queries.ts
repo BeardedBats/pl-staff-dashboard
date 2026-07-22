@@ -187,17 +187,7 @@ async function loadRaptiveRows(
   // filtering by `.in("entry_id", entryIds)` on large entry sets exceeded
   // PostgREST's URL length limit and silently returned []. Callers now
   // filter in memory.
-  const { data, error } = await supabase
-    .from("raptive_revenue")
-    .select(
-      "entry_id, date, page_url, earnings, rpm, page_rpm, sessions, pageviews",
-    )
-    .gte("date", filters.dateFrom)
-    .lte("date", filters.dateTo)
-    .limit(500000);
-  if (error) logAnalyticsFailure("raptive_rows.load_failed", error);
-
-  return (data ?? []) as unknown as Array<{
+  type RaptiveRow = {
     entry_id: string | null;
     date: string;
     page_url: string;
@@ -206,7 +196,29 @@ async function loadRaptiveRows(
     page_rpm: number;
     sessions: number;
     pageviews: number;
-  }>;
+  };
+  const { data, error } = await supabase.rpc("get_raptive_entry_rollup", {
+    p_date_from: filters.dateFrom,
+    p_date_to: filters.dateTo,
+    p_site: filters.site || undefined,
+  });
+  if (error) logAnalyticsFailure("raptive_rows.rollup_failed", error);
+
+  return (data ?? []).map((row): RaptiveRow => {
+    const earnings = Number(row.earnings);
+    const sessions = Number(row.sessions);
+    const pageviews = Number(row.pageviews);
+    return {
+      entry_id: row.entry_id,
+      date: filters.dateFrom,
+      page_url: "urn:raptive:entry-rollup",
+      earnings,
+      sessions,
+      pageviews,
+      rpm: sessions > 0 ? (earnings / sessions) * 1000 : 0,
+      page_rpm: pageviews > 0 ? (earnings / pageviews) * 1000 : 0,
+    };
+  });
 }
 
 async function loadEntryAuthors(

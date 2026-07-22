@@ -93,6 +93,7 @@ describe("Raptive upload API boundary", () => {
       ok: true,
       rows: [
         {
+          wp_site: "pl",
           date: "2026-07-01",
           page_url: "/valid/",
           earnings: 1,
@@ -131,6 +132,7 @@ describe("Raptive upload API boundary", () => {
 
   it("tracks a successful commit from its durable run through atomic completion", async () => {
     const parsedRow = {
+      wp_site: "pl" as const,
       date: "2026-07-01",
       page_url: "/valid/",
       earnings: 1,
@@ -181,7 +183,7 @@ describe("Raptive upload API boundary", () => {
   it("records matching failure with a safe error id and visible failed run", async () => {
     mocks.parse.mockReturnValue({
       ok: true,
-      rows: [{ date: "2026-07-01", page_url: "/valid/" }],
+      rows: [{ wp_site: "pl", date: "2026-07-01", page_url: "/valid/" }],
       dateRange: { start: "2026-07-01", end: "2026-07-01" },
       dataSheetCount: 1,
       duplicateCount: 0,

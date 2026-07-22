@@ -6,7 +6,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   getSupabaseAdmin: () => ({ rpc: mocks.rpc, from: mocks.from }),
 }));
 
-import { commitRaptiveRows, parseRaptiveWorkbook } from "./raptive";
+import { commitRaptiveRows, matchRaptiveRowsToEntries, parseRaptiveWorkbook } from "./raptive";
 
 function workbookBuffer(sheets: Record<string, unknown[][]>): Buffer {
   const workbook = XLSX.utils.book_new();
@@ -22,6 +22,7 @@ function workbookBuffer(sheets: Record<string, unknown[][]>): Buffer {
 
 const headers = [
   "Date",
+  "Site Name",
   "Page URL",
   "Earnings",
   "RPM",
@@ -38,13 +39,13 @@ describe("Raptive workbook parsing", () => {
         "PL Revenue": [
           ["Pitcher List revenue detail"],
           headers,
-          [new Date("2026-07-01T00:00:00.000Z"), "https://pitcherlist.com/a/", 10.25, 2, 3, 4, 5],
-          ["7/2/2026", "/b/", "$20.50", "4", "5", "6", "7"],
+          [new Date("2026-07-01T00:00:00.000Z"), "Pitcher List", "https://pitcherlist.com/a/", 10.25, 2, 3, 4, 5],
+          ["7/2/2026", "Pitcher List", "/b/", "$20.50", "4", "5", "6", "7"],
         ],
         "QB Revenue": [
-          ["Day", "Permalink", "Revenue", "Session RPM", "Pageview RPM", "Sessions", "Views"],
-          ["2026-07-01", "https://pitcherlist.com/a/?utm=duplicate", 10.25, 2, 3, 4, 5],
-          ["2026-07-03", "https://football.pitcherlist.com/c/", 30.75, 6, 7, 8, 9],
+          ["Day", "Site", "Permalink", "Revenue", "Session RPM", "Pageview RPM", "Sessions", "Views"],
+          ["2026-07-01", "Pitcher List", "https://pitcherlist.com/a/?utm=duplicate", 10.25, 2, 3, 4, 5],
+          ["2026-07-03", "QB List", "https://football.pitcherlist.com/c/", 30.75, 6, 7, 8, 9],
         ],
       }),
     );
@@ -69,10 +70,10 @@ describe("Raptive workbook parsing", () => {
       workbookBuffer({
         Revenue: [
           headers,
-          ["2026-07-01", "/valid/", 1, 1, 1, 1, 1],
-          ["2026-02-30", "/bad-date/", 1, 1, 1, 1, 1],
-          ["2026-07-02", "/bad-number/", "not money", 1, 1, 1, 1],
-          ["2026-07-03", "/bad-count/", 1, 1, 1, -1, 1],
+          ["2026-07-01", "Pitcher List", "/valid/", 1, 1, 1, 1, 1],
+          ["2026-02-30", "Pitcher List", "/bad-date/", 1, 1, 1, 1, 1],
+          ["2026-07-02", "Pitcher List", "/bad-number/", "not money", 1, 1, 1, 1],
+          ["2026-07-03", "Pitcher List", "/bad-count/", 1, 1, 1, -1, 1],
         ],
       }),
     );
@@ -82,7 +83,7 @@ describe("Raptive workbook parsing", () => {
     expect(result.rows).toHaveLength(1);
     expect(result.rejectedCount).toBe(3);
     expect(result.sampleRejected).toEqual([
-      { sheet: "Revenue", row: 3, reason: "Missing or invalid Date or Page URL" },
+      { sheet: "Revenue", row: 3, reason: "Missing or invalid Date" },
       { sheet: "Revenue", row: 4, reason: "Invalid numeric value" },
       {
         sheet: "Revenue",
@@ -97,8 +98,8 @@ describe("Raptive workbook parsing", () => {
       workbookBuffer({
         Revenue: [
           headers,
-          ["2026-07-01", "https://pitcherlist.com/a/", 1, 1, 1, 1, 1],
-          ["2026-07-01", "/a/?source=other", 2, 1, 1, 1, 1],
+          ["2026-07-01", "Pitcher List", "https://pitcherlist.com/a/", 1, 1, 1, 1, 1],
+          ["2026-07-01", "Pitcher List", "/a/?source=other", 2, 1, 1, 1, 1],
         ],
       }),
     );
@@ -109,6 +110,45 @@ describe("Raptive workbook parsing", () => {
     });
   });
 
+  it("preserves blank source paths as explicitly unattributed revenue", () => {
+    const result = parseRaptiveWorkbook(
+      workbookBuffer({
+        "Top Earning URLs": [
+          headers,
+          ["2026-07-01", "Pitcher List", "", 2, 1, 1, 1, 1],
+        ],
+      }),
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      rows: [expect.objectContaining({
+        wp_site: "pl",
+        page_url: "urn:raptive:unattributed",
+      })],
+    });
+  });
+
+  it("preserves identical paths independently for Pitcher List and QB List", () => {
+    const result = parseRaptiveWorkbook(
+      workbookBuffer({
+        "Top Earning URLs": [
+          headers,
+          ["2026-07-01", "Pitcher List", "/", 2, 1, 1, 1, 1],
+          ["2026-07-01", "QB List", "/", 3, 1, 1, 1, 1],
+        ],
+      }),
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      rows: [
+        expect.objectContaining({ wp_site: "pl", earnings: 2 }),
+        expect.objectContaining({ wp_site: "qb", earnings: 3 }),
+      ],
+    });
+  });
+
   it(
     "parses a representative 20,000-row workbook without truncation",
     () => {
@@ -116,6 +156,7 @@ describe("Raptive workbook parsing", () => {
       for (let index = 0; index < 20_000; index += 1) {
         rows.push([
           "2026-07-01",
+          "Pitcher List",
           `/large-fixture/${index}/`,
           index / 100,
           1,
@@ -159,6 +200,7 @@ describe("Raptive import commit", () => {
   it("sends one atomic replacement RPC instead of delete-plus-chunks", async () => {
     mocks.rpc.mockResolvedValue({ data: 1, error: null });
     const row = {
+      wp_site: "pl" as const,
       date: "2026-07-01",
       page_url: "/a/",
       earnings: 1,
@@ -211,6 +253,7 @@ describe("Raptive import commit", () => {
         "run-1",
         [
           {
+            wp_site: "pl",
             date: "2026-07-01",
             page_url: "/a/",
             earnings: 1,
@@ -232,5 +275,44 @@ describe("Raptive import commit", () => {
         },
       ),
     ).resolves.toEqual({ ok: false, error: "Failed to commit Raptive import" });
+  });
+});
+
+describe("Raptive entry matching", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("paginates beyond the first 1,000 entry URLs", async () => {
+    const entries = Array.from({ length: 1001 }, (_, index) => ({
+      id: `entry-${index}`,
+      site: "pl" as const,
+      wp_post_url: `https://pitcherlist.com/article-${index}/`,
+    }));
+    mocks.from.mockImplementation(() => {
+      const builder = {
+        select: vi.fn(() => builder),
+        not: vi.fn(() => builder),
+        order: vi.fn(() => builder),
+        range: vi.fn((from: number, to: number) => Promise.resolve({
+          data: entries.slice(from, to + 1),
+          error: null,
+        })),
+      };
+      return builder;
+    });
+
+    const result = await matchRaptiveRowsToEntries([{
+      wp_site: "pl",
+      date: "2026-07-01",
+      page_url: "/article-1000/",
+      earnings: 1,
+      rpm: 2,
+      page_rpm: 3,
+      sessions: 4,
+      pageviews: 5,
+    }]);
+
+    expect(result.matchedCount).toBe(1);
+    expect(result.matched[0].entry_id).toBe("entry-1000");
+    expect(mocks.from).toHaveBeenCalledTimes(2);
   });
 });
