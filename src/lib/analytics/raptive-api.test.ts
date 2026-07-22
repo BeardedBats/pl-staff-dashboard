@@ -8,6 +8,7 @@ vi.mock("@/lib/env", () => ({
 }));
 
 import {
+  getRaptiveDateBounds,
   getRaptivePagePerformance,
   listRaptiveSites,
   resetRaptiveTokenCacheForTests,
@@ -150,6 +151,91 @@ describe("Raptive Creator API client", () => {
     expect(rows.map((row) => row.earnings)).toEqual([1, 2]);
     expect(String(fetchMock.mock.calls[1][0])).toContain("page%5Bnumber%5D=1");
     expect(String(fetchMock.mock.calls[2][0])).toContain("page%5Bnumber%5D=2");
+  });
+
+  it("validates the consumed date-bound fields without requiring unused dashboard ranges", async () => {
+    fetchMock
+      .mockResolvedValueOnce(token())
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            analyticsDateBounds: {
+              range: { startDate: "2026-07-01", endDate: "2026-07-20" },
+            },
+            earningsDateBounds: {
+              range: { startDate: "2026-07-01", endDate: "2026-07-19" },
+            },
+          },
+        }),
+      );
+
+    await expect(getRaptiveDateBounds("site-1")).resolves.toMatchObject({
+      analyticsDateBounds: {
+        range: { startDate: "2026-07-01", endDate: "2026-07-20" },
+      },
+      earningsDateBounds: {
+        range: { startDate: "2026-07-01", endDate: "2026-07-19" },
+      },
+    });
+  });
+
+  it("accepts page rows with every persisted field while ignoring absent presentation metadata", async () => {
+    fetchMock
+      .mockResolvedValueOnce(token())
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              pageUrl: "https://pitcherlist.com/minimal/",
+              earnings: 3.25,
+              pageviews: 75,
+              rpm: 5.5,
+            },
+          ],
+          meta: {
+            recordCount: 1,
+            page: { number: 1, next: null },
+          },
+        }),
+      );
+
+    await expect(
+      getRaptivePagePerformance("site-1", "2026-07-20"),
+    ).resolves.toEqual([
+      {
+        pageUrl: "https://pitcherlist.com/minimal/",
+        earnings: 3.25,
+        pageviews: 75,
+        rpm: 5.5,
+      },
+    ]);
+  });
+
+  it("returns an endpoint-specific code when a persisted page metric is invalid", async () => {
+    fetchMock
+      .mockResolvedValueOnce(token())
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              pageUrl: "https://pitcherlist.com/invalid/",
+              earnings: "3.25",
+              pageviews: 75,
+              rpm: 5.5,
+            },
+          ],
+          meta: {
+            recordCount: 1,
+            page: { number: 1, next: null },
+          },
+        }),
+      );
+
+    await expect(
+      getRaptivePagePerformance("site-1", "2026-07-20"),
+    ).rejects.toMatchObject({
+      code: "raptive_page_performance_schema_invalid",
+    });
   });
 
   it("refreshes one rejected bearer token without exposing credentials", async () => {
