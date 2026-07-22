@@ -100,6 +100,33 @@ export const DEFAULT_FILTERS: EntriesFilterState = {
   sortDir: "asc",
 };
 
+const USEFUL_PRESETS: Array<{
+  name: string;
+  description: string;
+  filters: Partial<EntriesFilterState>;
+}> = [
+  {
+    name: "Needs a writer",
+    description: "Open assignments with no writer yet",
+    filters: { contentStatus: "writer_needed", sortBy: "publish_date", sortDir: "asc" },
+  },
+  {
+    name: "Ready to edit",
+    description: "Submitted work waiting for an editor",
+    filters: { editorStatus: "ready_for_edit", sortBy: "publish_date", sortDir: "asc" },
+  },
+  {
+    name: "Priority work",
+    description: "Priority entries ordered by deadline",
+    filters: { priority: "true", sortBy: "publish_date", sortDir: "asc" },
+  },
+  {
+    name: "Recently changed",
+    description: "Latest pipeline activity first",
+    filters: { sortBy: "updated_at", sortDir: "desc" },
+  },
+];
+
 const ALL_COLUMNS = [
   { id: "title", label: "Title", defaultVisible: true },
   { id: "authors", label: "Authors", defaultVisible: true },
@@ -158,6 +185,7 @@ export function EntriesTable({
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [bulkBusy, setBulkBusy] = React.useState(false);
   const [bulkError, setBulkError] = React.useState<string | null>(null);
+  const [bulkSuccess, setBulkSuccess] = React.useState<string | null>(null);
   const isMobile = useIsMobile();
   const tableContainerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -268,12 +296,22 @@ export function EntriesTable({
 
   const allRows = table.getRowModel().rows;
 
-  const selectedCount = Object.keys(rowSelection).length;
-  const selectedIds = Object.keys(rowSelection);
+  const selectedIds = table
+    .getSelectedRowModel()
+    .flatRows.map((row) => row.original.id);
+  const selectedCount = selectedIds.length;
 
-  async function runBulk(body: Record<string, unknown>) {
+  async function runBulk(body: Record<string, unknown>, actionLabel: string) {
+    if (
+      !window.confirm(
+        `${actionLabel} for ${selectedCount} selected ${selectedCount === 1 ? "entry" : "entries"}?`,
+      )
+    ) {
+      return;
+    }
     setBulkBusy(true);
     setBulkError(null);
+    setBulkSuccess(null);
     try {
       const res = await fetch("/api/entries/bulk", {
         method: "POST",
@@ -285,6 +323,11 @@ export function EntriesTable({
         return;
       }
 
+      const result = (await res.json()) as { updated?: number };
+      const updated = result.updated ?? selectedCount;
+      setBulkSuccess(
+        `${actionLabel} completed for ${updated} ${updated === 1 ? "entry" : "entries"}.`,
+      );
       setRowSelection({});
       setFilters((f) => ({ ...f })); // re-fetch
       router.refresh();
@@ -397,13 +440,7 @@ export function EntriesTable({
               size="sm"
               disabled={bulkBusy}
               onClick={() => {
-                if (
-                  window.confirm(
-                    `Archive ${selectedCount} entries? They'll be soft-deleted and can be restored later.`,
-                  )
-                ) {
-                  void runBulk({ action: "archive" });
-                }
+                void runBulk({ action: "archive" }, "Archive");
               }}
             >
               <Archive className="h-3.5 w-3.5" />
@@ -414,7 +451,10 @@ export function EntriesTable({
               size="sm"
               disabled={bulkBusy}
               onClick={() => {
-                void runBulk({ action: "set_priority", priority: true });
+                void runBulk(
+                  { action: "set_priority", priority: true },
+                  "Set priority",
+                );
               }}
             >
               <Star className="h-3.5 w-3.5 text-amber" />
@@ -425,7 +465,10 @@ export function EntriesTable({
               size="sm"
               disabled={bulkBusy}
               onClick={() => {
-                void runBulk({ action: "set_priority", priority: false });
+                void runBulk(
+                  { action: "set_priority", priority: false },
+                  "Remove priority",
+                );
               }}
             >
               <Star className="h-3.5 w-3.5" />
@@ -437,7 +480,7 @@ export function EntriesTable({
                 size="sm"
                 disabled={bulkBusy}
                 onClick={() => {
-                  void runBulk({ action: "unarchive" });
+                  void runBulk({ action: "unarchive" }, "Restore");
                 }}
               >
                 <Archive className="h-3.5 w-3.5 text-cyan" />
@@ -446,7 +489,10 @@ export function EntriesTable({
             ) : null}
             <div className="flex flex-wrap items-center gap-1.5">
               <Select value={bulkTierId} onValueChange={setBulkTierId}>
-                <SelectTrigger className="h-8 w-[140px] text-xs">
+                <SelectTrigger
+                  aria-label="Choose a tier for selected entries"
+                  className="h-8 w-[140px] text-xs"
+                >
                   <SelectValue placeholder="Pick tier…" />
                 </SelectTrigger>
                 <SelectContent>
@@ -462,7 +508,10 @@ export function EntriesTable({
                 size="sm"
                 disabled={bulkBusy || !bulkTierId}
                 onClick={() => {
-                  void runBulk({ action: "change_tier", tier_id: bulkTierId });
+                  void runBulk(
+                    { action: "change_tier", tier_id: bulkTierId },
+                    "Change tier",
+                  );
                 }}
               >
                 Change tier
@@ -475,6 +524,7 @@ export function EntriesTable({
                 onClick={() => {
                   setRowSelection({});
                   setBulkError(null);
+                  setBulkSuccess(null);
                 }}
               >
                 <X className="h-3 w-3" />
@@ -491,6 +541,15 @@ export function EntriesTable({
             </p>
           ) : null}
         </div>
+      ) : null}
+
+      {bulkSuccess ? (
+        <p
+          role="status"
+          className="rounded-md border border-cyan/30 bg-cyan-dim/20 px-3 py-2 text-xs text-cyan"
+        >
+          {bulkSuccess}
+        </p>
       ) : null}
 
       {/* Entries — table on desktop, card list on mobile */}
@@ -870,6 +929,31 @@ function EntriesToolbar({
                     <Save className="h-3.5 w-3.5" />
                     Save current
                   </Button>
+                </div>
+                <div className="space-y-1 border-b border-border pb-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-text-zero">
+                    Useful presets
+                  </p>
+                  {USEFUL_PRESETS.map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      className="block w-full rounded-sm px-2 py-1.5 text-left hover:bg-surface-3"
+                      onClick={() =>
+                        onFiltersChange({
+                          ...DEFAULT_FILTERS,
+                          ...preset.filters,
+                        })
+                      }
+                    >
+                      <span className="block text-sm text-text-cell">
+                        {preset.name}
+                      </span>
+                      <span className="block text-[10px] text-text-zero">
+                        {preset.description}
+                      </span>
+                    </button>
+                  ))}
                 </div>
                 {views.length === 0 ? (
                   <p className="text-xs text-text-zero">

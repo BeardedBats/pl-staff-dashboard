@@ -13,12 +13,14 @@ import {
   getMyUpcomingDeadlines,
   getOpenGraphicRequests,
   getPipelineHealth,
+  getManagerSignals,
   getStaleEntries,
   getUnclaimedWriterSlots,
   getWpSyncHealth,
 } from "@/lib/home/widgets";
 import { buildTodayBrief } from "@/lib/home/today";
 import { setupItemsForRoles } from "@/lib/onboarding/setup";
+import { buildWeeklyOperationalDigest } from "@/lib/home/manager-operations";
 import { SetupChecklist } from "@/components/onboarding/setup-checklist";
 import { ManagerInbox } from "./manager-inbox";
 import { TodayBrief } from "./today-brief";
@@ -43,6 +45,7 @@ import {
   StaleEntriesWidget,
   WpSyncHealthWidget,
 } from "./widgets/eic-widgets";
+import { ManagerControlCenter, WeeklyDigestWidget } from "./widgets/manager-widgets";
 
 export const metadata = {
   title: "Home",
@@ -114,6 +117,7 @@ export default async function HomePage() {
     stale,
     pendingClaims,
     pendingArchives,
+    managerSignals,
   ] = await Promise.all([
     writerFit ? getMyActiveClaims(user.id) : Promise.resolve([]),
     writerFit ? getMySubmittedInFlight(user.id) : Promise.resolve([]),
@@ -126,13 +130,23 @@ export default async function HomePage() {
     editorFit ? getMyActiveEdits(user.id) : Promise.resolve([]),
     graphicsScope ? getOpenGraphicRequests(graphicsScope) : Promise.resolve([]),
     graphicsFit ? getMyActiveGraphics(user.id) : Promise.resolve([]),
-    eicScope ? getPipelineHealth(eicScope) : Promise.resolve(null),
+    managerScope ? getPipelineHealth(managerScope) : Promise.resolve(null),
     eicScope ? getWpSyncHealth(eicScope) : Promise.resolve(null),
     eicScope ? getAnalyticsMini(eicScope) : Promise.resolve(null),
     eicScope ? getStaleEntries(eicScope) : Promise.resolve([]),
     managerFit ? listPendingClaims(user) : Promise.resolve([]),
     managerFit ? listPendingArchiveRequests(user) : Promise.resolve([]),
+    managerScope ? getManagerSignals(managerScope) : Promise.resolve(null),
   ]);
+
+  const weeklyDigest =
+    managerFit && pipelineHealth && managerSignals
+      ? buildWeeklyOperationalDigest({
+          health: pipelineHealth,
+          signals: managerSignals,
+          pendingApprovals: pendingClaims.length + pendingArchives.length,
+        })
+      : null;
 
   const todayBrief = buildTodayBrief({
     pendingClaims: pendingClaims.length,
@@ -179,6 +193,17 @@ export default async function HomePage() {
           initialClaims={pendingClaims}
           initialArchives={pendingArchives}
         />
+      ) : null}
+
+      {managerFit && pipelineHealth && managerSignals && weeklyDigest ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <ManagerControlCenter
+            health={pipelineHealth}
+            signals={managerSignals}
+            pendingApprovals={pendingClaims.length + pendingArchives.length}
+          />
+          <WeeklyDigestWidget digest={weeklyDigest} />
+        </div>
       ) : null}
 
       {/* EIC/Ops — pipeline health + analytics lead everything else */}

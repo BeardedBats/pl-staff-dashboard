@@ -5,7 +5,7 @@ Last updated: 2026-07-21
 ## Recovery state
 
 - Current phase: Phase 4 — Role-focused workflow and usability
-- Current action: P4.6–P4.9 — manager control-center, saved-view, digest, and safe-bulk-action batch.
+- Current action: P4.10–P4.15 — focused work, humane capacity, polishing, editor-risk, readiness, and handoff-history batch.
 - Branch: `codex/production-readiness-p4`
 - Stack base: `feb4f12` (combined Phase 3 exact head on green draft PR #39, based on the green stacked production-readiness pull requests).
 - Upstream baseline: `origin/main` at merge commit `dbab5c2` after PR #8.
@@ -94,10 +94,10 @@ Gate: new feature work can be built entirely from verified PLPD primitives.
 - [x] P4.3 Present plain-language status and a recommended next action.
 - [x] P4.4 Add role-based onboarding and setup checklists.
 - [x] P4.5 Cover loading, empty, partial, stale, success, and error states.
-- [ ] P4.6 Build a manager control center.
-- [ ] P4.7 Add useful saved views and presets.
-- [ ] P4.8 Add a concise weekly operational digest.
-- [ ] P4.9 Add safe bulk actions.
+- [x] P4.6 Build a manager control center.
+- [x] P4.7 Add useful saved views and presets.
+- [x] P4.8 Add a concise weekly operational digest.
+- [x] P4.9 Add safe bulk actions.
 - [ ] P4.10 Build a focused My Work view.
 - [ ] P4.11 Make availability and capacity visible without employee surveillance.
 - [ ] P4.12 Present polishing requests as actionable feedback.
@@ -599,6 +599,15 @@ Do not implement internal-link suggestions, WordPress editorial-comment bridging
 - Added inherited authenticated-route loading and safe error/retry boundaries. Global search exercises idle, loading, empty, partial, success, and error states; the Today view surfaces stale work; manager decisions now check every response and show explicit success or non-destructive failure feedback.
 - Targeted verification: five Today/setup unit tests, three authenticated search-route API tests, two global-search partial/error component tests, four recursive workflow-foundation contract tests, and two production-Chromium journeys pass. The browser proof uses real seeded database records to exercise all five search groups, the prioritized Today action, role-specific setup persistence/completion, keyboard opening/focus, and an open-dialog WCAG A/AA scan with no exclusions.
 - React review: state remains local to the command palette, setup checklist, and existing manager inbox; fetch effects are abortable and clean up their debounce timer; the tour timer retains cleanup; no mirrored server state, unstable list keys, request waterfall, or new broad client boundary was introduced.
+
+### 2026-07-21 — P4.6–P4.9 manager-operations batch
+
+- Managers and administrators now receive a site-scoped control center above their role queues. It surfaces pending decisions, overdue deadlines, writer coverage gaps, and stale work as direct actions; the existing EIC/Operations revenue boundary is unchanged.
+- Added a live weekly operations digest with published-seven-day output, upcoming-seven-day commitments, pending decisions, risk signals, and one ordered recommended action. Its pure decision model prioritizes approvals, overdue work, writer gaps, schedule blocks, and then the forward calendar.
+- Kept personal saved views and added four immediately useful, non-destructive presets: Needs a writer, Ready to edit, Priority work, and Recently changed. Presets reset unrelated filters before applying their documented purpose.
+- Every bulk archive, restore, priority, and tier operation now confirms the exact selected count, uses only currently visible selected resource IDs, reports the server's atomic updated count, and retains explicit safe failure feedback. The API still rejects the whole operation unless every entry exists, is visible, and is within the manager's site authority; status transitions remain deliberately excluded.
+- Targeted verification: ten manager-digest and transactional-bulk unit tests, four bulk-route API authorization/atomicity tests, ESLint, and TypeScript pass. Three production-Chromium workflow journeys pass against seeded data, including manager operations, a real preset, cancelled bulk confirmation, semantic widget headings, and a selected-action WCAG A/AA scan with no exclusions. The scan found and repaired the previously hidden bulk-tier control's missing accessible name.
+- React review: the new manager widgets remain server-rendered; digest derivation is pure; no request waterfall, broad client boundary, mirrored server state, or unstable key was introduced. Existing table-local state owns confirmations and feedback, and selection is derived from TanStack's current row model so stale filtered IDs cannot be submitted.
 
 ## Phase 0 prioritized defect and risk inventory
 

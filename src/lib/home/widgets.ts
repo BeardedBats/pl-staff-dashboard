@@ -7,6 +7,7 @@ import type {
   EditorStatus,
   GraphicStatus,
 } from "@/lib/entries/queries";
+import type { ManagerSignals } from "./manager-operations";
 
 // --------------------------------------------------------------------------
 // Shared widget row types
@@ -450,6 +451,46 @@ export async function getPipelineHealth(
     publishedThisWeek: publishedThisWeek.count ?? 0,
     drafted: drafted.count ?? 0,
     gateBlocked: gateBlocked ?? 0,
+  };
+}
+
+/** Site-scoped counts managers need for weekly risk triage. */
+export async function getManagerSignals(
+  userSite: AppSite,
+): Promise<ManagerSignals> {
+  const supabase = getSupabaseAdmin();
+  const now = new Date();
+  const nextWeek = new Date(now);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  const staleCutoff = new Date(now);
+  staleCutoff.setDate(staleCutoff.getDate() - 7);
+
+  const active = () => {
+    let query = supabase
+      .from("entries")
+      .select("id", { count: "exact", head: true })
+      .eq("is_archived", false)
+      .eq("is_drafted", false)
+      .eq("is_historical", false)
+      .neq("editor_status", "published");
+    if (userSite !== "both") query = query.in("site", [userSite, "both"]);
+    return query;
+  };
+
+  const [overdue, dueNextSevenDays, stale] = await Promise.all([
+    active().lt("publish_date", now.toISOString()),
+    active()
+      .gte("publish_date", now.toISOString())
+      .lte("publish_date", nextWeek.toISOString()),
+    active()
+      .in("content_status", ["claimed", "polishing"])
+      .lt("updated_at", staleCutoff.toISOString()),
+  ]);
+
+  return {
+    overdue: overdue.count ?? 0,
+    dueNextSevenDays: dueNextSevenDays.count ?? 0,
+    stale: stale.count ?? 0,
   };
 }
 

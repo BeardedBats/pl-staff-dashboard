@@ -41,7 +41,11 @@ export function WidgetShell({
     <Card state={state} stateful>
       <CardHeader className="flex flex-row items-start justify-between gap-2">
         <div>
-          <CardTitle className="flex items-center gap-2 text-sm">
+          <CardTitle
+            role="heading"
+            aria-level={2}
+            className="flex items-center gap-2 text-sm"
+          >
             {icon}
             {title}
             {typeof count === "number" ? (

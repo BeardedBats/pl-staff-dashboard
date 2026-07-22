@@ -87,3 +87,49 @@ test("first-time writers receive and can finish a role-specific setup checklist"
     await context.close();
   }
 });
+
+test("managers get risk-first operations, useful presets, and confirmed bulk actions", async ({
+  browser,
+}) => {
+  const { context, page } = await actorPage(browser, "admin");
+  try {
+    await page.goto("/home", { waitUntil: "networkidle" });
+    await expect(
+      page.getByRole("heading", { name: "Manager control center" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Weekly operations" }),
+    ).toBeVisible();
+    await expect(page.getByText("Published in 7 days")).toBeVisible();
+    await expect(page.getByText("Decisions waiting")).toBeVisible();
+
+    await page.goto("/content", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: /Views/ }).click();
+    await page.getByRole("button", { name: /Needs a writer/ }).click();
+    await expect(page.getByRole("combobox", { name: "Filter by content status" })).toHaveText(
+      "Writer needed",
+    );
+
+    await page.getByRole("checkbox", { name: "Select all" }).click();
+    const setPriority = page.getByRole("button", { name: "Set priority" });
+    await expect(setPriority).toBeVisible();
+    page.once("dialog", async (dialog) => {
+      expect(dialog.message()).toMatch(/Set priority for \d+ selected entr/);
+      await dialog.dismiss();
+    });
+    await setPriority.click();
+    await expect(setPriority).toBeVisible();
+
+    const axe = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+      .analyze();
+    expect(
+      axe.violations.map((violation) => ({
+        id: violation.id,
+        targets: violation.nodes.map((node) => node.target),
+      })),
+    ).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
