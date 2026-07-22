@@ -31,7 +31,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   const result = await createClaim(viewer, id, parsed.data.role_type);
   if (!result.ok) {
-    return errorResponse(400, result.error);
+    return errorResponse(statusCodeForClaimFailure(result.kind), result.error);
   }
 
   return NextResponse.json({
@@ -39,4 +39,21 @@ export async function POST(request: Request, context: RouteContext) {
     claim_id: result.claim_id,
     status: result.status,
   });
+}
+
+function statusCodeForClaimFailure(
+  kind: "invalid" | "not_found" | "forbidden" | "conflict" | "database",
+): number {
+  switch (kind) {
+    case "invalid":
+      return 400;
+    case "not_found":
+      return 404;
+    case "forbidden":
+      return 403;
+    case "conflict":
+      return 409;
+    case "database":
+      return 500;
+  }
 }

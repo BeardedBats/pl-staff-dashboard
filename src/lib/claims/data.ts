@@ -3,8 +3,8 @@ import "server-only";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { CurrentUser } from "@/lib/auth/current-user";
-import { writeAuditRow } from "@/lib/entries/status-transitions";
 import { appendRecentActivity } from "@/lib/entries/recent-activity";
+import { writeAuditRow } from "@/lib/entries/status-transitions";
 import {
   triggerClaimRequested,
   triggerClaimResolved,
@@ -22,6 +22,11 @@ import {
 
 export type ClaimRole = "writer" | "editor" | "graphic";
 export type ClaimStatus = "pending" | "approved" | "denied";
+export type ClaimFailure = {
+  ok: false;
+  kind: "invalid" | "not_found" | "forbidden" | "conflict" | "database";
+  error: string;
+};
 
 export type ClaimRecord = {
   id: string;
@@ -70,105 +75,94 @@ export async function createClaim(
   roleType: ClaimRole,
 ): Promise<
   | { ok: true; status: "pending" | "approved"; claim_id: string }
-  | { ok: false; error: string }
+  | ClaimFailure
 > {
   if (roleType !== "writer") {
     return {
       ok: false,
+      kind: "invalid",
       error:
         "Only writer claims go through /api/entries/:id/claim. Editors use claim-edit; graphics use Step 5 graphic requests.",
     };
   }
 
   const authorization = await loadEntryAuthorizationContext(entryId);
-  if (!authorization) return { ok: false, error: "Entry not found" };
+  if (!authorization) {
+    return { ok: false, kind: "not_found", error: "Entry not found" };
+  }
   if (!canClaimWriterResource(viewer, authorization)) {
     return {
       ok: false,
+      kind: "forbidden",
       error: "A writer role for this site is required to claim this entry",
     };
   }
 
   const supabase = getSupabaseAdmin();
 
-  // Load the entry.
+  // Load display data before the transactional claim RPC. The RPC repeats the
+  // state check while holding the entry row lock.
   const { data: entry } = await supabase
     .from("entries")
-    .select("id, content_status, wp_post_id, title, site")
+    .select("id, title")
     .eq("id", entryId)
     .maybeSingle();
-  if (!entry) return { ok: false, error: "Entry not found" };
+  if (!entry) {
+    return { ok: false, kind: "not_found", error: "Entry not found" };
+  }
 
-  if (entry.content_status !== "writer_needed") {
+  const autoApprove = isManagerPlusForSite(viewer, authorization.site);
+  const { data: created, error: createError } = await supabase
+    .rpc("create_writer_claim", {
+      p_actor_id: viewer.id,
+      p_entry_id: entryId,
+      p_auto_approve: autoApprove,
+    })
+    .single();
+  if (createError || !created) {
+    if (createError?.code === "P0002") {
+      return { ok: false, kind: "not_found", error: "Entry not found" };
+    }
+    if (createError?.code === "P0001") {
+      return {
+        ok: false,
+        kind: "conflict",
+        error: "Entry is not available for claiming",
+      };
+    }
+    return { ok: false, kind: "database", error: "Failed to create claim" };
+  }
+
+  if (created.claim_status === "approved") {
+    await appendRecentActivity(entryId, {
+      type: "claim",
+      actor_id: viewer.id,
+      actor_name: viewer.display_name,
+      label: "claimed to write",
+      at: new Date().toISOString(),
+    });
+    const draft = await createWpDraftForEntry(entryId, viewer.id);
+    if (!draft.ok) {
+      await writeAuditRow(
+        entryId,
+        viewer.id,
+        "field_edit",
+        "wp_draft_create_error",
+        null,
+        draft.error,
+      );
+    }
     return {
-      ok: false,
-      error: `Entry is not available for claiming (status: ${entry.content_status}).`,
+      ok: true,
+      status: "approved",
+      claim_id: created.claim_id,
     };
   }
-
-  // Insert the claim row first.
-  const { data: created, error: insertError } = await supabase
-    .from("claims")
-    .insert({
-      entry_id: entryId,
-      user_id: viewer.id,
-      role_type: roleType,
-      status: "pending",
-    })
-    .select("id")
-    .single();
-  if (insertError || !created) {
-    return { ok: false, error: "Failed to create claim" };
-  }
-
-  await writeAuditRow(
-    entryId,
-    viewer.id,
-    "claim",
-    "content_track",
-    null,
-    `${viewer.display_name} requested to write`,
-  );
-
-  // Auto-approve path: admin+ / eic / ops / manager claiming for themselves.
-  const isSelfApprover = viewer.roles.some((r) =>
-    ["admin", "eic", "operations", "manager"].includes(r),
-  );
-
-  if (isSelfApprover) {
-    const approvalResult = await approveClaim(
-      viewer,
-      created.id as string,
-      { autoApproval: true },
-    );
-    if (!approvalResult.ok) {
-      return { ok: false, error: approvalResult.error };
-    }
-    return { ok: true, status: "approved", claim_id: created.id as string };
-  }
-
-  // Otherwise flip the entry to `claim_requested` and leave the claim pending.
-  await supabase
-    .from("entries")
-    .update({
-      content_status: "claim_requested",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", entryId);
-
-  await writeAuditRow(
-    entryId,
-    viewer.id,
-    "status_change",
-    "content_status",
-    "writer_needed",
-    "claim_requested",
-  );
 
   // Notify team managers that there's a new claim to resolve.
   await triggerClaimRequested(viewer, entryId, entry.title as string);
 
-  return { ok: true, status: "pending", claim_id: created.id as string };
+  return { ok: true, status: "pending", claim_id: created.claim_id };
 }
 
 // --------------------------------------------------------------------------
@@ -178,8 +172,7 @@ export async function createClaim(
 export async function approveClaim(
   approver: CurrentUser,
   claimId: string,
-  opts: { autoApproval?: boolean } = {},
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true } | ClaimFailure> {
   const supabase = getSupabaseAdmin();
 
   const { data: claim } = await supabase
@@ -187,85 +180,50 @@ export async function approveClaim(
     .select("id, entry_id, user_id, role_type, status")
     .eq("id", claimId)
     .maybeSingle();
-  if (!claim) return { ok: false, error: "Claim not found" };
-  if (claim.status !== "pending") {
-    return { ok: false, error: `Claim already ${claim.status}` };
+  if (!claim) {
+    return { ok: false, kind: "not_found", error: "Claim not found" };
   }
-
   const authorization = await loadEntryAuthorizationContext(
     claim.entry_id as string,
   );
-  if (!authorization) return { ok: false, error: "Entry not found" };
-
-  // Permission check — skip in the auto-approval path (we've already vetted
-  // the viewer there).
-  if (!opts.autoApproval && !isManagerPlusForSite(approver, authorization.site)) {
-    return { ok: false, error: "Only managers can approve claims" };
+  if (!authorization) {
+    return { ok: false, kind: "not_found", error: "Entry not found" };
   }
 
-  // Read the entry's current content_status so the audit log captures the
-  // actual transition. This matters because auto-approval skips the
-  // `claim_requested` intermediate state — the entry jumps straight from
-  // `writer_needed` to `claimed` — and we want the audit row to reflect that.
-  const { data: priorEntry } = await supabase
-    .from("entries")
-    .select("content_status")
-    .eq("id", claim.entry_id)
-    .maybeSingle();
-  const previousContentStatus = (priorEntry?.content_status as string | null) ?? "writer_needed";
+  if (!isManagerPlusForSite(approver, authorization.site)) {
+    return {
+      ok: false,
+      kind: "forbidden",
+      error: "Only managers can approve claims",
+    };
+  }
 
-  // 1. Mark the claim approved.
-  await supabase
-    .from("claims")
-    .update({
-      status: "approved",
-      approved_by: approver.id,
-      resolved_at: new Date().toISOString(),
+  const { data: resolved, error } = await supabase
+    .rpc("resolve_writer_claim", {
+      p_actor_id: approver.id,
+      p_claim_id: claimId,
+      p_action: "approve",
     })
-    .eq("id", claimId);
+    .single();
+  if (error || !resolved) return claimResolutionFailure(error?.code);
 
-  // 2. Attach the claimer as the primary author.
-  await supabase.from("entry_authors").insert({
-    entry_id: claim.entry_id,
-    user_id: claim.user_id,
-    role: "primary",
-  });
-
-  // 3. Flip the entry to claimed.
-  await supabase
-    .from("entries")
-    .update({
-      content_status: "claimed",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", claim.entry_id);
-
-  await writeAuditRow(
-    claim.entry_id,
-    approver.id,
-    "status_change",
-    "content_status",
-    previousContentStatus,
-    "claimed",
-  );
-
-  await appendRecentActivity(claim.entry_id as string, {
+  await appendRecentActivity(resolved.resolved_entry_id, {
     type: "claim",
     actor_id: approver.id,
     actor_name: approver.display_name,
-    label:
-      opts.autoApproval && approver.id === claim.user_id
-        ? "claimed to write"
-        : "claim approved — writer assigned",
+    label: "claim approved — writer assigned",
     at: new Date().toISOString(),
   });
 
-  // 4. Create the WP draft. Best-effort — if WP is down, we still mark
+  // Create the WP draft. Best-effort — if WP is down, we still mark
   //    the claim approved but flag the failure in the audit log.
-  const draft = await createWpDraftForEntry(claim.entry_id, claim.user_id);
+  const draft = await createWpDraftForEntry(
+    resolved.resolved_entry_id,
+    resolved.claimant_user_id,
+  );
   if (!draft.ok) {
     await writeAuditRow(
-      claim.entry_id,
+      resolved.resolved_entry_id,
       approver.id,
       "field_edit",
       "wp_draft_create_error",
@@ -274,17 +232,11 @@ export async function approveClaim(
     );
   }
 
-  // 5. Notify the claimer (unless this was their own self-approval).
-  const { data: entryForNotif } = await supabase
-    .from("entries")
-    .select("title")
-    .eq("id", claim.entry_id)
-    .maybeSingle();
   await triggerClaimResolved(
     approver,
-    claim.user_id as string,
-    claim.entry_id as string,
-    (entryForNotif?.title as string | undefined) ?? "an entry",
+    resolved.claimant_user_id,
+    resolved.resolved_entry_id,
+    resolved.entry_title,
     true,
   );
 
@@ -294,7 +246,7 @@ export async function approveClaim(
 export async function denyClaim(
   approver: CurrentUser,
   claimId: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true } | ClaimFailure> {
   const supabase = getSupabaseAdmin();
 
   const { data: claim } = await supabase
@@ -302,58 +254,39 @@ export async function denyClaim(
     .select("id, entry_id, user_id, status")
     .eq("id", claimId)
     .maybeSingle();
-  if (!claim) return { ok: false, error: "Claim not found" };
-  if (claim.status !== "pending") {
-    return { ok: false, error: `Claim already ${claim.status}` };
+  if (!claim) {
+    return { ok: false, kind: "not_found", error: "Claim not found" };
   }
-
   const authorization = await loadEntryAuthorizationContext(
     claim.entry_id as string,
   );
-  if (!authorization) return { ok: false, error: "Entry not found" };
-
-  if (!isManagerPlusForSite(approver, authorization.site)) {
-    return { ok: false, error: "Only managers can deny claims" };
+  if (!authorization) {
+    return { ok: false, kind: "not_found", error: "Entry not found" };
   }
 
-  await supabase
-    .from("claims")
-    .update({
-      status: "denied",
-      approved_by: approver.id,
-      resolved_at: new Date().toISOString(),
-    })
-    .eq("id", claimId);
+  if (!isManagerPlusForSite(approver, authorization.site)) {
+    return {
+      ok: false,
+      kind: "forbidden",
+      error: "Only managers can deny claims",
+    };
+  }
 
-  // Revert the entry back to writer_needed.
-  await supabase
-    .from("entries")
-    .update({
-      content_status: "writer_needed",
-      updated_at: new Date().toISOString(),
+  const { data: resolved, error } = await supabase
+    .rpc("resolve_writer_claim", {
+      p_actor_id: approver.id,
+      p_claim_id: claimId,
+      p_action: "deny",
     })
-    .eq("id", claim.entry_id);
-
-  await writeAuditRow(
-    claim.entry_id,
-    approver.id,
-    "status_change",
-    "content_status",
-    "claim_requested",
-    "writer_needed (claim denied)",
-  );
+    .single();
+  if (error || !resolved) return claimResolutionFailure(error?.code);
 
   // Notify the claimer their claim was denied.
-  const { data: entryForNotif } = await supabase
-    .from("entries")
-    .select("title")
-    .eq("id", claim.entry_id)
-    .maybeSingle();
   await triggerClaimResolved(
     approver,
-    claim.user_id as string,
-    claim.entry_id as string,
-    (entryForNotif?.title as string | undefined) ?? "an entry",
+    resolved.claimant_user_id,
+    resolved.resolved_entry_id,
+    resolved.entry_title,
     false,
   );
 
@@ -426,4 +359,20 @@ function isManagerPlus(viewer: CurrentUser): boolean {
   return viewer.roles.some((r) =>
     ["manager", "admin", "eic", "operations"].includes(r),
   );
+}
+
+function claimResolutionFailure(
+  code: string | undefined,
+): ClaimFailure {
+  if (code === "P0002") {
+    return { ok: false, kind: "not_found", error: "Claim not found" };
+  }
+  if (code === "P0001") {
+    return {
+      ok: false,
+      kind: "conflict",
+      error: "Claim is no longer pending",
+    };
+  }
+  return { ok: false, kind: "database", error: "Failed to resolve claim" };
 }

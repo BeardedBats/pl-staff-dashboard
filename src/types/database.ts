@@ -1430,6 +1430,17 @@ export type Database = {
           run_id: string
         }[]
       }
+      create_writer_claim: {
+        Args: {
+          p_actor_id: string
+          p_auto_approve?: boolean
+          p_entry_id: string
+        }
+        Returns: {
+          claim_id: string
+          claim_status: string
+        }[]
+      }
       finish_cron_run: {
         Args: {
           p_error_code?: string
@@ -1462,6 +1473,28 @@ export type Database = {
           title: string
           word_count: number
         }[]
+      }
+      resolve_writer_claim: {
+        Args: { p_action: string; p_actor_id: string; p_claim_id: string }
+        Returns: {
+          claimant_user_id: string
+          entry_title: string
+          resolution: string
+          resolved_entry_id: string
+        }[]
+      }
+      transition_editorial_entry: {
+        Args: {
+          p_action: string
+          p_actor_id: string
+          p_entry_id: string
+          p_reason?: string
+        }
+        Returns: boolean
+      }
+      update_entry_fields: {
+        Args: { p_actor_id: string; p_entry_id: string; p_payload: Json }
+        Returns: boolean
       }
     }
     Enums: {

@@ -30,7 +30,24 @@ export async function PATCH(request: Request, context: RouteContext) {
       : await denyClaim(viewer, id);
 
   if (!result.ok) {
-    return errorResponse(400, result.error);
+    return errorResponse(statusCodeForClaimFailure(result.kind), result.error);
   }
   return NextResponse.json({ ok: true });
+}
+
+function statusCodeForClaimFailure(
+  kind: "invalid" | "not_found" | "forbidden" | "conflict" | "database",
+): number {
+  switch (kind) {
+    case "invalid":
+      return 400;
+    case "not_found":
+      return 404;
+    case "forbidden":
+      return 403;
+    case "conflict":
+      return 409;
+    case "database":
+      return 500;
+  }
 }

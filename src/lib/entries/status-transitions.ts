@@ -97,31 +97,12 @@ export async function submitContent(
     };
   }
 
-  const currentEditor = entry.editor_status as EditorStatus;
-  const newEditor: EditorStatus =
-    currentEditor === "none" ? "ready_for_edit" : currentEditor;
-
-  const { error } = await supabase
-    .from("entries")
-    .update({
-      content_status: "submitted",
-      editor_status: newEditor,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", entryId);
-  if (error) return { ok: false, error: { kind: "db_error", message: error.message } };
-
-  await writeAuditRow(entryId, viewer.id, "status_change", "content_status", currentContent, "submitted");
-  if (newEditor !== currentEditor) {
-    await writeAuditRow(
-      entryId,
-      viewer.id,
-      "status_change",
-      "editor_status",
-      currentEditor,
-      newEditor,
-    );
-  }
+  const transition = await runEditorialTransition(
+    viewer.id,
+    entryId,
+    "submit",
+  );
+  if (!transition.ok) return transition;
 
   await appendRecentActivity(entryId, {
     type: "status_change",
@@ -193,23 +174,13 @@ export async function sendToPolishing(
     };
   }
 
-  const { error } = await supabase
-    .from("entries")
-    .update({
-      content_status: "polishing",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", entryId);
-  if (error) return { ok: false, error: { kind: "db_error", message: error.message } };
-
-  await writeAuditRow(
-    entryId,
+  const transition = await runEditorialTransition(
     viewer.id,
-    "status_change",
-    "content_status",
-    "submitted",
-    `polishing: ${reason.trim()}`,
+    entryId,
+    "send_to_polishing",
+    reason.trim(),
   );
+  if (!transition.ok) return transition;
 
   await appendRecentActivity(entryId, {
     type: "status_change",
@@ -260,16 +231,7 @@ export async function claimEdit(
     };
   }
 
-  // Insert editor. The UNIQUE(entry_id, user_id) constraint makes re-claiming
-  // a no-op rather than an error.
-  await supabase
-    .from("entry_editors")
-    .insert({ entry_id: entryId, user_id: viewer.id })
-    .select("id");
-
-  await writeAuditRow(entryId, viewer.id, "claim", "editor_track", null, viewer.display_name);
-
-  return { ok: true };
+  return runEditorialTransition(viewer.id, entryId, "claim_edit");
 }
 
 /**
@@ -358,23 +320,12 @@ export async function markEdited(
     return { ok: true };
   }
 
-  const { error } = await supabase
-    .from("entries")
-    .update({
-      editor_status: "edited",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", entryId);
-  if (error) return { ok: false, error: { kind: "db_error", message: error.message } };
-
-  await writeAuditRow(
-    entryId,
+  const transition = await runEditorialTransition(
     viewer.id,
-    "status_change",
-    "editor_status",
-    currentEditor,
-    "edited",
+    entryId,
+    "mark_edited",
   );
+  if (!transition.ok) return transition;
 
   await appendRecentActivity(entryId, {
     type: "status_change",
@@ -481,6 +432,62 @@ export async function applyWpStateToEntry(
 // --------------------------------------------------------------------------
 // Shared helpers
 // --------------------------------------------------------------------------
+
+type EditorialTransitionAction =
+  | "submit"
+  | "send_to_polishing"
+  | "claim_edit"
+  | "mark_edited";
+
+async function runEditorialTransition(
+  actorId: string,
+  entryId: string,
+  action: EditorialTransitionAction,
+  reason?: string,
+): Promise<TransitionResult> {
+  const { error } = await getSupabaseAdmin().rpc(
+    "transition_editorial_entry",
+    {
+      p_actor_id: actorId,
+      p_entry_id: entryId,
+      p_action: action,
+      ...(reason === undefined ? {} : { p_reason: reason }),
+    },
+  );
+  if (!error) return { ok: true };
+
+  if (error.code === "P0002") {
+    return { ok: false, error: { kind: "not_found" } };
+  }
+  if (error.code === "42501") {
+    return {
+      ok: false,
+      error: { kind: "forbidden", message: "Only the assigned writer can submit." },
+    };
+  }
+  if (error.code === "P0004") {
+    return {
+      ok: false,
+      error: {
+        kind: "gate_blocked",
+        message: "Entry no longer satisfies the required editorial gates.",
+      },
+    };
+  }
+  if (error.code === "P0001" || error.code === "22023") {
+    return {
+      ok: false,
+      error: {
+        kind: "invalid_transition",
+        message: "Entry changed while this request was being processed.",
+      },
+    };
+  }
+  return {
+    ok: false,
+    error: { kind: "db_error", message: error.message },
+  };
+}
 
 export async function writeAuditRow(
   entryId: string,

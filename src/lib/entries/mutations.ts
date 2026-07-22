@@ -8,7 +8,7 @@ import type { Json } from "@/types/database";
 // Create entry
 // --------------------------------------------------------------------------
 
-export const createEntrySchema = z.object({
+const createEntryFieldsSchema = z.object({
   title: z.string().trim().min(1).max(500),
   description: z.string().max(4000).optional().or(z.literal("")),
   site: z.enum(["pl", "qb"]),
@@ -38,6 +38,20 @@ export const createEntrySchema = z.object({
     .optional()
     .default([]),
 });
+
+export const createEntrySchema = createEntryFieldsSchema.superRefine(
+  (entry, context) => {
+    const hasDeadline = Boolean(entry.publish_date);
+    const hasPrecision = entry.publish_date_precision !== "none";
+    if (hasDeadline !== hasPrecision) {
+      context.addIssue({
+        code: "custom",
+        path: ["publish_date"],
+        message: "Publish date and precision must be provided together",
+      });
+    }
+  },
+);
 
 export type CreateEntryInput = z.infer<typeof createEntrySchema>;
 
@@ -148,60 +162,67 @@ export const updateEntrySchema = z.object({
     .optional(),
   category_id: z.uuid().nullable().optional(),
   series_id: z.uuid().nullable().optional(),
+}).superRefine((entry, context) => {
+  const changesDate = entry.publish_date !== undefined;
+  const changesPrecision = entry.publish_date_precision !== undefined;
+  if (changesDate !== changesPrecision) {
+    context.addIssue({
+      code: "custom",
+      path: ["publish_date"],
+      message: "Publish date and precision must be updated together",
+    });
+    return;
+  }
+  if (changesDate) {
+    const hasDeadline = entry.publish_date !== null;
+    const hasPrecision = entry.publish_date_precision !== "none";
+    if (hasDeadline !== hasPrecision) {
+      context.addIssue({
+        code: "custom",
+        path: ["publish_date"],
+        message: "Publish date and precision must describe the same deadline",
+      });
+    }
+  }
 });
 
 export type UpdateEntryInput = z.infer<typeof updateEntrySchema>;
+export type UpdateEntryResult =
+  | { ok: true }
+  | {
+      ok: false;
+      kind:
+        | "completed_checklist"
+        | "not_found"
+        | "invalid_reference"
+        | "database";
+    };
 
 export async function updateEntry(
   userId: string,
   entryId: string,
   input: UpdateEntryInput,
-): Promise<boolean> {
-  const supabase = getSupabaseAdmin();
-
-  // Pull the before-state so we can record diffs in the audit log.
-  const { data: before } = await supabase
-    .from("entries")
-    .select(
-      "title, description, tier_id, priority, publish_date, publish_date_precision, category_id, series_id",
-    )
-    .eq("id", entryId)
-    .maybeSingle();
-
-  const { error } = await supabase
-    .from("entries")
-    .update({ ...input, updated_at: new Date().toISOString() })
-    .eq("id", entryId);
-
-  if (error) return false;
-
-  if (before) {
-    const diffs: Array<{ field: string; old: string; new: string }> = [];
-    for (const [key, value] of Object.entries(input)) {
-      const prev = (before as Record<string, unknown>)[key];
-      if (value !== undefined && value !== prev) {
-        diffs.push({
-          field: key,
-          old: String(prev ?? ""),
-          new: String(value ?? ""),
-        });
-      }
-    }
-    if (diffs.length > 0) {
-      await supabase.from("audit_log").insert(
-        diffs.map((d) => ({
-          entry_id: entryId,
-          user_id: userId,
-          action: "field_edit",
-          field_name: d.field,
-          old_value: d.old,
-          new_value: d.new,
-        })),
-      );
-    }
+): Promise<UpdateEntryResult> {
+  const { data, error } = await getSupabaseAdmin().rpc(
+    "update_entry_fields",
+    {
+      p_actor_id: userId,
+      p_entry_id: entryId,
+      p_payload: input as Json,
+    },
+  );
+  if (!error && data === true) return { ok: true };
+  if (
+    error?.code === "P0001" &&
+    error.message === "completed_checklist_blocks_tier_change"
+  ) {
+    return { ok: false, kind: "completed_checklist" };
   }
-
-  return true;
+  if (error?.code === "P0002") return { ok: false, kind: "not_found" };
+  if (error?.code === "23503") {
+    return { ok: false, kind: "invalid_reference" };
+  }
+  return { ok: false, kind: "database" };
 }
 
 // The archive helpers moved to lib/archive-requests/data.ts in Step 4 so the
