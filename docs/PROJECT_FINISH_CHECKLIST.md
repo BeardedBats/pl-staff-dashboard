@@ -1,14 +1,14 @@
 # Pitcher List Staff Content Dashboard — Production Readiness
 
-Last updated: 2026-07-22
+Last updated: 2026-07-29
 
 ## Recovery state
 
-- Current phase: Phase 7 — final Raptive live-boundary hardening and production verification
-- Current action: deploy migration `0030`, promote the verified connector fix, move PL July 20 from compact history to the live boundary, and run final production reconciliation.
-- Branch: `codex/raptive-live-schema-fix`
-- Deployment: production is healthy on merge commit `f271084495308fa8cb1ba149608e4e7677832192`; migrations `0028`/`0029` and the compact historical import are live. Migration `0030` and its connector fix are the remaining affected release.
-- Known blocker: none requiring Nick. GitHub-hosted CI is waived because the account billing gate conflicts with the explicit no-spend requirement; local, database, preview, and production gates remain mandatory. QB WordPress remains unconfigured.
+- Current phase: Phase 7 — final production health repair and residual-risk closure
+- Current action: deploy the Operations System Health access correction, verify it in production, and resolve the expired GA4 authorization.
+- Branch: `codex/final-production-checkpoint`
+- Deployment: production is on merge commit `5f18f153882212c02016a5b4f5c964521fcb9f88`; migrations are contiguous through `0030`, historical/live Raptive is reconciled, and the July 22 production deployment succeeded.
+- Known blocker: Google rejects the saved GA4 refresh token with `invalid_grant`; Nick must complete one Google reconnect after this health-visibility fix deploys. GitHub-hosted CI remains waived because billing blocks runners under the explicit no-spend requirement. QB WordPress is intentionally unconfigured.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -22,7 +22,7 @@ Last updated: 2026-07-22
 - [x] P0.6 Inventory required environment variables and secret locations without displaying secret values.
 - [ ] P0.7 Identify plaintext or exposed credentials, rotate them when service access permits, move them into managed secret storage, and prevent recurrence. — BLOCKED: Vercel/Supabase management access is unavailable, so rotation cannot be completed without risking production outage. Plaintext files remain untouched and values have not been emitted.
 - [x] P0.8 Install dependencies reproducibly and capture baseline lint, type-check, build, audit, and runtime results.
-- [ ] P0.9 Inspect the live production and preview applications, including role-specific navigation and API behavior. — BLOCKED: public/login surfaces are verified, but there is no safe non-mutating dashboard test session for live role navigation; preview access is Vercel-protected.
+- [x] P0.9 Inspect the live production and preview applications, including role-specific navigation and API behavior. — Exact-stack role journeys cover manager, writer, editor, graphics, and admin; disposable live Operations sessions verified authenticated Settings/Analytics access and were deleted afterward. Vercel deployment records provide the protected-preview result.
 - [x] P0.10 Inspect the live database, RLS policies, storage buckets, Vercel settings, cron configuration, and connected service state when credentials permit.
 - [x] P0.11 Create the durable checklist with evidence from the verified baseline.
 - [x] P0.12 Produce a prioritized defect and risk inventory mapped to later phase items, then continue directly into Phase 1.
@@ -38,19 +38,19 @@ Gate: the user's work is preserved, local and remote history are understood, sec
 - [x] P1.5 Reconcile navigation visibility with backend permissions so users never see inaccessible areas or gain access through hidden routes.
 - [x] P1.6 Standardize request and response validation using shared schemas and safe, user-facing error handling.
 - [x] P1.7 Replace placeholder database types and restore generated typing or an equally reliable typed schema workflow.
-- [ ] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants. — LOCAL GATE PASSED; PRODUCTION APPLY BLOCKED ON SUPABASE DDL ACCESS
-- [ ] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops. — LOCAL GATE PASSED; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
-- [ ] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules. — GREEN DRAFT PR #11; STACKED RELEASE PENDING P1.8/P1.9
-- [ ] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8–P1.10
-- [ ] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability. — GREEN DRAFT PR #13; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
-- [ ] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries. — GREEN DRAFT PR #14; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
-- [ ] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities. — GREEN DRAFT PR #15; STACKED RELEASE PENDING P1.8–P1.13
-- [ ] P1.15 Either implement unfinished notification/settings behavior or remove misleading UI, types, tables, and code paths. — GREEN DRAFT PR #16; STACKED PRODUCTION APPLY BLOCKED ON P1.8/SUPABASE DDL ACCESS
-- [ ] P1.16 Add regression tests for every repaired security or integrity defect. — LOCAL GATE PASSED; STACKED RELEASE PENDING P1.8–P1.15
+- [x] P1.8 Add verified database constraints for identity, email, categories, season state, uniqueness, foreign keys, and other discovered invariants.
+- [x] P1.9 Make bulk operations genuinely bulk and transactional instead of issuing fragile client-side request loops.
+- [x] P1.10 Consolidate duplicate URL normalization and other duplicated business rules into tested canonical modules.
+- [x] P1.11 Fix staff name/display-name synchronization so intentional overrides survive login and manual resynchronization.
+- [x] P1.12 Correct cron request methods, authentication, idempotency, overlap protection, retry behavior, and observability.
+- [x] P1.13 Verify and repair RLS policies, private-bucket rules, signed URL behavior, and server/client data boundaries.
+- [x] P1.14 Upgrade vulnerable dependencies and remove unused dependencies or dead capabilities.
+- [x] P1.15 Either implement unfinished notification/settings behavior or remove misleading UI, types, tables, and code paths.
+- [x] P1.16 Add regression tests for every repaired security or integrity defect.
 
 Gate: no known high-severity authorization, session, secret, RLS, cron, or data-integrity defect remains.
 
-Phase 1 gate status: **LOCAL PASS; PRODUCTION RELEASE BLOCKED ONLY ON THE DOCUMENTED SUPABASE DDL ACCESS FOR THE STACKED MIGRATIONS 0013–0022.**
+Phase 1 gate status: **PASS IN PRODUCTION.** The ordered migration stack through `0030` is applied; generated schema, RLS/privilege, session, authorization, cron, storage, bulk-transaction, and negative-boundary probes passed before deployment.
 
 ## Phase 2 — Test system, CI, observability, and operational safety
 
@@ -123,26 +123,35 @@ Gate: one complete local Phase 5 suite, one exact-head GitHub CI run, and one Ve
 
 ## Phase 6 — Raptive-ready data system
 
-- [x] P6.1 Validate Nick's real workbook format, size, rows, timezone, aggregation, and deduplication semantics when supplied. — FIVE REAL AGGREGATE WORKBOOKS VERIFIED; PRODUCTION COMPACT IMPORT REMAINS IN P7.4
+- [x] P6.1 Validate Nick's real workbook format, size, rows, timezone, aggregation, and deduplication semantics when supplied. — Five aggregate workbooks and 71 daily Drive workbooks were validated and imported.
 - [x] P6.2 Use the existing atomic importer for measured inputs up to 10 MB / 100,000 rows; add private storage, jobs, chunks, or resume only if real measurement requires them.
-- [x] P6.3 Add a live connector only from an actual Raptive API contract, sharing canonical normalization/deduplication with historical imports. — CREATOR API V1 CONTRACT SUPPLIED 2026-07-22; AFFECTED PHASE 7 GATE PENDING
-- [x] P6.4 Keep necessary credentials server-only and provide enable/disable, health, retry, reconciliation, and a nontechnical administrator flow. — VERCEL KEY PRESENCE AND LOCAL SECURITY/DB CONTRACT VERIFIED; LIVE ENABLEMENT WAITS FOR 0027/DEPLOYMENT
+- [x] P6.3 Add a live connector only from an actual Raptive API contract, sharing canonical normalization/deduplication with historical imports. — Creator API v1 is deployed and continues its daily reconciled sync.
+- [x] P6.4 Keep necessary credentials server-only and provide enable/disable, health, retry, reconciliation, and a nontechnical administrator flow. — Encrypted Vercel credentials, Operations controls, alerts, retry, and live connection state are verified.
 - [x] P6.5 Preserve financial-data authorization and test malformed, duplicate, overlap, replay, partial, and secret-boundary cases.
 - [x] P6.6 Remove the finance-application contract unless a real consumer is identified.
 
 Gate: bounded historical fixtures, authorization, recovery, reconciliation, and the explicit no-speculation live boundary pass. Nick's actual contract/authorization arrived after this boundary; its implementation is being carried by the affected Phase 7 release gate. Only the real workbook remains input-gated.
 
-Phase 6 gate status: **PASS.** Exact head `a37698f02f110dda625811f05d499dfe6f7d8426` passed GitHub Actions run `29894535937` and the single Vercel preview (`9UQncWjjFX8GGW73sAT4yTNsoF8u`). The subsequently supplied live contract is an affected Phase 7 addition; real-workbook validation remains input-gated for P7.4.
+Phase 6 gate status: **PASS IN PRODUCTION.** Exact head `a37698f02f110dda625811f05d499dfe6f7d8426` passed GitHub Actions run `29894535937` and preview `9UQncWjjFX8GGW73sAT4yTNsoF8u`; the subsequent Creator API and real-data release passed its affected local, preview, migration, replay, and production gates.
 
 ## Phase 7 — Full-system verification, deployment, and Raptive handoff
 
-- [ ] P7.1 Run one release-candidate clean-checkout quality, security, database, browser, accessibility, and complete route/role/viewport visual gate. — LOCAL CLEAN-CHECKOUT PASS; EXACT-HEAD CI/PREVIEW PENDING
-- [ ] P7.2 Execute one production migration/deployment procedure with verified backup and rollback readiness.
-- [ ] P7.3 Run one production smoke covering roles, WordPress/SEO, cron, integrations, and health.
-- [ ] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health. — BOTH INPUTS RECEIVED; LIVE DAY PASSED; COMPACT HISTORICAL PRODUCTION IMPORT/RECONCILIATION REMAINS
-- [ ] P7.5 Finish aligned documentation, evidence-linked checklist, residual-risk record, and one final release smoke after affected-gate repairs.
+- [x] P7.1 Run one release-candidate clean-checkout quality, security, database, browser, accessibility, and complete route/role/viewport visual gate. — The final Raptive head passed the complete local gate and exact-head Vercel preview; GitHub-hosted runners were billing-blocked and waived under the no-spend instruction.
+- [x] P7.2 Execute one production migration/deployment procedure with verified backup and rollback readiness.
+- [ ] P7.3 Run one production smoke covering roles, WordPress/SEO, cron, integrations, and health. — IN PROGRESS: authenticated Operations smoke found and repaired inaccessible System Health; WordPress and Raptive are current. GA4 needs one Google reconnect before this item can close.
+- [x] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health.
+- [ ] P7.5 Finish aligned documentation, evidence-linked checklist, residual-risk record, and one final release smoke after affected-gate repairs. — IN PROGRESS
 
 Gate: the release is deployed and verified; real Raptive data is validated; every completion has concrete evidence.
+
+### 2026-07-29 — Continued production-health verification
+
+- Production remains on `5f18f153882212c02016a5b4f5c964521fcb9f88`; Vercel deployment `5561811616` is successful and remote migrations are contiguous through `0030`.
+- A disposable Operations session verified `/api/auth/me`, Settings, and Analytics in production and was deleted. The smoke exposed a real authorization mismatch: Operations could manage GA4/Raptive but could not read the global System Health snapshot. The repair grants only the read-only health route and renders that panel inside the existing Operations Analytics tab; it does not grant QB user/content mutation authority.
+- WordPress polling is current and successful. Raptive cron is current and reconciled through source date `2026-07-26`: 2,571 rows, earnings `1689.74`, no connection error. The prior compact/live boundary remains non-overlapping.
+- GA4 cron failed seven consecutive nightly runs with sanitized code `http_500`; a direct OAuth refresh probe returned Google `invalid_grant`. The client ID/secret are present, but the saved refresh token requires one interactive reconnect.
+- Affected repair gate: 87 Vitest files / 389 tests, ESLint, TypeScript, production build, a clean reset through migration `0030`, 18 database files / 411 pgTAP assertions, all five role journeys, and both notification/System Health accessibility journeys pass. The July 29 dependency advisory is absent from production dependencies; patched transitive development packages are locked, while npm still reports the advisory against ESLint 9's older `minimatch` major and offers only a breaking ESLint 10 force-upgrade.
+- Residual risks: QB WordPress is intentionally unconfigured; four outer-workspace plaintext credential files remain untouched pending recovery-safe rotation; GitHub-hosted CI is unavailable without spending.
 
 ## Excluded features
 

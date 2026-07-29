@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { getCurrentUser, isOperations } from "@/lib/auth/current-user";
 import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { getOperationalHealth } from "@/lib/observability/health";
 import {
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const viewer = await getCurrentUser();
   if (!viewer) return errorResponse(401, "Not authenticated");
-  if (!isAdminPlusForScope(viewer, "both")) {
+  if (!isOperations(viewer) && !isAdminPlusForScope(viewer, "both")) {
     return errorResponse(403, "Forbidden");
   }
 

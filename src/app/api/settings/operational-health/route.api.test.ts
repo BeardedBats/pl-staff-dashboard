@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
+  isOperations: vi.fn(),
   isAdminPlusForScope: vi.fn(),
   getOperationalHealth: vi.fn(),
   emitStructuredLog: vi.fn(),
@@ -10,6 +11,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/auth/current-user", () => ({
   getCurrentUser: mocks.getCurrentUser,
+  isOperations: mocks.isOperations,
 }));
 vi.mock("@/lib/auth/authorization", () => ({
   isAdminPlusForScope: mocks.isAdminPlusForScope,
@@ -29,6 +31,7 @@ describe("GET /api/settings/operational-health", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getCurrentUser.mockResolvedValue({ id: "admin-1" });
+    mocks.isOperations.mockReturnValue(false);
     mocks.isAdminPlusForScope.mockReturnValue(true);
   });
 
@@ -41,13 +44,28 @@ describe("GET /api/settings/operational-health", () => {
     expect(mocks.getOperationalHealth).not.toHaveBeenCalled();
   });
 
-  it("requires both-site admin authority", async () => {
+  it("requires both-site admin or Operations authority", async () => {
     mocks.isAdminPlusForScope.mockReturnValue(false);
 
     const response = await GET();
 
     expect(response.status).toBe(403);
     expect(mocks.getOperationalHealth).not.toHaveBeenCalled();
+  });
+
+  it("allows Operations without expanding both-site admin authority", async () => {
+    mocks.isAdminPlusForScope.mockReturnValue(false);
+    mocks.isOperations.mockReturnValue(true);
+    const health = {
+      generatedAt: "2026-07-29T12:00:00.000Z",
+      overall: "healthy",
+    };
+    mocks.getOperationalHealth.mockResolvedValue(health);
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ health });
   });
 
   it("returns the authorized snapshot", async () => {
