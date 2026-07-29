@@ -7,6 +7,31 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { AdminAnalyticsPanel } from "./admin-analytics-panel";
+import type { OperationalHealthSnapshot } from "@/lib/observability/health";
+
+const health: OperationalHealthSnapshot = {
+  generatedAt: "2026-07-29T12:00:00.000Z",
+  overall: "healthy",
+  cron: [],
+  integrations: [],
+  imports: {
+    level: "healthy",
+    detail: "The latest Raptive import completed successfully.",
+    latestRunAt: "2026-07-22T12:00:00.000Z",
+    latestStatus: "succeeded",
+    runningCount: 0,
+    recentFailedCount: 0,
+  },
+  notifications: {
+    level: "healthy",
+    detail: "0 notifications are scheduled.",
+    scheduledCount: 0,
+    activeFailureCount: 0,
+    remediation: "No action required.",
+  },
+  alerts: [],
+  probeErrors: [],
+};
 
 const baseProps: ComponentProps<typeof AdminAnalyticsPanel> = {
   initialGa4Status: {
@@ -22,11 +47,24 @@ const baseProps: ComponentProps<typeof AdminAnalyticsPanel> = {
     databaseReady: true,
     connections: [],
   },
+  initialOperationalHealth: null,
   canConnectGa4: false,
   canManageRaptive: false,
 };
 
 describe("AdminAnalyticsPanel Raptive controls", () => {
+  it("shows global read-only system health when supplied for Operations", () => {
+    render(
+      <AdminAnalyticsPanel
+        {...baseProps}
+        initialOperationalHealth={health}
+      />,
+    );
+
+    expect(screen.getByText("System health")).toBeVisible();
+    expect(screen.getByText("No active operational alerts.")).toBeVisible();
+  });
+
   it("keeps live connection controls read-only for EIC viewers", () => {
     render(
       <AdminAnalyticsPanel

@@ -34,12 +34,15 @@ import type {
   RaptiveConnection,
 } from "@/lib/analytics/raptive-live";
 import type { RaptiveSite } from "@/lib/analytics/raptive-api";
+import type { OperationalHealthSnapshot } from "@/lib/observability/health";
+import { OperationalHealthPanel } from "./operational-health-panel";
 
 type Props = {
   initialGa4Status: Ga4Status;
   initialUploads: RaptiveUploadHistoryRow[];
   initialImportRuns: RaptiveImportRunRow[];
   initialRaptiveStatus: RaptiveLiveStatus;
+  initialOperationalHealth: OperationalHealthSnapshot | null;
   canConnectGa4: boolean;
   canManageRaptive: boolean;
 };
@@ -56,6 +59,7 @@ export function AdminAnalyticsPanel({
   initialUploads,
   initialImportRuns,
   initialRaptiveStatus,
+  initialOperationalHealth,
   canConnectGa4,
   canManageRaptive,
 }: Props) {
@@ -287,6 +291,9 @@ export function AdminAnalyticsPanel({
 
   return (
     <div className="space-y-4">
+      {initialOperationalHealth ? (
+        <OperationalHealthPanel initialHealth={initialOperationalHealth} />
+      ) : null}
       {flash ? (
         <div
           className={

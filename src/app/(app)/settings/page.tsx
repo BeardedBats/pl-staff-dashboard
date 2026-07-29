@@ -59,6 +59,7 @@ export default async function SettingsPage({
   const adminScope = authorizedSiteScope(viewer, "admin", "eic", "operations");
   const adminAccess = adminScope !== null;
   const globalAdminAccess = isAdminPlusForScope(viewer, "both");
+  const operationsAccess = isOperations(viewer);
   const allowedAdminSites: Array<"pl" | "qb"> =
     adminScope === "both"
       ? ["pl", "qb"]
@@ -101,14 +102,17 @@ export default async function SettingsPage({
     isAdminPlusForScope(viewer, template.site),
   );
 
-  const [syncStatus, checklistItems, operationalHealth, evergreenCandidates] = globalAdminAccess
-    ? await Promise.all([
-        loadSyncStatus(),
-        listChecklistItems(),
-        getOperationalHealth(),
-        listEvergreenCandidates(),
-      ])
-    : [{ pl: null, qb: null }, [], null, []];
+  const [syncStatus, checklistItems, operationalHealth, evergreenCandidates] =
+    await Promise.all([
+      globalAdminAccess
+        ? loadSyncStatus()
+        : Promise.resolve({ pl: null, qb: null }),
+      globalAdminAccess ? listChecklistItems() : Promise.resolve([]),
+      globalAdminAccess || operationsAccess
+        ? getOperationalHealth()
+        : Promise.resolve(null),
+      globalAdminAccess ? listEvergreenCandidates() : Promise.resolve([]),
+    ]);
 
   // Analytics panel — only fetched for EIC/Operations viewers
   const [ga4Status, raptiveUploads, raptiveImportRuns, raptiveLiveStatus] = analyticsAccess
@@ -235,6 +239,11 @@ export default async function SettingsPage({
               initialUploads={raptiveUploads}
               initialImportRuns={raptiveImportRuns}
               initialRaptiveStatus={raptiveLiveStatus}
+              initialOperationalHealth={
+                operationsAccess && !globalAdminAccess
+                  ? operationalHealth
+                  : null
+              }
               canConnectGa4={isOperations(viewer)}
               canManageRaptive={isOperations(viewer)}
             />
