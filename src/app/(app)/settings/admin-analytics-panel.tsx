@@ -252,10 +252,22 @@ export function AdminAnalyticsPanel({
       return;
     }
     setBusy("disconnect");
+    setFlash(null);
     try {
-      await fetch("/api/ga4/disconnect", { method: "POST" });
+      const res = await fetch("/api/ga4/disconnect", { method: "POST" });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setFlash({
+          kind: "error",
+          message: data.error ?? "GA4 disconnect failed.",
+        });
+        return;
+      }
+      setStatus((current) => ({ ...current, connected: false }));
       await refreshStatus();
       setFlash({ kind: "success", message: "GA4 disconnected." });
+    } catch {
+      setFlash({ kind: "error", message: "GA4 disconnect failed." });
     } finally {
       setBusy(null);
     }

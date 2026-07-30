@@ -53,12 +53,13 @@ async function readSetting(key: string): Promise<string | null> {
   return typeof value === "string" ? value : String(value);
 }
 
-async function writeSetting(key: string, value: string | null): Promise<void> {
+async function writeSetting(key: string, value: string): Promise<void> {
   const supabase = getSupabaseAdmin();
-  await supabase.from("global_settings").upsert(
+  const { error } = await supabase.from("global_settings").upsert(
     { key, value },
     { onConflict: "key" },
   );
+  if (error) throw error;
 }
 
 // --------------------------------------------------------------------------
@@ -171,11 +172,16 @@ export async function exchangeCodeForTokens(
 }
 
 export async function disconnectGa4(): Promise<void> {
-  await Promise.all([
-    writeSetting("ga4_refresh_token", null),
-    writeSetting("ga4_access_token", null),
-    writeSetting("ga4_access_expires", null),
-  ]);
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("global_settings")
+    .delete()
+    .in("key", [
+      "ga4_refresh_token",
+      "ga4_access_token",
+      "ga4_access_expires",
+    ]);
+  if (error) throw error;
 }
 
 // --------------------------------------------------------------------------
