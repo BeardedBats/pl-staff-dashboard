@@ -1728,6 +1728,39 @@ export type Database = {
         }
         Relationships: []
       }
+      wp_sync_backlog: {
+        Row: {
+          attempt_count: number
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          payload: Json
+          site: string
+          wp_author_id: number
+          wp_post_id: number
+        }
+        Insert: {
+          attempt_count?: number
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          payload: Json
+          site: string
+          wp_author_id: number
+          wp_post_id: number
+        }
+        Update: {
+          attempt_count?: number
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          payload?: Json
+          site?: string
+          wp_author_id?: number
+          wp_post_id?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1852,6 +1885,20 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_wp_draft_entry: {
+        Args: {
+          p_is_drafted: boolean
+          p_site: string
+          p_tier_id: string
+          p_title: string
+          p_user_id: string
+          p_wp_modified_at: string
+          p_wp_post_id: number
+          p_wp_post_url: string
+          p_wp_status: string
+        }
+        Returns: string
+      }
       create_writer_claim: {
         Args: {
           p_actor_id: string
@@ -1899,6 +1946,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_analytics_articles_v2: {
+        Args: {
+          p_author_id?: string
+          p_category_id?: string
+          p_date_from: string
+          p_date_to: string
+          p_site?: string
+          p_tier_id?: string
+        }
+        Returns: Json
+      }
       get_analytics_overview: {
         Args: {
           p_author_id?: string
@@ -1923,6 +1981,52 @@ export type Database = {
           word_count: number
         }[]
       }
+      get_analytics_overview_v2: {
+        Args: {
+          p_author_id?: string
+          p_category_id?: string
+          p_date_from: string
+          p_date_to: string
+          p_site?: string
+          p_tier_id?: string
+        }
+        Returns: Json
+      }
+      get_analytics_trends_v2: {
+        Args: {
+          p_author_id?: string
+          p_category_id?: string
+          p_date_from: string
+          p_date_to: string
+          p_max_days?: number
+          p_site?: string
+          p_tier_id?: string
+        }
+        Returns: Json
+      }
+      get_analytics_writers_v2: {
+        Args: {
+          p_author_id?: string
+          p_category_id?: string
+          p_date_from: string
+          p_date_to: string
+          p_site?: string
+          p_tier_id?: string
+        }
+        Returns: Json
+      }
+      get_latest_vercel_cron_runs: {
+        Args: never
+        Returns: {
+          attempt: number
+          error_code: string
+          finished_at: string
+          job_name: string
+          lease_expires_at: string
+          started_at: string
+          status: string
+        }[]
+      }
       get_raptive_entry_rollup: {
         Args: { p_date_from: string; p_date_to: string; p_site?: string }
         Returns: {
@@ -1943,6 +2047,15 @@ export type Database = {
           sessions: number
           wp_site: string
         }[]
+      }
+      queue_wp_sync_backlog: {
+        Args: {
+          p_payload: Json
+          p_site: string
+          p_wp_author_id: number
+          p_wp_post_id: number
+        }
+        Returns: boolean
       }
       record_graphic_upload: {
         Args: {

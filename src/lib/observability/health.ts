@@ -80,12 +80,7 @@ export async function getOperationalHealth(
   const probeErrors: string[] = [];
   const [cronResult, settingsResult, alertResult, importResult, ga4Result, raptiveResult, notificationResult] =
     await Promise.all([
-      supabase
-        .from("cron_runs")
-        .select("job_name,status,started_at,finished_at,lease_expires_at,error_code,attempt")
-        .eq("source", "vercel")
-        .order("started_at", { ascending: false })
-        .limit(200),
+      supabase.rpc("get_latest_vercel_cron_runs"),
       supabase
         .from("global_settings")
         .select("key,value")

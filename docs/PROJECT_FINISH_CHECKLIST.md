@@ -4,11 +4,11 @@ Last updated: 2026-07-30
 
 ## Recovery state
 
-- Current phase: Phase 7 — UI/UX reliability closeout and final production smoke
-- Current action: publish the cohesive notification, floating-surface, administration, tier-reorder, team-state, and logout reliability batch; apply migration `0031`; run the final affected production smoke.
-- Branch: `codex/ui-ux-reliability`
-- Deployment: production application history is on merge commit `de9c6e1f3bf5649df87596d205dfe1dcd4808de5`; production migrations are contiguous through `0030`, historical/live Raptive is reconciled, and GA4 has been interactively reconnected.
-- Known blocker: GitHub-hosted CI remains waived because billing blocks runners under the explicit no-spend requirement. QB WordPress is intentionally unconfigured. No Nick action is required for this batch.
+- Current phase: Phase 7 — full audit remediation and release verification
+- Current action: finish the cohesive analytics, recovery, UI reliability, and documentation batch; run the complete local gate; then apply migrations `0032`–`0033` and run the affected production smoke.
+- Branch: `codex/full-audit-remediation`
+- Deployment: production is on merge commit `4b7ee43`; production migrations are contiguous through `0031`. Historical/live Raptive is reconciled, GA4 is connected, and the current remediation migrations are not applied yet.
+- Known blocker: GitHub-hosted CI remains waived if billing still blocks runners under the explicit no-spend requirement. QB WordPress is intentionally unconfigured. Nick must rotate and remove the four outer-workspace plaintext credential copies after replacement credentials are verified.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -20,7 +20,7 @@ Last updated: 2026-07-30
 - [x] P0.4 Create an appropriate `codex/` working branch and establish checkpoint practices.
 - [x] P0.5 Inventory application routes, APIs, database migrations, background jobs, cron jobs, roles, permissions, integrations, and deployments.
 - [x] P0.6 Inventory required environment variables and secret locations without displaying secret values.
-- [ ] P0.7 Identify plaintext or exposed credentials, rotate them when service access permits, move them into managed secret storage, and prevent recurrence. — BLOCKED: Vercel/Supabase management access is unavailable, so rotation cannot be completed without risking production outage. Plaintext files remain untouched and values have not been emitted.
+- [ ] P0.7 Identify plaintext or exposed credentials, rotate them, retain replacements only in managed secret storage, and remove stale plaintext copies. — NICK ACTION: management access now exists, but credential rotation requires owner decisions across WordPress, GA4, Discord, and Resend. The four outer-workspace files remain untouched and their values have not been emitted.
 - [x] P0.8 Install dependencies reproducibly and capture baseline lint, type-check, build, audit, and runtime results.
 - [x] P0.9 Inspect the live production and preview applications, including role-specific navigation and API behavior. — Exact-stack role journeys cover manager, writer, editor, graphics, and admin; disposable live Operations sessions verified authenticated Settings/Analytics access and were deleted afterward. Vercel deployment records provide the protected-preview result.
 - [x] P0.10 Inspect the live database, RLS policies, storage buckets, Vercel settings, cron configuration, and connected service state when credentials permit.
@@ -141,6 +141,15 @@ Phase 6 gate status: **PASS IN PRODUCTION.** Exact head `a37698f02f110dda625811f
 - [x] P7.3 Run one production smoke covering roles, WordPress/SEO, cron, integrations, and health. — Authenticated Operations smoke verified System Health visibility, WordPress and Raptive are current, and Nick completed the required GA4 reconnect.
 - [x] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health.
 - [ ] P7.5 Finish aligned documentation, evidence-linked checklist, residual-risk record, and one final release smoke after affected-gate repairs. — IN PROGRESS
+
+### 2026-07-30 — Full three-perspective audit remediation
+
+- Analytics now aggregates in PostgreSQL through service-role-only JSON functions, so the Data API row ceiling cannot truncate entries, GA4 rows, writers, articles, or trends. Query failures throw instead of returning false empty dashboards.
+- Overview reporting separates total Raptive site revenue, entry-attributed revenue, unattributed revenue, and attribution rate. Daily revenue uses actual Raptive dates; the estimated GA4-proportional redistribution was removed. Average session duration is labeled and weighted by sessions.
+- GA4 OAuth state is bound to a short-lived HttpOnly cookie and validated with a timing-safe comparison. GA4 extraction follows `rowCount`/`offset` pagination.
+- System Health reads one latest Vercel run per job. Unmapped WordPress drafts enter a forced-RLS recovery backlog, and recovered entry, author, checklist, audit, and backlog cleanup commit in one transaction.
+- Failed content, graphics, comments, calendar, archive, notification-preference, analytics, saved-view, checklist, and administration requests now show explicit errors and retries. Archive uses mobile cards; chart data has screen-reader text equivalents; onboarding requires an explicit completion attestation.
+- Historical compact imports now create durable `import_runs` records. The existing no-spend compact operator path remains mandatory for multi-million-row workbooks because raw storage would exceed the free database ceiling.
 
 Gate: the release is deployed and verified; real Raptive data is validated; every completion has concrete evidence.
 

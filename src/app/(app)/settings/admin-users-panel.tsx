@@ -35,6 +35,8 @@ import { UserAvatar } from "@/components/users/user-avatar";
 import { RoleBadgeGroup } from "@/components/users/role-badge";
 import type { StaffUserSummary } from "@/lib/users/queries";
 import { EditUserDialog } from "./edit-user-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { readApiError } from "@/lib/api/client";
 
 type AdminUsersPanelProps = {
   initialUsers: StaffUserSummary[];
@@ -52,6 +54,7 @@ export function AdminUsersPanel({
   const [search, setSearch] = React.useState("");
   const [editingUserId, setEditingUserId] = React.useState<string | null>(null);
   const [importOpen, setImportOpen] = React.useState(false);
+  const [publishError, setPublishError] = React.useState<string | null>(null);
 
   // Keep local state in sync if server revalidation happens.
   React.useEffect(() => {
@@ -69,19 +72,37 @@ export function AdminUsersPanel({
 
   async function togglePublish(user: StaffUserSummary) {
     const next = !user.can_publish;
+    let succeeded = false;
+    setPublishError(null);
     setUsers((prev) =>
       prev.map((u) => (u.id === user.id ? { ...u, can_publish: next } : u)),
     );
-    const res = await fetch(`/api/users/${user.id}/publish`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ can_publish: next }),
-    });
-    if (!res.ok) {
-      // Revert on failure.
-      setUsers((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, can_publish: !next } : u)),
+    try {
+      const res = await fetch(`/api/users/${user.id}/publish`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ can_publish: next }),
+      });
+      if (res.ok) {
+        succeeded = true;
+      } else {
+        setPublishError(
+          await readApiError(res, "Publish permission was not changed."),
+        );
+      }
+    } catch {
+      setPublishError(
+        "Publish permission was not changed. Check your connection and retry.",
       );
+    } finally {
+      // Revert on failure.
+      if (!succeeded) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === user.id ? { ...u, can_publish: !next } : u,
+          ),
+        );
+      }
     }
   }
 
@@ -108,6 +129,12 @@ export function AdminUsersPanel({
         />
       </CardHeader>
       <CardContent className="space-y-4">
+        {publishError ? (
+          <Alert variant="error">
+            <AlertTitle>Permission change failed</AlertTitle>
+            <AlertDescription>{publishError}</AlertDescription>
+          </Alert>
+        ) : null}
         <Input
           placeholder="Search staff by name or email…"
           value={search}

@@ -3,7 +3,7 @@
 Internal Next.js 16 application for Pitcher List and QB List editorial work,
 graphics, staff administration, WordPress synchronization, notifications, and
 analytics. PostgreSQL, RLS, Storage, and durable operational state live in
-Supabase; Vercel hosts the application and eight scheduled jobs.
+Supabase; Vercel hosts the application and nine scheduled jobs.
 
 ## Local development
 

@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { GraphicRequestCard } from "@/components/graphics/graphic-request-card";
 import { GraphicsKanban } from "./graphics-kanban";
 import type { GraphicRequestRecord } from "@/lib/graphics/data";
@@ -36,18 +37,31 @@ export function GraphicsPageClient({
   const [statusFilter, setStatusFilter] = React.useState<GraphicStatus | "">("");
   const [siteFilter, setSiteFilter] = React.useState<AppSite | "">("");
   const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const requestSequence = React.useRef(0);
 
   const refresh = React.useCallback(async () => {
+    const requestId = ++requestSequence.current;
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (statusFilter) params.set("status", statusFilter);
       if (siteFilter) params.set("site", siteFilter);
       const res = await fetch(`/api/graphic-requests?${params.toString()}`);
+      if (!res.ok) {
+        throw new Error(`Graphic request failed (${res.status})`);
+      }
       const data = (await res.json()) as { requests: GraphicRequestRecord[] };
-      setRequests(data.requests ?? []);
+      if (requestId === requestSequence.current) {
+        setRequests(data.requests ?? []);
+      }
+    } catch {
+      if (requestId === requestSequence.current) {
+        setError("Graphic requests could not be loaded. Existing results were preserved.");
+      }
     } finally {
-      setLoading(false);
+      if (requestId === requestSequence.current) setLoading(false);
     }
   }, [statusFilter, siteFilter]);
 
@@ -80,6 +94,17 @@ export function GraphicsPageClient({
 
   return (
     <div className="space-y-4">
+      {error ? (
+        <Alert variant="error">
+          <AlertTitle>Graphics did not refresh</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+            <span>{error}</span>
+            <Button size="sm" variant="outline" onClick={() => void refresh()}>
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3">
         <div className="relative min-w-[200px] flex-1">

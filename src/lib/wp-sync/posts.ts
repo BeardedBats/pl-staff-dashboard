@@ -8,6 +8,7 @@ import {
   type WpSiteKey,
 } from "@/lib/wordpress/config";
 import { fetchAllWpPages } from "@/lib/wp-sync/pagination";
+import type { Json } from "@/types/database";
 
 /**
  * WordPress → dashboard post sync.
@@ -71,11 +72,12 @@ function settingsKeyForSite(site: WpSiteKey): string {
 
 async function readLastSyncIso(site: WpSiteKey): Promise<string> {
   const supabase = getSupabaseAdmin();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("global_settings")
     .select("value")
     .eq("key", settingsKeyForSite(site))
     .maybeSingle();
+  if (error) throw error;
 
   // `value` is JSONB: a JSON string like `"2026-04-15T12:00:00Z"`.
   const raw = (data?.value as unknown) ?? null;
@@ -93,19 +95,24 @@ async function writeLastSyncIso(site: WpSiteKey, iso: string): Promise<void> {
 
   // Explicit select-then-insert-or-update — Supabase's upsert() requires
   // a UNIQUE constraint target, and we want to stay simple.
-  const { data: existing } = await supabase
+  const { data: existing, error: readError } = await supabase
     .from("global_settings")
     .select("id")
     .eq("key", key)
     .maybeSingle();
+  if (readError) throw readError;
 
   if (existing?.id) {
-    await supabase
+    const { error } = await supabase
       .from("global_settings")
       .update({ value: iso, updated_at: new Date().toISOString() })
       .eq("id", existing.id as string);
+    if (error) throw error;
   } else {
-    await supabase.from("global_settings").insert({ key, value: iso });
+    const { error } = await supabase
+      .from("global_settings")
+      .insert({ key, value: iso });
+    if (error) throw error;
   }
 }
 
@@ -125,38 +132,21 @@ function pickTitle(wp: WpPost): string {
 async function findDefaultTierId(): Promise<string | null> {
   const supabase = getSupabaseAdmin();
   // Prefer "A" (Daily), fall back to "C" (Unscheduled).
-  const { data: tierA } = await supabase
+  const { data: tierA, error: tierAError } = await supabase
     .from("tiers")
     .select("id")
     .eq("name", "A")
     .maybeSingle();
+  if (tierAError) throw tierAError;
   if (tierA?.id) return tierA.id as string;
 
-  const { data: tierC } = await supabase
+  const { data: tierC, error: tierCError } = await supabase
     .from("tiers")
     .select("id")
     .eq("name", "C")
     .maybeSingle();
+  if (tierCError) throw tierCError;
   return (tierC?.id as string | undefined) ?? null;
-}
-
-async function seedChecklistForEntry(
-  entryId: string,
-  tierId: string,
-): Promise<void> {
-  const supabase = getSupabaseAdmin();
-  const { data: items } = await supabase
-    .from("checklist_items")
-    .select("id")
-    .eq("tier_id", tierId);
-  const rows = ((items ?? []) as Array<{ id: string }>).map((item) => ({
-    entry_id: entryId,
-    checklist_item_id: item.id,
-    is_completed: false,
-  }));
-  if (rows.length > 0) {
-    await supabase.from("entry_checklist").insert(rows);
-  }
 }
 
 // --------------------------------------------------------------------------
@@ -226,27 +216,46 @@ export async function syncWpPostsForSite(
     report.errors.push({ wpPostId: 0, message: fetched.error });
     return report;
   }
-  const posts = fetched.rows;
+  const { data: backlogRows, error: backlogError } = await supabase
+    .from("wp_sync_backlog")
+    .select("wp_post_id,payload")
+    .eq("site", site)
+    .order("first_seen_at", { ascending: true })
+    .limit(1000);
+  if (backlogError) {
+    report.errors.push({
+      wpPostId: 0,
+      message: "Failed to load the WordPress recovery backlog",
+    });
+    return report;
+  }
+  const postsById = new Map<number, WpPost>();
+  for (const row of backlogRows ?? []) {
+    postsById.set(row.wp_post_id, row.payload as unknown as WpPost);
+  }
+  for (const post of fetched.rows) postsById.set(post.id, post);
+  const posts = Array.from(postsById.values());
 
-  report.postsFetched = posts.length;
+  report.postsFetched = fetched.rows.length;
 
   const defaultTierId = await findDefaultTierId();
 
   for (const post of posts) {
     try {
       // Look up an existing entry for this WP post on this site.
-      const { data: existing } = await supabase
+      const { data: existing, error: existingError } = await supabase
         .from("entries")
         .select("id")
         .eq("wp_post_id", post.id)
         .eq("site", site)
         .maybeSingle();
+      if (existingError) throw existingError;
 
       if (existing?.id) {
         // Refresh the public permalink alongside the status mirror so that
         // migration 0010 can null out old admin URLs and trust the cron to
         // repopulate them with `post.link` on the next pass.
-        await supabase
+        const { error: refreshError } = await supabase
           .from("entries")
           .update({
             ...(typeof post.link === "string" && post.link.length > 0
@@ -257,6 +266,7 @@ export async function syncWpPostsForSite(
             wp_last_sync_error: null,
           })
           .eq("id", existing.id as string);
+        if (refreshError) throw refreshError;
 
         // Update path — hand off to the status-transitions helper.
         await applyWpStateToEntry(existing.id as string, systemUserId, {
@@ -264,6 +274,12 @@ export async function syncWpPostsForSite(
           modified: post.modified_gmt ? `${post.modified_gmt}Z` : null,
           date: post.date_gmt ? `${post.date_gmt}Z` : null,
         });
+        const { error: clearBacklogError } = await supabase
+          .from("wp_sync_backlog")
+          .delete()
+          .eq("site", site)
+          .eq("wp_post_id", post.id);
+        if (clearBacklogError) throw clearBacklogError;
         report.entriesUpdated++;
         continue;
       }
@@ -274,17 +290,34 @@ export async function syncWpPostsForSite(
       // This keeps the smoke test from accidentally pulling thousands of
       // old pitcherlist.com articles into the dashboard.
       if (post.status !== "draft" && post.status !== "pending") {
+        const { error: clearBacklogError } = await supabase
+          .from("wp_sync_backlog")
+          .delete()
+          .eq("site", site)
+          .eq("wp_post_id", post.id);
+        if (clearBacklogError) throw clearBacklogError;
         report.skippedNotDraft++;
         continue;
       }
 
-      const { data: dashboardUser } = await supabase
+      const { data: dashboardUser, error: userError } = await supabase
         .from("users")
         .select("id, auto_approve_drafts")
         .eq("wp_user_id", post.author)
         .maybeSingle();
+      if (userError) throw userError;
 
       if (!dashboardUser?.id) {
+        const { error: queueError } = await supabase.rpc(
+          "queue_wp_sync_backlog",
+          {
+            p_site: site,
+            p_wp_post_id: post.id,
+            p_wp_author_id: post.author,
+            p_payload: post as unknown as Json,
+          },
+        );
+        if (queueError) throw queueError;
         report.skippedNoMatchingUser++;
         continue;
       }
@@ -308,54 +341,30 @@ export async function syncWpPostsForSite(
         (dashboardUser as { auto_approve_drafts?: boolean }).auto_approve_drafts,
       );
 
-      const { data: inserted, error: insertError } = await supabase
-        .from("entries")
-        .insert({
-          title,
-          site,
-          tier_id: defaultTierId,
-          wp_post_id: post.id,
-          wp_post_url: publicUrl,
-          wp_status: post.status,
-          wp_modified_at: post.modified_gmt ? `${post.modified_gmt}Z` : null,
-          wp_sync_status: "synced",
-          wp_last_synced_at: new Date().toISOString(),
-          wp_last_sync_error: null,
-          content_status: "claimed",
-          editor_status: "none",
-          created_by: dashboardUser.id as string,
-          is_drafted: !autoApprove,
-        })
-        .select("id")
-        .single();
+      const { data: insertedId, error: insertError } = await supabase.rpc(
+        "create_wp_draft_entry",
+        {
+          p_title: title,
+          p_site: site,
+          p_tier_id: defaultTierId,
+          p_wp_post_id: post.id,
+          p_wp_post_url: publicUrl ?? "",
+          p_wp_status: post.status,
+          p_wp_modified_at: post.modified_gmt
+            ? `${post.modified_gmt}Z`
+            : "",
+          p_user_id: dashboardUser.id as string,
+          p_is_drafted: !autoApprove,
+        },
+      );
 
-      if (insertError || !inserted) {
+      if (insertError || !insertedId) {
         report.errors.push({
           wpPostId: post.id,
           message: "Failed to create dashboard entry",
         });
         continue;
       }
-
-      const newEntryId = inserted.id as string;
-
-      // Seed entry_authors with the mapped dashboard user as primary.
-      await supabase.from("entry_authors").insert({
-        entry_id: newEntryId,
-        user_id: dashboardUser.id as string,
-        role: "primary",
-      });
-
-      // Seed the tier's checklist items.
-      await seedChecklistForEntry(newEntryId, defaultTierId);
-
-      // Audit row.
-      await supabase.from("audit_log").insert({
-        entry_id: newEntryId,
-        user_id: dashboardUser.id as string,
-        action: "created",
-        new_value: "auto-picked up from WordPress draft",
-      });
 
       report.draftedEntriesCreated++;
     } catch {

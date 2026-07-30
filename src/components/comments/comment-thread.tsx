@@ -22,10 +22,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UserAvatar } from "@/components/users/user-avatar";
 import { CommentBody } from "./comment-body";
 import { CommentComposer } from "./comment-composer";
 import type { CommentRecord } from "@/lib/comments/data";
+import { readApiError } from "@/lib/api/client";
 
 type CommentThreadProps = {
   entryId: string;
@@ -41,70 +43,136 @@ export function CommentThread({
   const [comments, setComments] = React.useState<CommentRecord[] | null>(null);
   const [replyingTo, setReplyingTo] = React.useState<string | null>(null);
   const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   const reload = React.useCallback(async () => {
-    const res = await fetch(`/api/entries/${entryId}/comments`);
-    const data = (await res.json()) as { comments: CommentRecord[] };
-    setComments(data.comments ?? []);
+    setError(null);
+    try {
+      const res = await fetch(`/api/entries/${entryId}/comments`);
+      if (!res.ok) {
+        setError(await readApiError(res, "Comments could not be loaded."));
+        return false;
+      }
+      const data = (await res.json()) as { comments: CommentRecord[] };
+      setComments(data.comments ?? []);
+      return true;
+    } catch {
+      setError("Comments could not be loaded. Check your connection and retry.");
+      return false;
+    }
   }, [entryId]);
 
   React.useEffect(() => {
     void reload();
   }, [reload]);
 
-  if (comments === null) {
+  if (comments === null && !error) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-4 w-4 animate-spin text-text-zero" />
       </div>
     );
   }
+  if (comments === null) {
+    return (
+      <Alert variant="error">
+        <AlertTitle>Comments unavailable</AlertTitle>
+        <AlertDescription className="space-y-3">
+          <p>{error}</p>
+          <Button size="sm" variant="outline" onClick={() => void reload()}>
+            Retry
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   async function submitNew(body: string) {
-    const res = await fetch(`/api/entries/${entryId}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body }),
-    });
-    if (res.ok) await reload();
-    return res.ok;
+    setError(null);
+    try {
+      const res = await fetch(`/api/entries/${entryId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      });
+      if (!res.ok) {
+        setError(await readApiError(res, "Comment was not posted."));
+        return false;
+      }
+      await reload();
+      return true;
+    } catch {
+      setError("Comment was not posted. Check your connection and retry.");
+      return false;
+    }
   }
 
   async function submitReply(parentId: string, body: string) {
-    const res = await fetch(`/api/entries/${entryId}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body, parent_id: parentId }),
-    });
-    if (res.ok) {
+    setError(null);
+    try {
+      const res = await fetch(`/api/entries/${entryId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body, parent_id: parentId }),
+      });
+      if (!res.ok) {
+        setError(await readApiError(res, "Reply was not posted."));
+        return false;
+      }
       setReplyingTo(null);
       await reload();
+      return true;
+    } catch {
+      setError("Reply was not posted. Check your connection and retry.");
+      return false;
     }
-    return res.ok;
   }
 
   async function submitEdit(commentId: string, body: string) {
-    const res = await fetch(`/api/comments/${commentId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body }),
-    });
-    if (res.ok) {
+    setError(null);
+    try {
+      const res = await fetch(`/api/comments/${commentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      });
+      if (!res.ok) {
+        setError(await readApiError(res, "Comment changes were not saved."));
+        return false;
+      }
       setEditingId(null);
       await reload();
+      return true;
+    } catch {
+      setError("Comment changes were not saved. Check your connection and retry.");
+      return false;
     }
-    return res.ok;
   }
 
   async function handleDelete(commentId: string) {
     const confirmed = window.confirm("Delete this comment permanently?");
     if (!confirmed) return;
-    const res = await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
-    if (res.ok) await reload();
+    setError(null);
+    try {
+      const res = await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
+      if (!res.ok) {
+        setError(await readApiError(res, "Comment was not deleted."));
+        return;
+      }
+      await reload();
+    } catch {
+      setError("Comment was not deleted. Check your connection and retry.");
+    }
   }
 
   return (
     <div className="space-y-6">
+      {error ? (
+        <Alert variant="error">
+          <AlertTitle>Comment action failed</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
       {/* New comment composer */}
       <section>
         <h4 className="mb-2 font-sans text-[10px] font-medium uppercase tracking-wider text-text-zero">

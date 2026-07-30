@@ -27,7 +27,7 @@ describe("PLPD gated-data contract", () => {
       ["src/app/api/analytics/writers/route.ts", "getAnalyticsWriters"],
       [
         "src/app/api/analytics/publish-to-peak/route.ts",
-        "getPublishToPeakCurve",
+        "getAnalyticsTrends",
       ],
       [
         "src/app/api/analytics/articles/export/route.ts",

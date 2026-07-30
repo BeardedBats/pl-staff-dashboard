@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api/http";
 import { canViewAnalytics, getCurrentUser } from "@/lib/auth/current-user";
-import {
-  getDayOfWeekHeatmap,
-  getPublishToPeakCurve,
-} from "@/lib/analytics/queries";
+import { getAnalyticsTrends } from "@/lib/analytics/queries";
 import { parseAnalyticsFilters } from "@/lib/analytics/filters";
 import { authorizeAnalyticsFilters } from "@/lib/analytics/authorization";
 
@@ -40,10 +37,6 @@ export async function GET(request: Request) {
     return errorResponse(403, "Forbidden");
   }
 
-  const [curve, heat] = await Promise.all([
-    getPublishToPeakCurve(filters),
-    getDayOfWeekHeatmap(filters),
-  ]);
-
-  return NextResponse.json({ curve, heat });
+  const trends = await getAnalyticsTrends(filters);
+  return NextResponse.json(trends);
 }

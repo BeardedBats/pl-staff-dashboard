@@ -46,8 +46,9 @@ export default async function AnalyticsPage() {
         <div>
           <h1 className="text-2xl font-semibold text-text-cell">Analytics</h1>
           <p className="mt-1 text-sm text-text-team">
-            Pageviews from GA4 and revenue from Raptive, joined to every entry
-            in the pipeline. Filter by date, site, tier, category, or author.
+            GA4 traffic and Raptive revenue. Site totals include every URL;
+            article and writer views include revenue matched to dashboard
+            entries. Filter by date, site, tier, category, or author.
           </p>
         </div>
       </div>

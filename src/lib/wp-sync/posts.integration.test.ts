@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   from: vi.fn(),
+  rpc: vi.fn(),
   fetchAllWpPages: vi.fn(),
   applyWpStateToEntry: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
-  getSupabaseAdmin: () => ({ from: mocks.from }),
+  getSupabaseAdmin: () => ({ from: mocks.from, rpc: mocks.rpc }),
 }));
 vi.mock("@/lib/wp-sync/pagination", () => ({
   fetchAllWpPages: mocks.fetchAllWpPages,
@@ -28,6 +29,19 @@ function maybeSingleQuery(result: unknown, rejects = false) {
   };
   query.select.mockReturnValue(query);
   query.eq.mockReturnValue(query);
+  return query;
+}
+
+function listQuery(result: unknown) {
+  const query = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn().mockResolvedValue(result),
+  };
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  query.order.mockReturnValue(query);
   return query;
 }
 
@@ -60,6 +74,9 @@ describe("WordPress post reconciliation retries", () => {
       }
       if (table === "tiers") {
         return maybeSingleQuery({ data: { id: "tier-a" } });
+      }
+      if (table === "wp_sync_backlog") {
+        return listQuery({ data: [], error: null });
       }
       if (table === "entries") {
         return maybeSingleQuery(null, true);

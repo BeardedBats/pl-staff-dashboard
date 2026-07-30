@@ -34,6 +34,14 @@ type Props = { query: string };
 
 const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+async function fetchAnalyticsJson<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Analytics request failed (${response.status})`);
+  }
+  return response.json() as Promise<T>;
+}
+
 /**
  * Trends tab — pulls both overview (daily series) and articles (for tier
  * comparison) to render time-series and tier-breakdown charts.
@@ -55,9 +63,16 @@ export function AnalyticsTrendsTab({ query }: Props) {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(`/api/analytics/overview?${query}`).then((r) => r.json()),
-      fetch(`/api/analytics/articles?${query}`).then((r) => r.json()),
-      fetch(`/api/analytics/publish-to-peak?${query}`).then((r) => r.json()),
+      fetchAnalyticsJson<{ overview: AnalyticsOverview }>(
+        `/api/analytics/overview?${query}`,
+      ),
+      fetchAnalyticsJson<{ rows: AnalyticsArticleRow[] }>(
+        `/api/analytics/articles?${query}`,
+      ),
+      fetchAnalyticsJson<{
+        curve: PublishToPeakPoint[];
+        heat: DayOfWeekHeatPoint[];
+      }>(`/api/analytics/publish-to-peak?${query}`),
     ])
       .then(
         ([ov, art, ptp]: [
@@ -132,12 +147,16 @@ export function AnalyticsTrendsTab({ query }: Props) {
         <CardHeader>
           <CardTitle>Pageviews & revenue over time</CardTitle>
           <CardDescription>
-            Daily totals across every article in range.
+            Daily GA4 pageviews and actual total Raptive site revenue.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {hasDaily ? (
-            <div className="h-64 w-full font-data">
+            <div
+              className="h-64 w-full font-data"
+              role="img"
+              aria-label="Daily GA4 pageviews and actual total Raptive site revenue"
+            >
               <ResponsiveContainer
                 width="100%"
                 height="100%"
@@ -186,14 +205,15 @@ export function AnalyticsTrendsTab({ query }: Props) {
                   <Line
                     yAxisId="right"
                     type="monotone"
-                    dataKey="earnings"
+                    dataKey="siteEarnings"
                     stroke="var(--color-amber)"
                     strokeWidth={2}
                     dot={false}
-                    name="Earnings"
+                    name="Site revenue"
                   />
                 </LineChart>
               </ResponsiveContainer>
+              <DailyTrendTable rows={overview.daily} />
             </div>
           ) : (
             <EmptyState
@@ -214,7 +234,11 @@ export function AnalyticsTrendsTab({ query }: Props) {
         </CardHeader>
         <CardContent>
           {hasTier ? (
-            <div className="h-64 w-full font-data">
+            <div
+              className="h-64 w-full font-data"
+              role="img"
+              aria-label="Attributed Raptive revenue by content tier"
+            >
               <ResponsiveContainer
                 width="100%"
                 height="100%"
@@ -254,6 +278,7 @@ export function AnalyticsTrendsTab({ query }: Props) {
                   />
                 </BarChart>
               </ResponsiveContainer>
+              <TierTrendTable rows={tierData} metric="earnings" />
             </div>
           ) : (
             <EmptyState
@@ -274,7 +299,11 @@ export function AnalyticsTrendsTab({ query }: Props) {
         </CardHeader>
         <CardContent>
           {hasTier ? (
-            <div className="h-64 w-full font-data">
+            <div
+              className="h-64 w-full font-data"
+              role="img"
+              aria-label="GA4 pageviews by content tier"
+            >
               <ResponsiveContainer
                 width="100%"
                 height="100%"
@@ -310,6 +339,7 @@ export function AnalyticsTrendsTab({ query }: Props) {
                   />
                 </BarChart>
               </ResponsiveContainer>
+              <TierTrendTable rows={tierData} metric="pageviews" />
             </div>
           ) : (
             <EmptyState
@@ -369,7 +399,11 @@ function PublishToPeakChart({ curve }: { curve: PublishToPeakPoint[] | null }) {
     );
   }
   return (
-    <div className="h-72 w-full font-data">
+    <div
+      className="h-72 w-full font-data"
+      role="img"
+      aria-label="Average GA4 pageviews by day since article publication"
+    >
       <ResponsiveContainer
         width="100%"
         height="100%"
@@ -419,7 +453,62 @@ function PublishToPeakChart({ curve }: { curve: PublishToPeakPoint[] | null }) {
           />
         </LineChart>
       </ResponsiveContainer>
+      <dl className="sr-only">
+        {curve.map((point) => (
+          <div key={point.day}>
+            <dt>Day {point.day}</dt>
+            <dd>
+              {point.avgPageviews.toFixed(0)} average pageviews from{" "}
+              {point.articleCount} articles
+            </dd>
+          </div>
+        ))}
+      </dl>
     </div>
+  );
+}
+
+function DailyTrendTable({ rows }: { rows: AnalyticsOverview["daily"] }) {
+  return (
+    <dl className="sr-only">
+      {rows.map((row) => (
+        <div key={row.date}>
+          <dt>{row.date}</dt>
+          <dd>
+            {row.pageviews} pageviews; ${row.siteEarnings.toFixed(2)} site revenue
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function TierTrendTable({
+  rows,
+  metric,
+}: {
+  rows: Array<{
+    tier: string;
+    pageviews: number;
+    earnings: number;
+    articles: number;
+  }>;
+  metric: "earnings" | "pageviews";
+}) {
+  return (
+    <dl className="sr-only">
+      {rows.map((row) => (
+        <div key={row.tier}>
+          <dt>{row.tier}</dt>
+          <dd>
+            {metric === "earnings"
+              ? `$${row.earnings.toFixed(2)} attributed revenue`
+              : `${row.pageviews} pageviews`}
+            ; {row.articles} articles
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -503,6 +592,8 @@ function DayOfWeekHeatmap({ heat }: { heat: DayOfWeekHeatPoint[] | null }) {
                       data-has-value={pv > 0 && maxPv > 0}
                       style={cellStyle(pv)}
                       title={`${DOW_LABELS[dow]}: ${pv.toLocaleString()} pageviews`}
+                      tabIndex={0}
+                      aria-label={`Week of ${label}, ${DOW_LABELS[dow]}: ${pv.toLocaleString()} pageviews`}
                     >
                       {pv > 0 ? pv.toLocaleString() : "—"}
                     </div>

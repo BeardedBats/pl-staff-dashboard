@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0031_atomic_tier_reordering.sql`. The
-current application stack depends on migrations `0013`–`0031`; apply those
+`0001_initial_schema.sql` through `0033_recovery_and_health.sql`. The
+current application stack depends on migrations `0013`–`0033`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,8 +44,8 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0031_atomic_tier_reordering.sql`. Production is currently verified through
-`0030`, so this release's expected suffix is exactly `0031`. Apply once:
+`0033_recovery_and_health.sql`. Production is currently verified through
+`0031`, so this release's expected suffix is exactly `0032`, then `0033`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -242,6 +242,21 @@ DROP FUNCTION IF EXISTS public.swap_tier_sort_orders(uuid, uuid);
 ```
 
 After application deployment, preserve the API contract and ship a compatible
+forward repair or restore the database and application together.
+
+### Migrations 0032–0033 contingency
+
+Migration `0032` adds service-role-only aggregate analytics functions. The
+existing v1 functions remain available during rollback. Before application
+deployment, reverse it by dropping the four `_v2` functions.
+
+Migration `0033` adds the forced-RLS WordPress recovery backlog, atomic draft
+creation, per-job cron-health function, and a durable historical-import
+backfill. Before application deployment, export any backlog rows, then drop the
+three functions and backlog table. The inserted successful import-run audit row
+is harmless historical evidence and should be preserved.
+
+After application deployment, keep these contracts and use a compatible
 forward repair or restore the database and application together.
 
 ## Stop conditions

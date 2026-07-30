@@ -12,8 +12,8 @@ merge or Yoast write-back.
   last known-good production deployment, and Supabase project
   `ovnwmayhbmbdzbxrfrul`.
 - The committed migration history is contiguous through
-  `0031_atomic_tier_reordering.sql` and the prior production stack is verified
-  through `0030_prevent_raptive_history_overlap.sql`.
+  `0033_recovery_and_health.sql` and the prior production stack is verified
+  through `0031_atomic_tier_reordering.sql`.
 - Use a new clean checkout of the immutable release commit. Never copy the
   current worktree's `.env.local`, `.vercel`, Supabase link state, or user files
   into it.
@@ -84,6 +84,8 @@ known-missing Supabase DDL access.
 0029_compact_raptive_history.sql
 0030_prevent_raptive_history_overlap.sql
 0031_atomic_tier_reordering.sql
+0032_analytics_correctness.sql
+0033_recovery_and_health.sql
 ```
 
    If production already contains a verified prefix, apply only the remaining
@@ -152,7 +154,7 @@ The Raptive API contract is the published Creator API v1 contract linked in
 ## Verification
 
 - The clean checkout, GitHub Actions, and preview all identify the same commit.
-- Production migration history ends at `0030`; schema, grants, RLS, constraints,
+- Production migration history ends at `0033`; schema, grants, RLS, constraints,
   generated types, private Storage, and backup evidence match the release.
 - Production resolves to the intended release and every smoke boundary passes.
 - The real Raptive workbook reconciles exactly. The live connector follows the
