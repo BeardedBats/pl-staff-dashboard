@@ -1,6 +1,7 @@
 import type { ComponentProps } from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
@@ -53,6 +54,54 @@ const baseProps: ComponentProps<typeof AdminAnalyticsPanel> = {
 };
 
 describe("AdminAnalyticsPanel Raptive controls", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("shows Connect GA4 immediately after a successful disconnect", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ ok: true }), { status: 200 }),
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              status: {
+                configured: true,
+                connected: false,
+                propertyId: "property-id",
+                lastSyncedAt: null,
+              },
+            }),
+            { status: 200 },
+          ),
+        ),
+    );
+
+    render(
+      <AdminAnalyticsPanel
+        {...baseProps}
+        canConnectGa4
+        initialGa4Status={{
+          configured: true,
+          connected: true,
+          propertyId: "property-id",
+          lastSyncedAt: null,
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Disconnect" }));
+
+    expect(await screen.findByRole("button", { name: "Connect GA4" })).toBeEnabled();
+    expect(screen.getByText("GA4 disconnected.")).toBeVisible();
+  });
+
   it("shows global read-only system health when supplied for Operations", () => {
     render(
       <AdminAnalyticsPanel
