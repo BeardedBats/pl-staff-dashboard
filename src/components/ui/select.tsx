@@ -133,7 +133,7 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "plpd-menu-highlight relative flex h-6 w-full cursor-default select-none items-center rounded-sm pl-8 pr-2 text-plpd-body text-white/90 outline-none",
+      "plpd-menu-highlight relative flex h-6 w-full cursor-default select-none items-center rounded-sm pl-8 pr-2 text-plpd-body text-text-cell outline-none",
       // PLPD highlighted row — lighter-blue gradient bar
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,

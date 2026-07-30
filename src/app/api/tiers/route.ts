@@ -29,12 +29,19 @@ const createSchema = z.object({
   sort_order: z.number().int().min(0).max(999).optional(),
 });
 
-const updateSchema = z.object({
-  id: z.uuid(),
-  name: z.string().trim().min(1).max(40).optional(),
-  label: z.string().trim().min(1).max(80).optional(),
-  sort_order: z.number().int().min(0).max(999).optional(),
-});
+const updateSchema = z.union([
+  z.object({
+    action: z.literal("swap_sort_order"),
+    first_id: z.uuid(),
+    second_id: z.uuid(),
+  }),
+  z.object({
+    id: z.uuid(),
+    name: z.string().trim().min(1).max(40).optional(),
+    label: z.string().trim().min(1).max(80).optional(),
+    sort_order: z.number().int().min(0).max(999).optional(),
+  }),
+]);
 
 const deleteSchema = z.object({
   id: z.uuid(),
@@ -90,6 +97,19 @@ export async function PATCH(request: Request) {
 
   const parsed = await parseJsonBody(request, updateSchema);
   if (!parsed.ok) return parsed.response;
+
+  if ("action" in parsed.data) {
+    const { data, error } = await getSupabaseAdmin().rpc(
+      "swap_tier_sort_orders",
+      {
+        p_first_id: parsed.data.first_id,
+        p_second_id: parsed.data.second_id,
+      },
+    );
+    if (error) return errorResponse(500, "Reorder failed");
+    if (data !== true) return errorResponse(404, "Tier not found");
+    return NextResponse.json({ ok: true });
+  }
 
   const { id, name, label, sort_order } = parsed.data;
   const updates: { name?: string; label?: string; sort_order?: number } = {};

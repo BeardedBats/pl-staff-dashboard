@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0030_prevent_raptive_history_overlap.sql`. The
-current application stack depends on migrations `0013`–`0030`; apply those
+`0001_initial_schema.sql` through `0031_atomic_tier_reordering.sql`. The
+current application stack depends on migrations `0013`–`0031`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,7 +44,8 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0030_prevent_raptive_history_overlap.sql`. Apply once:
+`0031_atomic_tier_reordering.sql`. Production is currently verified through
+`0030`, so this release's expected suffix is exactly `0031`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -226,6 +227,22 @@ code that relies on this invariant, it can be reversed by dropping
 `trg_raptive_history_prevent_revenue_overlap`, and
 `prevent_raptive_history_overlap()`. After deployment, preserve the invariant
 and use a forward repair or restore instead.
+
+### Migration 0031 contingency
+
+Migration `0031` adds the service-role-only
+`swap_tier_sort_orders(uuid, uuid)` function. It serializes tier reorders with
+an advisory transaction lock and uses a temporary unused position so the
+existing unique `sort_order` constraint is preserved throughout the swap.
+Before deploying application code that calls the function, it can be reversed
+with:
+
+```sql
+DROP FUNCTION IF EXISTS public.swap_tier_sort_orders(uuid, uuid);
+```
+
+After application deployment, preserve the API contract and ship a compatible
+forward repair or restore the database and application together.
 
 ## Stop conditions
 

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { readApiError } from "@/lib/api/client";
 import {
   Card,
   CardContent,
@@ -24,9 +26,14 @@ export function AdminSeasonPanel({ initialModes }: Props) {
   const router = useRouter();
   const [modes, setModes] = React.useState(initialModes);
   const [busy, setBusy] = React.useState<string | null>(null);
+  const [feedback, setFeedback] = React.useState<{
+    kind: "success" | "error";
+    message: string;
+  } | null>(null);
 
   async function refresh() {
     const res = await fetch("/api/season-modes");
+    if (!res.ok) throw new Error("Season refresh failed");
     const data = (await res.json()) as { modes: SeasonModeRecord[] };
     setModes(data.modes ?? []);
     router.refresh();
@@ -34,11 +41,25 @@ export function AdminSeasonPanel({ initialModes }: Props) {
 
   async function activate(id: string) {
     setBusy(id);
+    setFeedback(null);
     try {
       const res = await fetch(`/api/season-modes/${id}/activate`, {
         method: "PATCH",
       });
-      if (res.ok) await refresh();
+      if (!res.ok) {
+        setFeedback({
+          kind: "error",
+          message: await readApiError(res, "Could not activate the season."),
+        });
+        return;
+      }
+      await refresh();
+      setFeedback({ kind: "success", message: "Active season updated." });
+    } catch {
+      setFeedback({
+        kind: "error",
+        message: "Could not activate the season. Check your connection and retry.",
+      });
     } finally {
       setBusy(null);
     }
@@ -46,8 +67,9 @@ export function AdminSeasonPanel({ initialModes }: Props) {
 
   async function saveDates(id: string, start: string, end: string) {
     setBusy(id);
+    setFeedback(null);
     try {
-      await fetch(`/api/season-modes/${id}`, {
+      const response = await fetch(`/api/season-modes/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -55,7 +77,20 @@ export function AdminSeasonPanel({ initialModes }: Props) {
           auto_switch_end: end || null,
         }),
       });
+      if (!response.ok) {
+        setFeedback({
+          kind: "error",
+          message: await readApiError(response, "Could not save the season dates."),
+        });
+        return;
+      }
       await refresh();
+      setFeedback({ kind: "success", message: "Season dates saved." });
+    } catch {
+      setFeedback({
+        kind: "error",
+        message: "Could not save the season dates. Check your connection and retry.",
+      });
     } finally {
       setBusy(null);
     }
@@ -77,6 +112,14 @@ export function AdminSeasonPanel({ initialModes }: Props) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
+        {feedback ? (
+          <Alert variant={feedback.kind}>
+            <AlertTitle>
+              {feedback.kind === "success" ? "Season updated" : "Update failed"}
+            </AlertTitle>
+            <AlertDescription>{feedback.message}</AlertDescription>
+          </Alert>
+        ) : null}
         {modes.map((mode) => (
           <SeasonRow
             key={mode.id}

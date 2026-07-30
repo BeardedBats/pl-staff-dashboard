@@ -61,14 +61,17 @@ export async function GET(request: Request, context: RouteContext) {
   );
   if (!parsed.ok) return parsed.response;
 
-  const result = await listNotificationsForUser(id, {
-    onlyUnread: parsed.data.onlyUnread,
-    type: parsed.data.type,
-    limit: parsed.data.limit,
-    offset: parsed.data.offset,
-  });
-
-  return NextResponse.json(result);
+  try {
+    const result = await listNotificationsForUser(id, {
+      onlyUnread: parsed.data.onlyUnread,
+      type: parsed.data.type,
+      limit: parsed.data.limit,
+      offset: parsed.data.offset,
+    });
+    return NextResponse.json(result);
+  } catch {
+    return errorResponse(500, "Failed to load notifications");
+  }
 }
 
 const patchBodySchema = z.union([

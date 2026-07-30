@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Check, CheckCheck, Inbox, Loader2 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { readApiError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -41,9 +42,14 @@ export function NotificationsPageClient({
   >("");
   const [onlyUnread, setOnlyUnread] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [busyAction, setBusyAction] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const requestSequence = React.useRef(0);
 
   const refresh = React.useCallback(async () => {
+    const sequence = ++requestSequence.current;
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
       params.set("limit", "100");
@@ -52,14 +58,26 @@ export function NotificationsPageClient({
       const res = await fetch(
         `/api/users/${userId}/notifications?${params.toString()}`,
       );
+      if (!res.ok) {
+        if (sequence === requestSequence.current) {
+          setError(await readApiError(res, "Could not load notifications."));
+        }
+        return;
+      }
       const data = (await res.json()) as {
         rows: NotificationRow[];
         unreadCount: number;
       };
-      setRows(data.rows ?? []);
-      setUnreadCount(data.unreadCount ?? 0);
+      if (sequence === requestSequence.current) {
+        setRows(data.rows ?? []);
+        setUnreadCount(data.unreadCount ?? 0);
+      }
+    } catch {
+      if (sequence === requestSequence.current) {
+        setError("Could not load notifications. Check your connection and retry.");
+      }
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   }, [userId, typeFilter, onlyUnread]);
 
@@ -68,21 +86,61 @@ export function NotificationsPageClient({
   }, [refresh]);
 
   async function markOne(id: string, isRead: boolean) {
-    await fetch(`/api/users/${userId}/notifications`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: [id], is_read: isRead }),
-    });
-    void refresh();
+    setBusyAction(id);
+    setError(null);
+    try {
+      const response = await fetch(`/api/users/${userId}/notifications`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id], is_read: isRead }),
+      });
+      if (!response.ok) {
+        setError(await readApiError(response, "Could not update the notification."));
+        return;
+      }
+      setRows((current) =>
+        onlyUnread && isRead
+          ? current.filter((notification) => notification.id !== id)
+          : current.map((notification) =>
+              notification.id === id
+                ? { ...notification, is_read: isRead }
+                : notification,
+            ),
+      );
+      setUnreadCount((current) =>
+        Math.max(0, current + (isRead ? -1 : 1)),
+      );
+    } catch {
+      setError("Could not update the notification. Check your connection and retry.");
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   async function markAllRead() {
-    await fetch(`/api/users/${userId}/notifications`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "mark_all_read" }),
-    });
-    void refresh();
+    setBusyAction("all");
+    setError(null);
+    try {
+      const response = await fetch(`/api/users/${userId}/notifications`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark_all_read" }),
+      });
+      if (!response.ok) {
+        setError(await readApiError(response, "Could not mark all notifications as read."));
+        return;
+      }
+      setRows((current) =>
+        onlyUnread
+          ? []
+          : current.map((notification) => ({ ...notification, is_read: true })),
+      );
+      setUnreadCount(0);
+    } catch {
+      setError("Could not mark all notifications as read. Check your connection and retry.");
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   return (
@@ -128,14 +186,25 @@ export function NotificationsPageClient({
           <Button
             variant="ghost"
             size="sm"
-            onClick={markAllRead}
+            onClick={() => void markAllRead()}
+            disabled={busyAction !== null}
             className="ml-auto text-text-zero"
           >
-            <CheckCheck className="h-3 w-3" />
-            Mark all read
+            {busyAction === "all" ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <CheckCheck className="h-3 w-3" />
+            )}
+            {busyAction === "all" ? "Marking…" : "Mark all read"}
           </Button>
         ) : null}
       </div>
+
+      {error ? (
+        <div role="alert" className="rounded-md border border-red/40 bg-red/10 px-3 py-2 text-sm text-red">
+          {error}
+        </div>
+      ) : null}
 
       {loading && rows.length === 0 ? (
         <div className="flex items-center justify-center rounded-lg border border-border bg-card py-10">
@@ -157,7 +226,8 @@ export function NotificationsPageClient({
             <li key={n.id}>
               <NotificationListRow
                 notification={n}
-                onToggleRead={() => markOne(n.id, !n.is_read)}
+                busy={busyAction === n.id}
+                onToggleRead={() => void markOne(n.id, !n.is_read)}
               />
             </li>
           ))}
@@ -169,14 +239,36 @@ export function NotificationsPageClient({
 
 function NotificationListRow({
   notification,
+  busy,
   onToggleRead,
 }: {
   notification: NotificationRow;
+  busy: boolean;
   onToggleRead: () => void;
 }) {
-  const href = notification.entry_id
-    ? `/content?entry=${notification.entry_id}`
-    : "#";
+  const notificationContent = (
+    <>
+      <div className="flex items-center gap-2">
+        <p className="break-words text-sm font-medium text-text-cell">
+          {notification.title}
+        </p>
+        <Badge variant="outline" className="shrink-0">
+          {EVENT_TYPE_LABELS[notification.type] ?? notification.type}
+        </Badge>
+      </div>
+      {notification.body ? (
+        <p className="mt-1 break-words text-xs text-text-team">
+          {notification.body}
+        </p>
+      ) : null}
+      <p className="mt-1 font-data text-[10px] text-text-zero">
+        {formatDate(notification.created_at, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })}
+      </p>
+    </>
+  );
 
   return (
     <div
@@ -192,35 +284,33 @@ function NotificationListRow({
           <span className="block h-1.5 w-1.5 rounded-full bg-cyan" />
         )}
       </div>
-      <Link href={href} className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="break-words text-sm font-medium text-text-cell">
-            {notification.title}
-          </p>
-          <Badge variant="outline" className="shrink-0">
-            {EVENT_TYPE_LABELS[notification.type] ?? notification.type}
-          </Badge>
-        </div>
-        {notification.body ? (
-          <p className="mt-1 break-words text-xs text-text-team">
-            {notification.body}
-          </p>
-        ) : null}
-        <p className="mt-1 font-data text-[10px] text-text-zero">
-          {formatDate(notification.created_at, {
-            dateStyle: "medium",
-            timeStyle: "short",
-          })}
-        </p>
-      </Link>
+      {notification.entry_id ? (
+        <Link
+          href={`/content?entry=${notification.entry_id}`}
+          className="min-w-0 flex-1"
+        >
+          {notificationContent}
+        </Link>
+      ) : (
+        <div className="min-w-0 flex-1">{notificationContent}</div>
+      )}
       <Button
         variant="ghost"
         size="sm"
         onClick={onToggleRead}
-        className="shrink-0 text-text-zero opacity-0 group-hover:opacity-100"
+        disabled={busy}
+        className="shrink-0 text-text-zero opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
       >
-        <Check className="h-3 w-3" />
-        {notification.is_read ? "Mark unread" : "Mark read"}
+        {busy ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Check className="h-3 w-3" />
+        )}
+        {busy
+          ? "Updating…"
+          : notification.is_read
+            ? "Mark unread"
+            : "Mark read"}
       </Button>
     </div>
   );

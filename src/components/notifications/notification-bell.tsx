@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Bell, Check, Inbox } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bell, Check, Inbox, Loader2 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { readApiError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,11 +28,14 @@ type NotificationBellProps = {
  * latest items and links to the full page.
  */
 export function NotificationBell({ userId }: NotificationBellProps) {
+  const router = useRouter();
   const [notifications, setNotifications] = React.useState<NotificationRow[]>(
     [],
   );
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [open, setOpen] = React.useState(false);
+  const [busyAction, setBusyAction] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
     try {
@@ -60,22 +65,61 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     if (open) void load();
   }, [open, load]);
 
-  async function markOneRead(notificationId: string) {
-    await fetch(`/api/users/${userId}/notifications`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: [notificationId], is_read: true }),
-    });
-    void load();
+  async function markOneRead(
+    notificationId: string,
+    href: string,
+  ): Promise<void> {
+    setBusyAction(notificationId);
+    setError(null);
+    try {
+      const response = await fetch(`/api/users/${userId}/notifications`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [notificationId], is_read: true }),
+      });
+      if (!response.ok) {
+        setError(await readApiError(response, "Could not mark the notification as read."));
+        return;
+      }
+      setNotifications((current) =>
+        current.map((notification) =>
+          notification.id === notificationId
+            ? { ...notification, is_read: true }
+            : notification,
+        ),
+      );
+      setUnreadCount((current) => Math.max(0, current - 1));
+      setOpen(false);
+      router.push(href);
+    } catch {
+      setError("Could not mark the notification as read. Check your connection and retry.");
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   async function markAllRead() {
-    await fetch(`/api/users/${userId}/notifications`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "mark_all_read" }),
-    });
-    void load();
+    setBusyAction("all");
+    setError(null);
+    try {
+      const response = await fetch(`/api/users/${userId}/notifications`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark_all_read" }),
+      });
+      if (!response.ok) {
+        setError(await readApiError(response, "Could not mark all notifications as read."));
+        return;
+      }
+      setNotifications((current) =>
+        current.map((notification) => ({ ...notification, is_read: true })),
+      );
+      setUnreadCount(0);
+    } catch {
+      setError("Could not mark all notifications as read. Check your connection and retry.");
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   return (
@@ -119,14 +163,25 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             <Button
               size="sm"
               variant="ghost"
-              onClick={markAllRead}
+              onClick={() => void markAllRead()}
+              disabled={busyAction !== null}
               className="text-xs text-text-zero"
             >
-              <Check className="h-3 w-3" />
-              Mark all read
+              {busyAction === "all" ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
+              {busyAction === "all" ? "Marking…" : "Mark all read"}
             </Button>
           ) : null}
         </div>
+
+        {error ? (
+          <p role="alert" className="border-b border-red/30 bg-red/10 px-4 py-2 text-xs text-red">
+            {error}
+          </p>
+        ) : null}
 
         <div className="max-h-96 overflow-y-auto">
           {notifications.length === 0 ? (
@@ -144,7 +199,8 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                 <li key={n.id}>
                   <NotificationListItem
                     notification={n}
-                    onMarkRead={() => markOneRead(n.id)}
+                    busy={busyAction === n.id}
+                    onMarkRead={(href) => markOneRead(n.id, href)}
                   />
                 </li>
               ))}
@@ -169,10 +225,12 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
 function NotificationListItem({
   notification,
+  busy,
   onMarkRead,
 }: {
   notification: NotificationRow;
-  onMarkRead: () => void;
+  busy: boolean;
+  onMarkRead: (href: string) => Promise<void>;
 }) {
   const href = notification.entry_id
     ? `/content?entry=${notification.entry_id}`
@@ -181,9 +239,14 @@ function NotificationListItem({
   return (
     <Link
       href={href}
-      onClick={onMarkRead}
+      aria-busy={busy}
+      onClick={(event) => {
+        event.preventDefault();
+        if (!busy) void onMarkRead(href);
+      }}
       className={cn(
         "block px-4 py-3 transition-colors hover:bg-surface-3",
+        busy && "pointer-events-none opacity-70",
         !notification.is_read && "bg-cyan-dim/30",
       )}
     >
