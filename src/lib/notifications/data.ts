@@ -220,14 +220,16 @@ export async function listNotificationsForUser(
   if (filters.onlyUnread) query = query.eq("is_read", false);
   if (filters.type) query = query.eq("type", filters.type);
 
-  const { data } = await query;
+  const { data, error: rowsError } = await query;
+  if (rowsError) throw rowsError;
 
-  const { count } = await supabase
+  const { count, error: countError } = await supabase
     .from("notifications")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
     .lte("available_at", new Date().toISOString())
     .eq("is_read", false);
+  if (countError) throw countError;
 
   return {
     rows: (data ?? []) as NotificationRow[],

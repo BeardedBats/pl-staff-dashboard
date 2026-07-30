@@ -27,6 +27,7 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { GlobalSearch } from "@/components/search/global-search";
 import { NAV_ITEMS, isNavVisible } from "@/components/layout/nav-config";
 import type { AppRole } from "@/lib/auth/current-user";
+import { readApiError } from "@/lib/api/client";
 
 type HeaderProps = {
   userId: string;
@@ -56,6 +57,7 @@ export function Header({
   const router = useRouter();
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const [logoutError, setLogoutError] = React.useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
 
   // Close mobile nav on route change
@@ -65,10 +67,18 @@ export function Header({
 
   async function handleLogout() {
     setIsLoggingOut(true);
+    setLogoutError(null);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) {
+        setLogoutError(await readApiError(response, "Could not sign out."));
+        return;
+      }
     } catch {
-      // Even on network error, clear local state and bounce.
+      setLogoutError("Could not sign out. Check your connection and retry.");
+      return;
+    } finally {
+      setIsLoggingOut(false);
     }
     router.refresh();
     router.replace("/login");
@@ -179,6 +189,11 @@ export function Header({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            {logoutError ? (
+              <div role="alert" className="px-2 py-1.5 text-xs text-red">
+                {logoutError}
+              </div>
+            ) : null}
             <DropdownMenuItem
               onSelect={(e) => {
                 e.preventDefault();

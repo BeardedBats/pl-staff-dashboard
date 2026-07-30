@@ -69,6 +69,7 @@ export const browserRecords = {
   polishingEntryId: "28200000-0000-0000-0000-000000000006",
   analyticsRowId: "28500000-0000-0000-0000-000000000001",
   revenueRowId: "28600000-0000-0000-0000-000000000001",
+  notificationId: "28900000-0000-4000-8000-000000000001",
   financialSentinel: 731.2942,
   tableArchiveEntryIds,
 } as const;
@@ -205,6 +206,18 @@ export default async function globalSetup() {
       })),
     ),
     "insert browser sessions",
+  );
+
+  await expectWrite(
+    supabase.from("notifications").insert({
+      id: browserRecords.notificationId,
+      user_id: browserActors.writer.userId,
+      type: "mention",
+      title: "E2E notification interaction",
+      body: "Verify read-state controls without external delivery.",
+      is_read: false,
+    }),
+    "insert browser notification",
   );
 
   const { data: tier, error: tierError } = await supabase

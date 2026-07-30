@@ -12,7 +12,8 @@ merge or Yoast write-back.
   last known-good production deployment, and Supabase project
   `ovnwmayhbmbdzbxrfrul`.
 - The committed migration history is contiguous through
-  `0030_prevent_raptive_history_overlap.sql` and the Phase 6 boundary is green.
+  `0031_atomic_tier_reordering.sql` and the prior production stack is verified
+  through `0030_prevent_raptive_history_overlap.sql`.
 - Use a new clean checkout of the immutable release commit. Never copy the
   current worktree's `.env.local`, `.vercel`, Supabase link state, or user files
   into it.
@@ -82,6 +83,7 @@ known-missing Supabase DDL access.
 0028_site_safe_raptive_import.sql
 0029_compact_raptive_history.sql
 0030_prevent_raptive_history_overlap.sql
+0031_atomic_tier_reordering.sql
 ```
 
    If production already contains a verified prefix, apply only the remaining

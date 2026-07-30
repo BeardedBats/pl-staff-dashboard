@@ -2018,6 +2018,10 @@ export type Database = {
         Args: { p_actor_id: string; p_request_id: string }
         Returns: boolean
       }
+      swap_tier_sort_orders: {
+        Args: { p_first_id: string; p_second_id: string }
+        Returns: boolean
+      }
       transition_editorial_entry: {
         Args: {
           p_action: string

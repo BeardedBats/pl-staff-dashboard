@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
+import { readApiError } from "@/lib/api/client";
 import type { ChecklistItemRecord } from "@/lib/checklist/data";
 import type { EntryTier } from "@/lib/entries/queries";
 
@@ -65,6 +66,7 @@ export function AdminChecklistsPanel({
     initialTiers[0]?.id ?? "",
   );
   const [busy, setBusy] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   async function refreshTiers() {
     const res = await fetch("/api/tiers");
@@ -83,6 +85,7 @@ export function AdminChecklistsPanel({
 
   async function refresh() {
     const res = await fetch("/api/settings/checklist-items");
+    if (!res.ok) throw new Error("Checklist refresh failed");
     const data = (await res.json()) as { items: ChecklistItemRecord[] };
     setItems(data.items ?? []);
     router.refresh();
@@ -94,11 +97,18 @@ export function AdminChecklistsPanel({
     );
     if (!confirmed) return;
     setBusy(item.id);
+    setError(null);
     try {
-      await fetch(`/api/settings/checklist-items/${item.id}`, {
+      const response = await fetch(`/api/settings/checklist-items/${item.id}`, {
         method: "DELETE",
       });
+      if (!response.ok) {
+        setError(await readApiError(response, "Could not delete the checklist item."));
+        return;
+      }
       await refresh();
+    } catch {
+      setError("Could not delete the checklist item. Check your connection and retry.");
     } finally {
       setBusy(null);
     }
@@ -109,13 +119,20 @@ export function AdminChecklistsPanel({
     required: boolean,
   ) {
     setBusy(item.id);
+    setError(null);
     try {
-      await fetch(`/api/settings/checklist-items/${item.id}`, {
+      const response = await fetch(`/api/settings/checklist-items/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_required: required }),
       });
+      if (!response.ok) {
+        setError(await readApiError(response, "Could not update the checklist item."));
+        return;
+      }
       await refresh();
+    } catch {
+      setError("Could not update the checklist item. Check your connection and retry.");
     } finally {
       setBusy(null);
     }
@@ -127,6 +144,11 @@ export function AdminChecklistsPanel({
 
   return (
     <div className="space-y-6">
+      {error ? (
+        <p role="alert" className="rounded-md border border-red/40 bg-red/10 p-3 text-sm text-red">
+          {error}
+        </p>
+      ) : null}
       <TiersCard tiers={tiers} onChange={refreshTiers} />
       <Card>
         <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row">
@@ -278,17 +300,22 @@ function TiersCard({
     setBusyId(tier.id);
     setError(null);
     try {
-      await fetch("/api/tiers", {
+      const response = await fetch("/api/tiers", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: tier.id, sort_order: swapWith.sort_order }),
+        body: JSON.stringify({
+          action: "swap_sort_order",
+          first_id: tier.id,
+          second_id: swapWith.id,
+        }),
       });
-      await fetch("/api/tiers", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: swapWith.id, sort_order: tier.sort_order }),
-      });
+      if (!response.ok) {
+        setError(await readApiError(response, "Could not reorder the tiers."));
+        return;
+      }
       await onChange();
+    } catch {
+      setError("Could not reorder the tiers. Check your connection and retry.");
     } finally {
       setBusyId(null);
     }

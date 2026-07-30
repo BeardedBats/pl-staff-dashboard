@@ -23,6 +23,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { readApiError } from "@/lib/api/client";
 import { TemplateDialog } from "./template-dialog";
 import type { RecurringTemplateRecord } from "@/lib/recurring-templates/data";
 import type { SeasonModeRecord } from "@/lib/season-modes/data";
@@ -52,11 +54,15 @@ export function AdminTemplatesPanel({
   const [editingTemplate, setEditingTemplate] =
     React.useState<RecurringTemplateRecord | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
-  const [runResult, setRunResult] = React.useState<string | null>(null);
+  const [feedback, setFeedback] = React.useState<{
+    kind: "success" | "error";
+    message: string;
+  } | null>(null);
   const dialogReturnFocusRef = React.useRef<HTMLElement | null>(null);
 
   async function refresh() {
     const res = await fetch("/api/templates");
+    if (!res.ok) throw new Error("Template refresh failed");
     const data = (await res.json()) as {
       templates: RecurringTemplateRecord[];
     };
@@ -70,13 +76,27 @@ export function AdminTemplatesPanel({
 
   async function toggleActive(t: RecurringTemplateRecord) {
     setBusy(t.id);
+    setFeedback(null);
     try {
-      await fetch(`/api/templates/${t.id}`, {
+      const response = await fetch(`/api/templates/${t.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: !t.is_active }),
       });
+      if (!response.ok) {
+        setFeedback({
+          kind: "error",
+          message: await readApiError(response, "Could not update the template."),
+        });
+        return;
+      }
       await refresh();
+      setFeedback({ kind: "success", message: "Template updated." });
+    } catch {
+      setFeedback({
+        kind: "error",
+        message: "Could not update the template. Check your connection and retry.",
+      });
     } finally {
       setBusy(null);
     }
@@ -88,9 +108,23 @@ export function AdminTemplatesPanel({
     );
     if (!confirmed) return;
     setBusy(t.id);
+    setFeedback(null);
     try {
-      await fetch(`/api/templates/${t.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/templates/${t.id}`, { method: "DELETE" });
+      if (!response.ok) {
+        setFeedback({
+          kind: "error",
+          message: await readApiError(response, "Could not delete the template."),
+        });
+        return;
+      }
       await refresh();
+      setFeedback({ kind: "success", message: "Template deleted." });
+    } catch {
+      setFeedback({
+        kind: "error",
+        message: "Could not delete the template. Check your connection and retry.",
+      });
     } finally {
       setBusy(null);
     }
@@ -98,7 +132,7 @@ export function AdminTemplatesPanel({
 
   async function runGeneratorNow() {
     setBusy("__runner__");
-    setRunResult(null);
+    setFeedback(null);
     try {
       const res = await fetch("/api/cron/recurring-generate", {
         method: "POST",
@@ -114,16 +148,23 @@ export function AdminTemplatesPanel({
         error?: string;
       };
       if (!res.ok || !data.ok) {
-        setRunResult(`Error: ${data.error ?? "run failed"}`);
+        setFeedback({ kind: "error", message: data.error ?? "Generator run failed." });
       } else if (data.report) {
-        setRunResult(
-          `Processed ${data.report.templatesProcessed} templates · ` +
+        setFeedback({
+          kind: data.report.errors.length > 0 ? "error" : "success",
+          message:
+            `Processed ${data.report.templatesProcessed} templates · ` +
             `Created ${data.report.entriesCreated} entries · ` +
             `Skipped ${data.report.entriesSkipped} existing · ` +
             `${data.report.errors.length} errors`,
-        );
+        });
       }
       await refresh();
+    } catch {
+      setFeedback({
+        kind: "error",
+        message: "Could not run the generator. Check your connection and retry.",
+      });
     } finally {
       setBusy(null);
     }
@@ -170,10 +211,13 @@ export function AdminTemplatesPanel({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {runResult ? (
-          <p className="rounded-sm border border-cyan/30 bg-cyan-dim px-3 py-2 text-xs text-cyan">
-            {runResult}
-          </p>
+        {feedback ? (
+          <Alert variant={feedback.kind}>
+            <AlertTitle>
+              {feedback.kind === "success" ? "Template action complete" : "Template action failed"}
+            </AlertTitle>
+            <AlertDescription>{feedback.message}</AlertDescription>
+          </Alert>
         ) : null}
 
         {templates.length === 0 ? (

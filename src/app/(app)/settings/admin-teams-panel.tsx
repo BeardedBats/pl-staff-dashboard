@@ -45,6 +45,7 @@ import { UserAvatar } from "@/components/users/user-avatar";
 import type { TeamSummary, TeamDetail, TeamMemberRow } from "@/lib/teams/data";
 import type { StaffUserSummary } from "@/lib/users/queries";
 import type { AppSite } from "@/lib/auth/current-user";
+import { readApiError } from "@/lib/api/client";
 
 type AdminTeamsPanelProps = {
   initialTeams: TeamSummary[];
@@ -64,6 +65,8 @@ export function AdminTeamsPanel({
   );
   const [teamDetail, setTeamDetail] = React.useState<TeamDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = React.useState(false);
+  const [detailError, setDetailError] = React.useState<string | null>(null);
+  const [pageError, setPageError] = React.useState<string | null>(null);
   const [createOpen, setCreateOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -74,14 +77,35 @@ export function AdminTeamsPanel({
   React.useEffect(() => {
     if (!selectedTeamId) {
       setTeamDetail(null);
+      setDetailError(null);
       return;
     }
     let cancelled = false;
+    setTeamDetail(null);
+    setDetailError(null);
     setLoadingDetail(true);
     fetch(`/api/teams/${selectedTeamId}`)
-      .then((r) => r.json())
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(
+            await readApiError(response, "Could not load the selected team."),
+          );
+        }
+        return response.json();
+      })
       .then((data: { team?: TeamDetail }) => {
-        if (!cancelled && data.team) setTeamDetail(data.team);
+        if (cancelled) return;
+        if (data.team) setTeamDetail(data.team);
+        else setDetailError("The selected team no longer exists.");
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setDetailError(
+            error instanceof Error
+              ? error.message
+              : "Could not load the selected team.",
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setLoadingDetail(false);
@@ -93,6 +117,7 @@ export function AdminTeamsPanel({
 
   async function refresh() {
     const res = await fetch("/api/teams");
+    if (!res.ok) throw new Error("Team refresh failed");
     const data = (await res.json()) as { teams: TeamSummary[] };
     setTeams(
       (data.teams ?? []).filter((team) =>
@@ -103,6 +128,7 @@ export function AdminTeamsPanel({
     );
     if (selectedTeamId) {
       const detailRes = await fetch(`/api/teams/${selectedTeamId}`);
+      if (!detailRes.ok) throw new Error("Team detail refresh failed");
       const detailData = (await detailRes.json()) as { team?: TeamDetail };
       setTeamDetail(detailData.team ?? null);
     }
@@ -114,15 +140,28 @@ export function AdminTeamsPanel({
       "Delete this team? Members will be unassigned.",
     );
     if (!confirmed) return;
-    const res = await fetch(`/api/teams/${id}`, { method: "DELETE" });
-    if (res.ok) {
+    setPageError(null);
+    try {
+      const res = await fetch(`/api/teams/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setPageError(await readApiError(res, "Could not delete the team."));
+        return;
+      }
       if (selectedTeamId === id) setSelectedTeamId(null);
       await refresh();
+    } catch {
+      setPageError("Could not delete the team. Check your connection and retry.");
     }
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-[320px_1fr]">
+    <div className="space-y-4">
+      {pageError ? (
+        <p role="alert" className="rounded-md border border-red/40 bg-red/10 p-3 text-sm text-red">
+          {pageError}
+        </p>
+      ) : null}
+      <div className="grid gap-6 md:grid-cols-[320px_1fr]">
       {/* Left — team list */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -192,8 +231,13 @@ export function AdminTeamsPanel({
 
       {/* Right — detail */}
       <div>
-        {loadingDetail && !teamDetail ? (
+        {loadingDetail ? (
           <EmptyState title="Loading team…" />
+        ) : detailError ? (
+          <EmptyState
+            title="Could not load team"
+            description={detailError}
+          />
         ) : !teamDetail ? (
           <EmptyState
             icon={<Users2 className="h-5 w-5" />}
@@ -208,6 +252,7 @@ export function AdminTeamsPanel({
             onDelete={() => deleteTeamRow(teamDetail.id)}
           />
         )}
+      </div>
       </div>
     </div>
   );
@@ -266,17 +311,41 @@ function TeamDetailPanel({
       `Remove ${member.display_name} from ${team.name}?`,
     );
     if (!confirmed) return;
-    const res = await fetch(`/api/teams/${team.id}/members/${member.user_id}`, {
-      method: "DELETE",
-    });
-    if (res.ok) await onChanged();
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/teams/${team.id}/members/${member.user_id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        setError(await readApiError(res, "Could not remove the team member."));
+        return;
+      }
+      await onChanged();
+    } catch {
+      setError("Could not remove the team member. Check your connection and retry.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function setPrimary(member: TeamMemberRow) {
-    const res = await fetch(`/api/teams/${team.id}/members/${member.user_id}`, {
-      method: "PATCH",
-    });
-    if (res.ok) await onChanged();
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/teams/${team.id}/members/${member.user_id}`, {
+        method: "PATCH",
+      });
+      if (!res.ok) {
+        setError(await readApiError(res, "Could not update the primary writer."));
+        return;
+      }
+      await onChanged();
+    } catch {
+      setError("Could not update the primary writer. Check your connection and retry.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (

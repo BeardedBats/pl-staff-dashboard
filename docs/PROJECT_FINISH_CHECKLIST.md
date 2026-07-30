@@ -1,14 +1,14 @@
 # Pitcher List Staff Content Dashboard — Production Readiness
 
-Last updated: 2026-07-29
+Last updated: 2026-07-30
 
 ## Recovery state
 
-- Current phase: Phase 7 — final production health repair and residual-risk closure
-- Current action: deploy the Operations System Health access correction, verify it in production, and resolve the expired GA4 authorization.
-- Branch: `codex/final-production-checkpoint`
-- Deployment: production is on merge commit `5f18f153882212c02016a5b4f5c964521fcb9f88`; migrations are contiguous through `0030`, historical/live Raptive is reconciled, and the July 22 production deployment succeeded.
-- Known blocker: Google rejects the saved GA4 refresh token with `invalid_grant`; Nick must complete one Google reconnect after this health-visibility fix deploys. GitHub-hosted CI remains waived because billing blocks runners under the explicit no-spend requirement. QB WordPress is intentionally unconfigured.
+- Current phase: Phase 7 — UI/UX reliability closeout and final production smoke
+- Current action: publish the cohesive notification, floating-surface, administration, tier-reorder, team-state, and logout reliability batch; apply migration `0031`; run the final affected production smoke.
+- Branch: `codex/ui-ux-reliability`
+- Deployment: production application history is on merge commit `de9c6e1f3bf5649df87596d205dfe1dcd4808de5`; production migrations are contiguous through `0030`, historical/live Raptive is reconciled, and GA4 has been interactively reconnected.
+- Known blocker: GitHub-hosted CI remains waived because billing blocks runners under the explicit no-spend requirement. QB WordPress is intentionally unconfigured. No Nick action is required for this batch.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
 
@@ -138,11 +138,19 @@ Phase 6 gate status: **PASS IN PRODUCTION.** Exact head `a37698f02f110dda625811f
 
 - [x] P7.1 Run one release-candidate clean-checkout quality, security, database, browser, accessibility, and complete route/role/viewport visual gate. — The final Raptive head passed the complete local gate and exact-head Vercel preview; GitHub-hosted runners were billing-blocked and waived under the no-spend instruction.
 - [x] P7.2 Execute one production migration/deployment procedure with verified backup and rollback readiness.
-- [ ] P7.3 Run one production smoke covering roles, WordPress/SEO, cron, integrations, and health. — IN PROGRESS: authenticated Operations smoke found and repaired inaccessible System Health; WordPress and Raptive are current. GA4 needs one Google reconnect before this item can close.
+- [x] P7.3 Run one production smoke covering roles, WordPress/SEO, cron, integrations, and health. — Authenticated Operations smoke verified System Health visibility, WordPress and Raptive are current, and Nick completed the required GA4 reconnect.
 - [x] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health.
 - [ ] P7.5 Finish aligned documentation, evidence-linked checklist, residual-risk record, and one final release smoke after affected-gate repairs. — IN PROGRESS
 
 Gate: the release is deployed and verified; real Raptive data is validated; every completion has concrete evidence.
+
+### 2026-07-30 — UI/UX reliability closeout
+
+- Repaired notification reads end to end: “Mark all read” and individual actions now check API failures, preserve state on failure, expose retryable feedback and pending states, update successful state immediately, avoid dead `#` links, remain visible to keyboard/touch users, and discard stale filtered responses.
+- Floating dropdown, select, and notification surfaces are now fully opaque in dark and light themes. The shared floating-surface token keeps the existing PLPD colors and shadows while removing transparent content bleed-through.
+- Administration mutations now fail visibly instead of silently across seasons, templates, checklist items, teams, and logout. Team selection clears stale details while loading. Tier reordering is one service-only transactional RPC instead of two conflicting client writes; migration `0031` is ordered, reversible, generated-type checked, and covered by constraint/privilege tests.
+- Complete affected local gate: runbook contract through `0031`; ESLint; TypeScript; 93 Vitest files / 400 tests; zero production dependency vulnerabilities; production build; clean migration reset; 19 database files / 419 pgTAP assertions; generated-type drift; warning-failing database lint; all 12 browser journeys; and all 43 accessibility, performance, responsive, route/role/viewport, interaction, and visual checks pass.
+- Release status: local gate **PASS**. One exact-head GitHub gate, one Vercel preview, production migration/deployment, and one final affected production smoke remain.
 
 ### 2026-07-29 — Continued production-health verification
 
