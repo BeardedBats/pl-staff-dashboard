@@ -5,7 +5,6 @@ import {
   DollarSign,
   Eye,
   FileText,
-  Gauge,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -92,22 +91,22 @@ export function AnalyticsOverviewTab({ query }: Props) {
           icon={<Users className="h-4 w-4" />}
         />
         <MetricCard
-          label="Revenue"
+          label="Site revenue"
           value={`$${data.totalEarnings.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`}
           icon={<DollarSign className="h-4 w-4" />}
-          hint="From Raptive"
+          hint="All Raptive URLs"
         />
         <MetricCard
-          label="Page RPM"
-          value={`$${data.avgPageRpm.toFixed(2)}`}
-          icon={<Gauge className="h-4 w-4" />}
-          hint="Revenue per 1k pageviews"
+          label="Attributed revenue"
+          value={`$${data.attributedEarnings.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`}
+          icon={<DollarSign className="h-4 w-4" />}
+          hint="Matched to filtered entries"
         />
         <MetricCard
-          label="Session RPM"
-          value={`$${data.avgRpm.toFixed(2)}`}
-          icon={<Gauge className="h-4 w-4" />}
-          hint="Revenue per 1k sessions"
+          label="Attribution"
+          value={`${(data.attributionRate * 100).toFixed(1)}%`}
+          icon={<TrendingUp className="h-4 w-4" />}
+          hint={`$${data.unattributedEarnings.toFixed(2)} not attributed`}
         />
       </div>
 
@@ -117,7 +116,11 @@ export function AnalyticsOverviewTab({ query }: Props) {
         </CardHeader>
         <CardContent>
           {hasData ? (
-            <div className="h-64 w-full font-data">
+            <div
+              className="h-64 w-full font-data"
+              role="img"
+              aria-label="Daily pageviews and actual total Raptive site revenue"
+            >
               <ResponsiveContainer
                 width="100%"
                 height="100%"
@@ -154,8 +157,8 @@ export function AnalyticsOverviewTab({ query }: Props) {
                     }}
                     formatter={(value, name) => {
                       const num = Number(value ?? 0);
-                      if (name === "earnings")
-                        return [`$${num.toFixed(2)}`, "Earnings"];
+                      if (name === "siteEarnings")
+                        return [`$${num.toFixed(2)}`, "Site revenue"];
                       return [num.toLocaleString(), "Pageviews"];
                     }}
                   />
@@ -170,13 +173,24 @@ export function AnalyticsOverviewTab({ query }: Props) {
                   <Area
                     yAxisId="right"
                     type="monotone"
-                    dataKey="earnings"
+                    dataKey="siteEarnings"
                     stroke="var(--color-amber)"
                     fill="var(--color-amber)"
                     fillOpacity={0.1}
                   />
                 </AreaChart>
               </ResponsiveContainer>
+              <dl className="sr-only">
+                {data.daily.map((point) => (
+                  <div key={point.date}>
+                    <dt>{point.date}</dt>
+                    <dd>
+                      {point.pageviews} pageviews; ${point.siteEarnings.toFixed(2)} site
+                      revenue; ${point.earnings.toFixed(2)} attributed revenue
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           ) : (
             <EmptyState

@@ -116,13 +116,35 @@ export function EntryDetailPanel({
   const [createGraphicOpen, setCreateGraphicOpen] = React.useState(false);
 
   const reload = React.useCallback(async () => {
-    const [entryRes, graphicsRes] = await Promise.all([
-      fetch(`/api/entries/${entryId}`).then((r) => r.json()),
-      fetch(`/api/graphic-requests?entryId=${entryId}`).then((r) => r.json()),
-    ]);
-    if (entryRes.entry) setEntry(entryRes.entry);
-    else setError(entryRes.error ?? "Failed to load");
-    setGraphicRequests(graphicsRes.requests ?? []);
+    setError(null);
+    try {
+      const [entryResponse, graphicsResponse] = await Promise.all([
+        fetch(`/api/entries/${entryId}`),
+        fetch(`/api/graphic-requests?entryId=${entryId}`),
+      ]);
+      if (!entryResponse.ok) {
+        setError(await readApiError(entryResponse, "Entry could not be loaded."));
+        return;
+      }
+      const entryRes = (await entryResponse.json()) as { entry?: EntryDetail };
+      if (entryRes.entry) setEntry(entryRes.entry);
+      else setError("Entry could not be loaded.");
+      if (graphicsResponse.ok) {
+        const graphicsRes = (await graphicsResponse.json()) as {
+          requests?: GraphicRequestRecord[];
+        };
+        setGraphicRequests(graphicsRes.requests ?? []);
+      } else {
+        setActionError(
+          await readApiError(
+            graphicsResponse,
+            "Graphic requests could not be loaded.",
+          ),
+        );
+      }
+    } catch {
+      setError("Entry could not be loaded. Check your connection and retry.");
+    }
   }, [entryId]);
 
   React.useEffect(() => {
@@ -131,15 +153,34 @@ export function EntryDetailPanel({
     setError(null);
 
     Promise.all([
-      fetch(`/api/entries/${entryId}`).then((r) => r.json()),
-      fetch(`/api/graphic-requests?entryId=${entryId}`).then((r) => r.json()),
-      fetch(`/api/auth/me`).then((r) => r.json()),
+      fetch(`/api/entries/${entryId}`),
+      fetch(`/api/graphic-requests?entryId=${entryId}`),
+      fetch(`/api/auth/me`),
     ])
-      .then(([entryRes, graphicsRes, meRes]) => {
+      .then(async ([entryResponse, graphicsResponse, meResponse]) => {
+        if (!entryResponse.ok || !meResponse.ok) {
+          throw new Error("Entry dependencies could not be loaded");
+        }
+        const [entryRes, meRes] = await Promise.all([
+          entryResponse.json(),
+          meResponse.json(),
+        ]);
         if (cancelled) return;
         if (entryRes.entry) setEntry(entryRes.entry);
         else setError(entryRes.error ?? "Failed to load");
-        setGraphicRequests(graphicsRes.requests ?? []);
+        if (graphicsResponse.ok) {
+          const graphicsRes = (await graphicsResponse.json()) as {
+            requests?: GraphicRequestRecord[];
+          };
+          setGraphicRequests(graphicsRes.requests ?? []);
+        } else {
+          setActionError(
+            await readApiError(
+              graphicsResponse,
+              "Graphic requests could not be loaded.",
+            ),
+          );
+        }
         if (meRes.user) {
           setMe({
             id: meRes.user.id,
@@ -147,6 +188,11 @@ export function EntryDetailPanel({
             role_rows: meRes.user.role_rows ?? [],
             can_publish: Boolean(meRes.user.can_publish),
           });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError("Entry could not be loaded. Check your connection and retry.");
         }
       })
       .finally(() => {
@@ -485,16 +531,23 @@ export function EntryDetailPanel({
               canCreateGraphic ? () => setCreateGraphicOpen(true) : undefined
             }
             onChecklistToggle={async (itemId, nextCompleted) => {
-              const res = await fetch(
-                `/api/entries/${entryId}/checklist/${itemId}`,
-                {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ is_completed: nextCompleted }),
-                },
-              );
-              if (res.ok) {
+              setError(null);
+              try {
+                const res = await fetch(
+                  `/api/entries/${entryId}/checklist/${itemId}`,
+                  {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ is_completed: nextCompleted }),
+                  },
+                );
+                if (!res.ok) {
+                  setError(await readApiError(res, "Checklist item was not changed."));
+                  return;
+                }
                 await reload();
+              } catch {
+                setError("Checklist item was not changed. Check your connection and retry.");
               }
             }}
           />
@@ -1374,24 +1427,29 @@ type MiniStats = {
 function EntryAnalyticsMini({ entryId }: { entryId: string }) {
   const [data, setData] = React.useState<MiniStats | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [reloadToken, setReloadToken] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(null);
 
     // Fetch last 30 days of this entry's GA4 + Raptive data
-    Promise.all([
-      fetch(
-        `/api/analytics/articles?dateFrom=${thirtyDaysAgo()}&dateTo=${today()}`,
-      ).then((r) => r.json()),
-    ])
-      .then(([articlesRes]: [{ rows?: Array<{
+    fetch(`/api/analytics/articles?dateFrom=${thirtyDaysAgo()}&dateTo=${today()}`)
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Analytics request failed (${response.status})`);
+        }
+        return response.json() as Promise<{ rows?: Array<{
         entry_id: string;
         pageviews: number;
         sessions: number;
         earnings: number;
         page_rpm: number;
-      }> }]) => {
+        }> }>;
+      })
+      .then((articlesRes) => {
         if (cancelled) return;
         const row = (articlesRes.rows ?? []).find(
           (r) => r.entry_id === entryId,
@@ -1409,7 +1467,7 @@ function EntryAnalyticsMini({ entryId }: { entryId: string }) {
         }
       })
       .catch(() => {
-        if (!cancelled) setData(null);
+        if (!cancelled) setError("Entry analytics could not be loaded.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -1418,7 +1476,7 @@ function EntryAnalyticsMini({ entryId }: { entryId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [entryId]);
+  }, [entryId, reloadToken]);
 
   if (loading) {
     return (
@@ -1429,6 +1487,20 @@ function EntryAnalyticsMini({ entryId }: { entryId: string }) {
   }
 
   if (!data) {
+    if (error) {
+      return (
+        <div className="space-y-3 py-6 text-center" role="alert">
+          <p className="text-xs text-destructive">{error}</p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setReloadToken((value) => value + 1)}
+          >
+            Retry
+          </Button>
+        </div>
+      );
+    }
     return (
       <div className="py-6 text-center text-xs text-text-zero">
         No analytics data for this entry in the last 30 days.

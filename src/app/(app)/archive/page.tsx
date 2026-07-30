@@ -14,11 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Pagination } from "@/components/ui/pagination";
 import { UserAvatar } from "@/components/users/user-avatar";
 import { formatDate } from "@/lib/utils";
 import type { EntrySummary } from "@/lib/entries/queries";
 import type { AppRole, AppSite } from "@/lib/auth/current-user";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
+import { readApiError } from "@/lib/api/client";
 
 const SITE_ALL = "__all__";
 const PAGE_SIZE = 25;
@@ -42,15 +45,25 @@ export default function ArchivePage() {
   const [loadingArchived, setLoadingArchived] = React.useState(true);
   const [loadingHistorical, setLoadingHistorical] = React.useState(true);
   const [busyId, setBusyId] = React.useState<string | null>(null);
+  const [archivedError, setArchivedError] = React.useState<string | null>(null);
+  const [historicalError, setHistoricalError] = React.useState<string | null>(null);
+  const [actionError, setActionError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     void (async () => {
-      const res = await fetch("/api/auth/me");
-      if (!res.ok) return;
-      const data = (await res.json()) as {
-        user: { role_rows: Array<{ role: AppRole; site: AppSite }> };
-      };
-      setRoleRows(data.user.role_rows ?? []);
+      try {
+        const res = await fetch("/api/auth/me");
+        if (!res.ok) {
+          setActionError("Archive permissions could not be loaded.");
+          return;
+        }
+        const data = (await res.json()) as {
+          user: { role_rows: Array<{ role: AppRole; site: AppSite }> };
+        };
+        setRoleRows(data.user.role_rows ?? []);
+      } catch {
+        setActionError("Archive permissions could not be loaded.");
+      }
     })();
   }, []);
 
@@ -66,6 +79,7 @@ export default function ArchivePage() {
 
   const fetchArchived = React.useCallback(async () => {
     setLoadingArchived(true);
+    setArchivedError(null);
     try {
       const params = new URLSearchParams({
         archivedOnly: "true",
@@ -78,8 +92,7 @@ export default function ArchivePage() {
       if (searchArchived) params.set("search", searchArchived);
       const res = await fetch(`/api/entries?${params.toString()}`);
       if (!res.ok) {
-        setArchived([]);
-        setTotalArchived(0);
+        setArchivedError(await readApiError(res, "Archived entries could not be loaded."));
         return;
       }
       const data = (await res.json()) as {
@@ -88,6 +101,8 @@ export default function ArchivePage() {
       };
       setArchived(data.entries ?? []);
       setTotalArchived(data.totalCount ?? 0);
+    } catch {
+      setArchivedError("Archived entries could not be loaded. Check your connection and retry.");
     } finally {
       setLoadingArchived(false);
     }
@@ -95,6 +110,7 @@ export default function ArchivePage() {
 
   const fetchHistorical = React.useCallback(async () => {
     setLoadingHistorical(true);
+    setHistoricalError(null);
     try {
       const params = new URLSearchParams({
         historicalOnly: "true",
@@ -107,8 +123,7 @@ export default function ArchivePage() {
       if (searchHistorical) params.set("search", searchHistorical);
       const res = await fetch(`/api/entries?${params.toString()}`);
       if (!res.ok) {
-        setHistorical([]);
-        setTotalHistorical(0);
+        setHistoricalError(await readApiError(res, "Historical entries could not be loaded."));
         return;
       }
       const data = (await res.json()) as {
@@ -117,6 +132,8 @@ export default function ArchivePage() {
       };
       setHistorical(data.entries ?? []);
       setTotalHistorical(data.totalCount ?? 0);
+    } catch {
+      setHistoricalError("Historical entries could not be loaded. Check your connection and retry.");
     } finally {
       setLoadingHistorical(false);
     }
@@ -146,13 +163,20 @@ export default function ArchivePage() {
 
   async function unarchive(id: string) {
     setBusyId(id);
+    setActionError(null);
     try {
       const res = await fetch("/api/entries/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "unarchive", entry_ids: [id] }),
       });
-      if (res.ok) await fetchArchived();
+      if (!res.ok) {
+        setActionError(await readApiError(res, "Entry was not unarchived."));
+        return;
+      }
+      await fetchArchived();
+    } catch {
+      setActionError("Entry was not unarchived. Check your connection and retry.");
     } finally {
       setBusyId(null);
     }
@@ -160,6 +184,12 @@ export default function ArchivePage() {
 
   return (
     <div className="space-y-6">
+      {actionError ? (
+        <Alert variant="error">
+          <AlertTitle>Archive action failed</AlertTitle>
+          <AlertDescription>{actionError}</AlertDescription>
+        </Alert>
+      ) : null}
       <div>
         <h1 className="text-2xl font-semibold text-text-cell">
           Published Archive
@@ -187,6 +217,9 @@ export default function ArchivePage() {
         </TabsList>
 
         <TabsContent value="archived">
+          {archivedError ? (
+            <ArchiveLoadError message={archivedError} onRetry={fetchArchived} />
+          ) : null}
           <ArchiveFilters
             search={searchArchived}
             onSearch={setSearchArchived}
@@ -209,6 +242,9 @@ export default function ArchivePage() {
         </TabsContent>
 
         <TabsContent value="historical">
+          {historicalError ? (
+            <ArchiveLoadError message={historicalError} onRetry={fetchHistorical} />
+          ) : null}
           <ArchiveFilters
             search={searchHistorical}
             onSearch={setSearchHistorical}
@@ -225,6 +261,26 @@ export default function ArchivePage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function ArchiveLoadError({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void | Promise<void>;
+}) {
+  return (
+    <Alert variant="error" className="mb-3">
+      <AlertTitle>Archive did not refresh</AlertTitle>
+      <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+        <span>{message}</span>
+        <Button size="sm" variant="outline" onClick={() => void onRetry()}>
+          Retry
+        </Button>
+      </AlertDescription>
+    </Alert>
   );
 }
 
@@ -304,6 +360,7 @@ function ArchivedTable({
   onUnarchive: (id: string) => void | Promise<void>;
   busyId: string | null;
 }) {
+  const isMobile = useIsMobile();
   if (loading && entries.length === 0) {
     return (
       <div className="flex justify-center rounded-lg border border-border bg-card p-10">
@@ -321,6 +378,65 @@ function ArchivedTable({
     );
   }
   const showUnarchiveColumn = entries.some((entry) => canUnarchive(entry.site));
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        {entries.map((entry) => (
+          <article
+            key={entry.id}
+            className="space-y-3 rounded-lg border border-border bg-card p-4"
+          >
+            <div>
+              <h3 className="break-words text-sm font-medium text-text-cell">
+                {entry.title}
+              </h3>
+              <p className="mt-1 text-xs text-text-team">
+                {entry.authors.map((author) => author.display_name).join(", ") || "No author"}
+              </p>
+            </div>
+            <dl className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <dt className="text-text-zero">Site</dt>
+                <dd>{entry.site.toUpperCase()}</dd>
+              </div>
+              <div>
+                <dt className="text-text-zero">Tier</dt>
+                <dd>{entry.tier.name}</dd>
+              </div>
+              <div className="col-span-2">
+                <dt className="text-text-zero">Published</dt>
+                <dd>
+                  {entry.publish_date
+                    ? formatDate(entry.publish_date, { dateStyle: "medium" })
+                    : "—"}
+                </dd>
+              </div>
+              <div className="col-span-2">
+                <dt className="text-text-zero">Archive reason</dt>
+                <dd className="break-words">{entry.archive_reason ?? "—"}</dd>
+              </div>
+            </dl>
+            {canUnarchive(entry.site) ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                disabled={busyId === entry.id}
+                onClick={() => void onUnarchive(entry.id)}
+              >
+                {busyId === entry.id ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Undo2 className="h-3 w-3" />
+                )}
+                Unarchive
+              </Button>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="plpd-table-shell overflow-auto">
       <table className="plpd-table font-data">
@@ -418,6 +534,7 @@ function HistoricalTable({
   entries: EntrySummary[];
   loading: boolean;
 }) {
+  const isMobile = useIsMobile();
   if (loading && entries.length === 0) {
     return (
       <div className="flex justify-center rounded-lg border border-border bg-card p-10">
@@ -432,6 +549,57 @@ function HistoricalTable({
         title="No historical imports"
         description="Articles imported from WordPress for analytics will appear here after the historical import runs."
       />
+    );
+  }
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        {entries.map((entry) => (
+          <article
+            key={entry.id}
+            className="space-y-3 rounded-lg border border-border bg-card p-4"
+          >
+            <div>
+              <h3 className="break-words text-sm font-medium text-text-cell">
+                {entry.title}
+              </h3>
+              <p className="mt-1 text-xs text-text-team">
+                {entry.authors.map((author) => author.display_name).join(", ") || "No author"}
+              </p>
+            </div>
+            <dl className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <dt className="text-text-zero">Site</dt>
+                <dd>{entry.site.toUpperCase()}</dd>
+              </div>
+              <div>
+                <dt className="text-text-zero">Category</dt>
+                <dd>{entry.category?.name ?? "—"}</dd>
+              </div>
+              <div className="col-span-2">
+                <dt className="text-text-zero">Published</dt>
+                <dd>
+                  {entry.publish_date
+                    ? formatDate(entry.publish_date, { dateStyle: "medium" })
+                    : "—"}
+                </dd>
+              </div>
+            </dl>
+            {entry.wp_post_url ? (
+              <Button asChild size="sm" variant="outline" className="w-full">
+                <a
+                  href={entry.wp_post_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Open WordPress
+                </a>
+              </Button>
+            ) : null}
+          </article>
+        ))}
+      </div>
     );
   }
   return (

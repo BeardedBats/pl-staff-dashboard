@@ -52,7 +52,9 @@ For supplied real workbooks, Operations will:
 4. Apply migrations `0028`, `0029`, and `0030`, run
    `scripts/import-raptive-history.mjs` against the immutable manifest, verify
    the database summary, then repeat one chunk to prove resumability without a
-  duplicate or total change.
+   duplicate or total change. The importer records a durable running,
+   succeeded, or failed `import_runs` row so System Health and Operations have
+   the same audit trail as browser imports.
 
 The compact and raw/live tables must never contain the same site/day. Migration
 `0030` enforces that boundary in both directions and serializes concurrent

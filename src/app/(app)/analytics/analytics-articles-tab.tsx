@@ -186,7 +186,7 @@ export function AnalyticsArticlesTab({ query }: Props) {
                   onClick={() => toggleSort("sessions")}
                 />
                 <SortableTh
-                  label="Avg Time"
+                  label="Avg session"
                   active={sortKey === "avg_time_on_page"}
                   dir={sortDir}
                   onClick={() => toggleSort("avg_time_on_page")}

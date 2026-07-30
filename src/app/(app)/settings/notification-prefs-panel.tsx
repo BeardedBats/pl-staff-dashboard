@@ -42,11 +42,19 @@ export function NotificationPrefsPanel({ userId }: Props) {
   const [saving, setSaving] = React.useState(false);
   const [savedAt, setSavedAt] = React.useState<Date | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [reloadToken, setReloadToken] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
     fetch(`/api/users/${userId}/notification-prefs`)
-      .then((r) => r.json())
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Preferences request failed (${response.status})`);
+        }
+        return response.json();
+      })
       .then((data: {
         preferences: PreferenceMatrix;
         deliverySettings: NotificationDeliverySettings;
@@ -56,13 +64,18 @@ export function NotificationPrefsPanel({ userId }: Props) {
           setDelivery(data.deliverySettings);
         }
       })
+      .catch(() => {
+        if (!cancelled) {
+          setError("Notification preferences could not be loaded.");
+        }
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, reloadToken]);
 
   function setChannel(
     eventType: NotificationEventType,
@@ -120,11 +133,28 @@ export function NotificationPrefsPanel({ userId }: Props) {
     }
   }
 
-  if (loading || !prefs || !delivery) {
+  if (loading) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-10">
           <Loader2 className="h-5 w-5 animate-spin text-text-zero" />
+        </CardContent>
+      </Card>
+    );
+  }
+  if (!prefs || !delivery) {
+    return (
+      <Card>
+        <CardContent className="space-y-3 py-10 text-center" role="alert">
+          <p className="text-sm text-destructive">
+            {error ?? "Notification preferences are unavailable."}
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => setReloadToken((value) => value + 1)}
+          >
+            Retry
+          </Button>
         </CardContent>
       </Card>
     );

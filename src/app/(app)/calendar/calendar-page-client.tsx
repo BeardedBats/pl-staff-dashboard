@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { EntrySummary, EntryTier } from "@/lib/entries/queries";
 import type { AppSite } from "@/lib/auth/current-user";
 
@@ -50,25 +51,34 @@ export function CalendarPageClient({
   const [calendarView, setCalendarView] = React.useState<
     "dayGridMonth" | "timeGridWeek" | "listMonth"
   >("dayGridMonth");
+  const [error, setError] = React.useState<string | null>(null);
+  const [reloadToken, setReloadToken] = React.useState(0);
 
   const calendarRef = React.useRef<FullCalendar | null>(null);
 
   // Re-fetch when filters change.
   React.useEffect(() => {
     let cancelled = false;
+    setError(null);
     (async () => {
-      const params = new URLSearchParams({ limit: "500" });
-      if (siteFilter) params.set("site", siteFilter);
-      if (tierFilter) params.set("tierId", tierFilter);
-      const res = await fetch(`/api/entries?${params.toString()}`);
-      if (!res.ok) return;
-      const data = (await res.json()) as { entries: EntrySummary[] };
-      if (!cancelled) setEntries(data.entries ?? []);
+      try {
+        const params = new URLSearchParams({ limit: "500" });
+        if (siteFilter) params.set("site", siteFilter);
+        if (tierFilter) params.set("tierId", tierFilter);
+        const res = await fetch(`/api/entries?${params.toString()}`);
+        if (!res.ok) throw new Error();
+        const data = (await res.json()) as { entries: EntrySummary[] };
+        if (!cancelled) setEntries(data.entries ?? []);
+      } catch {
+        if (!cancelled) {
+          setError("The calendar could not refresh. Existing events were preserved.");
+        }
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [siteFilter, tierFilter]);
+  }, [siteFilter, tierFilter, reloadToken]);
 
   // Sync the calendar API view when the toggle changes.
   React.useEffect(() => {
@@ -116,6 +126,21 @@ export function CalendarPageClient({
 
   return (
     <div className="space-y-4">
+      {error ? (
+        <Alert variant="error">
+          <AlertTitle>Calendar did not refresh</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+            <span>{error}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setReloadToken((value) => value + 1)}
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3">
         <Select

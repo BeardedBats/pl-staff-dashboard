@@ -94,10 +94,17 @@ export function AdminAnalyticsPanel({
   async function refreshStatus() {
     try {
       const res = await fetch("/api/ga4/status");
-      const data = (await res.json()) as { status?: Ga4Status };
-      if (data.status) setStatus(data.status);
+      const data = (await res.json().catch(() => ({}))) as {
+        status?: Ga4Status;
+        error?: string;
+      };
+      if (!res.ok || !data.status) {
+        setFlash({ kind: "error", message: data.error ?? "GA4 status could not be refreshed." });
+        return;
+      }
+      setStatus(data.status);
     } catch {
-      // ignore
+      setFlash({ kind: "error", message: "GA4 status could not be refreshed." });
     }
   }
 
@@ -107,20 +114,34 @@ export function AdminAnalyticsPanel({
       const data = (await res.json()) as {
         uploads?: RaptiveUploadHistoryRow[];
         runs?: RaptiveImportRunRow[];
+        error?: string;
       };
+      if (!res.ok) {
+        setFlash({ kind: "error", message: data.error ?? "Raptive history could not be refreshed." });
+        return;
+      }
       if (data.uploads) setUploads(data.uploads);
       if (data.runs) setImportRuns(data.runs);
     } catch {
-      // ignore
+      setFlash({ kind: "error", message: "Raptive history could not be refreshed." });
     }
   }
 
   async function refreshRaptiveStatus() {
-    const res = await fetch("/api/raptive/live/status");
-    const data = (await res.json().catch(() => ({}))) as {
-      status?: RaptiveLiveStatus;
-    };
-    if (res.ok && data.status) setRaptiveStatus(data.status);
+    try {
+      const res = await fetch("/api/raptive/live/status");
+      const data = (await res.json().catch(() => ({}))) as {
+        status?: RaptiveLiveStatus;
+        error?: string;
+      };
+      if (!res.ok || !data.status) {
+        setFlash({ kind: "error", message: data.error ?? "Raptive status could not be refreshed." });
+        return;
+      }
+      setRaptiveStatus(data.status);
+    } catch {
+      setFlash({ kind: "error", message: "Raptive status could not be refreshed." });
+    }
   }
 
   async function discoverSites() {
@@ -242,6 +263,8 @@ export function AdminAnalyticsPanel({
         return;
       }
       window.location.href = data.url;
+    } catch {
+      setFlash({ kind: "error", message: "Failed to start OAuth." });
     } finally {
       setBusy(null);
     }
@@ -296,6 +319,8 @@ export function AdminAnalyticsPanel({
         message: `Synced — ${data.rowsUpserted ?? 0} rows across ${data.matchedArticles ?? 0} articles.`,
       });
       await refreshStatus();
+    } catch {
+      setFlash({ kind: "error", message: "GA4 sync failed." });
     } finally {
       setBusy(null);
     }
@@ -308,6 +333,7 @@ export function AdminAnalyticsPanel({
       ) : null}
       {flash ? (
         <div
+          role={flash.kind === "error" ? "alert" : "status"}
           className={
             flash.kind === "success"
               ? "flex items-center gap-2 rounded-md border border-cyan/40 bg-cyan-dim/40 px-3 py-2 text-xs text-cyan"

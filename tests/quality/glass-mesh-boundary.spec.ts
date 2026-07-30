@@ -64,7 +64,9 @@ test("authenticated sidebar and legacy page panels preserve the mesh", async (
 
   try {
     await page.goto("/calendar", { waitUntil: "networkidle" });
-    await expect(page.getByRole("heading", { name: "Calendar" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Calendar", exact: true }),
+    ).toBeVisible();
 
     const body = await surface(page.locator("body"));
     const sidebar = await surface(page.locator("aside.plpd-sidebar"));

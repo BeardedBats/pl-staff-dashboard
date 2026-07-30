@@ -301,7 +301,10 @@ export function RaptiveUploadDialog({
             ) : null}
 
             {error ? (
-              <p className="flex items-center gap-1 text-xs text-destructive">
+              <p
+                className="flex items-center gap-1 text-xs text-destructive"
+                role="alert"
+              >
                 <X className="h-3 w-3" />
                 {error}
               </p>

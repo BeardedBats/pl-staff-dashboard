@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, Circle, Loader2, Rocket } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -44,10 +45,11 @@ export function SetupChecklist({ userId, items }: Props) {
     }
   }, [userId]);
 
-  function markVisited(id: string) {
+  function setItemComplete(id: string, done: boolean) {
     setCompleted((current) => {
       const next = new Set(current);
-      next.add(id);
+      if (done) next.add(id);
+      else next.delete(id);
       window.localStorage.setItem(storageKey(userId), JSON.stringify([...next]));
       return next;
     });
@@ -110,7 +112,6 @@ export function SetupChecklist({ userId, items }: Props) {
               <li key={item.id}>
                 <Link
                   href={item.href}
-                  onClick={() => markVisited(item.id)}
                   className="flex h-full gap-3 rounded-md border border-border bg-surface-3/30 p-3 hover:bg-surface-3/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan"
                 >
                   {done ? (
@@ -128,6 +129,16 @@ export function SetupChecklist({ userId, items }: Props) {
                   </span>
                   <span className="sr-only">{done ? "Completed" : "Not completed"}</span>
                 </Link>
+                <label className="mt-1.5 flex cursor-pointer items-center gap-2 px-1 text-xs text-text-team">
+                  <Checkbox
+                    checked={done}
+                    onCheckedChange={(checked) =>
+                      setItemComplete(item.id, checked === true)
+                    }
+                    aria-label={`Mark ${item.title} complete`}
+                  />
+                  I completed this review
+                </label>
               </li>
             );
           })}
@@ -146,7 +157,7 @@ export function SetupChecklist({ userId, items }: Props) {
           <p className="text-xs text-text-team">
             {allComplete
               ? "Setup is ready to finish."
-              : "Open each checklist item once, then finish setup."}
+              : "Complete each review and mark it done, then finish setup."}
           </p>
           <Button onClick={() => void finishSetup()} disabled={!allComplete || saving}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}

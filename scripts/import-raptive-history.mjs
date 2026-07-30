@@ -19,6 +19,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
+const { data: importRunId, error: beginError } = await supabase.rpc(
+  "begin_import_run",
+  {
+    p_import_type: "raptive",
+    p_file_name: path.basename(manifestPath),
+    p_requested_by: null,
+  },
+);
+if (beginError || !importRunId) {
+  throw new Error(`Could not record history import: ${beginError?.code ?? "unknown"}`);
+}
+
+try {
 let imported = 0;
 const expectedStored = new Map();
 
@@ -92,4 +105,26 @@ for (const site of ["pl", "qb"]) {
     throw new Error(`History reconciliation failed for ${site}`);
   }
 }
-console.log(JSON.stringify({ ok: true, imported, summary }));
+const { data: finished, error: finishError } = await supabase.rpc(
+  "finish_import_run",
+  {
+    p_import_run_id: importRunId,
+    p_succeeded: true,
+    p_rows_processed: imported,
+    p_summary: { mode: "compact-history", summary },
+  },
+);
+if (finishError || !finished) {
+  throw new Error(`Could not complete history import record: ${finishError?.code ?? "unknown"}`);
+}
+console.log(JSON.stringify({ ok: true, importRunId, imported, summary }));
+} catch (error) {
+  await supabase.rpc("finish_import_run", {
+    p_import_run_id: importRunId,
+    p_succeeded: false,
+    p_rows_processed: null,
+    p_error_code: "history_import_failed",
+    p_summary: { mode: "compact-history" },
+  });
+  throw error;
+}

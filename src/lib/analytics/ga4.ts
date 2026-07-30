@@ -257,52 +257,66 @@ async function runGa4Report(
   dateTo: string,
 ): Promise<Ga4Row[] | null> {
   const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
-  const body = {
-    dateRanges: [{ startDate: dateFrom, endDate: dateTo }],
-    dimensions: [{ name: "pagePath" }, { name: "date" }],
-    metrics: [
-      { name: "screenPageViews" },
-      { name: "sessions" },
-      { name: "averageSessionDuration" },
-    ],
-    limit: 100000,
-  };
-
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-  } catch {
-    return null;
-  }
-
-  if (!res.ok) return null;
-  const data = (await res.json()) as {
-    rows?: Array<{
-      dimensionValues: Array<{ value: string }>;
-      metricValues: Array<{ value: string }>;
-    }>;
-  };
-
   const out: Ga4Row[] = [];
-  for (const row of data.rows ?? []) {
-    const pagePath = row.dimensionValues[0]?.value ?? "";
-    const dateRaw = row.dimensionValues[1]?.value ?? ""; // YYYYMMDD
-    if (!pagePath || dateRaw.length !== 8) continue;
-    const date = `${dateRaw.slice(0, 4)}-${dateRaw.slice(4, 6)}-${dateRaw.slice(6, 8)}`;
-    out.push({
-      pagePath,
-      date,
-      pageviews: Number(row.metricValues[0]?.value ?? 0),
-      sessions: Number(row.metricValues[1]?.value ?? 0),
-      avgTimeOnPage: Number(row.metricValues[2]?.value ?? 0),
-    });
+  const pageSize = 100_000;
+  let offset = 0;
+  let rowCount = 0;
+
+  do {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: dateFrom, endDate: dateTo }],
+          dimensions: [{ name: "pagePath" }, { name: "date" }],
+          metrics: [
+            { name: "screenPageViews" },
+            { name: "sessions" },
+            { name: "averageSessionDuration" },
+          ],
+          limit: pageSize,
+          offset,
+        }),
+      });
+    } catch {
+      return null;
+    }
+
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      rowCount?: number;
+      rows?: Array<{
+        dimensionValues: Array<{ value: string }>;
+        metricValues: Array<{ value: string }>;
+      }>;
+    };
+    rowCount = data.rowCount ?? 0;
+    const rows = data.rows ?? [];
+
+    for (const row of rows) {
+      const pagePath = row.dimensionValues[0]?.value ?? "";
+      const dateRaw = row.dimensionValues[1]?.value ?? ""; // YYYYMMDD
+      if (!pagePath || dateRaw.length !== 8) continue;
+      const date = `${dateRaw.slice(0, 4)}-${dateRaw.slice(4, 6)}-${dateRaw.slice(6, 8)}`;
+      out.push({
+        pagePath,
+        date,
+        pageviews: Number(row.metricValues[0]?.value ?? 0),
+        sessions: Number(row.metricValues[1]?.value ?? 0),
+        avgTimeOnPage: Number(row.metricValues[2]?.value ?? 0),
+      });
+    }
+    offset += rows.length;
+    if (rows.length === 0) break;
+  } while (offset < rowCount);
+
+  if (offset < rowCount) {
+    return null;
   }
   return out;
 }
@@ -392,8 +406,8 @@ export async function syncGa4(
     };
     cur.pageviews += r.pageviews;
     cur.sessions += r.sessions;
-    cur.timeSum += r.avgTimeOnPage * r.pageviews;
-    cur.timeCount += r.pageviews;
+    cur.timeSum += r.avgTimeOnPage * r.sessions;
+    cur.timeCount += r.sessions;
     agg.set(key, cur);
   }
 

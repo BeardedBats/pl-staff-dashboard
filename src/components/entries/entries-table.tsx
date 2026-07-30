@@ -54,6 +54,16 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/users/user-avatar";
 import {
   ContentStatusBadge,
@@ -186,6 +196,12 @@ export function EntriesTable({
   const [bulkBusy, setBulkBusy] = React.useState(false);
   const [bulkError, setBulkError] = React.useState<string | null>(null);
   const [bulkSuccess, setBulkSuccess] = React.useState<string | null>(null);
+  const [loadError, setLoadError] = React.useState<string | null>(null);
+  const [viewError, setViewError] = React.useState<string | null>(null);
+  const [saveViewOpen, setSaveViewOpen] = React.useState(false);
+  const [saveViewName, setSaveViewName] = React.useState("");
+  const [deleteViewId, setDeleteViewId] = React.useState<string | null>(null);
+  const [viewBusy, setViewBusy] = React.useState(false);
   const isMobile = useIsMobile();
   const tableContainerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -231,6 +247,7 @@ export function EntriesTable({
     const id = setTimeout(() => {
       void (async () => {
         setLoading(true);
+        setLoadError(null);
         try {
           const params = new URLSearchParams();
           if (filters.search) params.set("search", filters.search);
@@ -248,10 +265,8 @@ export function EntriesTable({
 
           const res = await fetch(`/api/entries?${params.toString()}`);
           if (!res.ok) {
-            if (!cancelled) {
-              setEntries([]);
-              setTotalCount(0);
-            }
+            if (!cancelled)
+              setLoadError(await readApiError(res, "Entries could not be loaded."));
             return;
           }
           const data = (await res.json()) as {
@@ -261,6 +276,10 @@ export function EntriesTable({
           if (!cancelled) {
             setEntries(data.entries ?? []);
             setTotalCount(data.totalCount ?? 0);
+          }
+        } catch {
+          if (!cancelled) {
+            setLoadError("Entries could not be loaded. Check your connection and retry.");
           }
         } finally {
           if (!cancelled) setLoading(false);
@@ -358,12 +377,90 @@ export function EntriesTable({
 
   async function refreshViews() {
     const res = await fetch("/api/views");
+    if (!res.ok) {
+      throw new Error(await readApiError(res, "Saved views could not be loaded."));
+    }
     const data = (await res.json()) as { views: SavedViewRecord[] };
     setViews(data.views ?? []);
   }
 
+  async function saveCurrentView() {
+    if (!saveViewName.trim()) return;
+    setViewBusy(true);
+    setViewError(null);
+    try {
+      const columnsToSave = Object.entries(visibility)
+        .filter(([, value]) => value !== false)
+        .map(([key]) => key);
+      const response = await fetch("/api/views", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: saveViewName.trim(),
+          filters,
+          sort: { sortBy: filters.sortBy, sortDir: filters.sortDir },
+          columns: columnsToSave,
+          is_default: false,
+        }),
+      });
+      if (!response.ok) {
+        setViewError(await readApiError(response, "View was not saved."));
+        return;
+      }
+      await refreshViews();
+      setSaveViewName("");
+      setSaveViewOpen(false);
+    } catch {
+      setViewError("View was not saved. Check your connection and retry.");
+    } finally {
+      setViewBusy(false);
+    }
+  }
+
+  async function deleteSavedView() {
+    if (!deleteViewId) return;
+    setViewBusy(true);
+    setViewError(null);
+    try {
+      const response = await fetch(`/api/views/${deleteViewId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        setViewError(await readApiError(response, "View was not deleted."));
+        return;
+      }
+      await refreshViews();
+      setDeleteViewId(null);
+    } catch {
+      setViewError("View was not deleted. Check your connection and retry.");
+    } finally {
+      setViewBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
+      {loadError ? (
+        <Alert variant="error">
+          <AlertTitle>Content did not refresh</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+            <span>{loadError}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setFilters((current) => ({ ...current }))}
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {viewError ? (
+        <Alert variant="error">
+          <AlertTitle>Saved view action failed</AlertTitle>
+          <AlertDescription>{viewError}</AlertDescription>
+        </Alert>
+      ) : null}
       {expandedId &&
       !loading &&
       !entries.some((entry) => entry.id === expandedId) ? (
@@ -391,42 +488,92 @@ export function EntriesTable({
         onBulkCreateClick={onBulkCreateClick}
         views={views}
         onApplyView={applyView}
-        onSaveView={async () => {
-          const name = window.prompt("Name this view:");
-          if (!name?.trim()) return;
-          const columnsToSave = Object.entries(visibility)
-            .filter(([, v]) => v !== false)
-            .map(([k]) => k);
-          const res = await fetch("/api/views", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: name.trim(),
-              filters,
-              sort: { sortBy: filters.sortBy, sortDir: filters.sortDir },
-              columns: columnsToSave,
-              is_default: false,
-            }),
-          });
-          if (res.ok) void refreshViews();
-        }}
+        onSaveView={async () => setSaveViewOpen(true)}
         onDeleteView={async (id) => {
-          const confirmed = window.confirm("Delete this saved view?");
-          if (!confirmed) return;
-          const res = await fetch(`/api/views/${id}`, { method: "DELETE" });
-          if (res.ok) void refreshViews();
+          setDeleteViewId(id);
         }}
         onSetDefaultView={async (id) => {
-          const res = await fetch(`/api/views/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ is_default: true }),
-          });
-          if (res.ok) void refreshViews();
+          setViewError(null);
+          try {
+            const res = await fetch(`/api/views/${id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ is_default: true }),
+            });
+            if (!res.ok) {
+              setViewError(await readApiError(res, "Default view was not changed."));
+              return;
+            }
+            await refreshViews();
+          } catch {
+            setViewError("Default view was not changed. Check your connection and retry.");
+          }
         }}
         visibility={visibility}
         onVisibilityChange={setVisibility}
       />
+
+      <Dialog open={saveViewOpen} onOpenChange={setSaveViewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save current view</DialogTitle>
+            <DialogDescription>
+              Save the current filters, sort, and visible columns.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="saved-view-name">View name</Label>
+            <Input
+              id="saved-view-name"
+              value={saveViewName}
+              onChange={(event) => setSaveViewName(event.target.value)}
+              maxLength={80}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveViewOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void saveCurrentView()}
+              disabled={viewBusy || !saveViewName.trim()}
+            >
+              {viewBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Save view
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteViewId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteViewId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete saved view?</DialogTitle>
+            <DialogDescription>
+              This removes the saved configuration. Content is not changed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteViewId(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void deleteSavedView()}
+              disabled={viewBusy}
+            >
+              {viewBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Delete view
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk actions bar */}
       {selectedCount > 0 ? (
