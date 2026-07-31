@@ -48,29 +48,41 @@ export function CommentComposer({
   const [allStaff, setAllStaff] = React.useState<StaffSuggestion[] | null>(
     null,
   );
+  const staffRequestRef = React.useRef<Promise<StaffSuggestion[]> | null>(null);
 
   // Lazy-load the staff list the first time the composer is focused.
-  async function ensureStaffLoaded() {
-    if (allStaff) return;
-    try {
-      const res = await fetch("/api/users?limit=200");
-      const data = (await res.json()) as {
-        users: Array<{
-          id: string;
-          display_name: string;
-          avatar_url: string | null;
-        }>;
-      };
-      setAllStaff(
-        (data.users ?? []).map((u) => ({
+  async function ensureStaffLoaded(): Promise<StaffSuggestion[]> {
+    if (allStaff) return allStaff;
+    if (staffRequestRef.current) return staffRequestRef.current;
+    const request = (async () => {
+      try {
+        const res = await fetch("/api/users?limit=200");
+        if (!res.ok) {
+          throw new Error(`Staff request failed (${res.status})`);
+        }
+        const data = (await res.json()) as {
+          users: Array<{
+            id: string;
+            display_name: string;
+            avatar_url: string | null;
+          }>;
+        };
+        const staff = (data.users ?? []).map((u) => ({
           id: u.id,
           display_name: u.display_name,
           avatar_url: u.avatar_url,
-        })),
-      );
-    } catch {
-      setAllStaff([]);
-    }
+        }));
+        setAllStaff(staff);
+        return staff;
+      } catch {
+        setError("Could not load teammates for mentions. Check your connection and retry.");
+        return [];
+      } finally {
+        staffRequestRef.current = null;
+      }
+    })();
+    staffRequestRef.current = request;
+    return request;
   }
 
   function handleBodyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -91,8 +103,7 @@ export function CommentComposer({
     setMentionStart(start);
     setMentionFragment(fragment);
 
-    void ensureStaffLoaded().then(() => {
-      const list = allStaff ?? [];
+    void ensureStaffLoaded().then((list) => {
       const lower = fragment.toLowerCase();
       const filtered = list
         .filter(

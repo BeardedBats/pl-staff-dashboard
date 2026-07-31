@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { readApiError } from "@/lib/api/client";
+import { useConfirmation } from "@/components/ui/confirmation-provider";
 import type { ChecklistItemRecord } from "@/lib/checklist/data";
 import type { EntryTier } from "@/lib/entries/queries";
 
@@ -56,6 +57,7 @@ export function AdminChecklistsPanel({
   tiers: initialTiers,
 }: Props) {
   const router = useRouter();
+  const confirm = useConfirmation();
   const [tiers, setTiers] = React.useState<EntryTier[]>(initialTiers);
   const [items, setItems] = React.useState(initialItems);
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -69,18 +71,30 @@ export function AdminChecklistsPanel({
   const [error, setError] = React.useState<string | null>(null);
 
   async function refreshTiers() {
-    const res = await fetch("/api/tiers");
-    if (!res.ok) return;
-    const data = (await res.json()) as { tiers: EntryTier[] };
-    setTiers(data.tiers ?? []);
-    if (
-      data.tiers &&
-      data.tiers.length > 0 &&
-      !data.tiers.find((t) => t.id === activeTierId)
-    ) {
-      setActiveTierId(data.tiers[0].id);
+    try {
+      const res = await fetch("/api/tiers");
+      if (!res.ok) {
+        throw new Error(await readApiError(res, "Could not refresh tiers."));
+      }
+      const data = (await res.json()) as { tiers: EntryTier[] };
+      setTiers(data.tiers ?? []);
+      if (
+        data.tiers &&
+        data.tiers.length > 0 &&
+        !data.tiers.find((t) => t.id === activeTierId)
+      ) {
+        setActiveTierId(data.tiers[0].id);
+      }
+      setError(null);
+      router.refresh();
+    } catch (refreshError) {
+      setError(
+        refreshError instanceof Error
+          ? refreshError.message
+          : "Could not refresh tiers.",
+      );
+      throw refreshError;
     }
-    router.refresh();
   }
 
   async function refresh() {
@@ -92,9 +106,12 @@ export function AdminChecklistsPanel({
   }
 
   async function handleDelete(item: ChecklistItemRecord) {
-    const confirmed = window.confirm(
-      `Delete "${item.label}"? Entries using this item will keep their checklist row, but new entries won't.`,
-    );
+    const confirmed = await confirm({
+      title: "Delete checklist item?",
+      description: `Delete “${item.label}”? Existing rows will stay. New entries will not receive this item.`,
+      confirmLabel: "Delete item",
+      destructive: true,
+    });
     if (!confirmed) return;
     setBusy(item.id);
     setError(null);
@@ -267,7 +284,9 @@ export function AdminChecklistsPanel({
           onSaved={() => {
             setDialogOpen(false);
             setEditing(null);
-            void refresh();
+            void refresh().catch(() => {
+              setError("Checklist item saved, but the list could not refresh. Retry this page.");
+            });
           }}
         />
       </Card>
@@ -286,6 +305,7 @@ function TiersCard({
   tiers: EntryTier[];
   onChange: () => Promise<void> | void;
 }) {
+  const confirm = useConfirmation();
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [editingTier, setEditingTier] = React.useState<EntryTier | null>(null);
   const [creating, setCreating] = React.useState(false);
@@ -322,9 +342,12 @@ function TiersCard({
   }
 
   async function handleDelete(tier: EntryTier) {
-    const confirmed = window.confirm(
-      `Delete tier "${tier.name} — ${tier.label}"? This cannot be undone.`,
-    );
+    const confirmed = await confirm({
+      title: "Delete tier?",
+      description: `Delete “${tier.name} — ${tier.label}”? This cannot be undone.`,
+      confirmLabel: "Delete tier",
+      destructive: true,
+    });
     if (!confirmed) return;
     setBusyId(tier.id);
     setError(null);
@@ -336,6 +359,8 @@ function TiersCard({
         return;
       }
       await onChange();
+    } catch {
+      setError("Could not delete the tier. Check your connection and retry.");
     } finally {
       setBusyId(null);
     }

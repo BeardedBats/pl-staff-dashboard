@@ -81,6 +81,7 @@ import type {
 import type { AppSite } from "@/lib/auth/current-user";
 import type { SavedViewRecord } from "@/lib/views/data";
 import { readApiError } from "@/lib/api/client";
+import { useConfirmation } from "@/components/ui/confirmation-provider";
 
 // --------------------------------------------------------------------------
 // Filter state
@@ -181,6 +182,7 @@ export function EntriesTable({
   manageableSites,
 }: EntriesTableProps) {
   const router = useRouter();
+  const confirm = useConfirmation();
   const [filters, setFilters] =
     React.useState<EntriesFilterState>(DEFAULT_FILTERS);
   const [visibility, setVisibility] =
@@ -321,11 +323,11 @@ export function EntriesTable({
   const selectedCount = selectedIds.length;
 
   async function runBulk(body: Record<string, unknown>, actionLabel: string) {
-    if (
-      !window.confirm(
-        `${actionLabel} for ${selectedCount} selected ${selectedCount === 1 ? "entry" : "entries"}?`,
-      )
-    ) {
+    if (!(await confirm({
+      title: `${actionLabel} selected entries?`,
+      description: `${actionLabel} for ${selectedCount} selected ${selectedCount === 1 ? "entry" : "entries"}?`,
+      confirmLabel: actionLabel,
+    }))) {
       return;
     }
     setBulkBusy(true);

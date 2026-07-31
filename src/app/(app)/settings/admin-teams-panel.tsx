@@ -46,6 +46,7 @@ import type { TeamSummary, TeamDetail, TeamMemberRow } from "@/lib/teams/data";
 import type { StaffUserSummary } from "@/lib/users/queries";
 import type { AppSite } from "@/lib/auth/current-user";
 import { readApiError } from "@/lib/api/client";
+import { useConfirmation } from "@/components/ui/confirmation-provider";
 
 type AdminTeamsPanelProps = {
   initialTeams: TeamSummary[];
@@ -59,6 +60,7 @@ export function AdminTeamsPanel({
   allowedSites,
 }: AdminTeamsPanelProps) {
   const router = useRouter();
+  const confirm = useConfirmation();
   const [teams, setTeams] = React.useState(initialTeams);
   const [selectedTeamId, setSelectedTeamId] = React.useState<string | null>(
     initialTeams[0]?.id ?? null,
@@ -136,9 +138,12 @@ export function AdminTeamsPanel({
   }
 
   async function deleteTeamRow(id: string) {
-    const confirmed = window.confirm(
-      "Delete this team? Members will be unassigned.",
-    );
+    const confirmed = await confirm({
+      title: "Delete this team?",
+      description: "Members will become unassigned. This cannot be undone.",
+      confirmLabel: "Delete team",
+      destructive: true,
+    });
     if (!confirmed) return;
     setPageError(null);
     try {
@@ -273,6 +278,7 @@ function TeamDetailPanel({
   onChanged: () => Promise<void>;
   onDelete: () => Promise<void>;
 }) {
+  const confirm = useConfirmation();
   const [addUserId, setAddUserId] = React.useState<string>("");
   const [addAsPrimary, setAddAsPrimary] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -307,9 +313,12 @@ function TeamDetailPanel({
   }
 
   async function removeMember(member: TeamMemberRow) {
-    const confirmed = window.confirm(
-      `Remove ${member.display_name} from ${team.name}?`,
-    );
+    const confirmed = await confirm({
+      title: "Remove team member?",
+      description: `Remove ${member.display_name} from ${team.name}?`,
+      confirmLabel: "Remove member",
+      destructive: true,
+    });
     if (!confirmed) return;
     setBusy(true);
     setError(null);

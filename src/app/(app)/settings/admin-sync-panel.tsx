@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useConfirmation } from "@/components/ui/confirmation-provider";
 import {
   Card,
   CardContent,
@@ -303,6 +304,7 @@ export function AdminSyncPanel({
 }
 
 function HistoricalImportSection() {
+  const confirm = useConfirmation();
   const [site, setSite] = React.useState<ImportSite>("pl");
   const [dryRunFirst, setDryRunFirst] = React.useState(true);
   const [running, setRunning] = React.useState(false);
@@ -466,9 +468,11 @@ function HistoricalImportSection() {
       await runDryRun();
       return;
     }
-    const confirmed = window.confirm(
-      "This will import up to several thousand entries. Continue?",
-    );
+    const confirmed = await confirm({
+      title: "Import historical articles?",
+      description: "This can import several thousand entries. Existing entries will remain unchanged.",
+      confirmLabel: "Start import",
+    });
     if (!confirmed) return;
     await runImportLoop();
   }

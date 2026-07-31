@@ -59,4 +59,60 @@ describe("NotificationBell", () => {
     );
     expect(screen.getByRole("button", { name: "Mark all read" })).toBeEnabled();
   });
+
+  it("shows load failures instead of an all-clear empty state", async () => {
+    const user = userEvent.setup();
+    const failedResponse = () =>
+      new Response(JSON.stringify({ error: "Notification service failed" }), {
+        status: 500,
+      });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() => Promise.resolve(failedResponse())),
+    );
+
+    render(<NotificationBell userId={notification.user_id} />);
+    await user.click(
+      screen.getByRole("button", { name: "Notifications" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Notification service failed",
+    );
+    expect(screen.queryByText("All clear")).not.toBeInTheDocument();
+  });
+
+  it("does not decrement unread count for an already-read notification", async () => {
+    const user = userEvent.setup();
+    const readNotification = { ...notification, is_read: true };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ rows: [readNotification], unreadCount: 2 }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ rows: [readNotification], unreadCount: 2 }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true }), { status: 200 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<NotificationBell userId={notification.user_id} />);
+    const trigger = await screen.findByRole("button", {
+      name: "2 unread notifications",
+    });
+    await user.click(trigger);
+    await user.click(await screen.findByText("Bell notification"));
+
+    expect(
+      screen.getByRole("button", { name: "2 unread notifications" }),
+    ).toBeEnabled();
+  });
 });

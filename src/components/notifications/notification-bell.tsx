@@ -36,21 +36,28 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const [open, setOpen] = React.useState(false);
   const [busyAction, setBusyAction] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [loaded, setLoaded] = React.useState(false);
 
   const load = React.useCallback(async () => {
     try {
       const res = await fetch(`/api/users/${userId}/notifications?limit=10`, {
         cache: "no-store",
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setError(await readApiError(res, "Could not load notifications."));
+        return;
+      }
       const data = (await res.json()) as {
         rows: NotificationRow[];
         unreadCount: number;
       };
       setNotifications(data.rows ?? []);
       setUnreadCount(data.unreadCount ?? 0);
+      setError(null);
     } catch {
-      // Ignore network hiccups; next tick will retry.
+      setError("Could not load notifications. Check your connection and retry.");
+    } finally {
+      setLoaded(true);
     }
   }, [userId]);
 
@@ -69,6 +76,10 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     notificationId: string,
     href: string,
   ): Promise<void> {
+    const wasUnread = notifications.some(
+      (notification) =>
+        notification.id === notificationId && !notification.is_read,
+    );
     setBusyAction(notificationId);
     setError(null);
     try {
@@ -88,7 +99,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             : notification,
         ),
       );
-      setUnreadCount((current) => Math.max(0, current - 1));
+      if (wasUnread) {
+        setUnreadCount((count) => Math.max(0, count - 1));
+      }
       setOpen(false);
       router.push(href);
     } catch {
@@ -149,7 +162,10 @@ export function NotificationBell({ userId }: NotificationBellProps) {
           ) : null}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-96 p-0">
+      <PopoverContent
+        align="end"
+        className="w-[min(24rem,calc(100vw-1rem))] p-0"
+      >
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-text-cell">
@@ -178,13 +194,29 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         </div>
 
         {error ? (
-          <p role="alert" className="border-b border-red/30 bg-red/10 px-4 py-2 text-xs text-red">
-            {error}
-          </p>
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-2 border-b border-red/30 bg-red/10 px-4 py-2 text-xs text-red"
+          >
+            <span>{error}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => void load()}
+              className="h-7 shrink-0 text-xs"
+            >
+              Retry
+            </Button>
+          </div>
         ) : null}
 
         <div className="max-h-96 overflow-y-auto">
-          {notifications.length === 0 ? (
+          {!loaded ? (
+            <div className="flex items-center justify-center px-4 py-10">
+              <Loader2 className="h-5 w-5 animate-spin text-text-zero" />
+              <span className="sr-only">Loading notifications</span>
+            </div>
+          ) : notifications.length === 0 && !error ? (
             <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
               <Inbox className="mb-2 h-6 w-6 text-text-zero" />
               <p className="text-sm font-medium text-text-cell">All clear</p>

@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SeoWorkspace } from "./seo-workspace";
+import { ConfirmationProvider } from "@/components/ui/confirmation-provider";
 
 describe("SEO workspace", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -35,12 +36,14 @@ describe("SEO workspace", () => {
     }));
 
     render(
-      <SeoWorkspace
-        entryId="entry-1"
-        fallbackTitle="Fallback"
-        canApplyDashboardTitle={false}
-        onApplied={vi.fn()}
-      />,
+      <ConfirmationProvider>
+        <SeoWorkspace
+          entryId="entry-1"
+          fallbackTitle="Fallback"
+          canApplyDashboardTitle={false}
+          onApplied={vi.fn()}
+        />
+      </ConfirmationProvider>,
     );
 
     expect(await screen.findByRole("heading", { name: "Pitcher List title studio" })).toBeInTheDocument();

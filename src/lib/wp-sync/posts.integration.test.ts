@@ -118,4 +118,76 @@ describe("WordPress post reconciliation retries", () => {
     expect(eq).toHaveBeenCalledWith("site", "pl");
     expect(not).toHaveBeenCalledWith("wp_post_id", "is", null);
   });
+
+  it("queues only the compact recovery fields for an oversized WordPress post", async () => {
+    mocks.fetchAllWpPages.mockResolvedValue({
+      ok: true,
+      rows: [
+        {
+          id: 97,
+          status: "draft",
+          author: 700,
+          date_gmt: null,
+          modified_gmt: "2026-07-30T22:00:00",
+          link: "https://pitcherlist.com/large-draft/",
+          title: { rendered: "Large draft" },
+          content: { raw: "x".repeat(100_000) },
+        },
+      ],
+    });
+    let settingsReads = 0;
+    mocks.from.mockImplementation((table) => {
+      if (table === "global_settings") {
+        settingsReads += 1;
+        if (settingsReads === 1) {
+          return maybeSingleQuery({ data: { value: "2026-07-30T21:00:00Z" } });
+        }
+        const updateQuery = {
+          select: vi.fn(),
+          eq: vi.fn(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: { id: "setting-id" } }),
+          update: vi.fn(),
+        };
+        updateQuery.select.mockReturnValue(updateQuery);
+        updateQuery.eq.mockReturnValue(updateQuery);
+        updateQuery.update.mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        });
+        return updateQuery;
+      }
+      if (table === "tiers") {
+        return maybeSingleQuery({ data: { id: "tier-a" } });
+      }
+      if (table === "wp_sync_backlog") {
+        return listQuery({ data: [], error: null });
+      }
+      if (table === "entries") {
+        return maybeSingleQuery({ data: null, error: null });
+      }
+      if (table === "users") {
+        return maybeSingleQuery({ data: null, error: null });
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+
+    const report = await syncWpPostsForSite("pl", "system-user");
+
+    expect(report.errors).toEqual([]);
+    expect(report.skippedNoMatchingUser).toBe(1);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      "queue_wp_sync_backlog",
+      expect.objectContaining({
+        p_payload: {
+          id: 97,
+          status: "draft",
+          author: 700,
+          date_gmt: null,
+          modified_gmt: "2026-07-30T22:00:00",
+          link: "https://pitcherlist.com/large-draft/",
+          title: { rendered: "Large draft" },
+        },
+      }),
+    );
+  });
 });

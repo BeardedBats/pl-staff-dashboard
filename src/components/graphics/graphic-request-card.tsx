@@ -38,6 +38,7 @@ import type {
   GraphicVersionRecord,
 } from "@/lib/graphics/data";
 import { readApiError } from "@/lib/api/client";
+import { useConfirmation } from "@/components/ui/confirmation-provider";
 
 type GraphicRequestCardProps = {
   request: GraphicRequestRecord;
@@ -55,6 +56,7 @@ export function GraphicRequestCard({
   showEntryLink = false,
   onChanged,
 }: GraphicRequestCardProps) {
+  const confirm = useConfirmation();
   const [busy, setBusy] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [flagDialogOpen, setFlagDialogOpen] = React.useState(false);
@@ -164,9 +166,12 @@ export function GraphicRequestCard({
   }
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      `Delete the graphic request "${request.title}"? This cannot be undone.`,
-    );
+    const confirmed = await confirm({
+      title: "Delete graphic request?",
+      description: `Delete “${request.title}”? This cannot be undone.`,
+      confirmLabel: "Delete request",
+      destructive: true,
+    });
     if (!confirmed) return;
     await runAction("delete", () =>
       fetch(`/api/graphic-requests/${request.id}`, { method: "DELETE" }),

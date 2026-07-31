@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useConfirmation } from "@/components/ui/confirmation-provider";
 import type { Ga4Status } from "@/lib/analytics/ga4";
 import type {
   RaptiveImportRunRow,
@@ -63,6 +64,7 @@ export function AdminAnalyticsPanel({
   canConnectGa4,
   canManageRaptive,
 }: Props) {
+  const confirm = useConfirmation();
   const searchParams = useSearchParams();
   const ga4Flag = searchParams.get("ga4");
   const [status, setStatus] = React.useState(initialGa4Status);
@@ -271,7 +273,12 @@ export function AdminAnalyticsPanel({
   }
 
   async function handleDisconnect() {
-    if (!window.confirm("Disconnect GA4? You'll need to re-authorise to resume sync.")) {
+    if (!(await confirm({
+      title: "Disconnect GA4?",
+      description: "You must reconnect GA4 before analytics can synchronize again.",
+      confirmLabel: "Disconnect GA4",
+      destructive: true,
+    }))) {
       return;
     }
     setBusy("disconnect");

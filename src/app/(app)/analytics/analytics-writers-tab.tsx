@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Avatar,
   AvatarFallback,
@@ -20,6 +21,7 @@ export function AnalyticsWritersTab({ query }: Props) {
   const [rows, setRows] = React.useState<AnalyticsWriterRow[] | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [reloadKey, setReloadKey] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -44,7 +46,7 @@ export function AnalyticsWritersTab({ query }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [query]);
+  }, [query, reloadKey]);
 
   if (loading && !rows) {
     return (
@@ -57,6 +59,11 @@ export function AnalyticsWritersTab({ query }: Props) {
         icon={<Users className="h-5 w-5" />}
         title="Failed to load writers"
         description={error}
+        action={
+          <Button size="sm" onClick={() => setReloadKey((key) => key + 1)}>
+            Retry
+          </Button>
+        }
       />
     );
   }

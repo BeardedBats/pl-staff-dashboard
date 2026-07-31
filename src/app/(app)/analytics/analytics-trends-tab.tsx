@@ -21,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import type {
   AnalyticsArticleRow,
@@ -57,6 +58,7 @@ export function AnalyticsTrendsTab({ query }: Props) {
   const [heat, setHeat] = React.useState<DayOfWeekHeatPoint[] | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [reloadKey, setReloadKey] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -97,7 +99,7 @@ export function AnalyticsTrendsTab({ query }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [query]);
+  }, [query, reloadKey]);
 
   if (loading && !overview) {
     return (
@@ -113,6 +115,11 @@ export function AnalyticsTrendsTab({ query }: Props) {
         icon={<TrendingUp className="h-5 w-5" />}
         title="Failed to load trends"
         description={error}
+        action={
+          <Button size="sm" onClick={() => setReloadKey((key) => key + 1)}>
+            Retry
+          </Button>
+        }
       />
     );
   }

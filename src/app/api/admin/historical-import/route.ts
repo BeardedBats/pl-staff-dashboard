@@ -454,6 +454,21 @@ export async function POST(request: Request) {
     0,
     ...reports.map((r) => r.pagesProcessed),
   );
+  let raptiveRowsMatched = 0;
+  if (!dryRun && !anyHasMore) {
+    const { data, error } = await getSupabaseAdmin().rpc(
+      "reconcile_raptive_entry_links",
+    );
+    if (error) {
+      return errorResponse(
+        502,
+        "Articles were imported, but Raptive reconciliation failed. Retry this import safely.",
+      );
+    }
+    raptiveRowsMatched = Number(
+      (data as { liveRowsMatched?: number } | null)?.liveRowsMatched ?? 0,
+    );
+  }
 
   return NextResponse.json({
     ok: true,
@@ -466,5 +481,6 @@ export async function POST(request: Request) {
     totals,
     nextPage,
     totalPagesProcessed,
+    raptiveRowsMatched,
   });
 }

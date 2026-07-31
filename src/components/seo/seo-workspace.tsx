@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readApiError } from "@/lib/api/client";
+import { useConfirmation } from "@/components/ui/confirmation-provider";
 import {
   analyzeSeoDocument,
   generateTitleCandidates,
@@ -28,6 +29,7 @@ export function SeoWorkspace({
   canApplyDashboardTitle: boolean;
   onApplied: () => void;
 }) {
+  const confirm = useConfirmation();
   const [workspace, setWorkspace] = React.useState<SeoWorkspaceData | null>(null);
   const [title, setTitle] = React.useState(fallbackTitle);
   const [keyphrase, setKeyphrase] = React.useState("");
@@ -104,7 +106,13 @@ export function SeoWorkspace({
   );
 
   async function applyTitle() {
-    if (!window.confirm(`Use “${title}” as the dashboard title? WordPress content will not be changed.`)) return;
+    if (
+      !(await confirm({
+        title: "Use this dashboard title?",
+        description: `Use “${title}” as the dashboard title? WordPress content will not change.`,
+        confirmLabel: "Use title",
+      }))
+    ) return;
     setApplying(true);
     setError(null);
     try {

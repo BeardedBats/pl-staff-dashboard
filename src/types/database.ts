@@ -1767,6 +1767,7 @@ export type Database = {
     }
     Functions: {
       activate_season_mode: { Args: { p_mode_id: string }; Returns: boolean }
+      analytics_article_path: { Args: { p_url: string }; Returns: string }
       begin_graphic_submission: {
         Args: {
           p_actor_id: string
@@ -2015,6 +2016,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_ga4_coverage_health: {
+        Args: { p_date_from?: string; p_date_to?: string }
+        Returns: Json
+      }
       get_latest_vercel_cron_runs: {
         Args: never
         Returns: {
@@ -2057,6 +2062,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      reconcile_raptive_entry_links: { Args: never; Returns: Json }
       record_graphic_upload: {
         Args: {
           p_actor_id: string

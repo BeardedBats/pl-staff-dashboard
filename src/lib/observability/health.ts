@@ -78,7 +78,7 @@ export async function getOperationalHealth(
 ): Promise<OperationalHealthSnapshot> {
   const supabase = getSupabaseAdmin();
   const probeErrors: string[] = [];
-  const [cronResult, settingsResult, alertResult, importResult, ga4Result, raptiveResult, notificationResult] =
+  const [cronResult, settingsResult, alertResult, importResult, ga4Result, ga4CoverageResult, raptiveResult, notificationResult] =
     await Promise.all([
       supabase.rpc("get_latest_vercel_cron_runs"),
       supabase
@@ -101,6 +101,7 @@ export async function getOperationalHealth(
         (data) => ({ data, error: null }),
         (error: unknown) => ({ data: null, error }),
       ),
+      supabase.rpc("get_ga4_coverage_health"),
       getRaptiveLiveStatus().then(
         (data) => ({ data, error: null }),
         (error: unknown) => ({ data: null, error }),
@@ -117,6 +118,7 @@ export async function getOperationalHealth(
     ["alerts", alertResult.error],
     ["imports", importResult.error],
     ["ga4", ga4Result.error],
+    ["ga4-coverage", ga4CoverageResult.error],
     ["raptive", raptiveResult.error],
     ["notification-delivery", notificationResult.error],
   ] as const) {
@@ -150,6 +152,12 @@ export async function getOperationalHealth(
   const ga4Freshness = ga4?.connected
     ? evaluateTimestampFreshness(ga4.lastSyncedAt, 2 * 24 * 60 * 60, now)
     : null;
+  const ga4Coverage = ga4CoverageResult.data as {
+    missingDays?: number;
+    firstMissingDate?: string | null;
+    lastMissingDate?: string | null;
+  } | null;
+  const ga4MissingDays = Number(ga4Coverage?.missingDays ?? 0);
   const raptive = raptiveResult.data;
   const enabledRaptive = raptive?.connections.filter((item) => item.enabled) ?? [];
   const latestRaptive = [...enabledRaptive].sort((a, b) =>
@@ -183,20 +191,28 @@ export async function getOperationalHealth(
       label: "Google Analytics 4",
       level: ga4Result.error
         ? "unknown"
+        : ga4CoverageResult.error
+          ? "unknown"
         : !ga4?.configured
           ? "not_configured"
           : !ga4.connected
             ? "critical"
+            : ga4MissingDays > 0
+              ? "warning"
             : ga4Freshness!.level,
       detail: ga4Result.error
         ? "GA4 health could not be read."
+        : ga4CoverageResult.error
+          ? "GA4 date coverage could not be read."
         : !ga4?.configured
           ? "GA4 environment configuration is incomplete."
           : !ga4.connected
             ? "GA4 is configured but not authorized."
+            : ga4MissingDays > 0
+              ? `${ga4MissingDays} GA4 day${ga4MissingDays === 1 ? " is" : "s are"} missing between ${ga4Coverage?.firstMissingDate} and ${ga4Coverage?.lastMissingDate}.`
             : ga4Freshness!.detail,
       lastSuccessAt: ga4?.lastSyncedAt ?? null,
-      remediation: "Open Settings > Analytics to configure, reconnect, or manually synchronize GA4.",
+      remediation: "Open Settings > Analytics to configure, reconnect, or backfill the missing GA4 date range.",
     },
     {
       key: "raptive",

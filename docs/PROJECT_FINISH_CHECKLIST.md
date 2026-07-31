@@ -5,9 +5,9 @@ Last updated: 2026-07-30
 ## Recovery state
 
 - Current phase: Phase 7 — full audit remediation and release verification
-- Current action: finish the cohesive analytics, recovery, UI reliability, and documentation batch; run the complete local gate; then apply migrations `0032`–`0033` and run the affected production smoke.
-- Branch: `codex/full-audit-remediation`
-- Deployment: production is on merge commit `4b7ee43`; production migrations are contiguous through `0031`. Historical/live Raptive is reconciled, GA4 is connected, and the current remediation migrations are not applied yet.
+- Current action: finish the audit-completion batch, run the complete local gate, apply migration `0034`, deploy once, backfill missing WordPress/GA4 data, and run the final smoke.
+- Branch: `codex/audit-completion-fixes`
+- Deployment: production is on merge commit `3f55019`; production migrations are contiguous through `0033`. Raptive is connected. GA4 is connected but has a May 17–July 28 coverage gap. WordPress sync is blocked by an oversized recovery payload until this batch deploys.
 - Known blocker: GitHub-hosted CI remains waived if billing still blocks runners under the explicit no-spend requirement. QB WordPress is intentionally unconfigured. Nick must rotate and remove the four outer-workspace plaintext credential copies after replacement credentials are verified.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
@@ -130,7 +130,7 @@ Gate: one complete local Phase 5 suite, one exact-head GitHub CI run, and one Ve
 - [x] P6.5 Preserve financial-data authorization and test malformed, duplicate, overlap, replay, partial, and secret-boundary cases.
 - [x] P6.6 Remove the finance-application contract unless a real consumer is identified.
 
-Gate: bounded historical fixtures, authorization, recovery, reconciliation, and the explicit no-speculation live boundary pass. Nick's actual contract/authorization arrived after this boundary; its implementation is being carried by the affected Phase 7 release gate. Only the real workbook remains input-gated.
+Gate: bounded historical fixtures, authorization, recovery, reconciliation, and the explicit no-speculation live boundary pass. Nick supplied and validated the five aggregate workbooks, daily Drive files, API contract, and server-only credentials.
 
 Phase 6 gate status: **PASS IN PRODUCTION.** Exact head `a37698f02f110dda625811f05d499dfe6f7d8426` passed GitHub Actions run `29894535937` and preview `9UQncWjjFX8GGW73sAT4yTNsoF8u`; the subsequent Creator API and real-data release passed its affected local, preview, migration, replay, and production gates.
 
@@ -141,6 +141,18 @@ Phase 6 gate status: **PASS IN PRODUCTION.** Exact head `a37698f02f110dda625811f
 - [x] P7.3 Run one production smoke covering roles, WordPress/SEO, cron, integrations, and health. — Authenticated Operations smoke verified System Health visibility, WordPress and Raptive are current, and Nick completed the required GA4 reconnect.
 - [x] P7.4 Present Nick with only the two real Raptive actions, then validate historical and live inputs, deduplication, totals, reconciliation, permissions, and health.
 - [ ] P7.5 Finish aligned documentation, evidence-linked checklist, residual-risk record, and one final release smoke after affected-gate repairs. — IN PROGRESS
+
+### 2026-07-30 — Audit-completion repair batch
+
+- WordPress polling now requests and stores only the seven recovery fields it needs. Oversized article content can no longer block the backlog.
+- GA4 health now detects missing calendar days. Partial backfills fail visibly instead of reporting success.
+- Article Page RPM now uses Raptive pageviews. Service-only reconciliation can attach unmatched live URLs after historical articles are imported.
+- Notification load failures no longer display “All clear.” Read notifications preserve the unread count. The mobile panel fits the viewport.
+- Mobile article analytics can sort. Analytics errors include Retry. Mention and tier refresh failures remain visible.
+- One branded confirmation dialog replaces every native browser confirmation.
+- The compact-history import record now includes SHA-256 hashes for all five supplied aggregate workbooks.
+- Local gate: runbooks, ESLint, TypeScript, 97 Vitest files / 412 tests, zero vulnerabilities, production build, 22 database files / 449 pgTAP assertions, generated types, database lint, 12 browser journeys, and the complete 43-check quality matrix pass. The quality matrix required one affected rerun after its native-confirm test was updated for the branded dialog.
+- Migration `0034` and its rollback procedure are ordered and locally verified. Exact-head CI, preview, migration, deployment, production data repair, and final smoke remain.
 
 ### 2026-07-30 — Full three-perspective audit remediation
 
