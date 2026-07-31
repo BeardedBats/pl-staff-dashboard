@@ -3,6 +3,10 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NotificationsPageClient } from "./notifications-page-client";
 import type { NotificationRow } from "@/lib/notifications/data";
+import {
+  NOTIFICATIONS_CHANGED_EVENT,
+  type NotificationsChangedDetail,
+} from "@/lib/notifications/events";
 
 const notification: NotificationRow = {
   id: "10000000-0000-4000-8000-000000000001",
@@ -31,6 +35,8 @@ describe("NotificationsPageClient", () => {
 
   it("marks every notification read and updates the page immediately", async () => {
     const user = userEvent.setup();
+    const changed = vi.fn();
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, changed);
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(listResponse())
@@ -56,6 +62,12 @@ describe("NotificationsPageClient", () => {
       ).not.toBeInTheDocument(),
     );
     expect(screen.getByRole("button", { name: "Mark unread" })).toBeVisible();
+    expect(changed).toHaveBeenCalledOnce();
+    expect(
+      (changed.mock.calls[0][0] as CustomEvent<NotificationsChangedDetail>)
+        .detail,
+    ).toEqual({ unreadCount: 0 });
+    window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, changed);
   });
 
   it("keeps unread state and reports a failed mark-all request", async () => {

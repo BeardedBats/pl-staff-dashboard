@@ -1,8 +1,9 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NotificationBell } from "./notification-bell";
 import type { NotificationRow } from "@/lib/notifications/data";
+import { dispatchNotificationsChanged } from "@/lib/notifications/events";
 
 const mocks = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -114,5 +115,20 @@ describe("NotificationBell", () => {
     expect(
       screen.getByRole("button", { name: "2 unread notifications" }),
     ).toBeEnabled();
+  });
+
+  it("updates the header badge when the notifications page changes the count", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(listResponse()));
+
+    render(<NotificationBell userId={notification.user_id} />);
+    expect(
+      await screen.findByRole("button", { name: "1 unread notifications" }),
+    ).toBeVisible();
+
+    act(() => dispatchNotificationsChanged(0));
+
+    expect(
+      screen.getByRole("button", { name: "Notifications" }),
+    ).toBeVisible();
   });
 });
