@@ -301,6 +301,7 @@ function NotificationListRow({
         {formatDate(notification.created_at, {
           dateStyle: "medium",
           timeStyle: "short",
+          timeZone: "America/New_York",
         })}
       </p>
     </>

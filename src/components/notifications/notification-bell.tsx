@@ -336,6 +336,7 @@ function NotificationListItem({
             {formatDate(notification.created_at, {
               dateStyle: "short",
               timeStyle: "short",
+              timeZone: "America/New_York",
             })}
           </p>
         </div>
