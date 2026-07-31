@@ -4,7 +4,15 @@ import * as React from "react";
 import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TableValue } from "@/components/ui/table";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 import type { AnalyticsArticleRow } from "@/lib/analytics/queries";
@@ -22,6 +30,7 @@ export function AnalyticsArticlesTab({ query }: Props) {
   const [error, setError] = React.useState<string | null>(null);
   const [sortKey, setSortKey] = React.useState<SortKey>("earnings");
   const [sortDir, setSortDir] = React.useState<"asc" | "desc">("desc");
+  const [reloadKey, setReloadKey] = React.useState(0);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -46,7 +55,7 @@ export function AnalyticsArticlesTab({ query }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [query]);
+  }, [query, reloadKey]);
 
   const sorted = React.useMemo(() => {
     if (!rows) return [];
@@ -70,6 +79,11 @@ export function AnalyticsArticlesTab({ query }: Props) {
         icon={<FileText className="h-5 w-5" />}
         title="Failed to load articles"
         description={error}
+        action={
+          <Button size="sm" onClick={() => setReloadKey((key) => key + 1)}>
+            Retry
+          </Button>
+        }
       />
     );
   }
@@ -98,6 +112,43 @@ export function AnalyticsArticlesTab({ query }: Props) {
   if (isMobile) {
     return (
       <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Select
+            value={sortKey}
+            onValueChange={(value) => {
+              setSortKey(value as SortKey);
+              setSortDir("desc");
+            }}
+          >
+            <SelectTrigger aria-label="Sort articles by" className="flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="earnings">Revenue</SelectItem>
+              <SelectItem value="pageviews">Pageviews</SelectItem>
+              <SelectItem value="sessions">Sessions</SelectItem>
+              <SelectItem value="page_rpm">Page RPM</SelectItem>
+              <SelectItem value="avg_time_on_page">Average session</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={`Sort ${sortDir === "desc" ? "ascending" : "descending"}`}
+            onClick={() =>
+              setSortDir((direction) =>
+                direction === "desc" ? "asc" : "desc",
+              )
+            }
+          >
+            {sortDir === "desc" ? (
+              <ArrowDown className="h-4 w-4" />
+            ) : (
+              <ArrowUp className="h-4 w-4" />
+            )}
+            {sortDir === "desc" ? "High first" : "Low first"}
+          </Button>
+        </div>
         {sorted.map((r) => (
           <div
             key={r.entry_id}

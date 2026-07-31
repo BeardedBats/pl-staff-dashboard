@@ -62,6 +62,18 @@ type WpPost = {
     | undefined;
 };
 
+function compactBacklogPost(post: WpPost): WpPost {
+  return {
+    id: post.id,
+    status: post.status,
+    author: post.author,
+    date_gmt: post.date_gmt,
+    modified_gmt: post.modified_gmt,
+    link: post.link,
+    title: post.title,
+  };
+}
+
 // --------------------------------------------------------------------------
 // Watermark helpers
 // --------------------------------------------------------------------------
@@ -190,6 +202,7 @@ export async function syncWpPostsForSite(
     context: "edit",
     orderby: "modified",
     order: "asc",
+    _fields: "id,status,author,date_gmt,modified_gmt,link,title",
   });
   const fetched = await fetchAllWpPages<WpPost>({
     urlForPage: (page) => {
@@ -314,7 +327,7 @@ export async function syncWpPostsForSite(
             p_site: site,
             p_wp_post_id: post.id,
             p_wp_author_id: post.author,
-            p_payload: post as unknown as Json,
+            p_payload: compactBacklogPost(post) as unknown as Json,
           },
         );
         if (queueError) throw queueError;

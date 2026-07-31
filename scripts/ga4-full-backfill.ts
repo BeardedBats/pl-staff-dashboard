@@ -291,6 +291,16 @@ function addOneDayIso(iso: string): string {
   return new Date(t).toISOString().slice(0, 10);
 }
 
+function readDateArgument(name: "from" | "to"): string | null {
+  const prefix = `--${name}=`;
+  const value = process.argv.find((argument) => argument.startsWith(prefix))
+    ?.slice(prefix.length) ?? null;
+  if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`--${name} must use YYYY-MM-DD`);
+  }
+  return value;
+}
+
 // --------------------------------------------------------------------------
 // Resume prompt — 10s default to "r"
 // --------------------------------------------------------------------------
@@ -394,8 +404,10 @@ async function main(): Promise<void> {
   console.log(`GA4 property: ${propertyId}`);
 
   // ---- Resume vs overwrite ----
-  let startDate = START_DATE;
-  const endDate = yesterdayIso();
+  const requestedStart = readDateArgument("from");
+  const requestedEnd = readDateArgument("to");
+  let startDate = requestedStart ?? START_DATE;
+  const endDate = requestedEnd ?? yesterdayIso();
 
   const { data: maxRow, error: maxErr } = await supabase
     .from("article_analytics")
@@ -408,7 +420,7 @@ async function main(): Promise<void> {
   }
   const existingMax = maxRow ? (maxRow as { date: string }).date : null;
 
-  if (existingMax) {
+  if (existingMax && !requestedStart) {
     const choice = await promptResume(existingMax);
     if (choice === "q") {
       console.log("Quitting.");
@@ -489,14 +501,14 @@ async function main(): Promise<void> {
       const key = `${entryId}|${r.date}`;
       const cur = agg.get(key);
       if (cur) {
-        const totalViews = cur.pageviews + r.pageviews;
+        const totalSessions = cur.sessions + r.sessions;
         cur.avg_time_on_page =
-          totalViews > 0
-            ? (cur.avg_time_on_page * cur.pageviews +
-                r.avgTimeOnPage * r.pageviews) /
-              totalViews
+          totalSessions > 0
+            ? (cur.avg_time_on_page * cur.sessions +
+                r.avgTimeOnPage * r.sessions) /
+              totalSessions
             : 0;
-        cur.pageviews = totalViews;
+        cur.pageviews += r.pageviews;
         cur.sessions += r.sessions;
       } else {
         agg.set(key, {
@@ -543,6 +555,9 @@ async function main(): Promise<void> {
   console.log(`Total rows upserted: ${totalRowsUpserted.toLocaleString()}`);
   console.log(`Total errors: ${totalErrors}`);
   console.log(`Duration: ${formatDuration(durationMs)}`);
+  if (totalErrors > 0) {
+    throw new Error(`${totalErrors} GA4 day${totalErrors === 1 ? "" : "s"} failed`);
+  }
 }
 
 main().catch((err) => {

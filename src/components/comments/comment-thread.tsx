@@ -28,6 +28,7 @@ import { CommentBody } from "./comment-body";
 import { CommentComposer } from "./comment-composer";
 import type { CommentRecord } from "@/lib/comments/data";
 import { readApiError } from "@/lib/api/client";
+import { useConfirmation } from "@/components/ui/confirmation-provider";
 
 type CommentThreadProps = {
   entryId: string;
@@ -40,6 +41,7 @@ export function CommentThread({
   currentUserId,
   isAdmin,
 }: CommentThreadProps) {
+  const confirm = useConfirmation();
   const [comments, setComments] = React.useState<CommentRecord[] | null>(null);
   const [replyingTo, setReplyingTo] = React.useState<string | null>(null);
   const [editingId, setEditingId] = React.useState<string | null>(null);
@@ -150,7 +152,12 @@ export function CommentThread({
   }
 
   async function handleDelete(commentId: string) {
-    const confirmed = window.confirm("Delete this comment permanently?");
+    const confirmed = await confirm({
+      title: "Delete comment?",
+      description: "Delete this comment permanently? This cannot be undone.",
+      confirmLabel: "Delete comment",
+      destructive: true,
+    });
     if (!confirmed) return;
     setError(null);
     try {

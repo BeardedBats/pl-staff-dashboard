@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { UserAvatar } from "@/components/users/user-avatar";
 import { ContentStatusBadge, EditorStatusBadge } from "@/components/entries/status-badges";
 import { readApiError } from "@/lib/api/client";
+import { useConfirmation } from "@/components/ui/confirmation-provider";
 import type { EntrySummary } from "@/lib/entries/queries";
 import { formatDate } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ export function EditingQueueClient({
   nowIso: string;
 }) {
   const router = useRouter();
+  const confirm = useConfirmation();
   const now = new Date(nowIso).getTime();
   const [view, setView] = React.useState<QueueView>("risk");
   const [selected, setSelected] = React.useState<Set<string>>(() => new Set());
@@ -65,7 +67,11 @@ export function EditingQueueClient({
   const selectedIds = claimable.filter((entry) => selected.has(entry.id)).map((entry) => entry.id);
 
   async function claimSelected() {
-    if (!window.confirm(`Claim ${selectedIds.length} selected ${selectedIds.length === 1 ? "edit" : "edits"}?`)) return;
+    if (!(await confirm({
+      title: "Claim selected edits?",
+      description: `Claim ${selectedIds.length} selected ${selectedIds.length === 1 ? "edit" : "edits"}?`,
+      confirmLabel: "Claim edits",
+    }))) return;
     setBusy(true);
     setFeedback(null);
     try {

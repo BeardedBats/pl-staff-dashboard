@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Work_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { ConfirmationProvider } from "@/components/ui/confirmation-provider";
 import "./globals.css";
 
 // PLPD typography: DM Sans for chrome/everything, Work Sans for DATA text.
@@ -50,7 +51,7 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          {children}
+          <ConfirmationProvider>{children}</ConfirmationProvider>
         </ThemeProvider>
       </body>
     </html>

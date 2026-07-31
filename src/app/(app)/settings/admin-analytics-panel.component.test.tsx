@@ -8,6 +8,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { AdminAnalyticsPanel } from "./admin-analytics-panel";
+import { ConfirmationProvider } from "@/components/ui/confirmation-provider";
 import type { OperationalHealthSnapshot } from "@/lib/observability/health";
 
 const health: OperationalHealthSnapshot = {
@@ -53,6 +54,14 @@ const baseProps: ComponentProps<typeof AdminAnalyticsPanel> = {
   canManageRaptive: false,
 };
 
+function renderPanel(props: ComponentProps<typeof AdminAnalyticsPanel>) {
+  return render(
+    <ConfirmationProvider>
+      <AdminAnalyticsPanel {...props} />
+    </ConfirmationProvider>,
+  );
+}
+
 describe("AdminAnalyticsPanel Raptive controls", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -60,7 +69,6 @@ describe("AdminAnalyticsPanel Raptive controls", () => {
 
   it("shows Connect GA4 immediately after a successful disconnect", async () => {
     const user = userEvent.setup();
-    vi.stubGlobal("confirm", vi.fn(() => true));
     vi.stubGlobal(
       "fetch",
       vi
@@ -83,42 +91,35 @@ describe("AdminAnalyticsPanel Raptive controls", () => {
         ),
     );
 
-    render(
-      <AdminAnalyticsPanel
-        {...baseProps}
-        canConnectGa4
-        initialGa4Status={{
+    renderPanel({
+      ...baseProps,
+      canConnectGa4: true,
+      initialGa4Status: {
           configured: true,
           connected: true,
           propertyId: "property-id",
           lastSyncedAt: null,
-        }}
-      />,
-    );
+      },
+    });
 
     await user.click(screen.getByRole("button", { name: "Disconnect" }));
+    await user.click(screen.getByRole("button", { name: "Disconnect GA4" }));
 
     expect(await screen.findByRole("button", { name: "Connect GA4" })).toBeEnabled();
     expect(screen.getByText("GA4 disconnected.")).toBeVisible();
   });
 
   it("shows global read-only system health when supplied for Operations", () => {
-    render(
-      <AdminAnalyticsPanel
-        {...baseProps}
-        initialOperationalHealth={health}
-      />,
-    );
+    renderPanel({ ...baseProps, initialOperationalHealth: health });
 
     expect(screen.getByText("System health")).toBeVisible();
     expect(screen.getByText("No active operational alerts.")).toBeVisible();
   });
 
   it("keeps live connection controls read-only for EIC viewers", () => {
-    render(
-      <AdminAnalyticsPanel
-        {...baseProps}
-        initialRaptiveStatus={{
+    renderPanel({
+      ...baseProps,
+      initialRaptiveStatus: {
           configured: true,
           databaseReady: true,
           connections: [
@@ -138,9 +139,8 @@ describe("AdminAnalyticsPanel Raptive controls", () => {
               lastErrorCode: null,
             },
           ],
-        }}
-      />,
-    );
+      },
+    });
 
     expect(screen.getByText("Only Operations can change or run the connection.")).toBeVisible();
     expect(screen.getByText("Pitcher List: Pitcher List")).toBeVisible();
@@ -149,28 +149,21 @@ describe("AdminAnalyticsPanel Raptive controls", () => {
   });
 
   it("explains migration readiness and exposes controls only when safe", () => {
-    const { unmount } = render(
-      <AdminAnalyticsPanel
-        {...baseProps}
-        canManageRaptive
-        initialRaptiveStatus={{
+    const { unmount } = renderPanel({
+      ...baseProps,
+      canManageRaptive: true,
+      initialRaptiveStatus: {
           configured: true,
           databaseReady: false,
           connections: [],
-        }}
-      />,
-    );
+      },
+    });
 
     expect(screen.getByText("Migration pending")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Find eligible sites" })).not.toBeInTheDocument();
 
     unmount();
-    render(
-      <AdminAnalyticsPanel
-        {...baseProps}
-        canManageRaptive
-      />,
-    );
+    renderPanel({ ...baseProps, canManageRaptive: true });
     expect(screen.getByRole("button", { name: "Find eligible sites" })).toBeEnabled();
   });
 });

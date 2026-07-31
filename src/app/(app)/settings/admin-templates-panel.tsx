@@ -25,6 +25,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { readApiError } from "@/lib/api/client";
+import { useConfirmation } from "@/components/ui/confirmation-provider";
 import { TemplateDialog } from "./template-dialog";
 import type { RecurringTemplateRecord } from "@/lib/recurring-templates/data";
 import type { SeasonModeRecord } from "@/lib/season-modes/data";
@@ -49,6 +50,7 @@ export function AdminTemplatesPanel({
   canRunGenerator,
 }: Props) {
   const router = useRouter();
+  const confirm = useConfirmation();
   const [templates, setTemplates] = React.useState(initialTemplates);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editingTemplate, setEditingTemplate] =
@@ -103,9 +105,12 @@ export function AdminTemplatesPanel({
   }
 
   async function handleDelete(t: RecurringTemplateRecord) {
-    const confirmed = window.confirm(
-      `Delete template "${t.title_pattern}"? Existing entries it created will stay, but no new ones will be generated.`,
-    );
+    const confirmed = await confirm({
+      title: "Delete recurring template?",
+      description: `Delete “${t.title_pattern}”? Existing entries will stay. No new entries will be generated.`,
+      confirmLabel: "Delete template",
+      destructive: true,
+    });
     if (!confirmed) return;
     setBusy(t.id);
     setFeedback(null);

@@ -1,8 +1,8 @@
 # Migration and rollback
 
 The committed database history is contiguous from
-`0001_initial_schema.sql` through `0033_recovery_and_health.sql`. The
-current application stack depends on migrations `0013`–`0033`; apply those
+`0001_initial_schema.sql` through `0034_audit_completion.sql`. The
+current application stack depends on migrations `0013`–`0034`; apply those
 migrations before merging or promoting their application code.
 
 Database migrations are forward-only release records. Do not edit an applied
@@ -44,8 +44,8 @@ npx supabase db push --dry-run --linked
 ```
 
 The dry run must list only reviewed, committed files and must end at
-`0033_recovery_and_health.sql`. Production is currently verified through
-`0031`, so this release's expected suffix is exactly `0032`, then `0033`. Apply once:
+`0034_audit_completion.sql`. Production is currently verified through
+`0033`, so this release's expected suffix is exactly `0034`. Apply once:
 
 ```powershell
 npx supabase db push --linked
@@ -259,6 +259,31 @@ is harmless historical evidence and should be preserved.
 After application deployment, keep these contracts and use a compatible
 forward repair or restore the database and application together.
 
+### Migration 0034 contingency
+
+Migration `0034` corrects article Page RPM, adds service-only Raptive URL
+reconciliation and GA4 coverage checks, and records the five workbook hashes.
+It does not delete analytics rows.
+
+Before application deployment, restore `get_analytics_articles_v2` from
+migration `0032`, then drop these new functions:
+
+```sql
+BEGIN;
+DROP FUNCTION IF EXISTS public.get_ga4_coverage_health(date, date);
+DROP FUNCTION IF EXISTS public.reconcile_raptive_entry_links();
+DROP FUNCTION IF EXISTS public.analytics_article_path(text);
+UPDATE public.import_runs
+SET summary = summary - 'sourceManifest' - 'manifestRecordedByMigration'
+WHERE import_type = 'raptive'
+  AND file_name = 'legacy-compact-history-backfill';
+COMMIT;
+```
+
+After application deployment or reconciliation, keep the entry links and use
+a compatible forward migration. Restore the database only if validation finds
+data corruption.
+
 ## Stop conditions
 
 - Production DB access is absent. Management access that only lists backups is
@@ -306,6 +331,8 @@ forward repair or restore the database and application together.
   the summary must reconcile the immutable manifest exactly.
 - The both-site Admin+ health endpoint loads, all integration probes are
   explainable, and no new critical alert appears.
+- GA4 coverage reports missing calendar days, article Page RPM uses Raptive
+  pageviews, and only the service role can run URL reconciliation.
 - Continue to the [Deployment](./DEPLOYMENT.md) gate; do not reopen release
   merges solely because `db push` exited zero.
 

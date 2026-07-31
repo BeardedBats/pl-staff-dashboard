@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     errors.push(`${window.from} → ${window.to}: ${result.error}`);
   }
 
-  return NextResponse.json({
+  const body = {
     ok: true,
     rowsUpserted: totalRowsUpserted,
     matchedArticles: totalMatchedArticles,
@@ -114,5 +114,16 @@ export async function POST(request: Request) {
     dateTo: date_to,
     monthsProcessed: monthlyWindows.length,
     errors,
-  });
+  };
+  if (errors.length > 0) {
+    return NextResponse.json(
+      {
+        ...body,
+        ok: false,
+        error: "GA4 backfill completed with failed date windows.",
+      },
+      { status: 502 },
+    );
+  }
+  return NextResponse.json(body);
 }

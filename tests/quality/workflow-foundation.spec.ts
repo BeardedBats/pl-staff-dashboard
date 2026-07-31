@@ -117,11 +117,11 @@ test("managers get risk-first operations, useful presets, and confirmed bulk act
     await page.getByRole("checkbox", { name: "Select all" }).click();
     const setPriority = page.getByRole("button", { name: "Set priority" });
     await expect(setPriority).toBeVisible();
-    page.once("dialog", async (dialog) => {
-      expect(dialog.message()).toMatch(/Set priority for \d+ selected entr/);
-      await dialog.dismiss();
-    });
     await setPriority.click();
+    await expect(
+      page.getByRole("heading", { name: "Set priority selected entries?" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
     await expect(setPriority).toBeVisible();
 
     const axe = await new AxeBuilder({ page })
@@ -171,11 +171,11 @@ test("writers and editors get focused handoffs, readiness, templates, and safe m
       .getByRole("checkbox", { name: "Select E2E P2.8 editor completion" })
       .click();
     const claimSelected = editor.page.getByRole("button", { name: "Claim selected" });
-    editor.page.once("dialog", async (dialog) => {
-      expect(dialog.message()).toBe("Claim 1 selected edit?");
-      await dialog.dismiss();
-    });
     await claimSelected.click();
+    await expect(
+      editor.page.getByRole("heading", { name: "Claim selected edits?" }),
+    ).toBeVisible();
+    await editor.page.getByRole("button", { name: "Cancel" }).click();
     await expect(claimSelected).toBeVisible();
 
     await editor.page.goto(`/content?entry=${browserRecords.editorEntryId}`, {

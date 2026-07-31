@@ -8,15 +8,14 @@ import * as React from "react";
  * the server and resolves on first client paint.
  */
 export function useIsMobile(breakpoint = 768): boolean {
-  const [isMobile, setIsMobile] = React.useState(false);
-
-  React.useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-    setIsMobile(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, [breakpoint]);
-
-  return isMobile;
+  const query = `(max-width: ${breakpoint - 1}px)`;
+  return React.useSyncExternalStore(
+    React.useCallback((onChange) => {
+      const media = window.matchMedia(query);
+      media.addEventListener("change", onChange);
+      return () => media.removeEventListener("change", onChange);
+    }, [query]),
+    React.useCallback(() => window.matchMedia(query).matches, [query]),
+    () => false,
+  );
 }
