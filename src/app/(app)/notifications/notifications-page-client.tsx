@@ -20,6 +20,11 @@ import {
   EVENT_TYPE_LABELS,
   type NotificationEventType,
 } from "@/lib/notifications/defaults";
+import {
+  dispatchNotificationsChanged,
+  NOTIFICATIONS_CHANGED_EVENT,
+  type NotificationsChangedDetail,
+} from "@/lib/notifications/events";
 import type { NotificationRow } from "@/lib/notifications/data";
 
 type Props = {
@@ -85,6 +90,33 @@ export function NotificationsPageClient({
     void refresh();
   }, [refresh]);
 
+  React.useEffect(() => {
+    function handleNotificationsChanged(event: Event) {
+      const unread = (event as CustomEvent<NotificationsChangedDetail>).detail
+        ?.unreadCount;
+      if (!Number.isFinite(unread)) return;
+      setUnreadCount(unread);
+      if (unread === 0) {
+        setRows((current) =>
+          current.map((notification) => ({
+            ...notification,
+            is_read: true,
+          })),
+        );
+      }
+    }
+
+    window.addEventListener(
+      NOTIFICATIONS_CHANGED_EVENT,
+      handleNotificationsChanged,
+    );
+    return () =>
+      window.removeEventListener(
+        NOTIFICATIONS_CHANGED_EVENT,
+        handleNotificationsChanged,
+      );
+  }, []);
+
   async function markOne(id: string, isRead: boolean) {
     setBusyAction(id);
     setError(null);
@@ -107,9 +139,12 @@ export function NotificationsPageClient({
                 : notification,
             ),
       );
-      setUnreadCount((current) =>
-        Math.max(0, current + (isRead ? -1 : 1)),
+      const nextUnreadCount = Math.max(
+        0,
+        unreadCount + (isRead ? -1 : 1),
       );
+      setUnreadCount(nextUnreadCount);
+      dispatchNotificationsChanged(nextUnreadCount);
     } catch {
       setError("Could not update the notification. Check your connection and retry.");
     } finally {
@@ -136,6 +171,7 @@ export function NotificationsPageClient({
           : current.map((notification) => ({ ...notification, is_read: true })),
       );
       setUnreadCount(0);
+      dispatchNotificationsChanged(0);
     } catch {
       setError("Could not mark all notifications as read. Check your connection and retry.");
     } finally {

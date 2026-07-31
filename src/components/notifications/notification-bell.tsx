@@ -15,6 +15,11 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import type { NotificationRow } from "@/lib/notifications/data";
+import {
+  dispatchNotificationsChanged,
+  NOTIFICATIONS_CHANGED_EVENT,
+  type NotificationsChangedDetail,
+} from "@/lib/notifications/events";
 
 type NotificationBellProps = {
   userId: string;
@@ -67,6 +72,33 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     return () => clearInterval(id);
   }, [load]);
 
+  React.useEffect(() => {
+    function handleNotificationsChanged(event: Event) {
+      const unread = (event as CustomEvent<NotificationsChangedDetail>).detail
+        ?.unreadCount;
+      if (!Number.isFinite(unread)) return;
+      setUnreadCount(unread);
+      if (unread === 0) {
+        setNotifications((current) =>
+          current.map((notification) => ({
+            ...notification,
+            is_read: true,
+          })),
+        );
+      }
+    }
+
+    window.addEventListener(
+      NOTIFICATIONS_CHANGED_EVENT,
+      handleNotificationsChanged,
+    );
+    return () =>
+      window.removeEventListener(
+        NOTIFICATIONS_CHANGED_EVENT,
+        handleNotificationsChanged,
+      );
+  }, []);
+
   // Refresh when the popover opens so the list is fresh.
   React.useEffect(() => {
     if (open) void load();
@@ -100,7 +132,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         ),
       );
       if (wasUnread) {
-        setUnreadCount((count) => Math.max(0, count - 1));
+        const nextUnreadCount = Math.max(0, unreadCount - 1);
+        setUnreadCount(nextUnreadCount);
+        dispatchNotificationsChanged(nextUnreadCount);
       }
       setOpen(false);
       router.push(href);
@@ -128,6 +162,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         current.map((notification) => ({ ...notification, is_read: true })),
       );
       setUnreadCount(0);
+      dispatchNotificationsChanged(0);
     } catch {
       setError("Could not mark all notifications as read. Check your connection and retry.");
     } finally {
