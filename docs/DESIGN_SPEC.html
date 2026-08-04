@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PL Staff Dashboard — Design Specification</title>
+<style>
+:root{
+  --navy1:#13152A; --navy2:#181A2C; --navy3:#21243A; --cyan:#55e8ff; --amber:#ffc277;
+  --bg:#f6f7fb; --card:#ffffff; --ink:#1a1f33; --muted:#5b6480; --line:rgba(70,90,140,.22);
+  --code-bg:#eef1f6; --accent:#0a6f85; --accent2:#a05a12;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#13152A; --card:#181A2C; --ink:#f0f1f5; --muted:rgba(180,187,215,.82);
+         --line:rgba(118,138,190,.28); --code-bg:#21243A; --accent:#55e8ff; --accent2:#ffc277; }
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--ink);
+  font:15px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif;}
+.hero{background:linear-gradient(135deg,#13152A 0%,#21243A 60%,#2E3150 100%); color:#f0f1f5;
+  padding:48px 24px 40px; border-bottom:3px solid var(--cyan);}
+.hero .wrap{max-width:980px;margin:0 auto}
+.hero h1{margin:0 0 6px; font-size:30px; letter-spacing:-0.01em}
+.hero .brand{color:#55e8ff; font-weight:700; text-transform:uppercase; letter-spacing:.12em; font-size:12px}
+.hero p{color:rgba(203,215,253,.85); max-width:70ch; margin:10px 0 0}
+.hero .meta{margin-top:14px; font-size:12px; color:rgba(180,187,215,.75)}
+.layout{max-width:980px; margin:0 auto; padding:28px 24px 80px}
+nav.toc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 22px; margin-bottom:28px}
+nav.toc>ul{margin:0;padding-left:18px; columns:2; column-gap:36px}
+nav.toc ul ul{display:none}
+nav.toc li{margin:3px 0; break-inside:avoid}
+nav.toc a{color:var(--accent); text-decoration:none}
+nav.toc a:hover{text-decoration:underline}
+nav.toc .toc-title{font-weight:700; text-transform:uppercase; font-size:11px; letter-spacing:.1em; color:var(--muted); margin-bottom:8px}
+h2{font-size:22px; margin:44px 0 12px; padding-bottom:8px; border-bottom:2px solid var(--line); letter-spacing:-0.01em}
+h2 a.anchor{display:none}
+h3{font-size:17px; margin:28px 0 8px; color:var(--accent)}
+h4{font-size:15px; margin:20px 0 6px}
+p{margin:10px 0}
+a{color:var(--accent)}
+strong{font-weight:650}
+code{background:var(--code-bg); border:1px solid var(--line); border-radius:5px; padding:1px 5px;
+  font:12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace}
+pre{background:#13152A; color:#e6ecff; border-radius:10px; padding:16px 18px; overflow-x:auto;
+  border:1px solid rgba(85,232,255,.18)}
+pre code{background:none;border:none;color:inherit;padding:0;font-size:12.5px}
+table{border-collapse:collapse; width:100%; margin:14px 0; font-size:13.5px; display:block; overflow-x:auto}
+th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top}
+th{background:var(--code-bg); font-weight:650; white-space:nowrap}
+tr:nth-child(even) td{background:color-mix(in srgb, var(--code-bg) 45%, transparent)}
+ul,ol{padding-left:24px}
+li{margin:4px 0}
+blockquote{margin:12px 0; padding:8px 16px; border-left:4px solid var(--amber); background:var(--code-bg); border-radius:0 8px 8px 0}
+hr{border:none; border-top:1px solid var(--line); margin:36px 0}
+.footer{color:var(--muted); font-size:12.5px; margin-top:48px; border-top:1px solid var(--line); padding-top:16px}
+@media print{ .hero{background:#fff;color:#000;border-bottom:2px solid #000} nav.toc{display:none}
+  body{background:#fff;color:#000} pre{background:#f4f4f4;color:#000} }
+@media (max-width:720px){ nav.toc>ul{columns:1} .hero h1{font-size:24px} }
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+  <div class="brand">Pitcher List &middot; Staff Dashboard</div>
+  <h1>Complete Design Specification</h1>
+  <p>The full, verified specification of the PL Staff Dashboard: product goal and end-to-end workflow,
+  every subsystem, the database schema, security model, role matrix, design system, current status,
+  open items, and a vetting checklist of known discrepancies.</p>
+  <div class="meta">Generated 2026-07-21 from commit <code style="background:rgba(85,232,255,.12);border-color:rgba(85,232,255,.25);color:#9df4ff">a2af3ef</code> (branch main) &middot;
+  Every statement verified against source. Nothing assumed. &middot; Companion machine-readable version: <code style="background:rgba(85,232,255,.12);border-color:rgba(85,232,255,.25);color:#9df4ff">docs/DESIGN_SPEC.md</code></div>
+</div></header>
+<main class="layout">
+<nav class="toc"><div class="toc-title">Contents</div>
+<ul>
+<li><a href="#1-what-this-app-is">1. What this app is</a><ul>
+<li><a href="#11-the-goal-start-to-finish">1.1 The goal, start to finish</a></li>
+<li><a href="#12-what-it-is-not">1.2 What it is not</a></li>
+</ul>
+</li>
+<li><a href="#2-scaffolding-stack-and-build-system">2. Scaffolding, stack, and build system</a><ul>
+<li><a href="#21-stack">2.1 Stack</a></li>
+<li><a href="#22-declared-but-unused-dependencies-verified-zero-imports-in-src-and-scripts">2.2 Declared but unused dependencies (verified: zero imports in src/ and scripts/)</a></li>
+<li><a href="#23-repository-layout">2.3 Repository layout</a></li>
+<li><a href="#24-architectural-conventions-consistent-across-the-codebase">2.4 Architectural conventions (consistent across the codebase)</a></li>
+</ul>
+</li>
+<li><a href="#3-the-sites-tiers-and-season-model">3. The sites, tiers, and season model</a></li>
+<li><a href="#4-roles-and-the-permission-matrix">4. Roles and the permission matrix</a><ul>
+<li><a href="#verified-capability-matrix">Verified capability matrix</a></li>
+</ul>
+</li>
+<li><a href="#5-environment-configuration">5. Environment &amp; configuration</a></li>
+<li><a href="#6-database-schema">6. Database schema</a><ul>
+<li><a href="#61-tables-columns-abridged-to-the-semantically-meaningful-all-have-id-uuid-pk-default-gen_random_uuid-and-created_at-unless-noted">6.1 Tables (columns abridged to the semantically meaningful; all have id UUID PK default gen_random_uuid() and created_at unless noted)</a></li>
+<li><a href="#62-migration-timeline-what-changed-and-why-from-migration-header-comments">6.2 Migration timeline (what changed and why — from migration header comments)</a></li>
+<li><a href="#63-security-model-three-layers">6.3 Security model (three layers)</a></li>
+</ul>
+</li>
+<li><a href="#7-authentication-sessions">7. Authentication &amp; sessions</a><ul>
+<li><a href="#71-login-flow-post-apiauthlogin-performlogin-in-srclibauthlogints">7.1 Login flow (POST /api/auth/login → performLogin in src/lib/auth/login.ts)</a></li>
+<li><a href="#72-tokens-cookies-srclibauthsessionts">7.2 Tokens &amp; cookies (src/lib/auth/session.ts)</a></li>
+</ul>
+</li>
+<li><a href="#8-users-staff-directory-and-teams">8. Users, staff directory, and teams</a><ul>
+<li><a href="#81-user-management">8.1 User management</a></li>
+<li><a href="#82-staff-directory-staff-staffid">8.2 Staff directory (/staff, /staff/[id])</a></li>
+<li><a href="#83-teams">8.3 Teams</a></li>
+</ul>
+</li>
+<li><a href="#9-the-entry-workflow-core-state-machine">9. The entry workflow (core state machine)</a><ul>
+<li><a href="#91-entry-creation-paths">9.1 Entry creation paths</a></li>
+<li><a href="#92-claims-writer-track">9.2 Claims (writer track)</a></li>
+<li><a href="#93-checklists">9.3 Checklists</a></li>
+<li><a href="#94-comments-mentions">9.4 Comments &amp; mentions</a></li>
+<li><a href="#95-archive-archive-requests">9.5 Archive &amp; archive requests</a></li>
+<li><a href="#96-bulk-operations-post-apientriesbulk-ismanagerplus">9.6 Bulk operations (POST /api/entries/bulk, isManagerPlus)</a></li>
+<li><a href="#97-audit-recent-activity">9.7 Audit &amp; recent activity</a></li>
+</ul>
+</li>
+<li><a href="#10-saved-views">10. Saved views</a></li>
+<li><a href="#11-pages-navigation">11. Pages &amp; navigation</a><ul>
+<li><a href="#111-the-content-table-entriestable">11.1 The content table (EntriesTable)</a></li>
+<li><a href="#112-the-entry-detail-panel-entrydetailpanel">11.2 The entry detail panel (EntryDetailPanel)</a></li>
+</ul>
+</li>
+<li><a href="#12-home-dashboards-role-tailored">12. Home dashboards (role-tailored)</a></li>
+<li><a href="#13-graphics-subsystem-including-the-file-vault">13. Graphics subsystem — including the file "vault"</a><ul>
+<li><a href="#131-a-note-on-the-word-vault">13.1 A note on the word "vault"</a></li>
+<li><a href="#132-the-private-storage-bucket-signed-url-system-srclibgraphicsstoragets">13.2 The private storage bucket &amp; signed-URL system (src/lib/graphics/storage.ts)</a></li>
+<li><a href="#133-request-lifecycle">13.3 Request lifecycle</a></li>
+<li><a href="#134-graphics-ui">13.4 Graphics UI</a></li>
+</ul>
+</li>
+<li><a href="#14-notifications">14. Notifications</a><ul>
+<li><a href="#141-event-types-15-matching-the-db-check">14.1 Event types (15, matching the DB CHECK)</a></li>
+<li><a href="#142-channels-delivery">14.2 Channels &amp; delivery</a></li>
+<li><a href="#143-preferences-defaults-srclibnotificationsdefaultsts">14.3 Preferences &amp; defaults (src/lib/notifications/defaults.ts)</a></li>
+<li><a href="#144-surfaces">14.4 Surfaces</a></li>
+<li><a href="#145-trigger-inventory-srclibnotificationstriggerts-all-best-effort-actor-always-excluded">14.5 Trigger inventory (src/lib/notifications/trigger.ts — all best-effort, actor always excluded)</a></li>
+</ul>
+</li>
+<li><a href="#15-recurring-templates-generation">15. Recurring templates &amp; generation</a></li>
+<li><a href="#16-wordpress-integration-four-sync-surfaces">16. WordPress integration (four sync surfaces)</a></li>
+<li><a href="#17-analytics-subsystem">17. Analytics subsystem</a><ul>
+<li><a href="#171-ga4-integration-srclibanalyticsga4ts">17.1 GA4 integration (src/lib/analytics/ga4.ts)</a></li>
+<li><a href="#172-url-normalization-the-join-key">17.2 URL normalization — the join key</a></li>
+<li><a href="#173-raptive-revenue-srclibanalyticsraptivets">17.3 Raptive revenue (src/lib/analytics/raptive.ts)</a></li>
+<li><a href="#174-query-layer-srclibanalyticsqueriests">17.4 Query layer (src/lib/analytics/queries.ts)</a></li>
+<li><a href="#175-analytics-ui-4-tabs-toolbar">17.5 Analytics UI (4 tabs + toolbar)</a></li>
+<li><a href="#176-backfills">17.6 Backfills</a></li>
+<li><a href="#177-historical-import-post-apiadminhistorical-import-operations-maxduration-300">17.7 Historical import (POST /api/admin/historical-import, Operations, maxDuration 300)</a></li>
+</ul>
+</li>
+<li><a href="#18-cron-jobs-verceljson-utc">18. Cron jobs (vercel.json, UTC)</a></li>
+<li><a href="#19-design-system-plpd-subtle-glass-over-mesh-srcappglobalscss">19. Design system — "PLPD, Subtle Glass Over Mesh" (src/app/globals.css)</a><ul>
+<li><a href="#191-tokens-dark-canonical-values">19.1 Tokens (dark canonical values)</a></li>
+<li><a href="#192-the-mesh">19.2 The mesh</a></li>
+<li><a href="#193-signature-chrome">19.3 Signature chrome</a></li>
+<li><a href="#194-component-primitives-srccomponentsui">19.4 Component primitives (src/components/ui/)</a></li>
+<li><a href="#195-responsive-a11y-state">19.5 Responsive &amp; a11y state</a></li>
+</ul>
+</li>
+<li><a href="#20-onboarding">20. Onboarding</a></li>
+<li><a href="#21-build-history-current-status">21. Build history &amp; current status</a><ul>
+<li><a href="#211-explicitly-incomplete-open-items">21.1 Explicitly incomplete / open items</a></li>
+</ul>
+</li>
+<li><a href="#22-known-discrepancies-quirks-and-risks-verified-in-code-vetting-checklist">22. Known discrepancies, quirks, and risks (verified in code — vetting checklist)</a></li>
+<li><a href="#23-api-route-index-method-guard-purpose">23. API route index (method — guard — purpose)</a></li>
+</ul>
+<</nav>
+<p><strong>Audience:</strong> AI agents and engineers working on this codebase.
+<strong>Generated:</strong> 2026-07-21, from commit <code>a2af3ef</code> (branch <code>main</code>).
+<strong>Method:</strong> Every statement in this document was verified by reading the actual source files, migrations, and configuration in this repository. Nothing is assumed or inferred from convention. Where the codebase is ambiguous, incomplete, or inconsistent, that is stated explicitly rather than papered over. Section 22 lists every known gap and discrepancy.</p>
+<hr />
+<h2 id="1-what-this-app-is">1. What this app is</h2>
+<p>The <strong>PL Staff Dashboard</strong> (<code>pl-staff-dashboard</code>) is the internal content-management and workflow hub for <strong>Pitcher List</strong> (pitcherlist.com, a fantasy-baseball publication) and its sibling site <strong>QB List</strong> (fantasy football). Its metadata description in <code>src/app/layout.tsx</code> reads: <em>"Pitcher List internal content management and workflow hub."</em></p>
+<h3 id="11-the-goal-start-to-finish">1.1 The goal, start to finish</h3>
+<p>The app manages the entire life of an article from idea to published post to revenue attribution:</p>
+<ol>
+<li><strong>Plan</strong> — An entry (planned article) is created: manually, in bulk, via a recurring template generated on a schedule, or auto-picked-up from a draft someone started directly in WordPress.</li>
+<li><strong>Claim</strong> — A writer claims the entry. Managers approve claims (senior roles auto-approve). Approval automatically creates a WordPress draft post and links it to the entry.</li>
+<li><strong>Write &amp; gate</strong> — The writer works through a per-tier required checklist. They cannot submit until every required checklist item is checked.</li>
+<li><strong>Edit</strong> — Submission flips the entry into the editing queue. Editors claim it, can bounce it back to the writer ("polishing") with a reason, and mark it edited — but only once every graphic request on the entry has been fulfilled (a second gate).</li>
+<li><strong>Graphics</strong> — Anyone on the entry can request graphics. Graphics staff claim requests on a kanban board, upload files to a <strong>private Supabase Storage bucket</strong>, and submit — which pushes the file into the WordPress media library and sets it as the post's featured image.</li>
+<li><strong>Schedule &amp; publish</strong> — Scheduling and publishing happen <strong>in WordPress, not in the dashboard</strong>. A cron polls WordPress every 5 minutes; when WP reports a post as <code>future</code> or <code>publish</code>, the dashboard mirrors that as <code>scheduled</code>/<code>published</code>. These two statuses can never be set by hand.</li>
+<li><strong>Measure</strong> — A daily cron pulls per-page traffic from Google Analytics 4; Operations uploads Raptive ad-revenue spreadsheets. Both are matched to entries by URL, producing per-article and per-writer traffic, revenue, RPM, and revenue-per-word analytics visible only to EIC and Operations.</li>
+<li><strong>Archive</strong> — Entries are never deleted. Staff request archiving with a reason; managers approve. Admin-level roles archive directly. A Published Archive page also exposes ~10,000 historical WordPress posts back-imported to Oct 2022 for analytics continuity.</li>
+</ol>
+<p>Supporting systems: role-tailored home dashboards, in-app notifications (with Discord/email planned but stubbed), @-mention comment threads per entry, an audit log on every entry, season modes that gate recurring-template generation, deadline and unclaimed-slot reminder crons, saved table views, a staff directory synced from WordPress profiles, and an onboarding tour for first-time users.</p>
+<h3 id="12-what-it-is-not">1.2 What it is not</h3>
+<ul>
+<li>It is <strong>not</strong> a CMS. Article bodies live in WordPress. The dashboard stores workflow state, metadata, and analytics, and links out to WP for the content itself.</li>
+<li>It has <strong>no public surface</strong>. <code>robots</code> is <code>index:false, follow:false</code>; every page requires login.</li>
+</ul>
+<hr />
+<h2 id="2-scaffolding-stack-and-build-system">2. Scaffolding, stack, and build system</h2>
+<h3 id="21-stack">2.1 Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Framework</td>
+<td><strong>Next.js 16.2.3</strong> (App Router)</td>
+<td>Bootstrapped with <code>create-next-app</code>. <code>AGENTS.md</code>/<code>CLAUDE.md</code> warn: <em>"This is NOT the Next.js you know"</em> — this version has breaking changes vs. model training data; the authoritative docs ship inside the package at <code>node_modules/next/dist/docs/</code> (present only after <code>npm install</code>) and must be read before writing code.</td>
+</tr>
+<tr>
+<td>UI runtime</td>
+<td>React 19.2.4 / react-dom 19.2.4</td>
+<td></td>
+</tr>
+<tr>
+<td>Language</td>
+<td>TypeScript 5 (strict), path alias <code>@/*</code> → <code>./src/*</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Styling</td>
+<td><strong>Tailwind CSS v4</strong> (<code>@tailwindcss/postcss</code>, <code>@import "tailwindcss"</code>, <code>@theme inline</code>)</td>
+<td>No <code>tailwind.config</code> file; tokens are defined in <code>src/app/globals.css</code>.</td>
+</tr>
+<tr>
+<td>Components</td>
+<td>shadcn/ui-style primitives over <strong>Radix UI</strong>, variants via <code>class-variance-authority</code>, <code>clsx</code> + <code>tailwind-merge</code> (<code>cn()</code> in <code>src/lib/utils.ts</code>)</td>
+<td></td>
+</tr>
+<tr>
+<td>Database</td>
+<td><strong>Supabase</strong> (Postgres) — 11 SQL migrations in <code>supabase/migrations/</code></td>
+<td>Accessed exclusively server-side via the <strong>service-role</strong> key (<code>@supabase/supabase-js</code>; <code>src/lib/supabase/admin.ts</code> imports <code>"server-only"</code>).</td>
+</tr>
+<tr>
+<td>Auth</td>
+<td>Custom JWT cookie sessions (<code>jsonwebtoken</code>); credentials validated against <strong>WordPress application passwords</strong></td>
+<td>No local passwords. See §7.</td>
+</tr>
+<tr>
+<td>Validation</td>
+<td><code>zod</code> (35 source files)</td>
+<td>Every API body/query and env var is zod-validated.</td>
+</tr>
+<tr>
+<td>Tables</td>
+<td><code>@tanstack/react-table</code> (content table)</td>
+<td></td>
+</tr>
+<tr>
+<td>Calendar</td>
+<td>FullCalendar 6 (<code>daygrid</code>, <code>timegrid</code>, <code>list</code>, <code>interaction</code>)</td>
+<td></td>
+</tr>
+<tr>
+<td>Drag &amp; drop</td>
+<td><code>@dnd-kit</code> (graphics kanban)</td>
+<td></td>
+</tr>
+<tr>
+<td>Charts</td>
+<td><code>recharts</code> 3 (analytics, home widgets)</td>
+<td></td>
+</tr>
+<tr>
+<td>Onboarding</td>
+<td><code>react-joyride</code> v3</td>
+<td></td>
+</tr>
+<tr>
+<td>Spreadsheets</td>
+<td><code>xlsx</code> (SheetJS, pinned CDN tarball 0.20.3) — <strong>read-only</strong>, for Raptive upload parsing; exports are hand-built CSV</td>
+<td></td>
+</tr>
+<tr>
+<td>Icons / fonts / theming</td>
+<td><code>lucide-react</code>; <strong>DM Sans</strong> (chrome) + <strong>Work Sans</strong> (data) via <code>next/font/google</code>; <code>next-themes</code> (class strategy, dark default)</td>
+<td>Not Geist, despite the boilerplate README.</td>
+</tr>
+<tr>
+<td>Deployment</td>
+<td><strong>Vercel</strong> — <code>vercel.json</code> defines 8 cron jobs (§18)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-declared-but-unused-dependencies-verified-zero-imports-in-src-and-scripts">2.2 Declared but unused dependencies (verified: zero imports in <code>src/</code> and <code>scripts/</code>)</h3>
+<p><code>sonner</code> (no toast system exists anywhere), <code>bcryptjs</code> + <code>@types/bcryptjs</code> (auth never hashes passwords locally), <code>react-hook-form</code>, <code>@hookform/resolvers</code>, <code>@supabase/ssr</code> (the plain supabase-js client is used instead), <code>discord.js</code>, <code>resend</code> (both are <em>planned</em> for notification delivery — currently name-checked only in stub comments in <code>src/lib/notifications/delivery.ts</code>), <code>@tanstack/react-virtual</code> (virtualization was deliberately skipped, see POLISH.md), <code>@radix-ui/react-toast</code>, <code>@radix-ui/react-tooltip</code>, <code>@radix-ui/react-progress</code>, <code>@radix-ui/react-radio-group</code>, <code>@radix-ui/react-scroll-area</code>.</p>
+<h3 id="23-repository-layout">2.3 Repository layout</h3>
+<pre><code>pl-staff-dashboard/
+├── AGENTS.md / CLAUDE.md        # AI instructions: read bundled Next.js docs first
+├── POLISH.md                    # Living UI/UX backlog (see §21)
+├── README.md                    # Untouched create-next-app boilerplate
+├── package.json                 # Scripts: dev / build / start / lint (no test script)
+├── next.config.ts               # images.remotePatterns only (supabase, pitcherlist, gravatar)
+├── vercel.json                  # 8 cron schedules
+├── eslint.config.mjs            # Flat config; eslint-config-next core-web-vitals + typescript
+├── postcss.config.mjs           # @tailwindcss/postcss
+├── tsconfig.json                # strict; @/* alias
+├── .env.example                 # Full env contract (§5)
+├── public/                      # create-next-app default SVGs (unused by the app)
+├── scripts/ga4-full-backfill.ts # Standalone resumable GA4 backfill (§17.6)
+├── supabase/migrations/         # 0001–0011 (§6)
+└── src/
+    ├── app/
+    │   ├── layout.tsx, page.tsx, globals.css, favicon.ico
+    │   ├── login/               # page.tsx + login-form.tsx
+    │   ├── (app)/               # Authed shell: layout.tsx + 13 page areas (§19)
+    │   └── api/                 # ~60 route handlers (auth, entries, claims, comments,
+    │                            #   graphics, users, teams, templates, season-modes, tiers,
+    │                            #   views, notifications, analytics, ga4, raptive, settings,
+    │                            #   archive-requests, categories, admin, cron)
+    ├── components/
+    │   ├── ui/                  # 16 primitives (§20.4)
+    │   ├── layout/              # header, sidebar, nav-config
+    │   ├── entries/             # table, detail panel, create/bulk dialogs, status badges
+    │   ├── comments/            # thread, composer, body
+    │   ├── graphics/            # request card, create dialog
+    │   ├── notifications/       # bell
+    │   ├── users/               # staff card, role badge, user avatar
+    │   ├── theme/               # provider, toggle
+    │   └── onboarding/          # onboarding-tour
+    ├── lib/                     # All server logic, one folder per domain:
+    │   │                        #   analytics, archive-requests, auth, checklist, claims,
+    │   │                        #   comments, entries, graphics, home, hooks, notifications,
+    │   │                        #   recurring-templates, season-modes, supabase, teams,
+    │   │                        #   users, views, wp-sync + env.ts + utils.ts
+    └── types/database.ts        # Placeholder Supabase types (loose `any` shapes; §22)
+</code></pre>
+<h3 id="24-architectural-conventions-consistent-across-the-codebase">2.4 Architectural conventions (consistent across the codebase)</h3>
+<ul>
+<li><strong>Server components fetch, client components interact.</strong> Pages under <code>(app)/</code> are mostly server components that call <code>src/lib/**</code> data functions directly, then hand data to a <code>*-page-client.tsx</code> or component. Client components mutate via <code>fetch()</code> to <code>/api/**</code>.</li>
+<li><strong>All data access is server-side through <code>getSupabaseAdmin()</code></strong> (service-role singleton). There is no browser Supabase client at all.</li>
+<li><strong>Authorization lives in route handlers</strong>, not the database. Every API route starts with <code>getCurrentUser()</code> and applies role guards from <code>src/lib/auth/current-user.ts</code>. RLS exists only as a default-deny backstop (§6.3).</li>
+<li><strong>No Postgres transactions.</strong> Multi-step mutations (e.g. role replacement, claim approval) run as sequential Supabase calls; routes document this as a known non-atomicity.</li>
+<li><strong>No PostgREST relational fan-out for large sets.</strong> List queries batch-fetch related tables by ID and stitch in application code, after a class of bugs where <code>.in("entry_id", thousands-of-uuids)</code> exceeded URL limits and silently returned <code>[]</code> (fixed in commits <code>550b4c1</code>, <code>998fe88</code>, <code>1582feb</code>).</li>
+<li><strong>Every workflow mutation writes an <code>audit_log</code> row</strong> via <code>writeAuditRow()</code> and most append to the entry's denormalized <code>recent_activity</code> JSONB cache (capped at 10, fire-and-forget).</li>
+<li><strong>Enums are TEXT + CHECK constraints</strong>, never native Postgres enums.</li>
+<li><strong>API routes set <code>export const dynamic = "force-dynamic"</code></strong>; WP/cron/upload routes also set <code>runtime = "nodejs"</code> and, where long-running, <code>maxDuration</code> (60–300).</li>
+<li><strong>No test suite exists.</strong> There is no test script, no test files, no CI config in the repo.</li>
+</ul>
+<hr />
+<h2 id="3-the-sites-tiers-and-season-model">3. The sites, tiers, and season model</h2>
+<ul>
+<li><strong>Sites:</strong> <code>pl</code> (Pitcher List) and <code>qb</code> (QB List). Users/teams/templates can be scoped <code>pl</code>, <code>qb</code>, or <code>both</code>; entries and categories are strictly <code>pl</code> or <code>qb</code>. QB List integration is entirely optional — every QB env var is optional and each WP code path checks <code>WP_QB_URL</code> before running.</li>
+<li><strong>Tiers</strong> (<code>tiers</code> table; seeded S=Annual, A=Daily, B=Weekly, C=Unscheduled with sort_order 0–3): cadence buckets that drive the per-tier checklist and table filters. Full CRUD in Settings (Admin+); deletion is blocked with HTTP 409 while any entry references the tier.</li>
+<li><strong>Season modes</strong> (<code>season_modes</code>; seeded Pre-Season, In-Season <em>(active)</em>, Offseason): exactly one active at a time (enforced procedurally, not by constraint). The active season (a) selects which recurring templates generate and (b) supplies <code>auto_switch_start</code> as the anchor for the <code>{week}</code> title token. A daily cron auto-activates a mode whose <code>auto_switch_start</code>–<code>auto_switch_end</code> window contains today; modes without dates are manual-only.</li>
+</ul>
+<hr />
+<h2 id="4-roles-and-the-permission-matrix">4. Roles and the permission matrix</h2>
+<p>Seven roles (<code>user_roles.role</code>, per-site rows, <code>UNIQUE(user_id, role, site)</code>): <strong>writer, editor, graphics, manager, admin, eic, operations</strong>. A user's effective roles are the distinct flattened set. Helper predicates in <code>src/lib/auth/current-user.ts</code>:</p>
+<ul>
+<li><code>hasRole(user, ...roles)</code> — any match.</li>
+<li><code>isManagerPlus</code> — manager | admin | eic | operations.</li>
+<li><code>isAdminPlus</code> — admin | eic | operations.</li>
+<li><code>canViewAnalytics</code> — <strong>eic | operations only</strong>. Source comment: deliberately excludes <code>admin</code> <em>"so contractor admins handling pipeline state can't see revenue numbers."</em></li>
+<li><code>isOperations</code> — operations only (GA4 connect/disconnect/sync, Raptive upload, backfills, historical import).</li>
+<li><code>canPublish</code> — <code>users.can_publish</code> flag OR isManagerPlus OR editor (flag exists; not otherwise consumed by the workflow routes).</li>
+</ul>
+<h3 id="verified-capability-matrix">Verified capability matrix</h3>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Who</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Create entry / edit entry fields</td>
+<td>Any authenticated user (UI helper <code>canCreateEntry</code> requires ≥1 role)</td>
+</tr>
+<tr>
+<td>Claim to write</td>
+<td>Anyone, on <code>writer_needed</code> entries; <strong>auto-approved</strong> for manager/admin/eic/operations, else pending</td>
+</tr>
+<tr>
+<td>Approve/deny writer claims; approve/deny archive requests; bulk operations</td>
+<td>isManagerPlus</td>
+</tr>
+<tr>
+<td>Submit content</td>
+<td>The entry's <strong>primary author only</strong>, and only when required checklist items are complete</td>
+</tr>
+<tr>
+<td>Send to polishing / claim edit / mark edited</td>
+<td>editor, manager, admin, eic, operations (<code>canEditorAct</code>); mark-edited additionally gated on all graphics submitted</td>
+</tr>
+<tr>
+<td>Toggle a checklist item</td>
+<td>Primary author, an entry editor, or admin/eic/operations</td>
+</tr>
+<tr>
+<td>Tier CRUD, checklist-template CRUD, template CRUD, season activation, WP sync status, user import, role editing, can_publish flag</td>
+<td>isAdminPlus</td>
+</tr>
+<tr>
+<td>Archive directly (skip request queue)</td>
+<td>isAdminPlus</td>
+</tr>
+<tr>
+<td>Unarchive (Archive page UI + bulk <code>unarchive</code>)</td>
+<td>UI restricts to eic/operations; the underlying bulk API accepts isManagerPlus</td>
+</tr>
+<tr>
+<td>Edit a comment</td>
+<td>Comment author only</td>
+</tr>
+<tr>
+<td>Delete a comment</td>
+<td>admin/eic/operations</td>
+</tr>
+<tr>
+<td>Graphics: claim/unclaim/upload/submit/flag</td>
+<td>Any authenticated user per-card rules (§13.4); delete = creator or admin/eic/operations</td>
+</tr>
+<tr>
+<td>Analytics pages &amp; APIs</td>
+<td>canViewAnalytics (eic/operations)</td>
+</tr>
+<tr>
+<td>GA4 connect/sync/backfill, Raptive upload, historical import</td>
+<td>isOperations</td>
+</tr>
+<tr>
+<td>Editing Queue page</td>
+<td>editor/manager/admin/eic/operations</td>
+</tr>
+<tr>
+<td>Per-entry Analytics tab in the detail panel</td>
+<td>admin/eic/operations (<strong>inconsistency:</strong> plain <code>admin</code> sees this mini view despite being excluded from <code>canViewAnalytics</code> — see §22)</td>
+</tr>
+<tr>
+<td>Team edit / membership management</td>
+<td>isAdminPlus OR that team's manager</td>
+</tr>
+<tr>
+<td>Cron endpoints</td>
+<td><code>Authorization: Bearer CRON_SECRET</code>; most also accept a logged-in Admin+ session (exceptions: <code>deadline-reminders</code> and <code>season-switch</code> accept the secret only)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-environment-configuration">5. Environment &amp; configuration</h2>
+<p><code>src/lib/env.ts</code> validates all env vars with zod at server module load and throws on failure (treeified error). <code>.env.example</code> documents every variable.</p>
+<p><strong>Required:</strong> <code>NEXT_PUBLIC_SUPABASE_URL</code> (URL), <code>SUPABASE_SERVICE_ROLE_KEY</code>, <code>JWT_SECRET</code> (≥32 chars), <code>JWT_REFRESH_SECRET</code> (≥32), <code>WP_PL_URL</code> (URL; default example <code>https://pitcherlist.com</code>), <code>WP_PL_USERNAME</code>, <code>WP_PL_APP_PASSWORD</code>, <code>NEXT_PUBLIC_APP_URL</code> (URL), <code>CRON_SECRET</code> (≥16).</p>
+<p><strong>Optional:</strong> <code>WP_QB_URL</code>, <code>WP_QB_USERNAME</code>, <code>WP_QB_APP_PASSWORD</code> (QB List); <code>DISCORD_BOT_TOKEN</code>, <code>DISCORD_GUILD_ID</code> (planned Discord DMs); <code>RESEND_API_KEY</code>, <code>EMAIL_FROM</code> (planned email); <code>GA4_CLIENT_ID</code>, <code>GA4_CLIENT_SECRET</code>, <code>GA4_PROPERTY_ID</code> (GA4 OAuth; redirect URI is <code>${NEXT_PUBLIC_APP_URL}/api/ga4/callback</code>).</p>
+<p><code>next.config.ts</code> allowlists remote images from <code>*.supabase.co/storage/v1/object/public/**</code>, <code>pitcherlist.com</code>, <code>*.pitcherlist.com</code>, and gravatar hosts (user-uploaded graphics render with <code>unoptimized</code>). POLISH.md notes <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> should be dropped from env if unused (it is not referenced anywhere in <code>src/</code>).</p>
+<hr />
+<h2 id="6-database-schema">6. Database schema</h2>
+<p>Eleven migrations. <strong>29 tables</strong>, all in <code>public</code>. All enums are TEXT CHECK constraints. <code>pgcrypto</code> provides <code>gen_random_uuid()</code>. A shared trigger <code>set_updated_at()</code> maintains <code>updated_at</code> on users, teams, recurring_templates, entries, graphic_requests, comments, global_settings.</p>
+<h3 id="61-tables-columns-abridged-to-the-semantically-meaningful-all-have-id-uuid-pk-default-gen_random_uuid-and-created_at-unless-noted">6.1 Tables (columns abridged to the semantically meaningful; all have <code>id UUID PK default gen_random_uuid()</code> and <code>created_at</code> unless noted)</h3>
+<p><strong>Identity &amp; access</strong>
+- <strong>users</strong> — wp_user_id INT, wp_site (pl/qb/both), email (nullable since 0009, no unique constraint), display_name, avatar_url, bio, discord_id, twitter_handle, bluesky_handle, timezone (default <code>America/New_York</code>), theme (dark/light, default dark), auto_approve_drafts bool, can_publish bool, onboarding_completed bool, display_name_override bool (0009), last_wp_sync, updated_at.
+- <strong>user_roles</strong> — user_id FK cascade, role (7-value CHECK), site (pl/qb/both), UNIQUE(user_id, role, site).
+- <strong>teams</strong> — name, manager_id FK users, site, description (0003), updated_at.
+- <strong>team_members</strong> — team_id FK cascade, user_id FK cascade, is_primary (0003; partial unique index: at most one primary team per user), UNIQUE(team_id, user_id).
+- <strong>sessions</strong> — user_id FK cascade, token_hash, refresh_token_hash (SHA-256 hex), expires_at.</p>
+<p><strong>Content pipeline</strong>
+- <strong>tiers</strong> — name, label, sort_order.
+- <strong>categories</strong> — site (pl/qb), wp_category_id, name, is_active, synced_at.
+- <strong>season_modes</strong> — name, is_active, auto_switch_start DATE, auto_switch_end DATE.
+- <strong>checklist_items</strong> — tier_id FK cascade, label, sort_order, is_required (default true).
+- <strong>recurring_templates</strong> — title_pattern, site (pl/qb), tier_id, category_id, default_publish_time TIME, assigned_user_id, description_template, season_mode_id (NOT NULL), schedule_rule JSONB, is_active, updated_at. Satellites: <strong>recurring_template_roles</strong> (role writer/editor/graphics, UNIQUE(template,role)), <strong>recurring_template_checklist</strong> (UNIQUE(template,item)).
+- <strong>entries</strong> — the core table. title, description, site (pl/qb), tier_id, priority bool, publish_date TIMESTAMPTZ, publish_date_precision (exact/loose_date/loose_time/none), category_id, series_id FK recurring_templates, wp_post_id INT, wp_post_url (public permalink; admin-URL values purged by 0010), <strong>content_status</strong> (writer_needed/claim_requested/claimed/submitted/polishing + published for historical imports, 0010), <strong>editor_status</strong> (none/ready_for_edit/edited/scheduled + published, 0004/0010), is_archived, archive_reason, created_by, word_count, recent_activity JSONB (cap-10 event cache), wp_status (raw WP mirror, 0004), wp_modified_at (0004), published_at (0004), <strong>is_drafted</strong> (0006 — WP-discovered draft awaiting author approval), <strong>is_historical</strong> (0010 — back-imported post excluded from the active pipeline), updated_at.
+- <strong>entry_authors</strong> — entry_id FK cascade, user_id, role (primary/co_author), UNIQUE(entry,user).
+- <strong>entry_editors</strong> — entry_id FK cascade, user_id, claimed_at, UNIQUE(entry,user).
+- <strong>entry_checklist</strong> — entry_id FK cascade, checklist_item_id, is_completed, completed_by, completed_at, UNIQUE(entry,item).
+- <strong>claims</strong> — entry_id FK cascade, user_id, role_type (writer/editor/graphic), status (pending/approved/denied), approved_by, resolved_at.
+- <strong>archive_requests</strong> — entry_id FK cascade, requested_by, reason, status (pending/approved/denied), resolved_by, resolved_at.
+- <strong>graphic_requests</strong> — entry_id FK cascade, title, description, urgency_date, graphic_status (needed/claimed/submitted/flagged), claimed_by, file_url, flag_reason, updated_at; +0005: created_by, wp_media_id, file_name, file_size, mime_type, <strong>storage_path</strong> (key inside the private bucket), is_featured.
+- <strong>comments</strong> — entry_id FK cascade, user_id, body, parent_id (self-ref, two-level threading), mentions JSONB, updated_at.
+- <strong>audit_log</strong> — entry_id FK cascade, user_id, action (status_change/field_edit/claim/comment/archive/graphic_update/checklist/assignment/created/scheduled), field_name, old_value, new_value.
+- <strong>file_attachments</strong> — entry_id FK cascade, uploaded_by, file_url, file_name, file_size, mime_type. <strong>Schema-only: no code reads or writes this table.</strong></p>
+<p><strong>Notifications &amp; settings</strong>
+- <strong>notifications</strong> — user_id FK cascade, entry_id FK SET NULL, type (15-value CHECK, §14.1), title, body, is_read, discord_sent, email_sent. Partial index on (user_id, is_read) WHERE unread.
+- <strong>notification_preferences</strong> — user_id FK cascade, event_type, discord_enabled/email_enabled/in_app_enabled (all default true), UNIQUE(user,event_type).
+- <strong>global_settings</strong> — key UNIQUE, value JSONB, updated_at. Seeded: <code>deadline_reminder_hours=24</code>, <code>wp_poll_frequency_minutes=5</code>, <code>default_theme="dark"</code>, <code>unclaimed_alert_hours=12</code>. Also used as the KV store for GA4 tokens (<code>ga4_refresh_token</code>, <code>ga4_access_token</code>, <code>ga4_access_expires</code>, <code>ga4_property_id</code>, <code>ga4_last_synced_at</code>) and WP sync watermarks (<code>wp_last_sync_pl</code>, <code>wp_last_sync_qb</code>).</p>
+<p><strong>Analytics</strong>
+- <strong>article_analytics</strong> — entry_id FK cascade, date, pageviews, sessions, avg_time_on_page REAL, new_users, returning_users (both always written 0 by the GA4 sync), synced_at, UNIQUE(entry_id, date).
+- <strong>raptive_revenue</strong> — entry_id FK SET NULL (nullable — unmatched rows import anyway), date, page_url, earnings DECIMAL(10,4), rpm, page_rpm, sessions, pageviews, synced_at.
+- <strong>raptive_uploads</strong> — uploaded_by, file_name, date_range_start/end, rows_imported.
+- <strong>saved_table_views</strong> — user_id FK cascade, name, filters JSONB, sort JSONB, columns JSONB, grouping, is_default.</p>
+<p>Performance indexes (0001): partial indexes on entries by (site,tier), publish_date, content_status, editor_status (all <code>WHERE is_archived=false</code>), series_id, plus author/graphic-status/pending-claims/comments/audit/sessions/users(wp) indexes; later migrations add wp_post_id, is_drafted, is_historical partials.</p>
+<h3 id="62-migration-timeline-what-changed-and-why-from-migration-header-comments">6.2 Migration timeline (what changed and why — from migration header comments)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0001</td>
+<td>All 29 tables, indexes, <code>set_updated_at()</code> triggers. RLS intentionally NOT enabled; authorization is enforced in Next.js route handlers using the service-role key.</td>
+</tr>
+<tr>
+<td>0002</td>
+<td>Idempotent seeds: 4 tiers, 3 season modes, 4 global settings, per-tier default checklist items (S: Topic approved / Outline drafted / Featured image selected / SEO review complete; A: Player names verified / Stats current / Featured image loaded / Tooltips used / Twitter auto-post format correct; B: Data refreshed / Rankings consistent with prior week / Featured image loaded / Tooltips used; C: Draft review / Featured image loaded).</td>
+</tr>
+<tr>
+<td>0003</td>
+<td>Team model per Nick: <code>team_members.is_primary</code> + partial unique (one primary team per user), <code>teams.description</code>, membership indexes.</td>
+</tr>
+<tr>
+<td>0004</td>
+<td>WP-driven scheduling: editor_status gains <code>published</code>; entries gain <code>wp_status</code>, <code>wp_modified_at</code>, <code>published_at</code>. <code>scheduled</code>/<code>published</code> are set ONLY when WP reports <code>future</code>/<code>publish</code>.</td>
+</tr>
+<tr>
+<td>0005</td>
+<td>Graphics metadata: created_by, wp_media_id, file_name/size/mime, <code>storage_path</code>, <code>is_featured</code>.</td>
+</tr>
+<tr>
+<td>0006</td>
+<td><code>entries.is_drafted</code> — WP-discovered drafts hidden from the main table until the author approves (or auto-approved via <code>users.auto_approve_drafts</code>).</td>
+</tr>
+<tr>
+<td>0007</td>
+<td><strong>Security:</strong> enable + FORCE RLS on all 29 tables with <strong>zero permissive policies</strong> (default-deny), and <code>REVOKE ALL … FROM anon, authenticated</code>. Service-role bypasses RLS. Response to Supabase linter <code>rls_disabled_in_public</code> on all 29 tables.</td>
+</tr>
+<tr>
+<td>0008</td>
+<td><strong>Private graphics bucket:</strong> <code>UPDATE storage.buckets SET public=false WHERE id='graphics'</code>. Reads switch to 1-hour signed URLs; stored <code>file_url</code> values are dead and are overwritten on every read (§13.2).</td>
+</tr>
+<tr>
+<td>0009</td>
+<td><code>users.display_name_override</code> (protects admin edits from the WP profile-sync cron); email becomes nullable; clears <code>@example.com</code> placeholders.</td>
+</tr>
+<tr>
+<td>0010</td>
+<td><code>wp_post_url</code> fix: purge admin-edit URLs (broke GA4/Raptive URL joins); add <code>is_historical</code>; extend content_status and editor_status CHECKs to allow <code>published</code>.</td>
+</tr>
+<tr>
+<td>0011</td>
+<td><code>get_analytics_overview()</code> SQL RPC — pushes the entries × article_analytics × raptive_revenue join into Postgres to avoid PostgREST URL-length limits.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="63-security-model-three-layers">6.3 Security model (three layers)</h3>
+<ol>
+<li><strong>Application layer (primary):</strong> every route handler authenticates via signed JWT cookie and applies role predicates. All DB access uses the service-role key from <code>src/lib/supabase/admin.ts</code> (<code>server-only</code>, singleton, <code>autoRefreshToken:false, persistSession:false</code>).</li>
+<li><strong>Database layer (backstop):</strong> RLS enabled and FORCED on all 29 tables with no permissive policies, plus REVOKE from <code>anon</code>/<code>authenticated</code> — direct PostgREST access with the anon key returns empty/401/403. (POLISH.md still lists "live curl test against anon key after deploy" as an open verification item.)</li>
+<li><strong>Storage layer:</strong> the <code>graphics</code> bucket is private; files are only reachable through server-generated signed URLs with a 1-hour TTL (§13.2).</li>
+</ol>
+<hr />
+<h2 id="7-authentication-sessions">7. Authentication &amp; sessions</h2>
+<p>There are no local passwords. <strong>WordPress is the identity provider</strong> via <a href="https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/">application passwords</a> and REST Basic auth.</p>
+<h3 id="71-login-flow-post-apiauthlogin-performlogin-in-srclibauthlogints">7.1 Login flow (<code>POST /api/auth/login</code> → <code>performLogin</code> in <code>src/lib/auth/login.ts</code>)</h3>
+<ol>
+<li><code>validateWpAnywhere(username, password)</code> (<code>src/lib/auth/wordpress.ts</code>) — tries <strong>PL first</strong>, and on <code>invalid_credentials</code> falls through to <strong>QB</strong>. Validation = <code>GET {site}/wp-json/wp/v2/users/me?context=edit</code> with <code>Basic base64(user:pass)</code> (whitespace stripped from the app password). Errors map to HTTP: invalid_credentials→401, network→502, not_configured/unexpected→500.</li>
+<li><code>upsertUserFromWp</code> — matches the existing <code>users</code> row <strong>by email</strong> (the stable cross-site identifier). Existing: updates wp_site (bumps to <code>both</code> when logging in from the other site), display_name, avatar_url, bio, last_wp_sync. New: inserts the user and seeds one role via <code>wpRoleToDashboardRole</code> (WP administrator→admin, editor/author→editor, else writer — deliberately conservative; escalation is manual in Settings).</li>
+<li>Creates a <code>sessions</code> row, then a token pair bound to the real session id (the first pair uses a placeholder sid and is immediately replaced), stores SHA-256 hashes of both tokens on the row, and sets cookies.</li>
+</ol>
+<h3 id="72-tokens-cookies-srclibauthsessionts">7.2 Tokens &amp; cookies (<code>src/lib/auth/session.ts</code>)</h3>
+<ul>
+<li>Access token: JWT <code>{sub: user_id, sid: session_id, kind:"access"}</code>, signed with <code>JWT_SECRET</code>, <strong>15 minutes</strong>, cookie <code>pl_at</code>.</li>
+<li>Refresh token: <code>kind:"refresh"</code>, signed with <code>JWT_REFRESH_SECRET</code>, <strong>7 days</strong>, cookie <code>pl_rt</code>.</li>
+<li>Both cookies HttpOnly, SameSite=Lax, path=/, <code>secure</code> in production. Issuer <code>pl-staff-dashboard</code>.</li>
+<li><code>POST /api/auth/refresh</code> rotates: verifies the refresh JWT, requires a <code>sessions</code> row matching both <code>sid</code> and the refresh-token hash (making a stolen refresh token single-use), checks expiry, mints a new pair, updates hashes in place, resets cookies.</li>
+<li><code>POST /api/auth/logout</code> best-effort deletes the session row and clears cookies. <code>GET /api/auth/me</code> returns the current user or 401.</li>
+<li><code>getCurrentUser()</code> (<code>src/lib/auth/current-user.ts</code>) is the canonical server-side identity: verifies the access cookie's signature and loads the user + roles. Note: it does <strong>not</strong> consult the <code>sessions</code> table — revocation only bites at refresh time (≤15 min window).</li>
+</ul>
+<hr />
+<h2 id="8-users-staff-directory-and-teams">8. Users, staff directory, and teams</h2>
+<h3 id="81-user-management">8.1 User management</h3>
+<ul>
+<li><code>listUsers</code> (<code>src/lib/users/queries.ts</code>) powers <code>/staff</code> and Settings: paginated (default 50, max 200), search on display_name/email, site filter, with roles and team memberships stitched from batched queries; role/team filters applied in memory after pagination.</li>
+<li>Admin+ can: <strong>import</strong> a WP user by ID or username (<code>POST /api/users/import</code>; staff-only — WP roles administrator/editor/author), <strong>edit</strong> any user (display name, wp_site, can_publish, full role set with per-site rows, primary team) via <code>EditUserDialog</code> → <code>PATCH /api/users/[id]</code>, toggle <code>can_publish</code> inline, and <strong>re-sync</strong> a user from WP.</li>
+<li>Users self-edit their profile in Settings (<code>profile-form.tsx</code> → same PATCH): bio, twitter/bluesky handles (validated), discord_id (numeric), timezone, theme, auto_approve_drafts. Admin-only fields (<code>wp_site, can_publish, roles, team_id</code>) are rejected with 403 for non-admins.</li>
+<li>Setting <code>display_name</code> through the update path flips <strong><code>display_name_override=true</code></strong>, which the profile-sync cron honors (it then syncs only bio/avatar). <strong>Known gap:</strong> the manual <code>resyncUserFromWp</code> helper does <em>not</em> honor the flag and overwrites display_name (§22).</li>
+<li><code>GET /api/users/[id]</code> sanitizes: email, discord_id, theme, can_publish, onboarding_completed, auto_approve_drafts are visible only to self or Admin+.</li>
+</ul>
+<h3 id="82-staff-directory-staff-staffid">8.2 Staff directory (<code>/staff</code>, <code>/staff/[id]</code>)</h3>
+<p>Grid of <code>StaffCard</code>s (avatar, name, site badge, primary team + manager, bio clamp, role badges) with URL-driven filters (debounced search, role, site, team) and a skeleton <code>loading.tsx</code>. The profile page shows identity, socials, timezone, and all team memberships; private fields gated to self/Admin+.</p>
+<h3 id="83-teams">8.3 Teams</h3>
+<p>Teams have one <strong>manager</strong> (<code>teams.manager_id</code>) and members with an <strong>is_primary</strong> flag (at most one primary team per user, DB-enforced). Model comment (0003): writers have a single main manager plus secondary category memberships under different managers. CRUD: Admin+ creates/deletes teams; Admin+ <strong>or the team's own manager</strong> edits details and manages members (non-admin managers cannot reassign <code>manager_id</code>). The Settings panel is a master/detail with add/remove/make-primary member actions; eligible managers are filtered client-side to editor/manager/admin/eic/operations.</p>
+<hr />
+<h2 id="9-the-entry-workflow-core-state-machine">9. The entry workflow (core state machine)</h2>
+<p>Defined in <code>src/lib/entries/status-transitions.ts</code>. Three parallel tracks per entry:</p>
+<pre><code>CONTENT (staff-driven):
+  writer_needed → claim_requested → claimed → submitted ⇄ polishing
+       ↑ (deny claim)                  (auto-approve skips claim_requested)
+
+EDITOR (staff-driven to &quot;edited&quot;, WordPress-driven after):
+  none → ready_for_edit → edited → scheduled → published
+         (auto on submit)  (gated)   (WP `future`) (WP `publish`)
+
+GRAPHICS (per graphic request, §13):
+  needed → claimed → submitted ; flagged ⇄ (claimed|needed)
+</code></pre>
+<p><strong>Transitions, exactly as enforced:</strong></p>
+<ul>
+<li><strong><code>submitContent</code></strong> — from <code>claimed</code> or <code>polishing</code>; caller must be the primary author; <strong>gate 1:</strong> <code>findMissingRequiredItems</code> must return empty (every required checklist item checked) else <code>gate_blocked</code> listing missing labels. Side effects: editor_status <code>none→ready_for_edit</code>, audit rows, recent-activity, <code>triggerContentSubmitted</code> (notifies editor+).</li>
+<li><strong><code>sendToPolishing</code></strong> — from <code>submitted</code> only, <code>canEditorAct</code> roles, requires a non-empty reason. The route also posts a system comment (bold <strong>"Polishing request"</strong> header) and notifies the authors.</li>
+<li><strong><code>claimEdit</code></strong> — <code>canEditorAct</code>, only when <code>ready_for_edit</code>; inserts into <code>entry_editors</code> (idempotent by unique constraint); does not change editor_status.</li>
+<li><strong><code>markEdited</code></strong> — <code>canEditorAct</code>; requires content_status <code>submitted</code> (gate) AND <strong>gate 2:</strong> every <code>graphic_request</code> on the entry has <code>graphic_status="submitted"</code> (or there are none) else <code>gate_blocked</code> with flagged/pending counts. Idempotent when already <code>edited</code>.</li>
+<li><strong><code>applyWpStateToEntry</code></strong> — the only path to <code>scheduled</code>/<code>published</code>. Called from WP sync/refresh; maps WP <code>future</code>→scheduled (unless already published), <code>publish</code>→published (forward-only), records wp_status/wp_modified_at/published_at, audits as "(via WP sync)", fires <code>triggerEntryScheduled</code>/<code>triggerEntryPublished</code> to the authors.</li>
+</ul>
+<p>Error taxonomy → HTTP: <code>not_found</code>→404, <code>forbidden</code>→403, <code>invalid_transition</code>/<code>gate_blocked</code>→409, <code>db_error</code>→500.</p>
+<h3 id="91-entry-creation-paths">9.1 Entry creation paths</h3>
+<ol>
+<li><strong>Manual</strong> (<code>CreateEntryDialog</code> → <code>POST /api/entries</code>): title, brief, site, tier, category (auto-filtered by site), publish date + precision, priority. Seeds the tier's checklist into <code>entry_checklist</code>. Optional assignees: first becomes primary author and content_status starts at <code>claimed</code>.</li>
+<li><strong>Bulk</strong> (<code>BulkCreateEntryDialog</code>): shared site/tier/precision/default-category + up to 25 per-row title/date/category rows; fires N parallel <code>POST /api/entries</code> via <code>Promise.allSettled</code> (no dedicated bulk-create endpoint, by design — reuses validation and audit) and reports per-row failures.</li>
+<li><strong>Recurring templates</strong> (§15): daily cron materializes the next 14 days.</li>
+<li><strong>WordPress draft pickup</strong> (§16.2): the 5-minute sync creates <code>is_drafted</code> entries for drafts started directly in WP.</li>
+<li><strong>Historical import</strong> (§17.7): back-imports published WP posts as <code>is_historical</code> entries.</li>
+</ol>
+<h3 id="92-claims-writer-track">9.2 Claims (writer track)</h3>
+<p><code>createClaim</code> (<code>src/lib/claims/data.ts</code>): writer-type only (editors use claimEdit; graphics use graphic requests), entry must be <code>writer_needed</code>. Senior roles (manager/admin/eic/operations) are <strong>auto-approved</strong> and the entry jumps straight to <code>claimed</code>; everyone else creates a pending claim, the entry shows <code>claim_requested</code>, and managers are notified. <strong>Approval</strong> inserts the primary <code>entry_authors</code> row, flips to <code>claimed</code>, and — critically — calls <code>createWpDraftForEntry</code> to create the linked WordPress draft (best-effort; failures audited as <code>wp_draft_create_error</code>). <strong>Denial</strong> reverts to <code>writer_needed</code>. Managers see all pending claims (<code>listPendingClaims</code>; team-based routing is documented as deferred) in the home-page Manager Inbox.</p>
+<h3 id="93-checklists">9.3 Checklists</h3>
+<p><code>checklist_items</code> are per-tier templates (label, sort_order, is_required) with Admin+ CRUD in Settings (tier is locked on edit — move = delete + recreate). Entries snapshot the tier's items at creation into <code>entry_checklist</code>. Toggling (<code>PATCH /api/entries/[id]/checklist/[itemId]</code>) is allowed for the primary author, entry editors, or admin/eic/operations, records who/when, and audits. Required items gate submission (§9, gate 1).</p>
+<h3 id="94-comments-mentions">9.4 Comments &amp; mentions</h3>
+<p>Two-level threaded comments per entry. <code>@mention</code> parsing: regex <code>@([A-Z][A-Za-z0-9'.-]*(?:\s[A-Z][A-Za-z0-9'.-]*){0,2})</code> (capitalized, up to 3 tokens), resolved against up to 500 users in 3 passes (exact → startsWith → first-name); unresolved mentions are silently dropped; resolved ones are stored on the comment and trigger <code>mention</code> notifications. The composer has full keyboard-driven autocomplete (lazy staff load, Cmd/Ctrl+Enter submit). Edit = author only; delete = admin/eic/operations, hard-delete with confirm. System comments (polishing) store <code>**Label**\n\n</code> and render an amber header. All comment activity audits and appends to <code>recent_activity</code>.</p>
+<h3 id="95-archive-archive-requests">9.5 Archive &amp; archive requests</h3>
+<p>Entries are never hard-deleted (no DELETE route exists). <code>POST /api/entries/[id]/archive</code> with a reason: Admin+ archives directly; everyone else creates an <code>archive_requests</code> row (managers notified, approve/deny in Manager Inbox; approval sets <code>is_archived</code> + reason). Bulk archive/unarchive exists for isManagerPlus. The <code>/archive</code> page (§19) lists archived entries (unarchive button shown only to eic/operations) and, on a second tab, historical imports.</p>
+<h3 id="96-bulk-operations-post-apientriesbulk-ismanagerplus">9.6 Bulk operations (<code>POST /api/entries/bulk</code>, isManagerPlus)</h3>
+<p>Actions on 1–200 entry ids: <code>archive</code> (reason defaults "Bulk archived"), <code>unarchive</code>, <code>set_priority</code>, <code>change_tier</code>. One bulk UPDATE + per-entry audit rows. Status-changing bulk actions are deliberately unsupported (per source comment: they'd need per-entry validation, notifications, and WP side effects).</p>
+<h3 id="97-audit-recent-activity">9.7 Audit &amp; recent activity</h3>
+<p><code>audit_log</code> accumulates every mutation (10 action kinds); <code>GET /api/entries/[id]/audit</code> returns the latest 200 with actor names for the detail panel's timeline. <code>entries.recent_activity</code> is a denormalized newest-first JSONB cache (max 10) written fire-and-forget for cheap display in lists/widgets.</p>
+<hr />
+<h2 id="10-saved-views">10. Saved views</h2>
+<p><code>saved_table_views</code> stores per-user named filter/sort/column/grouping presets for the content table, with a single <code>is_default</code> (cleared on set). CRUD via <code>/api/views</code> (owner-scoped). The content table's toolbar popover applies/saves (via <code>window.prompt</code>)/sets-default/deletes views, and the default view auto-applies on mount.</p>
+<hr />
+<h2 id="11-pages-navigation">11. Pages &amp; navigation</h2>
+<p>Nav (<code>src/components/layout/nav-config.ts</code>, in order): Home <code>/home</code>, Content Table <code>/content</code>, Calendar <code>/calendar</code>, My Tasks <code>/my-tasks</code>, Editing Queue <code>/editing-queue</code> (editor+), Graphic Requests <code>/graphics</code>, Published Archive <code>/archive</code>, Analytics <code>/analytics</code> (eic/operations), Staff Directory <code>/staff</code>, Notifications <code>/notifications</code>, Settings <code>/settings</code>. Root <code>/</code> redirects to <code>/home</code> or <code>/login</code>; the <code>(app)/layout.tsx</code> shell enforces auth, renders sidebar (desktop) + header + onboarding tour.</p>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>What it shows (verified)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/home</code></td>
+<td>Role-tailored widget dashboard (§12).</td>
+</tr>
+<tr>
+<td><code>/content</code></td>
+<td>The pipeline table (§11.1) + create/bulk-create dialogs. Header: <em>"The pipeline. Every article, every tier, every status in one table."</em></td>
+</tr>
+<tr>
+<td><code>/calendar</code></td>
+<td>FullCalendar month/week/agenda of entries with publish dates (server preload −30/+90 days, limit 500; client refetch on site/tier filter). Tier colors: S=amber, A=cyan, B=violet, C=gray. All-day unless precision exact/loose_time. Click → <code>/content?entry=ID</code>. Separate "Unscheduled" list (top 10).</td>
+</tr>
+<tr>
+<td><code>/my-tasks</code></td>
+<td>Two parallel lists: my writing (<code>authorId=me</code>, status claimed/polishing) and my editing (<code>editorId=me</code>, ready_for_edit/edited), plus an 8-item upcoming-deadlines rail with overdue/due-soon coloring and checklist progress.</td>
+</tr>
+<tr>
+<td><code>/editing-queue</code></td>
+<td>Editor+ only (redirects home otherwise). Entries with editor_status ready_for_edit/edited, publish-date ascending, with author/tier/status columns, overdue red / due-in-24h amber, and editor avatars or "Unclaimed".</td>
+</tr>
+<tr>
+<td><code>/graphics</code></td>
+<td>Card grid + kanban of graphic requests (§13.4) with status tallies, search, status/site filters.</td>
+</tr>
+<tr>
+<td><code>/archive</code></td>
+<td>Client page, two server-paginated tabs (page size 50): <strong>Archived</strong> (with reason; unarchive for eic/ops) and <strong>Historical imports</strong> (with WP permalink links). Site filter + debounced search per tab.</td>
+</tr>
+<tr>
+<td><code>/analytics</code></td>
+<td>EIC/Ops only, 4 tabs (§17.5).</td>
+</tr>
+<tr>
+<td><code>/staff</code>, <code>/staff/[id]</code></td>
+<td>Directory + profile (§8.2).</td>
+</tr>
+<tr>
+<td><code>/notifications</code></td>
+<td>Full notification list: type filter (15 types), unread-only toggle, mark all/one read, Discord/email sent markers.</td>
+</tr>
+<tr>
+<td><code>/settings</code></td>
+<td>Tabbed hub: Profile + Notification prefs (everyone); Users, Teams, Templates, Season, Tiers+Checklists, Sync panels (Admin+); Analytics panel (EIC/Ops, with Operations-only connect/upload controls).</td>
+</tr>
+<tr>
+<td><code>/login</code></td>
+<td>WordPress-credential form over the mesh-gradient brand background.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="111-the-content-table-entriestable">11.1 The content table (<code>EntriesTable</code>)</h3>
+<p>TanStack-table client component. 12 columns (8 visible by default: title, authors, content/editor/graphic status, tier, site, publish date; hidden: category, checklist progress, word count, updated). URL-less local filter state (search, site, tier, content/editor status, priority, include-archived, sort) debounced 200ms against <code>GET /api/entries?limit=100</code>. Rows expand inline into the <strong>entry detail panel</strong>; <code>writer_needed</code> rows get an amber highlight; selection checkboxes drive the bulk-action bar; mobile renders cards instead (bounded <code>max-h-[70vh]</code> scroll with sticky header on desktop — full virtualization was skipped because expandable rows break uniform row height, per POLISH.md).</p>
+<h3 id="112-the-entry-detail-panel-entrydetailpanel">11.2 The entry detail panel (<code>EntryDetailPanel</code>)</h3>
+<p>Fetches the entry, its graphic requests, and <code>/api/auth/me</code>; computes <code>isAuthor</code>/<code>isEditorLike</code>/<code>isAdminLike</code> capabilities. Context-sensitive action buttons (Claim to write / Submit — disabled with a tooltip listing missing checklist items / Send to polishing (reason dialog) / Claim edit / Mark edited / Archive (reason dialog)), "Edit in WordPress" permalink link and a per-entry "Refresh WP" button. Four tabs: <strong>Pipeline</strong> (three-track status summary, brief, interactive checklist, graphics cards), <strong>Comments</strong> (thread), <strong>Audit</strong> (timeline), <strong>Analytics</strong> (admin/eic/ops: 30-day pageviews/sessions/revenue/RPM pulled from the articles API).</p>
+<hr />
+<h2 id="12-home-dashboards-role-tailored">12. Home dashboards (role-tailored)</h2>
+<p><code>/home</code> runs up to 15 read-only fetchers in one <code>Promise.all</code>, gated by role fit (<code>src/lib/home/widgets.ts</code>, server-only):</p>
+<ul>
+<li><strong>Manager+</strong>: <strong>Manager Inbox</strong> — pending writer claims and archive requests with inline Approve/Deny.</li>
+<li><strong>EIC/Ops row</strong>: Pipeline Health (6 count tiles: writer needed / claimed / ready for edit / polishing / scheduled / published-7d, each linking to a filtered view, plus amber warnings for gate-blocked and drafted counts); Analytics Mini (7-day pageviews + revenue with a recharts sparkline; gated by <code>canViewAnalytics</code>); WP Sync Health (PL/QB last-sync freshness badges).</li>
+<li><strong>Writer row</strong> (writers and above): My Active Claims (overdue-flagged), My Upcoming Deadlines, My Submitted (in editing), My Drafts To Approve (WP pickups), and Open Writer Slots (pure writers see it here; multi-role writers see it in a bottom row).</li>
+<li><strong>Editor row</strong>: Editing Queue preview + My Active Edits.</li>
+<li><strong>Graphics row</strong>: Open Graphic Requests + My Graphics In Progress.</li>
+<li><strong>Stale Entries</strong> for EIC/Ops.</li>
+</ul>
+<p>All widgets share <code>WidgetShell</code> (icon, title, count badge, "View all" link) and the compact <code>EntryList</code> row (priority star, site badge, tier, date with overdue warning).</p>
+<hr />
+<h2 id="13-graphics-subsystem-including-the-file-vault">13. Graphics subsystem — including the file "vault"</h2>
+<h3 id="131-a-note-on-the-word-vault">13.1 A note on the word "vault"</h3>
+<p><strong>The term "vault" does not appear anywhere in this codebase</strong> — not in code, comments, migrations, docs, or commit messages (verified by repository-wide search). What the project <em>does</em> have is a locked-down private file store for graphics that functions like a vault, described below, plus the default-deny RLS posture (§6.3) and the Published Archive (§9.5). This spec documents the storage system factually; if "vault" refers to something else planned or discussed outside this repository, it is not represented in the code today.</p>
+<h3 id="132-the-private-storage-bucket-signed-url-system-srclibgraphicsstoragets">13.2 The private storage bucket &amp; signed-URL system (<code>src/lib/graphics/storage.ts</code>)</h3>
+<ul>
+<li><strong>Bucket:</strong> Supabase Storage bucket <code>graphics</code>, made <strong>private</strong> in migration 0008 (<code>public=false</code>). Rationale from the migration: table RLS (0007) is a separate trust boundary from Storage — a public bucket let anyone who guessed a path hotlink files.</li>
+<li><strong>Writes:</strong> server-side only, via the service-role client. Path convention <code>{entryId}/{Date.now()}-{sanitizedFilename}</code>; filename sanitization strips directories, NFKD-normalizes, removes non <code>[a-zA-Z0-9._-]</code>, truncates to 120 chars. Constraints: max <strong>10 MB</strong>, MIME allowlist png/jpeg/jpg/webp/gif, <code>cacheControl</code> 1 year, no upsert.</li>
+<li><strong>Reads:</strong> every read regenerates a <strong>signed URL with a 1-hour TTL</strong> (<code>SIGNED_URL_TTL_SECONDS = 3600</code>). <code>getSignedGraphicUrl</code> (single) and <code>getSignedGraphicUrls</code> (batch, one round-trip for lists). The persisted <code>graphic_requests.file_url</code> column is explicitly documented in code as <em>"useless on its own"</em> — <code>lib/graphics/data.ts</code> overwrites <code>file_url</code> with a fresh signed URL on <strong>every</strong> read (list and detail). Old public CDN URLs 403/400 by design.</li>
+<li>Also provided: <code>deleteStoredGraphic</code> (idempotent; called best-effort after request deletion and on re-upload), <code>downloadGraphicBytes</code> (feeds the WP media push).</li>
+</ul>
+<h3 id="133-request-lifecycle">13.3 Request lifecycle</h3>
+<p>Statuses: <code>needed → claimed → submitted</code>, with <code>flagged</code> as a repair loop. Data layer (<code>src/lib/graphics/data.ts</code>): create (anyone on the entry; notifies graphics staff), claim (from <code>needed</code> only), unclaim (claimer or admin/eic/ops), flag (requires a reason; notifies the claimer or the graphics team), unflag (back to <code>claimed</code> if still claimed else <code>needed</code>), edit, delete (creator or admin/eic/ops; returns the storage path so the route can clean up the file). Every action writes an audit row on the parent entry.</p>
+<p><strong>Submit</strong> (<code>src/lib/graphics/submit-flow.ts</code>, <code>POST /api/graphic-requests/[id]/submit</code>): requires an uploaded file and that the parent entry already has a <code>wp_post_id</code> (i.e. a writer claim was approved — the error message says exactly that). Steps: download bytes from Storage → <code>uploadMediaToWp</code> (raw-bytes POST to <code>/wp-json/wp/v2/media</code> with Content-Disposition) → <code>setFeaturedMedia</code> on the WP post → unfeature any other graphics on the entry → mark this request <code>submitted</code> + <code>is_featured</code> + <code>wp_media_id</code> → audit → notify the entry's creator and authors. WP failures audit as <code>wp_media_upload_error</code>/<code>wp_featured_set_error</code> and return 502.</p>
+<p><strong>Upload</strong> (<code>POST /api/graphic-requests/[id]/upload</code>): multipart, blocked once <code>submitted</code>, replaces the previous file (best-effort delete), stores path/name/size/mime plus a most-recent signed URL as a hint.</p>
+<h3 id="134-graphics-ui">13.4 Graphics UI</h3>
+<p><code>/graphics</code> offers a card grid and a <strong>@dnd-kit kanban</strong> with columns Needed / In Progress (claimed) / Submitted / Flagged. Drag rules are whitelisted: needed→claimed (claim), claimed→needed (unclaim), flagged→needed|claimed (unflag); everything else is blocked — the Submitted column is locked to the real submit flow, and flagging by drag is disabled because it requires a reason. Card capabilities: claim when needed; unclaim by the claimer; upload unless submitted; "Submit to WP" when claimed with a file; flag when claimed/submitted (reason dialog); unflag when flagged; delete by creator (unless submitted). Featured graphics show a star; thumbnails render the signed URL via <code>next/image</code> <code>unoptimized</code>.</p>
+<hr />
+<h2 id="14-notifications">14. Notifications</h2>
+<h3 id="141-event-types-15-matching-the-db-check">14.1 Event types (15, matching the DB CHECK)</h3>
+<p><code>new_claimable</code>, <code>claim_requested</code>, <code>claim_resolved</code>, <code>content_submitted</code>, <code>sent_to_polishing</code>, <code>graphic_requested</code>, <code>graphic_submitted</code>, <code>graphic_flagged</code>, <code>deadline_approaching</code>, <code>entry_scheduled</code>, <code>entry_published</code>, <code>mention</code>, <code>archive_requested</code>, <code>unclaimed_slot</code>, <code>priority_flagged</code>.</p>
+<p><strong>Note:</strong> no code path ever emits <code>new_claimable</code> or <code>priority_flagged</code> — the types exist in the schema, defaults, and UI filter, but no trigger fires them (§22).</p>
+<h3 id="142-channels-delivery">14.2 Channels &amp; delivery</h3>
+<p>Three channels per event: <strong>in-app</strong> (a <code>notifications</code> row — fully implemented), <strong>Discord DM</strong> and <strong>email (Resend)</strong> — both <strong>stubs</strong> in <code>src/lib/notifications/delivery.ts</code>: without tokens configured they log <code>[discord stub]</code>/<code>[email stub]</code> and report success; with tokens they log "unimplemented" warnings. The planned implementations (discord.js DM, Resend SDK) are named in comments and the packages are already in <code>package.json</code>. <code>dispatchNotification</code> resolves the recipient's per-event channel preferences (explicit row wins, else role defaults), inserts the in-app row, invokes the channel stubs, and flips <code>discord_sent</code>/<code>email_sent</code> flags. It never throws.</p>
+<h3 id="143-preferences-defaults-srclibnotificationsdefaultsts">14.3 Preferences &amp; defaults (<code>src/lib/notifications/defaults.ts</code>)</h3>
+<p>Role-based default matrices (writer ⊂ editor ⊂ manager ⊂ admin; graphics has its own; eic/operations reuse admin's) are OR-merged across a user's roles, then a floor forces <strong>in-app ON</strong> for directly-targeted events (<code>mention</code>, <code>claim_resolved</code>, <code>sent_to_polishing</code>, <code>graphic_flagged</code>) regardless of roles. The Settings panel renders the full 15×3 switch matrix grouped as "Your work / Pipeline / Scheduling / Admin" and saves the complete matrix (delete-and-reinsert).</p>
+<h3 id="144-surfaces">14.4 Surfaces</h3>
+<p>Header <strong>bell</strong> polls <code>/api/users/[id]/notifications?limit=10</code> every 30 s, badge caps at 99+, popover with mark-read and a link to <code>/notifications</code> (full page: filters, unread toggle, mark-all). Notification rows deep-link to <code>/content?entry={id}</code> (or a custom <code>actionPath</code> such as <code>/graphics</code>).</p>
+<h3 id="145-trigger-inventory-srclibnotificationstriggerts-all-best-effort-actor-always-excluded">14.5 Trigger inventory (<code>src/lib/notifications/trigger.ts</code> — all best-effort, actor always excluded)</h3>
+<p>mention → mentioned users; claim_requested → manager+; claim_resolved → the claimer; content_submitted → editor+; sent_to_polishing → entry authors; graphic_requested → graphics staff + admin/eic/ops; graphic_submitted → entry creator + authors; graphic_flagged → the claimer (else graphics team); archive_requested → manager+; entry_scheduled / entry_published → entry authors (fired from WP sync). <code>deadline_approaching</code> and <code>unclaimed_slot</code> are dispatched directly by their crons (§18).</p>
+<hr />
+<h2 id="15-recurring-templates-generation">15. Recurring templates &amp; generation</h2>
+<p>Templates define: <code>title_pattern</code> with tokens <code>{date}</code>, <code>{month}</code>, <code>{week}</code> (week-of-season, anchored to the active season's <code>auto_switch_start</code>), <code>{day_of_week}</code>; site, tier, optional category, optional default publish time (combined with the date in <code>America/New_York</code> by default, converted to a correct UTC instant), optional assigned writer, description template, owning <strong>season mode</strong>, and a JSONB <code>schedule_rule</code> — a discriminated union: <code>daily{days[]}</code> / <code>weekly{day}</code> / <code>monthly{day_of_month 1–28}</code> / <code>yearly{month, day_of_month 1–28}</code> (capped at 28 to avoid end-of-month gaps). <code>describeSchedule</code> renders human strings ("Every weekday", "3rd of each month", …).</p>
+<p><strong>The generator</strong> (<code>runGenerator</code>, daily cron at 05:17 UTC + a "Run generator" button in Settings): resolves a system user (first admin/eic/operations) for attribution, loads the active season, and for each active template <em>belonging to that season</em> computes occurrences in a <strong>14-day window</strong>, deduplicates against existing entries with the same <code>series_id</code> on the same UTC calendar day (safe against repeated runs), renders the title, and inserts the entry — <code>claimed</code> with a primary author if the template has an assignee, else <code>writer_needed</code>; precision <code>exact</code> with a default time else <code>loose_time</code>; tier checklist seeded; audit <code>created</code>. Admin+ CRUD via <code>/api/templates</code> and the Settings panel with a schedule-builder dialog (day chips default Mon–Fri, etc.).</p>
+<hr />
+<h2 id="16-wordpress-integration-four-sync-surfaces">16. WordPress integration (four sync surfaces)</h2>
+<p>All WP calls use REST with application-password Basic auth from env; QB paths run only when <code>WP_QB_URL</code> is configured.</p>
+<ol>
+<li><strong>Draft creation on claim approval</strong> (<code>createWpDraftForEntry</code>): idempotent POST <code>/wp/v2/posts</code> <code>{title, status:"draft", author: wp_user_id}</code>; stores <code>wp_post_id</code> and <code>wp_post_url = link</code> (the public permalink — required for analytics URL joins).</li>
+<li><strong>Post reconciliation</strong> (<code>syncWpPostsForBothSites</code>, cron every 5 min): fetches posts <code>modified_after</code> a per-site watermark (kept in <code>global_settings</code>, default lookback 7 days), statuses draft/pending/future/publish, ordered by modified. Existing entries (matched by <code>wp_post_id</code>+site): refresh permalink, then <code>applyWpStateToEntry</code> (→ scheduled/published mirroring, notifications). Unknown posts: only draft/pending become new entries — created as <code>claimed</code>, <code>is_drafted = !author.auto_approve_drafts</code>, requiring a WP-author→dashboard-user match (else skipped and counted); published/future strangers are skipped to avoid backdating history. Drafted entries are hidden from the main table until the author approves via <code>POST /api/entries/[id]/approve-draft</code> (creator/author/Admin+). Per-entry "Refresh WP" (<code>refreshWpStatusForEntry</code>) does the same reconciliation on demand, handles WP 404 as <code>wp_status="trash"</code>, and tracks permalink changes (draft <code>?p=N</code> → clean slug).</li>
+<li><strong>Profile sync</strong> (<code>syncWpProfiles</code>, cron every 6 h): refreshes display_name/bio/avatar_url for every user with a <code>wp_user_id</code>, skipping display_name when <code>display_name_override</code> is set; only writes when something changed.</li>
+<li><strong>Category sync</strong> (<code>syncWpCategoriesForBothSites</code>, weekly): paginates <code>/wp/v2/categories</code>, creates/renames, and soft-deactivates categories that disappeared from WP.</li>
+</ol>
+<p>The Settings <strong>Sync panel</strong> (Admin+) shows last-sync watermarks (<code>GET /api/settings/wp-sync-status</code>) and manual "Sync now" buttons that POST the cron endpoints using the admin-session fallback; it also hosts the Operations-only historical import UI (§17.7).</p>
+<hr />
+<h2 id="17-analytics-subsystem">17. Analytics subsystem</h2>
+<p><strong>Access:</strong> viewing = EIC + Operations (<code>canViewAnalytics</code>); connecting/uploading/backfilling = Operations only. Plain admins are deliberately excluded from revenue (§4).</p>
+<h3 id="171-ga4-integration-srclibanalyticsga4ts">17.1 GA4 integration (<code>src/lib/analytics/ga4.ts</code>)</h3>
+<p>Direct <code>fetch</code> against Google OAuth 2 and the GA4 Data API (no googleapis SDK). Credentials live in <code>global_settings</code>: <code>ga4_refresh_token</code>, cached <code>ga4_access_token</code> + <code>ga4_access_expires</code> (refreshed with a 60 s margin), <code>ga4_property_id</code> (setting overrides env). OAuth: <code>buildAuthorizeUrl</code> (offline access, consent prompt) → <code>/api/ga4/callback</code> exchanges the code and stores the refresh token → redirect to <code>/settings?tab=analytics&amp;ga4=connected</code>. <code>syncGa4(dateFrom?, dateTo?)</code> — defaults to <strong>yesterday</strong> (UTC) — runs one report (<code>pagePath</code> × <code>date</code>; <code>screenPageViews</code>, <code>sessions</code>, <code>averageSessionDuration</code>; limit 100 000), maps pagePaths to entries via <code>normaliseUrl(wp_post_url)</code>, aggregates with pageview-weighted average time, and upserts <code>article_analytics</code> on <code>(entry_id, date)</code>. Unmatched paths are skipped. <code>new_users</code>/<code>returning_users</code> are always written as 0.</p>
+<h3 id="172-url-normalization-the-join-key">17.2 URL normalization — the join key</h3>
+<p><code>normaliseUrl</code> (in <code>raptive.ts</code>, shared by the GA4 sync): lowercase; strip scheme, <code>www.</code>, host, leading slash, query, hash, trailing slashes. This is what lets GA4 <code>pagePath</code> and Raptive <code>page_url</code> match <code>entries.wp_post_url</code> — and why migration 0010 purged admin-URL values (commit <code>f2bc7fa</code> fixed the zero-match bug). The standalone backfill script uses a different pathname-based normalization (<code>new URL().pathname</code>, lowercased, trailing slash stripped).</p>
+<h3 id="173-raptive-revenue-srclibanalyticsraptivets">17.3 Raptive revenue (<code>src/lib/analytics/raptive.ts</code>)</h3>
+<p>Operations uploads Raptive XLSX/XLS exports through a drag-drop dialog. Parsing: SheetJS, first sheet, loose header matching (date/day, page url/url/path/permalink, earnings/revenue, rpm, page rpm, sessions, pageviews), tolerant coercion (Excel serial dates, <code>$</code>/<code>,</code> stripping). Flow is two-phase: <strong>preview</strong> (row count, date range, matched/unmatched counts with up to 10 sample unmatched URLs, total earnings) then <strong>commit</strong> — which <strong>deletes all <code>raptive_revenue</code> rows inside the file's date range</strong> and inserts the new set in 500-row chunks (re-upload = replace period), recording a <code>raptive_uploads</code> history row (last 50 shown in Settings). Unmatched rows import with <code>entry_id = null</code> (site-total revenue is preserved; the dialog says so).</p>
+<h3 id="174-query-layer-srclibanalyticsqueriests">17.4 Query layer (<code>src/lib/analytics/queries.ts</code>)</h3>
+<p>Filters (zod): dateFrom/dateTo (default last 30 days), site, tier, category, author. <strong>Overview</strong> uses the Postgres RPC <code>get_analytics_overview</code> (0011) joining analytics × entries × summed Raptive earnings server-side; the app dedupes the per-entry earnings (the RPC repeats them on every date row) and distributes them across days proportional to pageviews for the daily chart; RPMs = earnings/sessions·1000 and earnings/pageviews·1000. <strong>Articles</strong>: per-entry totals (Raptive pageviews/sessions only backfill when GA4 has none, avoiding double counts), sorted by earnings. <strong>Writers</strong>: primary authors only; aggregates articles/pageviews/earnings/word counts → <strong>revenue per word</strong>. <strong>Trends</strong>: publish-to-peak curve (average pageviews by day-since-publish, 0–30) and a day-of-week × week heatmap (GA4 is daily, so no hour granularity). Entry filtering deliberately ignores publish_date (old articles accrue views in-window); date filtering hits the analytics tables and the rest joins in memory (PostgREST URL-length lesson, §2.4).</p>
+<h3 id="175-analytics-ui-4-tabs-toolbar">17.5 Analytics UI (4 tabs + toolbar)</h3>
+<p>Filter bar (dates + 7/30/90-day presets, site, tier, site-aware category, author) drives all tabs. <strong>Overview</strong>: six metric cards (Articles, Pageviews, Sessions, Revenue, Page RPM, Session RPM) + dual-axis area chart (pageviews cyan / earnings amber). <strong>Articles</strong> and <strong>Writers</strong>: sortable tables with CSV export endpoints and mobile card layouts. <strong>Trends</strong>: dual-axis line chart, revenue-by-tier and pageviews-by-tier bars, publish-to-peak line, pure-CSS heatmap (cyan opacity ramp). "Print / PDF" = <code>window.print()</code> with <code>@media print</code> rules (forced light palette, chrome hidden, scroll containers expanded). Raptive upload button appears only for Operations.</p>
+<h3 id="176-backfills">17.6 Backfills</h3>
+<ul>
+<li><strong>In-app</strong> (<code>POST /api/admin/ga4-backfill</code>, Operations, maxDuration 120): monthly-chunked <code>syncGa4</code> loop over an arbitrary range (monthly because GA4's 100k-row cap otherwise fills with peak days — commit <code>ce1f85f</code> "traffic cliff artifact").</li>
+<li><strong>Standalone script</strong> (<code>scripts/ga4-full-backfill.ts</code>, run locally with <code>npx tsx</code>): <strong>day-by-day</strong> from <code>2022-10-01</code> to yesterday — a single-day report returns every page with traffic that day, defeating the row cap for the long tail. Reads <code>.env.local</code> itself, paginates entries past the 1000-row PostgREST cap, is <strong>resumable</strong> (resumes from <code>MAX(date)</code> in <code>article_analytics</code>; interactive resume/overwrite/quit prompt with a 10 s default), throttles 200 ms/day.</li>
+</ul>
+<h3 id="177-historical-import-post-apiadminhistorical-import-operations-maxduration-300">17.7 Historical import (<code>POST /api/admin/historical-import</code>, Operations, maxDuration 300)</h3>
+<p>Back-imports all <strong>published</strong> WP posts since <code>2022-09-30T23:59:59</code> (≈10 441 posts per the UI's page estimate) as entries with <code>is_historical=true</code>, <code>content_status/editor_status = "published"</code>, real permalinks, category and author matches where possible (system-user fallback for the FK; <code>entry_authors</code> only for real matches). Idempotent on <code>(wp_post_id, site)</code>; paginated (<code>start_page</code>/<code>max_pages</code>, default 20 pages of 100) with a <code>nextPage</code> cursor the Settings UI loops over; <code>dry_run</code> supported. Historical entries are excluded from the pipeline, queues, calendar, and alert crons but power analytics and the archive tab.</p>
+<hr />
+<h2 id="18-cron-jobs-verceljson-utc">18. Cron jobs (vercel.json, UTC)</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Schedule</th>
+<th>Auth</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/cron/wp-sync</code></td>
+<td><code>2-59/5 * * * *</code> (every 5 min)</td>
+<td>secret or Admin+</td>
+<td>WordPress post reconciliation + draft pickup (§16.2).</td>
+</tr>
+<tr>
+<td><code>/api/cron/recurring-generate</code></td>
+<td><code>17 5 * * *</code></td>
+<td>secret or Admin+</td>
+<td>Template generator, 14-day window (§15).</td>
+</tr>
+<tr>
+<td><code>/api/cron/season-switch</code></td>
+<td><code>0 6 * * *</code></td>
+<td><strong>secret only</strong></td>
+<td>Auto-activates the season whose date window contains today; manual (dateless) modes untouched.</td>
+</tr>
+<tr>
+<td><code>/api/cron/ga4-sync</code></td>
+<td><code>47 7 * * *</code></td>
+<td>secret or Admin+</td>
+<td>Pulls yesterday's GA4 report; soft-skips when not configured/connected.</td>
+</tr>
+<tr>
+<td><code>/api/cron/deadline-reminders</code></td>
+<td><code>0 * * * *</code> (hourly)</td>
+<td><strong>secret only</strong></td>
+<td>Notifies primary authors + editors of entries publishing within <code>deadline_reminder_hours</code> (setting, default 24); 24 h per-user-per-entry dedupe; times formatted in each recipient's timezone.</td>
+</tr>
+<tr>
+<td><code>/api/cron/unclaimed-alerts</code></td>
+<td><code>13 */3 * * *</code></td>
+<td>secret or Admin+</td>
+<td>Alerts manager+ about <code>writer_needed</code> entries publishing within 72 h (hardcoded; the seeded <code>unclaimed_alert_hours=12</code> setting is not read — §22); 24 h dedupe.</td>
+</tr>
+<tr>
+<td><code>/api/cron/profile-sync</code></td>
+<td><code>23 */6 * * *</code></td>
+<td>secret or Admin+</td>
+<td>WP profile refresh (§16.3).</td>
+</tr>
+<tr>
+<td><code>/api/cron/category-sync</code></td>
+<td><code>37 3 * * 0</code> (weekly Sun)</td>
+<td>secret or Admin+</td>
+<td>WP category reconciliation (§16.4).</td>
+</tr>
+</tbody>
+</table>
+<p>All cron routes are <code>runtime="nodejs"</code>, <code>force-dynamic</code>, and export <strong>POST only</strong>. <strong>Discrepancy to verify:</strong> Vercel Cron invokes scheduled paths with GET; with only POST exported these fire 405s unless something rewrites the method — flagged in §22.</p>
+<hr />
+<h2 id="19-design-system-plpd-subtle-glass-over-mesh-srcappglobalscss">19. Design system — "PLPD, Subtle Glass Over Mesh" (<code>src/app/globals.css</code>)</h2>
+<p>Adopted repo-wide in commit <code>a2af3ef</code> (PR #1). The stylesheet's header states dark mode is <strong>byte-exact PLPD</strong>, with tokens <em>"copied verbatim from <code>PLPD_Style_Guide_6-21-26.html</code> — invent nothing, round nothing."</em> (That style-guide file is not in this repository.) Dark is the default (<code>class="dark"</code>, next-themes class strategy, system detection off); light mode is an explicitly-labeled derived extension, not canonical.</p>
+<h3 id="191-tokens-dark-canonical-values">19.1 Tokens (dark canonical values)</h3>
+<ul>
+<li><strong>Surfaces</strong> (5-step navy): <code>#13152A → #181A2C → #21243A → #262940 → #2E3150</code>.</li>
+<li><strong>Brand:</strong> cyan <code>#55e8ff</code> (+header <code>#73efff</code>), amber <code>#ffc277</code> (+muted 82%). Derived tints <code>--cyan-dim #55e8ff18</code>, <code>--amber-dim #ffc27718</code> (marked non-canonical).</li>
+<li><strong>Text ramp:</strong> nav <code>#cbd7fd</code>, cell <code>#f0f1f5</code>, player <code>rgba(246,248,255,.96)</code>, team <code>rgba(180,187,215,.82)</code>, zero <code>rgba(164,170,202,.7)</code>, plus bench-note variants.</li>
+<li><strong>Borders:</strong> sidebar <code>rgba(85,232,255,.12)</code>, tab <code>rgba(255,255,255,.13)</code>, table <code>rgba(118,138,190,.22)</code>, row <code>rgba(140,165,210,.11)</code>, thead <code>rgba(157,244,255,.22)</code>.</li>
+<li><strong>Row fills</strong> (translucent so "the mesh breathes through"): <code>rgba(48,58,97,.46)</code> / <code>rgba(42,51,85,.38)</code> / <code>rgba(34,40,63,.3)</code>.</li>
+<li><strong>Semantic:</strong> green <code>#34d399</code>, red <code>#f4707c</code>, blue <code>#3da9f5</code>, violet <code>#a78bfa</code>, gold <code>#f5b950</code>; value deltas <code>#7fc8a9</code>/<code>#d98f97</code>.</li>
+<li><strong>shadcn remap:</strong> background=surface-1, card=surface-2, popover=surface-3, primary=cyan, accent=amber, destructive=red, ring=cyan; radius 10px panels / 8px controls / 12px cards, chips 6px.</li>
+<li>All tokens are exposed as Tailwind utilities via <code>@theme inline</code> (<code>bg-surface-2</code>, <code>text-text-cell</code>, <code>border-border-tab</code>, …).</li>
+</ul>
+<h3 id="192-the-mesh">19.2 The mesh</h3>
+<p><code>body</code> carries a <strong>verbatim inline SVG data-URI</strong> background (comment: "Do not regenerate or approximate"): a base navy linear gradient plus four faint radial blooms and two rotated diagonal sheens, <code>cover</code>/<code>fixed</code>. Light mode drops the mesh for a flat <code>#f6f7fb → #eef0f7</code> gradient. Cards sit on top as translucent glass with <code>ring-1 ring-white/[0.03]</code>.</p>
+<h3 id="193-signature-chrome">19.3 Signature chrome</h3>
+<ul>
+<li><code>.plpd-nav-active</code> — amber gradient pill (<code>#975100 → #cd8532</code>) with outer glow, used for the active nav item.</li>
+<li><code>.plpd-tab-active</code> — amber bold text with an overhanging 6px rounded underline and glow; comments insist tabs are <strong>"never cyan."</strong></li>
+<li><code>.plpd-btn-import</code> (blue <code>#245297 → #0a2e63</code>) and <code>.plpd-btn-cta</code> (amber) — 4-layer buttons: gradient, shadow-ring (never a border), white-fade overlay, inset top highlight; hover brightens, active scales 0.98. <code>Button</code> <code>default</code> variant = import style; <code>amber</code> variant = CTA.</li>
+<li>Select triggers/menus reuse the blue gradient family; dropdown item focus uses a lighter blue gradient with white text.</li>
+<li>Typography: DM Sans for chrome (≤700 except 900 section titles), Work Sans for data (hero numerals 800); headings tracked -0.01em; base 15px/1.55.</li>
+<li>Focus = 2px cyan outline; scrollbars are 10px translucent-cyan; theme transitions 180 ms.</li>
+<li><strong>Print</strong> styles force light values, hide nav/header/bell/<code>.no-print</code>, expand scroll containers, and avoid page breaks inside cards/rows.</li>
+<li><strong>Joyride</strong> portal colors are hardcoded per theme (the portal renders outside the <code>.dark</code> scope).</li>
+</ul>
+<h3 id="194-component-primitives-srccomponentsui">19.4 Component primitives (<code>src/components/ui/</code>)</h3>
+<p>16 files: avatar, badge (CVA; 10px uppercase 6px-radius chips in 15 variants incl. cyan/amber/violet/green/gold/blue/red/zero), button (7 variants × 4 sizes), card, checkbox, dialog, dropdown-menu, empty-state, input (inset-highlight PLPD field), label, popover, select (PLPD blue), separator, skeleton, switch (cyan when on), tabs (amber active), textarea. Status → badge mapping (<code>status-badges.tsx</code>): content writer_needed=zero, claim_requested=gold, claimed=blue, submitted=green, polishing=violet; editor none="—", ready_for_edit=gold, edited=blue, scheduled=valpos, published=green; graphics needed=zero, claimed=blue, submitted=green "Done", flagged=red; role badges are decorative identity colors (writer=zero, editor=cyan, graphics=violet, manager=amber-filled, admin=cyan-header, eic=amber-outline, operations=blue).</p>
+<h3 id="195-responsive-a11y-state">19.5 Responsive &amp; a11y state</h3>
+<p>Sidebar hidden below <code>md</code> with a hamburger slide-over drawer (closes on route change); collapse state persists in <code>localStorage</code>. Tables (content, analytics) collapse to card lists via <code>useIsMobile</code> (768px matchMedia). Accessibility items in POLISH.md (contrast audit, focus visibility sweep, keyboard-nav order, icon-button label spot-check) remain open review items.</p>
+<hr />
+<h2 id="20-onboarding">20. Onboarding</h2>
+<p>First login (<code>users.onboarding_completed=false</code>) triggers a 6-step react-joyride tour after a 600 ms mount delay: Welcome → sidebar → Content Table → My Tasks → notification bell → Settings (mentions linking Discord). Targets use <code>data-tour</code> attributes. Finishing or skipping POSTs <code>/api/users/me/onboarding</code> which sets the flag.</p>
+<hr />
+<h2 id="21-build-history-current-status">21. Build history &amp; current status</h2>
+<p>Built in 14 explicitly-labeled steps (commit messages, 2026-04-15 → 04-16), then hardening waves:</p>
+<ol>
+<li>Scaffold, auth, shell → 2. Users/teams/staff/settings → 3. Content table CRUD + saved views → 4. Status tracks, claims, WP-driven scheduling → 5. Graphic requests + Storage + WP media → 6. Comments/@mentions/activity cache → 7. Notifications → 8. Calendar, Editing Queue, My Tasks → 9. Recurring templates, season mode, unclaimed alerts → 10. WP bi-directional sync + draft pickup → 11. Per-tier checklists + submit gate → 12. Analytics (GA4 OAuth, Raptive, 4 tabs) → 13. Role-tailored home → 14. Onboarding tour, bulk ops, polish backlog.</li>
+</ol>
+<p>Then: mobile/polish passes (04-16); <strong>RLS on all 29 tables</strong> (04-22); storage privacy + analytics depth + bulk create + skeletons (05-15); user-management overrides + the historical-import/backfill/URL-normalization campaign (05-16→17, nine fix commits); deadline-reminders + season-switch crons, archive page, tier CRUD (05-17); <strong>PLPD design-system restyle</strong> (06-21, PR #1, latest commit).</p>
+<p><strong>Working today</strong> (implemented and wired end-to-end): everything described in §§7–20 except the items below.</p>
+<h3 id="211-explicitly-incomplete-open-items">21.1 Explicitly incomplete / open items</h3>
+<p><strong>From POLISH.md (the project's own backlog):</strong>
+- Brand assets: real Pitcher List logo for login + sidebar, QB List logo for conditional swap (asset-dependent, "not code-fixable").
+- Typography review pass; avatar-dropdown animation review (subjective, deferred).
+- Accessibility audit items (contrast, focus, keyboard order, icon labels).
+- Security follow-ups: live curl test of the anon key against PostgREST after deploy; drop unused <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.</p>
+<p><strong>Stubbed features (code present, delivery not implemented):</strong>
+- <strong>Discord DM delivery</strong> and <strong>email delivery</strong> for notifications — preference matrix, flags, and dispatch flow all exist; the actual sends are logging stubs (§14.2).</p>
+<p><strong>Schema/features with no consuming code:</strong>
+- <code>file_attachments</code> table (no reads or writes anywhere).
+- Notification types <code>new_claimable</code> and <code>priority_flagged</code> (never emitted).
+- <code>recurring_template_roles</code> and <code>recurring_template_checklist</code> tables (schema exists; templates seed checklists from tier defaults instead, and no code reads either table).
+- <code>saved_table_views.columns/grouping</code> are stored but the table applies only filters/sort from a view.
+- <code>users.can_publish</code> / <code>canPublish()</code> (flag + helper + admin toggle exist; no workflow route consumes them).
+- <code>global_settings.wp_poll_frequency_minutes</code> and <code>default_theme</code> (seeded, never read); <code>unclaimed_alert_hours</code> seeded but the cron hardcodes 72 h.</p>
+<hr />
+<h2 id="22-known-discrepancies-quirks-and-risks-verified-in-code-vetting-checklist">22. Known discrepancies, quirks, and risks (verified in code — vetting checklist)</h2>
+<ol>
+<li><strong>Cron method mismatch:</strong> all 8 cron routes export <strong>POST only</strong>, but Vercel Cron calls scheduled paths with <strong>GET</strong>. Unless a platform-level rewrite exists outside this repo, scheduled invocations would 405. Needs verification against production logs.</li>
+<li><strong>Per-entry analytics leak vs. policy:</strong> <code>canViewAnalytics</code> deliberately excludes <code>admin</code>, but the entry-detail Analytics tab gates on admin|eic|operations — so plain admins can see per-entry revenue there (the API it calls, however, would 403 them; the tab renders for admins but its data fetch fails for a pure admin — behavior worth reconciling).</li>
+<li><strong><code>resyncUserFromWp</code> ignores <code>display_name_override</code></strong> — the manual per-user resync overwrites admin-edited names; the cron respects the flag.</li>
+<li><strong><code>getUserById</code> shortcut quirk:</strong> first calls <code>listUsers({limit:1})</code> and matches only when the target happens to be the alphabetically first user; otherwise falls through to the direct query. Harmless but pointless first query.</li>
+<li><strong>Access-token revocation window:</strong> <code>getCurrentUser</code> never checks the <code>sessions</code> table, so a deleted session stays valid until the ≤15-minute access token expires.</li>
+<li><strong><code>setUserRoles</code> / <code>PATCH users/[id]</code> are non-atomic</strong> (documented in code): a failure mid-sequence can strip roles without reinserting.</li>
+<li><strong>No unique constraint on <code>users.email</code></strong> even though login matches users by email; duplicate emails would break identity assumptions. Likewise <code>categories</code> (site, wp_category_id) uniqueness is app-enforced only.</li>
+<li><strong><code>{week}</code> token renders literally</strong> when no active season has <code>auto_switch_start</code> set (code comment calls it a visible bug).</li>
+<li><strong>Unclaimed-alerts window hardcoded</strong> at 72 h; the seeded <code>unclaimed_alert_hours=12</code> setting is dead.</li>
+<li><strong>Two different URL normalizers</strong> (app <code>normaliseUrl</code> vs. backfill script <code>normalisePath</code>) — currently agree on typical permalinks but are separate implementations.</li>
+<li><strong><code>src/types/database.ts</code> is a placeholder</strong> — every table types to <code>any</code>; the real types were never generated (<code>npx supabase gen types</code>). Type safety against the DB is nominal.</li>
+<li><strong>12 unused dependencies</strong> in package.json (§2.2) — including the entire planned Discord/email/toast surface.</li>
+<li><strong>No tests, no CI</strong> anywhere in the repo.</li>
+<li><strong>README.md is untouched boilerplate</strong> — this spec and POLISH.md are the only real documentation.</li>
+<li><strong>Bulk create is N parallel POSTs</strong> from the client (≤25) — no server-side batching or partial-failure rollback (per-row error reporting only).</li>
+<li><strong><code>login/performLogin</code> placeholder-sid dance:</strong> the first token pair is created with a zero-UUID sid before the session row exists, then replaced — correct but subtle; worth knowing before touching login.</li>
+<li><strong>"Vault":</strong> no vault-named system exists in the repo (§13.1). The private <code>graphics</code> bucket + signed-URL layer is the closest real system.</li>
+</ol>
+<hr />
+<h2 id="23-api-route-index-method-guard-purpose">23. API route index (method — guard — purpose)</h2>
+<p><strong>Auth:</strong> <code>POST /api/auth/login</code> (public) · <code>POST /api/auth/logout</code> (any) · <code>GET /api/auth/me</code> (any) · <code>POST /api/auth/refresh</code> (refresh cookie).
+<strong>Entries:</strong> <code>GET|POST /api/entries</code> (any authed) · <code>GET|PATCH /api/entries/[id]</code> (any authed; no DELETE) · <code>POST …/claim</code> (any) · <code>PATCH …/content-status</code> (submit=primary author; polishing=editor+) · <code>PATCH …/editor-status</code> (editor+) · <code>PATCH …/checklist/[itemId]</code> (author/editor/admin+) · <code>GET|POST …/comments</code> (any) · <code>GET …/audit</code> (any) · <code>POST …/archive</code> (any; direct for admin+) · <code>POST …/approve-draft</code> (creator/author/admin+) · <code>POST …/wp-refresh</code> (any) · <code>POST /api/entries/bulk</code> (manager+).
+<strong>Claims:</strong> <code>GET /api/claims</code> (any; non-managers get <code>[]</code>) · <code>PATCH /api/claims/[id]</code> (manager+).
+<strong>Archive requests:</strong> <code>GET /api/archive-requests</code> (any; managers see pending) · <code>PATCH /api/archive-requests/[id]</code> (manager+).
+<strong>Comments:</strong> <code>PATCH /api/comments/[id]</code> (author) · <code>DELETE</code> (admin/eic/ops).
+<strong>Graphics:</strong> <code>GET|POST /api/graphic-requests</code> (any authed) · <code>GET|PATCH|DELETE /api/graphic-requests/[id]</code> (per-action rules §13) · <code>POST …/upload</code> (any; blocked when submitted) · <code>POST …/submit</code> (any authed; 502 on WP failure).
+<strong>Users:</strong> <code>GET /api/users</code> (any) · <code>GET|PATCH /api/users/[id]</code> (self/admin+ for private fields &amp; edits) · <code>PATCH …/roles</code>, <code>PATCH …/publish</code>, <code>POST /api/users/import</code> (admin+) · <code>POST …/resync-wp</code> (self/admin+) · <code>GET|PATCH …/notification-prefs</code>, <code>GET|PATCH …/notifications</code> (self/admin+) · <code>POST /api/users/me/onboarding</code> (self).
+<strong>Teams:</strong> <code>GET /api/teams</code> (any) · <code>POST</code> (admin+) · <code>GET /api/teams/[id]</code> (any) · <code>PATCH</code> (admin+ or own manager) · <code>DELETE</code> (admin+) · <code>POST …/members</code>, <code>PATCH|DELETE …/members/[userId]</code> (admin+ or own manager).
+<strong>Templates:</strong> <code>GET /api/templates</code>, <code>GET /api/templates/[id]</code> (any) · <code>POST|PATCH|DELETE</code> (admin+).
+<strong>Season modes:</strong> <code>GET /api/season-modes</code> (any) · <code>PATCH /api/season-modes/[id]</code>, <code>PATCH …/activate</code> (admin+).
+<strong>Tiers:</strong> <code>GET /api/tiers</code> (any) · <code>POST|PATCH|DELETE</code> (admin+; DELETE 409s when referenced).
+<strong>Checklist items:</strong> <code>GET|POST /api/settings/checklist-items</code>, <code>PATCH|DELETE …/[id]</code> (all admin+).
+<strong>Views:</strong> <code>GET|POST /api/views</code> (any, own) · <code>PATCH|DELETE /api/views/[id]</code> (owner).
+<strong>Categories:</strong> <code>GET /api/categories</code> (any).
+<strong>Settings:</strong> <code>GET /api/settings/wp-sync-status</code> (admin+).
+<strong>Analytics:</strong> <code>GET /api/analytics/{overview,articles,writers,publish-to-peak}</code> + <code>…/export</code> (eic/ops) · <code>POST /api/ga4/{connect,disconnect,sync}</code> (operations) · <code>GET /api/ga4/callback</code> (operations, OAuth redirect) · <code>GET /api/ga4/status</code> (eic/ops) · <code>POST /api/raptive/upload</code> (operations) · <code>GET /api/raptive/uploads</code> (eic/ops).
+<strong>Admin:</strong> <code>POST /api/admin/ga4-backfill</code>, <code>POST /api/admin/historical-import</code> (operations).
+<strong>Cron:</strong> 8 routes (§18), POST, <code>Bearer CRON_SECRET</code> (most also accept Admin+ session).</p>
+<hr />
+<p><em>End of specification. Companion human-readable version: <code>docs/DESIGN_SPEC.html</code>.</em></p>
+<div class="footer">PL Staff Dashboard Design Specification &middot; generated by direct inspection of the repository at commit a2af3ef &middot; 2026-07-21</div>
+</main>
+</body>
+</html>
