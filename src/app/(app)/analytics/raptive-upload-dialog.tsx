@@ -170,6 +170,7 @@ export function RaptiveUploadDialog({
           </div>
         ) : (
           <div className="space-y-4">
+            <p className="rounded-md border border-border bg-card p-3 text-sm text-text-team">Daily report upload: .xlsx files up to 10 MB and 100,000 rows. Larger historical workbooks need the resumable history importer. Open Connections to review import history and recovery status; do not split overlapping date ranges blindly.</p>
             <label
               onDragEnter={(e) => {
                 e.preventDefault();

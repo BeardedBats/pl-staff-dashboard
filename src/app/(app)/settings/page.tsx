@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation";
-import {
-  canViewAnalytics,
-  getCurrentUser,
-  isOperations,
-} from "@/lib/auth/current-user";
+import Link from "next/link";
+import { SettingsTabs } from "./settings-tabs";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   authorizedSiteScope,
   isAdminPlusForScope,
@@ -14,17 +12,7 @@ import { listTiers } from "@/lib/entries/queries";
 import { listTemplates } from "@/lib/recurring-templates/data";
 import { listSeasonModes } from "@/lib/season-modes/data";
 import { listChecklistItems } from "@/lib/checklist/data";
-import { getGa4Status } from "@/lib/analytics/ga4";
 import {
-  listRaptiveImportRuns,
-  listRaptiveUploads,
-} from "@/lib/analytics/raptive";
-import { getRaptiveLiveStatus } from "@/lib/analytics/raptive-live";
-import { getOperationalHealth } from "@/lib/observability/health";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { listEvergreenCandidates } from "@/lib/wp-sync/evergreen";
-import {
-  Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
@@ -34,16 +22,14 @@ import { AdminUsersPanel } from "./admin-users-panel";
 import { AdminTeamsPanel } from "./admin-teams-panel";
 import { AdminTemplatesPanel } from "./admin-templates-panel";
 import { AdminSeasonPanel } from "./admin-season-panel";
-import { AdminSyncPanel } from "./admin-sync-panel";
 import { AdminChecklistsPanel } from "./admin-checklists-panel";
-import { AdminAnalyticsPanel } from "./admin-analytics-panel";
 import { NotificationPrefsPanel } from "./notification-prefs-panel";
 
 export const metadata = {
   title: "Settings",
 };
 
-type SearchParams = Promise<{ tab?: string }>;
+type SearchParams = Promise<{ tab?: string; ga4?: string }>;
 
 export default async function SettingsPage({
   searchParams,
@@ -59,25 +45,27 @@ export default async function SettingsPage({
   const adminScope = authorizedSiteScope(viewer, "admin", "eic", "operations");
   const adminAccess = adminScope !== null;
   const globalAdminAccess = isAdminPlusForScope(viewer, "both");
-  const operationsAccess = isOperations(viewer);
   const allowedAdminSites: Array<"pl" | "qb"> =
     adminScope === "both"
       ? ["pl", "qb"]
       : adminScope
         ? [adminScope]
         : [];
-  const analyticsAccess = canViewAnalytics(viewer);
   const params = await searchParams;
+  if (params.tab === "sync" || params.tab === "analytics") {
+    redirect(`/connections${params.ga4 ? `?ga4=${encodeURIComponent(params.ga4)}` : ""}`);
+  }
+  const selectedTab = params.tab ?? "profile";
 
   // Fetch admin data in parallel if the viewer has access.
   const [rawStaffList, rawTeams, tiers, rawTemplates, seasonModes] =
     adminAccess
       ? await Promise.all([
-          listUsers({ limit: 200 }),
-          listTeams(),
-          listTiers(),
-          listTemplates(),
-          listSeasonModes(),
+          ["users", "teams", "templates"].includes(selectedTab) ? listUsers({ limit: 1000, site: adminScope ?? undefined }) : Promise.resolve({ users: [], totalCount: 0 }),
+          selectedTab === "teams" ? listTeams() : Promise.resolve([]),
+          ["templates", "checklists"].includes(selectedTab) ? listTiers() : Promise.resolve([]),
+          selectedTab === "templates" ? listTemplates() : Promise.resolve([]),
+          ["templates", "season"].includes(selectedTab) ? listSeasonModes() : Promise.resolve([]),
         ])
       : [
           { users: [], totalCount: 0 },
@@ -102,42 +90,14 @@ export default async function SettingsPage({
     isAdminPlusForScope(viewer, template.site),
   );
 
-  const [syncStatus, checklistItems, operationalHealth, evergreenCandidates] =
-    await Promise.all([
-      globalAdminAccess
-        ? loadSyncStatus()
-        : Promise.resolve({ pl: null, qb: null }),
-      globalAdminAccess ? listChecklistItems() : Promise.resolve([]),
-      globalAdminAccess || operationsAccess
-        ? getOperationalHealth()
-        : Promise.resolve(null),
-      globalAdminAccess ? listEvergreenCandidates() : Promise.resolve([]),
-    ]);
-
-  // Analytics panel — only fetched for EIC/Operations viewers
-  const [ga4Status, raptiveUploads, raptiveImportRuns, raptiveLiveStatus] = analyticsAccess
-    ? await Promise.all([
-        getGa4Status(),
-        listRaptiveUploads(),
-        listRaptiveImportRuns(),
-        getRaptiveLiveStatus(),
-      ])
-    : [
-        { configured: false, connected: false, propertyId: null, lastSyncedAt: null },
-        [],
-        [],
-        { configured: false, databaseReady: true, connections: [] },
-      ];
+  const checklistItems = globalAdminAccess && selectedTab === "checklists" ? await listChecklistItems() : [];
 
   const validTabs = ["profile", "notifications"];
   if (adminAccess) {
     validTabs.push("users", "teams", "templates");
   }
   if (globalAdminAccess) {
-    validTabs.push("season", "sync", "checklists");
-  }
-  if (analyticsAccess) {
-    validTabs.push("analytics");
+    validTabs.push("season", "checklists");
   }
   const defaultTab =
     params.tab && validTabs.includes(params.tab) ? params.tab : "profile";
@@ -152,8 +112,9 @@ export default async function SettingsPage({
         </p>
       </div>
 
-      <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList>
+      {adminAccess && <Link href="/connections" className="inline-block text-sm text-cyan underline underline-offset-4">Manage connections and data recovery</Link>}
+      <SettingsTabs value={defaultTab}>
+        <TabsList className="h-auto flex-wrap justify-start gap-x-6 gap-y-1">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           {adminAccess ? (
@@ -166,12 +127,8 @@ export default async function SettingsPage({
           {globalAdminAccess ? (
             <>
               <TabsTrigger value="season">Season</TabsTrigger>
-              <TabsTrigger value="sync">Sync</TabsTrigger>
               <TabsTrigger value="checklists">Checklists</TabsTrigger>
             </>
-          ) : null}
-          {analyticsAccess ? (
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           ) : null}
         </TabsList>
 
@@ -216,14 +173,6 @@ export default async function SettingsPage({
             <TabsContent value="season">
               <AdminSeasonPanel initialModes={seasonModes} />
             </TabsContent>
-            <TabsContent value="sync">
-              <AdminSyncPanel
-                initialLastSync={syncStatus}
-                initialHealth={operationalHealth!}
-                evergreenCandidates={evergreenCandidates}
-                canRunHistoricalImport={isOperations(viewer)}
-              />
-            </TabsContent>
             <TabsContent value="checklists">
               <AdminChecklistsPanel
                 initialItems={checklistItems}
@@ -232,43 +181,7 @@ export default async function SettingsPage({
             </TabsContent>
           </>
         ) : null}
-        {analyticsAccess ? (
-          <TabsContent value="analytics">
-            <AdminAnalyticsPanel
-              initialGa4Status={ga4Status}
-              initialUploads={raptiveUploads}
-              initialImportRuns={raptiveImportRuns}
-              initialRaptiveStatus={raptiveLiveStatus}
-              initialOperationalHealth={
-                operationsAccess && !globalAdminAccess
-                  ? operationalHealth
-                  : null
-              }
-              canConnectGa4={isOperations(viewer)}
-              canManageRaptive={isOperations(viewer)}
-            />
-          </TabsContent>
-        ) : null}
-      </Tabs>
+      </SettingsTabs>
     </div>
   );
-}
-
-async function loadSyncStatus(): Promise<{
-  pl: string | null;
-  qb: string | null;
-}> {
-  const supabase = getSupabaseAdmin();
-  const { data } = await supabase
-    .from("global_settings")
-    .select("key, value")
-    .in("key", ["wp_last_sync_pl", "wp_last_sync_qb"]);
-
-  const rows = (data ?? []) as Array<{ key: string; value: unknown }>;
-  const pl = rows.find((r) => r.key === "wp_last_sync_pl");
-  const qb = rows.find((r) => r.key === "wp_last_sync_qb");
-  return {
-    pl: (pl?.value as string | null) ?? null,
-    qb: (qb?.value as string | null) ?? null,
-  };
 }

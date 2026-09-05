@@ -26,6 +26,7 @@ export default async function NotificationsPage() {
       </div>
 
       <NotificationsPageClient
+        timezone={viewer.timezone}
         userId={viewer.id}
         initialRows={rows}
         initialUnreadCount={unreadCount}

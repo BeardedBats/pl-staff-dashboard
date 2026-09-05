@@ -23,12 +23,14 @@ function maybeSingleQuery(result: unknown, rejects = false) {
   const query = {
     select: vi.fn(),
     eq: vi.fn(),
+    in: vi.fn(),
     maybeSingle: rejects
       ? vi.fn().mockRejectedValue(new Error("database failure"))
       : vi.fn().mockResolvedValue(result),
   };
   query.select.mockReturnValue(query);
   query.eq.mockReturnValue(query);
+  query.in.mockReturnValue(query);
   return query;
 }
 

@@ -148,8 +148,8 @@ export function buildTodayBrief(input: TodayBriefInput): TodayBrief {
 
   return {
     state: "clear",
-    title: "Nothing needs your attention right now",
-    summary: "Your queues are clear. Check the calendar before wrapping up.",
+    title: "No queued work is assigned to you",
+    summary: "Check the calendar and team overview. This summary does not verify integration health.",
     actionLabel: "View calendar",
     href: "/calendar",
   };

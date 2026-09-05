@@ -4,6 +4,7 @@ import { authorizedSiteScope } from "@/lib/auth/authorization";
 import { listCategories, listTiers } from "@/lib/entries/queries";
 import { listUsers } from "@/lib/users/queries";
 import { AnalyticsPageClient } from "./analytics-page-client";
+import { DataCoverage } from "@/components/analytics/data-coverage";
 
 export const metadata = {
   title: "Analytics",
@@ -27,17 +28,9 @@ export default async function AnalyticsPage() {
     listUsers({ limit: 300 }),
   ]);
 
-  // Only show people who could plausibly be authors (writer / editor / contributor roles).
+  // Former authors retain reporting identities without receiving dashboard roles.
   const authorCandidates = staff.users
-    .filter((u) =>
-      u.role_rows.some(
-        (row) =>
-          ["writer", "editor", "manager", "admin", "eic", "operations"].includes(
-            row.role,
-          ) &&
-          (row.site === "both" || allowedSites.includes(row.site)),
-      ),
-    )
+    .filter((u) => u.wp_site === "both" || allowedSites.includes(u.wp_site))
     .map((u) => ({ id: u.id, display_name: u.display_name }));
 
   return (
@@ -53,6 +46,7 @@ export default async function AnalyticsPage() {
         </div>
       </div>
 
+      {allowedSites.includes("pl") && <DataCoverage />}
       <AnalyticsPageClient
         tiers={tiers}
         categories={categories}

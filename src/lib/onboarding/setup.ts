@@ -55,7 +55,7 @@ const roleItems: Partial<Record<AppRole, SetupItem>> = {
     id: "operations-health",
     title: "Review integration health",
     description: "Check WordPress, analytics, imports, cron jobs, and alerts.",
-    href: "/settings?tab=sync",
+    href: "/connections",
   },
 };
 

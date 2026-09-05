@@ -1,4 +1,5 @@
 import "server-only";
+import { missingRaptiveDates } from "./coverage";
 
 import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -213,8 +214,11 @@ function canonicalizeApiRows(
 ): RaptiveParsedRow[] {
   const byPath = new Map<string, RaptiveParsedRow>();
   for (const row of rows) {
-    const path = normalizeAnalyticsPath(row.pageUrl);
-    if (!path && !row.pageUrl.trim()) {
+    // A provider row can have earnings but no URL. Preserve it as explicitly
+    // unattributed; never discard its money or attach it to the homepage.
+    const pageUrl = row.pageUrl ?? `raptive:unattributed:${wpSite}:${date}`;
+    const path = normalizeAnalyticsPath(pageUrl);
+    if (!path && !pageUrl.trim()) {
       throw Object.assign(new Error("Raptive returned an invalid page URL"), {
         code: "raptive_page_url_invalid",
       });
@@ -228,7 +232,7 @@ function canonicalizeApiRows(
     const canonical: RaptiveParsedRow = {
       wp_site: wpSite,
       date,
-      page_url: row.pageUrl,
+      page_url: pageUrl,
       earnings: row.earnings,
       rpm,
       page_rpm: rpm,
@@ -241,7 +245,7 @@ function canonicalizeApiRows(
         existing.earnings !== canonical.earnings ||
         existing.rpm !== canonical.rpm ||
         existing.pageviews !== canonical.pageviews;
-      if (!metricsDiffer) continue;
+      if (!metricsDiffer && row.pageUrl !== null) continue;
       existing.earnings += canonical.earnings;
       existing.pageviews += canonical.pageviews;
       existing.rpm = existing.pageviews > 0
@@ -457,6 +461,23 @@ export async function syncEnabledRaptiveConnections(
   const results: RaptiveSyncResult[] = [];
   for (const connection of enabled) {
     results.push(await syncRaptiveConnection(connection, requestedDate));
+    if (requestedDate || !results[results.length - 1].ok) continue;
+    // Bounded catch-up keeps one failed day from becoming a permanent gap.
+    // The next daily run resumes remaining gaps without repeating completed days.
+    const latest = results[results.length - 1].date;
+    if (!latest) continue;
+    const from = new Date(Math.max(
+      Date.parse(connection.configuredAt), Date.parse(latest) - 60 * 86_400_000,
+    )).toISOString().slice(0, 10);
+    try {
+      const gaps = await missingRaptiveDates(connection.wpSite, from, latest);
+      for (const date of gaps.slice(0, 1)) {
+        results.push(await syncRaptiveConnection(connection, date));
+      }
+    } catch {
+      results.push({ ok: false, wpSite: connection.wpSite, date: latest,
+        error: "Raptive date coverage could not be checked", errorCode: "raptive_coverage_failed" });
+    }
   }
   return results;
 }

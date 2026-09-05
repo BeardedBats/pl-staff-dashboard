@@ -108,13 +108,31 @@ test("managers get risk-first operations, useful presets, and confirmed bulk act
     await expect(page.getByText("Decisions waiting")).toBeVisible();
 
     await page.goto("/content", { waitUntil: "networkidle" });
+    // Keep the previous rows visible long enough to verify the loading boundary.
+    await page.route("**/api/entries?**", async (route) => {
+      if (new URL(route.request().url()).searchParams.get("contentStatus") === "writer_needed") {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      }
+      await route.continue();
+    });
     await page.getByRole("button", { name: /Views/ }).click();
+    const filtered = page.waitForResponse((response) =>
+      response.request().method() === "GET" &&
+      new URL(response.url()).pathname === "/api/entries" &&
+      new URL(response.url()).searchParams.get("contentStatus") === "writer_needed",
+    );
     await page.getByRole("button", { name: /Needs a writer/ }).click();
     await expect(page.getByRole("combobox", { name: "Filter by content status" })).toHaveText(
       "Writer needed",
     );
 
-    await page.getByRole("checkbox", { name: "Select all" }).click();
+    const selectAll = page.getByRole("checkbox", { name: "Select all" });
+    await expect(selectAll).toBeDisabled();
+    expect((await filtered).status()).toBe(200);
+    // Claim journeys can empty this preset. Use the full fixture set for bulk cancellation.
+    await page.getByRole("button", { name: "Clear", exact: true }).click();
+    await expect(selectAll).toBeEnabled();
+    await selectAll.click();
     const setPriority = page.getByRole("button", { name: "Set priority" });
     await expect(setPriority).toBeVisible();
     await setPriority.click();

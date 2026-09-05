@@ -343,15 +343,17 @@ export function ProfileForm({ profile }: ProfileFormProps) {
 
           <div className="flex items-center justify-between rounded-md border border-border bg-surface-3 p-3">
             <div>
-              <p className="text-sm font-medium text-text-cell">
+              <Label htmlFor="auto-approve-drafts" className="text-sm font-medium text-text-cell">
                 Auto-approve my WordPress drafts
-              </p>
-              <p className="text-xs text-text-zero">
+              </Label>
+              <p id="auto-approve-drafts-description" className="text-xs text-text-zero">
                 Skip the manual approval step when a draft you started appears
                 via the WP sync.
               </p>
             </div>
             <Switch
+              id="auto-approve-drafts"
+              aria-describedby="auto-approve-drafts-description"
               checked={form.auto_approve_drafts}
               onCheckedChange={(checked) =>
                 update("auto_approve_drafts", checked)

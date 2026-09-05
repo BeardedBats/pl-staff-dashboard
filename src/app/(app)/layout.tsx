@@ -29,6 +29,7 @@ export default async function AppLayout({
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <Header
+          timezone={user.timezone}
           userId={user.id}
           displayName={user.display_name}
           email={user.email}

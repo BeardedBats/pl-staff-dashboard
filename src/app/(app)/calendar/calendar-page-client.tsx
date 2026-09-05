@@ -248,6 +248,7 @@ export function CalendarPageClient({
           eventClick={handleEventClick}
           height="auto"
           dayMaxEvents={4}
+          moreLinkDidMount={({ el }) => el.setAttribute("role", "button")}
           weekends={true}
           eventDisplay="block"
           displayEventTime={true}

@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Home,
   Table2,
-  Calendar,
+  Plug,
   ListChecks,
   ClipboardEdit,
   Palette,
@@ -29,10 +29,9 @@ export type NavItem = {
  * Role-based visibility is enforced via {@link isNavVisible}.
  */
 export const NAV_ITEMS: NavItem[] = [
-  { label: "Home", href: "/home", icon: Home },
-  { label: "Content Table", href: "/content", icon: Table2 },
-  { label: "Calendar", href: "/calendar", icon: Calendar },
   { label: "My Work", href: "/my-tasks", icon: ListChecks },
+  { label: "Team Overview", href: "/home", icon: Home },
+  { label: "Content", href: "/content", icon: Table2 },
   {
     label: "Editing Queue",
     href: "/editing-queue",
@@ -50,6 +49,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Staff Directory", href: "/staff", icon: Users },
   { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Connections", href: "/connections", icon: Plug, visibleTo: ["admin", "eic", "operations"] },
 ];
 
 export function isNavVisible(

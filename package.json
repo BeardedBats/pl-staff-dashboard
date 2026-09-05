@@ -79,20 +79,22 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^4.1.10",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.11",
     "jsdom": "^29.1.1",
-    "postcss": "8.5.21",
+    "postcss": "8.5.23",
     "supabase": "2.109.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
   },
   "overrides": {
+    "nanoid": "3.3.18",
     "minimatch": "10.2.6",
     "eslint-plugin-react-hooks": "7.0.1",
     "next": {
-      "postcss": "8.5.21",
+      "postcss": "8.5.23",
       "sharp": "0.35.3"
     }
   }

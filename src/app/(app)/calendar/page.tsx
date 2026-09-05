@@ -1,6 +1,7 @@
 import { listEntries, listTiers } from "@/lib/entries/queries";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { CalendarPageClient } from "./calendar-page-client";
+import { ContentViews } from "@/components/layout/content-views";
 
 export const metadata = {
   title: "Calendar",
@@ -33,11 +34,11 @@ export default async function CalendarPage() {
       <div>
         <h1 className="text-2xl font-semibold text-text-cell">Calendar</h1>
         <p className="mt-1 text-sm text-text-team">
-          Publishing schedule across Pitcher List and QB List. Color-coded by
-          tier.
+          Publishing schedule for your accessible sites. WordPress owns the final publication time.
         </p>
       </div>
 
+      <ContentViews active="calendar" />
       <CalendarPageClient initialEntries={entries} tiers={tiers} />
     </div>
   );

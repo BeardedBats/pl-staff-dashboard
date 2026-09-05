@@ -16,6 +16,9 @@ import {
   EditorStatusBadge,
 } from "@/components/entries/status-badges";
 import { formatDate } from "@/lib/utils";
+import { SetupChecklist } from "@/components/onboarding/setup-checklist";
+import { setupItemsForRoles } from "@/lib/onboarding/setup";
+import { hasRoleForSite } from "@/lib/auth/authorization";
 import {
   getLatestPolishingFeedback,
   type PolishingFeedback,
@@ -75,10 +78,17 @@ export default async function MyTasksPage() {
       <div>
         <h1 className="text-2xl font-semibold text-text-cell">My Work</h1>
         <p className="mt-1 text-sm text-text-team">
-          Your court. Articles you&apos;re writing, edits you&apos;re owning,
-          and upcoming deadlines.
+          Start with your next deadline. Write and publish in WordPress; manage reviews and handoffs here.
         </p>
       </div>
+
+      {!viewer.onboarding_completed && <SetupChecklist userId={viewer.id} items={setupItemsForRoles(viewer.roles)} />}
+      <nav aria-label="Your work queues" className="flex flex-wrap gap-3 text-sm">
+        <Link href="/content" className="rounded-md border border-border bg-card px-4 py-2 text-cyan">Browse assignments</Link>
+        {hasRoleForSite(viewer, "pl", "editor", "manager", "admin", "eic", "operations") && <Link href="/editing-queue" className="rounded-md border border-border bg-card px-4 py-2 text-cyan">Editing queue</Link>}
+        <Link href="/graphics" className="rounded-md border border-border bg-card px-4 py-2 text-cyan">Graphics queue</Link>
+        {hasRoleForSite(viewer, "pl", "admin", "eic", "operations") && <Link href="/connections" className="rounded-md border border-border bg-card px-4 py-2 text-cyan">Check connections</Link>}
+      </nav>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
@@ -94,7 +104,7 @@ export default async function MyTasksPage() {
               <EmptyState
                 icon={<Pencil className="h-5 w-5" />}
                 title="Nothing to write right now"
-                description="Claim an entry from the Content Table to get started."
+                description="Browse Content to request an assignment. Your manager approves the request."
               />
             ) : (
               <ul className="space-y-2">
@@ -228,6 +238,7 @@ function TaskRow({
             ) : (
               <ContentStatusBadge status={entry.content_status} />
             )}
+            <span className="text-xs text-text-team">Next: {showEditorStatus ? entry.editor_status === "edited" ? "Schedule in WordPress" : "Review the article" : entry.content_status === "polishing" ? "Address editor feedback" : "Write in WordPress, then submit for review"}</span>
             {entry.checklist_total > 0 ? (
               <span className="font-data text-[10px] text-text-zero">
                 {entry.checklist_completed}/{entry.checklist_total} checklist

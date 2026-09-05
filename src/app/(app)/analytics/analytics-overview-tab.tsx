@@ -79,6 +79,11 @@ export function AnalyticsOverviewTab({ query }: Props) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg border border-border bg-card p-4 text-sm text-text-team">
+        <span className="font-semibold text-text-cell">Attribution coverage: {(data.attributionRate * 100).toFixed(1)}%. </span>
+        ${data.unattributedEarnings.toLocaleString(undefined, { maximumFractionDigits: 2 })} is outside the matched entries in this view.
+        {data.attributionRate < 0.95 && " Writer totals are partial; filters and unresolved article or author links can reduce coverage."}
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <MetricCard
           label="Articles"

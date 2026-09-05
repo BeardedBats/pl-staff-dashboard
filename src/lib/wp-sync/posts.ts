@@ -168,6 +168,7 @@ async function findDefaultTierId(): Promise<string | null> {
 export async function syncWpPostsForSite(
   site: WpSiteKey,
   systemUserId: string,
+  recoverySince?: string,
 ): Promise<PostSyncReport> {
   const report: PostSyncReport = {
     site,
@@ -193,7 +194,7 @@ export async function syncWpPostsForSite(
   // Mark the "started at" time BEFORE we fetch so that any changes made
   // during the sync are still caught next time.
   const syncStartedAt = new Date().toISOString();
-  const modifiedAfter = await readLastSyncIso(site);
+  const modifiedAfter = recoverySince ?? await readLastSyncIso(site);
 
   const params = new URLSearchParams({
     modified_after: modifiedAfter,
@@ -231,10 +232,10 @@ export async function syncWpPostsForSite(
   }
   const { data: backlogRows, error: backlogError } = await supabase
     .from("wp_sync_backlog")
-    .select("wp_post_id,payload")
+    .select("wp_post_id,payload,last_seen_at")
     .eq("site", site)
-    .order("first_seen_at", { ascending: true })
-    .limit(1000);
+    .order("last_seen_at", { ascending: true })
+    .limit(25);
   if (backlogError) {
     report.errors.push({
       wpPostId: 0,
@@ -244,7 +245,18 @@ export async function syncWpPostsForSite(
   }
   const postsById = new Map<number, WpPost>();
   for (const row of backlogRows ?? []) {
-    postsById.set(row.wp_post_id, row.payload as unknown as WpPost);
+    if (fetched.rows.some((post) => post.id === row.wp_post_id)) continue;
+    if (Date.parse(row.last_seen_at) > Date.now() - 24 * 60 * 60 * 1000) continue;
+    // Never apply a cached draft over a post published since the backlog was recorded.
+    const response = await fetch(`${config.url}/wp-json/wp/v2/posts/${row.wp_post_id}?context=edit&_fields=id,status,author,date_gmt,modified_gmt,link,title`, {
+      headers: { Authorization: wordPressBasicAuth(config.appUsername, config.appPassword) },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) {
+      report.errors.push({ wpPostId: row.wp_post_id, message: "Could not refresh backlog post" });
+      continue;
+    }
+    postsById.set(row.wp_post_id, await response.json() as WpPost);
   }
   for (const post of fetched.rows) postsById.set(post.id, post);
   const posts = Array.from(postsById.values());
@@ -265,6 +277,20 @@ export async function syncWpPostsForSite(
       if (existingError) throw existingError;
 
       if (existing?.id) {
+        const { data: author, error: authorError } = await supabase.from("users")
+          .select("id").eq("wp_user_id", post.author).in("wp_site", [site, "both"]).maybeSingle();
+        if (authorError) throw authorError;
+        if (author) {
+          const { data: links, error } = await supabase.from("entry_authors")
+            .select("user_id").eq("entry_id", existing.id).eq("role", "primary");
+          if (error) throw error;
+          if (!links?.length) {
+            const { error: linkError } = await supabase.from("entry_authors").upsert({
+              entry_id: existing.id, user_id: author.id, role: "primary",
+            }, { onConflict: "entry_id,user_id", ignoreDuplicates: true });
+            if (linkError) throw linkError;
+          }
+        }
         // Refresh the public permalink alongside the status mirror so that
         // migration 0010 can null out old admin URLs and trust the cron to
         // repopulate them with `post.link` on the next pass.
@@ -287,6 +313,16 @@ export async function syncWpPostsForSite(
           modified: post.modified_gmt ? `${post.modified_gmt}Z` : null,
           date: post.date_gmt ? `${post.date_gmt}Z` : null,
         });
+        if (!author) {
+          const { error } = await supabase.rpc("queue_wp_sync_backlog", {
+            p_site: site, p_wp_post_id: post.id, p_wp_author_id: post.author,
+            p_payload: compactBacklogPost(post) as unknown as Json,
+          });
+          if (error) throw error;
+          report.skippedNoMatchingUser++;
+          report.entriesUpdated++;
+          continue;
+        }
         const { error: clearBacklogError } = await supabase
           .from("wp_sync_backlog")
           .delete()
@@ -297,11 +333,41 @@ export async function syncWpPostsForSite(
         continue;
       }
 
-      // Create path — only for draft/pending posts. Published and scheduled
-      // posts that don't already have a dashboard entry pre-date the
-      // dashboard's tracking and shouldn't auto-create backdated entries.
-      // This keeps the smoke test from accidentally pulling thousands of
-      // old pitcherlist.com articles into the dashboard.
+      // A post can be published between polls. Capture it even before its author signs in.
+      if (post.status === "publish" || post.status === "future") {
+        if (!defaultTierId) throw new Error("No default tier configured");
+        const { data: author, error: authorError } = await supabase.from("users")
+          .select("id").eq("wp_user_id", post.author).in("wp_site", [site, "both"]).maybeSingle();
+        if (authorError) throw authorError;
+        const date = post.date_gmt ? `${post.date_gmt}Z` : null;
+        const { data: captured, error: captureError } = await supabase.from("entries").insert({
+          title: pickTitle(post), site, tier_id: defaultTierId,
+          wp_post_id: post.id, wp_post_url: post.link, wp_status: post.status,
+          wp_modified_at: post.modified_gmt ? `${post.modified_gmt}Z` : null,
+          wp_sync_status: "synced", wp_last_synced_at: new Date().toISOString(),
+          content_status: post.status === "publish" ? "published" : "submitted",
+          editor_status: post.status === "publish" ? "published" : "scheduled",
+          publish_date: date, publish_date_precision: date ? "exact" : "none",
+          published_at: post.status === "publish" ? date : null,
+          created_by: author?.id ?? systemUserId,
+        }).select("id").single();
+        if (captureError || !captured) throw captureError ?? new Error("Post capture failed");
+        if (author) {
+          const { error } = await supabase.from("entry_authors").upsert({
+            entry_id: captured.id, user_id: author.id, role: "primary",
+          }, { onConflict: "entry_id,user_id", ignoreDuplicates: true });
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.rpc("queue_wp_sync_backlog", {
+            p_site: site, p_wp_post_id: post.id, p_wp_author_id: post.author,
+            p_payload: compactBacklogPost(post) as unknown as Json,
+          });
+          if (error) throw error;
+          report.skippedNoMatchingUser++;
+        }
+        report.entriesUpdated++;
+        continue;
+      }
       if (post.status !== "draft" && post.status !== "pending") {
         const { error: clearBacklogError } = await supabase
           .from("wp_sync_backlog")
@@ -317,6 +383,7 @@ export async function syncWpPostsForSite(
         .from("users")
         .select("id, auto_approve_drafts")
         .eq("wp_user_id", post.author)
+        .in("wp_site", [site, "both"])
         .maybeSingle();
       if (userError) throw userError;
 
@@ -390,7 +457,7 @@ export async function syncWpPostsForSite(
 
   // Any failed row stays inside the next retry window. Successful rows are
   // safe to see again because matching is keyed by (site, wp_post_id).
-  if (report.errors.length === 0) {
+  if (report.errors.length === 0 && !recoverySince) {
     try {
       await writeLastSyncIso(site, syncStartedAt);
     } catch {

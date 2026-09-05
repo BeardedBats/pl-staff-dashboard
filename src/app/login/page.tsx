@@ -10,7 +10,7 @@ export default async function LoginPage() {
   // Already authenticated? Bounce to home.
   const user = await getCurrentUser();
   if (user) {
-    redirect("/home");
+    redirect("/my-tasks");
   }
 
   return (
@@ -37,6 +37,15 @@ export default async function LoginPage() {
         </div>
 
         <LoginForm />
+        <details className="mt-5 rounded-lg border border-border bg-card p-4 text-sm text-text-team">
+          <summary className="cursor-pointer font-medium text-text-cell">First time signing in?</summary>
+          <ol className="mt-3 list-decimal space-y-2 pl-5">
+            <li>Open <a href="https://pitcherlist.com/wp-admin/profile.php#application-passwords-section" target="_blank" rel="noreferrer" className="text-cyan underline">your WordPress profile</a>.</li>
+            <li>Create an application password named “Staff Dashboard”.</li>
+            <li>Use your WordPress username and that application password here.</li>
+          </ol>
+          <p className="mt-3 text-xs">Keep the password private. Your regular WordPress password will not work here.</p>
+        </details>
 
         <p className="mt-6 text-center text-xs text-text-zero">
           Trouble signing in? Reach out to a dashboard admin for help creating

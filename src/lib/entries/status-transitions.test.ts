@@ -28,7 +28,7 @@ vi.mock("@/lib/auth/authorization", () => ({
   canEditorActOnSite: mocks.canEditorActOnSite,
 }));
 
-import { claimEdit, submitContent } from "./status-transitions";
+import { claimEdit, submitContent, applyWpStateToEntry } from "./status-transitions";
 
 const viewer: CurrentUser = {
   id: "10000000-0000-4000-8000-000000000001",
@@ -61,6 +61,13 @@ function singleQuery(data: unknown) {
 }
 
 describe("transactional editorial state transitions", () => {
+  it("does not record success after a failed WordPress state write", async () => {
+    const failure = new Error("write failed");
+    mocks.from.mockReturnValueOnce(singleQuery({ editor_status: "edited", wp_status: "draft", published_at: null }))
+      .mockReturnValueOnce({ update: () => ({ eq: () => Promise.resolve({ error: failure }) }) });
+    await expect(applyWpStateToEntry(entryId, viewer.id, { status: "publish", date: "2026-09-05T12:00:00Z", modified: null })).rejects.toBe(failure);
+    expect(mocks.appendRecentActivity).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.findMissingRequiredItems.mockResolvedValue([]);

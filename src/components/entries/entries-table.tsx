@@ -190,6 +190,8 @@ export function EntriesTable({
   const [entries, setEntries] = React.useState<EntrySummary[]>([]);
   const [totalCount, setTotalCount] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
+  const [loadedFilters, setLoadedFilters] = React.useState<EntriesFilterState | null>(null);
+  const selectionUnavailable = loading || loadedFilters !== filters;
   const [expandedId, setExpandedId] = React.useState<string | null>(
     initialEntryId ?? null,
   );
@@ -278,6 +280,7 @@ export function EntriesTable({
           if (!cancelled) {
             setEntries(data.entries ?? []);
             setTotalCount(data.totalCount ?? 0);
+            setLoadedFilters(filters);
           }
         } catch {
           if (!cancelled) {
@@ -308,7 +311,7 @@ export function EntriesTable({
     onColumnVisibilityChange: setVisibility,
     onRowSelectionChange: setRowSelection,
     enableRowSelection: (row) =>
-      manageableSites.includes(row.original.site as "pl" | "qb"),
+      !selectionUnavailable && manageableSites.includes(row.original.site as "pl" | "qb"),
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
   });
@@ -317,12 +320,13 @@ export function EntriesTable({
 
   const allRows = table.getRowModel().rows;
 
-  const selectedIds = table
+  const selectedIds = selectionUnavailable ? [] : table
     .getSelectedRowModel()
     .flatRows.map((row) => row.original.id);
   const selectedCount = selectedIds.length;
 
   async function runBulk(body: Record<string, unknown>, actionLabel: string) {
+    if (selectionUnavailable || selectedCount === 0 || bulkBusy) return;
     if (!(await confirm({
       title: `${actionLabel} selected entries?`,
       description: `${actionLabel} for ${selectedCount} selected ${selectedCount === 1 ? "entry" : "entries"}?`,
@@ -835,6 +839,7 @@ export function EntriesTable({
                         table.toggleAllRowsSelected(Boolean(checked))
                       }
                       aria-label="Select all"
+                      disabled={selectionUnavailable || !entries.length}
                     />
                   </th>
                   <th className="w-8 px-2 py-2" />

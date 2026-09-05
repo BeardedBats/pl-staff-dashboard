@@ -1,4 +1,5 @@
 "use client";
+import { decodeProviderText } from "@/lib/text";
 
 import * as React from "react";
 import Link from "next/link";
@@ -28,6 +29,7 @@ import {
 import type { NotificationRow } from "@/lib/notifications/data";
 
 type Props = {
+  timezone?: string;
   userId: string;
   initialRows: NotificationRow[];
   initialUnreadCount: number;
@@ -36,6 +38,7 @@ type Props = {
 const ALL = "__all__";
 
 export function NotificationsPageClient({
+  timezone = "America/New_York",
   userId,
   initialRows,
   initialUnreadCount,
@@ -261,6 +264,7 @@ export function NotificationsPageClient({
           {rows.map((n) => (
             <li key={n.id}>
               <NotificationListRow
+                timezone={timezone}
                 notification={n}
                 busy={busyAction === n.id}
                 onToggleRead={() => void markOne(n.id, !n.is_read)}
@@ -274,10 +278,12 @@ export function NotificationsPageClient({
 }
 
 function NotificationListRow({
+  timezone,
   notification,
   busy,
   onToggleRead,
 }: {
+  timezone: string;
   notification: NotificationRow;
   busy: boolean;
   onToggleRead: () => void;
@@ -286,7 +292,7 @@ function NotificationListRow({
     <>
       <div className="flex items-center gap-2">
         <p className="break-words text-sm font-medium text-text-cell">
-          {notification.title}
+          {decodeProviderText(notification.title)}
         </p>
         <Badge variant="outline" className="shrink-0">
           {EVENT_TYPE_LABELS[notification.type] ?? notification.type}
@@ -294,14 +300,14 @@ function NotificationListRow({
       </div>
       {notification.body ? (
         <p className="mt-1 break-words text-xs text-text-team">
-          {notification.body}
+          {decodeProviderText(notification.body)}
         </p>
       ) : null}
       <p className="mt-1 font-data text-[10px] text-text-zero">
         {formatDate(notification.created_at, {
           dateStyle: "medium",
           timeStyle: "short",
-          timeZone: "America/New_York",
+          timeZone: timezone,
         })}
       </p>
     </>

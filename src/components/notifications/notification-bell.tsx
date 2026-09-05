@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, Check, Inbox, Loader2 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { decodeProviderText } from "@/lib/text";
 import { readApiError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import {
 
 type NotificationBellProps = {
   userId: string;
+  timezone?: string;
 };
 
 /**
@@ -32,7 +34,7 @@ type NotificationBellProps = {
  * count + the 10 most recent. Clicking the bell opens a popover with the
  * latest items and links to the full page.
  */
-export function NotificationBell({ userId }: NotificationBellProps) {
+export function NotificationBell({ userId, timezone = "America/New_York" }: NotificationBellProps) {
   const router = useRouter();
   const [notifications, setNotifications] = React.useState<NotificationRow[]>(
     [],
@@ -265,6 +267,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
               {notifications.map((n) => (
                 <li key={n.id}>
                   <NotificationListItem
+                    timezone={timezone}
                     notification={n}
                     busy={busyAction === n.id}
                     onMarkRead={(href) => markOneRead(n.id, href)}
@@ -291,10 +294,12 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 }
 
 function NotificationListItem({
+  timezone,
   notification,
   busy,
   onMarkRead,
 }: {
+  timezone: string;
   notification: NotificationRow;
   busy: boolean;
   onMarkRead: (href: string) => Promise<void>;
@@ -325,18 +330,18 @@ function NotificationListItem({
         )}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-text-cell">
-            {notification.title}
+            {decodeProviderText(notification.title)}
           </p>
           {notification.body ? (
             <p className="mt-0.5 break-words text-xs text-text-team">
-              {notification.body}
+              {decodeProviderText(notification.body)}
             </p>
           ) : null}
           <p className="mt-1 text-[10px] text-text-zero">
             {formatDate(notification.created_at, {
               dateStyle: "short",
               timeStyle: "short",
-              timeZone: "America/New_York",
+              timeZone: timezone,
             })}
           </p>
         </div>

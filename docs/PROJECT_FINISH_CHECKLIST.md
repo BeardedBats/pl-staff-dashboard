@@ -1,13 +1,27 @@
 # Pitcher List Staff Content Dashboard — Production Readiness
 
-Last updated: 2026-07-30
+Last updated: 2026-09-05
+
+## September audit remediation batch
+
+- Active worktree: `codex/audit-completion-fixes`. Preserve the existing stacked history; one implementation batch and release candidate.
+- Implemented: WordPress published-post capture, existing author repair, authoritative schedule/unpublish reconciliation, failed-write handling, daily backlog backoff with fresh provider reads.
+- Implemented: paginated GA4 article matching, token-failure classification, bounded date catch-up; Raptive gap catch-up and preservation of null-URL revenue.
+- Implemented: scoped Connections recovery page, data coverage warnings, My Work landing, combined Content views, guided login, route-backed Settings tabs, profile timezone for notifications, calendar more-link semantics.
+- Production data: GA4 August 5–September 4 restored; coverage probe reports zero missing days and latest traffic September 4. WordPress recovery processed 548 changed posts without errors and captured/refreshed 527 entries. Author repair linked 9,261 entries using 158 verified directory records, without granting roles. A fresh check found zero WordPress-linked PL entries without a primary author. August 1–September 4 revenue attribution improved from 39.75% to 84.68%; missing Raptive dates and historical unmatched totals still limit completeness.
+- Verification: 100 test files / 427 tests, lint, types, and production build pass. All six checked authenticated routes pass desktop/mobile accessibility and overflow checks with no browser runtime errors. Calendar more-link semantics and the profile switch label were fixed. The complete dependency audit reports zero vulnerabilities.
+- Follow-up checks: all 512 recent published WordPress IDs are now represented, including one cutoff-boundary article recovered through the paged importer. Raptive August 17 and August 24 were replayed through the authenticated preview: 2,904 and 3,281 rows respectively, verified in production storage. Recent revenue attribution is now 84.49% including these dates. Historical compact attribution still requires original-source replay.
+- Visual follow-up: notification surfaces are fully opaque; Escape dismissal and Settings tab navigation pass. Fixed encoded notification punctuation and cramped tab spacing. Preserved system-health and global administration controls under Connections with unchanged permissions; the role journey now follows that route.
+- Full quality gate follow-up: 12 role journeys and 40 quality checks passed. Reviewed the two expected navigation/coverage screenshot changes and refreshed their baselines. Fixed a real filter-loading selection race exposed by the bulk-cancel journey. A targeted authenticated check confirms loading disables selection, Cancel preserves selection, and no bulk write occurs. Final exact-head rerun remains required.
+- Release gate pending: final exact-head CI, preview/production verification, and historical attribution reconciliation. Local Docker cannot start. GitHub's first-candidate database, application, and dependency checks passed; the final candidate still needs its own completed role/browser gate. Do not treat the local limitation as a passing gate.
+- Scope remains Pitcher List only. No paid service upgrade or destructive database migration is required by this batch.
 
 ## Recovery state
 
-- Current phase: Phase 7 — full audit remediation and release verification
-- Current action: finish the audit-completion batch, run the complete local gate, apply migration `0034`, deploy once, backfill missing WordPress/GA4 data, and run the final smoke.
+- Current phase: September production audit remediation and release verification.
+- Current action: finish the remaining historical author links, validate the release candidate, replay Raptive null-URL dates, and run the final smoke.
 - Branch: `codex/audit-completion-fixes`
-- Deployment: production is on merge commit `3f55019`; production migrations are contiguous through `0033`. Raptive is connected. GA4 is connected but has a May 17–July 28 coverage gap. WordPress sync is blocked by an oversized recovery payload until this batch deploys.
+- Deployment baseline: production was on main `92745cd` at this audit. September repairs are not yet deployed. GA4 was reconnected and its 31 missing days were restored. WordPress publication recovery completed without errors. No new migration is introduced by this batch.
 - Known blocker: GitHub-hosted CI remains waived if billing still blocks runners under the explicit no-spend requirement. QB WordPress is intentionally unconfigured. Nick must rotate and remove the four outer-workspace plaintext credential copies after replacement credentials are verified.
 - Preserved user work: modified `CLAUDE.md`; seven untracked prompt/audit files; zero-byte untracked `npx`. These are excluded from project commits.
 - Sensitive local material: four plaintext credential files exist in the outer workspace. Values were not read or emitted. Rotation/removal is pending verified service access and recovery-safe replacement.
