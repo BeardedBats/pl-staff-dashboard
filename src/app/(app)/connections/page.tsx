@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { hasRoleForSite } from "@/lib/auth/authorization";
+import { hasRoleForSite, isAdminPlusForScope } from "@/lib/auth/authorization";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getGa4Status } from "@/lib/analytics/ga4";
 import { getRaptiveLiveStatus } from "@/lib/analytics/raptive-live";
@@ -9,6 +9,9 @@ import { listRaptiveImportRuns, listRaptiveUploads } from "@/lib/analytics/rapti
 import { DataCoverage } from "@/components/analytics/data-coverage";
 import { AdminAnalyticsPanel } from "../settings/admin-analytics-panel";
 import { RecoveryActions } from "./recovery-actions";
+import { getOperationalHealth } from "@/lib/observability/health";
+import { listEvergreenCandidates } from "@/lib/wp-sync/evergreen";
+import { AdminSyncPanel } from "../settings/admin-sync-panel";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "@/components/ui/table";
 
 export const metadata = { title: "Connections" };
@@ -19,6 +22,7 @@ export default async function ConnectionsPage() {
   if (!hasRoleForSite(viewer, "pl", "admin", "eic", "operations")) redirect("/my-tasks");
   const operations = hasRoleForSite(viewer, "pl", "operations");
   const analytics = hasRoleForSite(viewer, "pl", "eic", "operations");
+  const globalAdmin = isAdminPlusForScope(viewer, "both");
   const db = getSupabaseAdmin();
   const backlog = await db.from("wp_sync_backlog")
     .select("wp_post_id,wp_author_id,first_seen_at,attempt_count", { count: "exact" })
@@ -26,6 +30,12 @@ export default async function ConnectionsPage() {
   const [ga4, raptive, uploads, imports] = analytics ? await Promise.all([
     getGa4Status(), getRaptiveLiveStatus(), listRaptiveUploads(), listRaptiveImportRuns(),
   ]) : [null, null, [], []];
+  const [health, evergreen, syncSettings] = await Promise.all([
+    globalAdmin || operations ? getOperationalHealth() : Promise.resolve(null),
+    globalAdmin ? listEvergreenCandidates() : Promise.resolve([]),
+    globalAdmin ? db.from("global_settings").select("key,value").in("key", ["wp_last_sync_pl", "wp_last_sync_qb"]) : Promise.resolve(null),
+  ]);
+  if (syncSettings?.error) throw new Error("WordPress sync status could not load");
   return <div className="space-y-6">
     <header><h1 className="text-2xl font-semibold text-text-cell">Connections</h1>
       <p className="mt-1 max-w-2xl text-sm text-text-team">Check data coverage, repair missing articles, and manage Pitcher List analytics. A successful job does not guarantee complete data.</p></header>
@@ -43,9 +53,14 @@ export default async function ConnectionsPage() {
           <TableCell>{row.wp_author_id}</TableCell><TableCell>{row.first_seen_at.slice(0, 10)}</TableCell><TableCell>{row.attempt_count.toLocaleString()}</TableCell>
         </TableRow>)}</TableBody></Table></div>}
     </section>
+    {globalAdmin && health && <AdminSyncPanel initialHealth={health} evergreenCandidates={evergreen}
+      initialLastSync={{
+        pl: syncSettings?.data?.find((row) => row.key === "wp_last_sync_pl")?.value as string | null ?? null,
+        qb: syncSettings?.data?.find((row) => row.key === "wp_last_sync_qb")?.value as string | null ?? null,
+      }} canRunHistoricalImport={operations} />}
     {ga4 && raptive && <AdminAnalyticsPanel initialGa4Status={ga4}
       initialRaptiveStatus={{ ...raptive, connections: raptive.connections.filter((item) => item.wpSite === "pl") }}
-      initialUploads={uploads} initialImportRuns={imports} initialOperationalHealth={null}
+      initialUploads={uploads} initialImportRuns={imports} initialOperationalHealth={globalAdmin ? null : health}
       canConnectGa4={operations} canManageRaptive={operations} />}
   </div>;
 }

@@ -167,7 +167,6 @@ test.describe("database-backed role journeys", () => {
         "Teams",
         "Templates",
         "Season",
-        "Sync",
         "Checklists",
       ]) {
         await expect(page.getByRole("tab", { name: tab })).toBeVisible();
@@ -175,7 +174,8 @@ test.describe("database-backed role journeys", () => {
       await expect(page.getByRole("tab", { name: "Analytics" })).toHaveCount(0);
       await expect(page.getByText(browserActors.writer.displayName).first()).toBeVisible();
 
-      await page.getByRole("tab", { name: "Sync" }).click();
+      await page.getByRole("link", { name: "Connections", exact: true }).click();
+      await expect(page).toHaveURL(/\/connections$/);
       await expect(
         page.getByText("System health", { exact: false }).first(),
       ).toBeVisible();
