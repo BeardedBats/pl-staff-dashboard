@@ -23,6 +23,7 @@ import {
 
 type NotificationBellProps = {
   userId: string;
+  timezone?: string;
 };
 
 /**
@@ -32,7 +33,7 @@ type NotificationBellProps = {
  * count + the 10 most recent. Clicking the bell opens a popover with the
  * latest items and links to the full page.
  */
-export function NotificationBell({ userId }: NotificationBellProps) {
+export function NotificationBell({ userId, timezone = "America/New_York" }: NotificationBellProps) {
   const router = useRouter();
   const [notifications, setNotifications] = React.useState<NotificationRow[]>(
     [],
@@ -265,6 +266,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
               {notifications.map((n) => (
                 <li key={n.id}>
                   <NotificationListItem
+                    timezone={timezone}
                     notification={n}
                     busy={busyAction === n.id}
                     onMarkRead={(href) => markOneRead(n.id, href)}
@@ -291,10 +293,12 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 }
 
 function NotificationListItem({
+  timezone,
   notification,
   busy,
   onMarkRead,
 }: {
+  timezone: string;
   notification: NotificationRow;
   busy: boolean;
   onMarkRead: (href: string) => Promise<void>;
@@ -336,7 +340,7 @@ function NotificationListItem({
             {formatDate(notification.created_at, {
               dateStyle: "short",
               timeStyle: "short",
-              timeZone: "America/New_York",
+              timeZone: timezone,
             })}
           </p>
         </div>

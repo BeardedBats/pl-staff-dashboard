@@ -92,7 +92,7 @@ const completeBounds = {
 };
 
 function apiRow(
-  pageUrl: string,
+  pageUrl: string | null,
   earnings: number,
   pageviews = 100,
   rpm: number | null = 5,
@@ -113,6 +113,15 @@ function apiRow(
 }
 
 describe("Raptive live synchronization", () => {
+  it("preserves all null-URL earnings separately from the homepage", async () => {
+    mocks.getPerformance.mockResolvedValue([apiRow(null, 2), apiRow(null, 2), apiRow("/", 3)]);
+    const result = await syncRaptiveConnection(connection, "2026-07-20");
+    expect(result.ok).toBe(true);
+    expect(mocks.matchRows).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ page_url: "raptive:unattributed:pl:2026-07-20", earnings: 4 }),
+      expect.objectContaining({ page_url: "/", earnings: 3 }),
+    ]), "pl");
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.listSites.mockResolvedValue([activeSite]);

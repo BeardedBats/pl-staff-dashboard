@@ -34,6 +34,7 @@ export type Ga4Status = {
   connected: boolean;
   propertyId: string | null;
   lastSyncedAt: string | null;
+  lastError?: string | null;
 };
 
 // --------------------------------------------------------------------------
@@ -83,12 +84,14 @@ export async function getGa4Status(): Promise<Ga4Status> {
   const refreshToken = await readSetting("ga4_refresh_token");
   const propertyIdOverride = await readSetting("ga4_property_id");
   const lastSyncedAt = await readSetting("ga4_last_synced_at");
+  const lastError = await readSetting("ga4_last_error");
 
   return {
     configured,
-    connected: Boolean(refreshToken),
+    connected: Boolean(refreshToken) && lastError !== "invalid_grant",
     propertyId: propertyIdOverride ?? env.GA4_PROPERTY_ID ?? null,
     lastSyncedAt,
+    lastError: lastError || null,
   };
 }
 
@@ -160,6 +163,7 @@ export async function exchangeCodeForTokens(
   }
 
   await writeSetting("ga4_refresh_token", data.refresh_token);
+  await writeSetting("ga4_last_error", "");
   if (data.access_token) {
     await writeSetting("ga4_access_token", data.access_token);
   }
@@ -221,12 +225,18 @@ async function getFreshAccessToken(): Promise<string | null> {
     return null;
   }
 
-  if (!res.ok) return null;
+  if (!res.ok) {
+    const failure = await res.json().catch(() => ({})) as { error?: string };
+    // Store only an allowlisted code, never provider payloads or credentials.
+    await writeSetting("ga4_last_error", failure.error === "invalid_grant" ? "invalid_grant" : "token_refresh_failed");
+    return null;
+  }
   const data = (await res.json()) as {
     access_token?: string;
     expires_in?: number;
   };
   if (!data.access_token) return null;
+  await writeSetting("ga4_last_error", "");
 
   await writeSetting("ga4_access_token", data.access_token);
   if (data.expires_in) {
@@ -355,8 +365,17 @@ export async function syncGa4(
   const yesterday = new Date(today);
   yesterday.setUTCDate(today.getUTCDate() - 1);
   const defaultDate = yesterday.toISOString().slice(0, 10);
-  const from = dateFrom ?? defaultDate;
-  const to = dateTo ?? defaultDate;
+  let from = dateFrom ?? defaultDate;
+  let to = dateTo ?? defaultDate;
+  if (!dateFrom && !dateTo) {
+    const coverage = await getSupabaseAdmin().rpc("get_ga4_coverage_health");
+    if (coverage.error) return { ok: false, error: "Could not check GA4 date coverage" };
+    const missing = (coverage.data as { firstMissingDate?: string } | null)?.firstMissingDate;
+    if (missing && missing <= defaultDate) {
+      from = missing;
+      to = new Date(Math.min(Date.parse(defaultDate), Date.parse(missing) + 6 * 86_400_000)).toISOString().slice(0, 10);
+    }
+  }
 
   const rows = await runGa4Report(status.propertyId, accessToken, from, to);
   if (!rows) {
@@ -365,10 +384,15 @@ export async function syncGa4(
 
   // Match GA4 pagePath → entry_id via wp_post_url
   const supabase = getSupabaseAdmin();
-  const { data: entryRows } = await supabase
-    .from("entries")
-    .select("id, wp_post_url")
-    .not("wp_post_url", "is", null);
+  const entryRows: Array<{ id: string; wp_post_url: string | null }> = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data: page, error } = await supabase.from("entries")
+      .select("id, wp_post_url").eq("site", "pl")
+      .not("wp_post_url", "is", null).order("id").range(offset, offset + 999);
+    if (error) return { ok: false, error: "Failed to load GA4 article mappings" };
+    entryRows.push(...(page ?? []));
+    if (!page || page.length < 1000) break;
+  }
 
   const urlToEntry = buildAnalyticsPathIndex(
     ((entryRows ?? []) as Array<{

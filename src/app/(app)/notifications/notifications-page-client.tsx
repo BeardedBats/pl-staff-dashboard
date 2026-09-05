@@ -28,6 +28,7 @@ import {
 import type { NotificationRow } from "@/lib/notifications/data";
 
 type Props = {
+  timezone?: string;
   userId: string;
   initialRows: NotificationRow[];
   initialUnreadCount: number;
@@ -36,6 +37,7 @@ type Props = {
 const ALL = "__all__";
 
 export function NotificationsPageClient({
+  timezone = "America/New_York",
   userId,
   initialRows,
   initialUnreadCount,
@@ -261,6 +263,7 @@ export function NotificationsPageClient({
           {rows.map((n) => (
             <li key={n.id}>
               <NotificationListRow
+                timezone={timezone}
                 notification={n}
                 busy={busyAction === n.id}
                 onToggleRead={() => void markOne(n.id, !n.is_read)}
@@ -274,10 +277,12 @@ export function NotificationsPageClient({
 }
 
 function NotificationListRow({
+  timezone,
   notification,
   busy,
   onToggleRead,
 }: {
+  timezone: string;
   notification: NotificationRow;
   busy: boolean;
   onToggleRead: () => void;
@@ -301,7 +306,7 @@ function NotificationListRow({
         {formatDate(notification.created_at, {
           dateStyle: "medium",
           timeStyle: "short",
-          timeZone: "America/New_York",
+          timeZone: timezone,
         })}
       </p>
     </>

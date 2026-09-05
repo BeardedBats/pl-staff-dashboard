@@ -1,10 +1,14 @@
 # API authorization matrix
 
 Audited: 2026-07-21  
-Scope: all 117 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
+Scope: all 118 exported HTTP handlers under `src/app/api`; no Server Actions exist under `src`.
 Status vocabulary: **OK** was enforced at the audit baseline; **GAP** was a baseline defect; **P1.12** marked the then-broken Vercel cron method contract. The closure table below is authoritative for post-audit repair state, and an automated parity test now rejects undocumented handlers.
 
 ## Policy vocabulary
+
+| Method | Route | Policy | Status |
+| --- | --- | --- | --- |
+| POST | `/api/connections/wordpress` | Live session with Operations role scoped to PL; invokes PL only | OK |
 
 - **Public**: no dashboard session is required.
 - **Session**: any current, server-validated dashboard session.

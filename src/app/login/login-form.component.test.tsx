@@ -48,7 +48,7 @@ describe("LoginForm", () => {
       }),
     });
     expect(refresh).toHaveBeenCalledOnce();
-    expect(replace).toHaveBeenCalledWith("/home");
+    expect(replace).toHaveBeenCalledWith("/my-tasks");
   });
 
   it("renders a safe API failure and allows a retry", async () => {

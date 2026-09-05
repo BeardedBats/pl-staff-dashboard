@@ -39,7 +39,7 @@ export function LoginForm() {
 
       // Hard-navigate so the fresh cookies are visible to the server layout.
       router.refresh();
-      router.replace("/home");
+      router.replace("/my-tasks");
     } catch {
       setError("Network error. Check your connection and retry.");
       setIsSubmitting(false);

@@ -8,5 +8,5 @@ import { getCurrentUser } from "@/lib/auth/current-user";
  */
 export default async function RootPage() {
   const user = await getCurrentUser();
-  redirect(user ? "/home" : "/login");
+  redirect(user ? "/my-tasks" : "/login");
 }

@@ -32,7 +32,7 @@ function token(value = "access-token") {
   });
 }
 
-function pageRow(url: string, earnings: number) {
+function pageRow(url: string | null, earnings: number) {
   return {
     pageUrl: url,
     siteUrl: "https://pitcherlist.com",
@@ -72,6 +72,12 @@ function pageResponse(
 }
 
 describe("Raptive Creator API client", () => {
+  it("preserves a provider row whose URL is explicitly null", async () => {
+    fetchMock.mockResolvedValueOnce(token()).mockResolvedValueOnce(pageResponse([pageRow(null, 2.5)], 1, null, 1));
+    const rows = await getRaptivePagePerformance("site-1", "2026-08-17");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ pageUrl: null, earnings: 2.5 });
+  });
   beforeEach(() => {
     fetchMock.mockReset();
     resetRaptiveTokenCacheForTests();

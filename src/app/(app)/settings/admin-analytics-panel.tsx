@@ -335,6 +335,9 @@ export function AdminAnalyticsPanel({
 
   return (
     <div className="space-y-4">
+      {status.lastError && <p role="alert" className="rounded-lg border border-amber/40 bg-amber/5 p-4 text-sm text-amber">
+        {status.lastError === "invalid_grant" ? "Google authorization expired or was revoked. Connect GA4 again, then backfill the missing dates." : "GA4 could not refresh its credentials. Retry synchronization or reconnect."}
+      </p>}
       {initialOperationalHealth ? (
         <OperationalHealthPanel initialHealth={initialOperationalHealth} />
       ) : null}

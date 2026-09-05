@@ -25,6 +25,7 @@ import { buildWeeklyOperationalDigest } from "@/lib/home/manager-operations";
 import { SetupChecklist } from "@/components/onboarding/setup-checklist";
 import { ManagerInbox } from "./manager-inbox";
 import { TodayBrief } from "./today-brief";
+import { DataCoverage } from "@/components/analytics/data-coverage";
 import {
   MyActiveClaimsWidget,
   MyDraftsToApproveWidget,
@@ -189,6 +190,7 @@ export default async function HomePage() {
       ) : null}
 
       <TodayBrief brief={todayBrief} />
+      {(user.roles.includes("eic") || user.roles.includes("operations")) && <DataCoverage />}
 
       {/* Manager inbox first — approvals block work */}
       {managerFit ? (

@@ -141,6 +141,7 @@ function NavLink({
 }
 
 function isActiveHref(pathname: string, href: string): boolean {
+  if (href === "/content" && pathname === "/calendar") return true;
   if (href === "/home") return pathname === "/home" || pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }

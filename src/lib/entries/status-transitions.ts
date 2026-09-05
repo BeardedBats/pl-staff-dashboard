@@ -1,4 +1,5 @@
 import "server-only";
+import { reconcilePublication } from "@/lib/wp-sync/state";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { TablesUpdate } from "@/types/database";
@@ -360,25 +361,25 @@ export async function applyWpStateToEntry(
 ): Promise<void> {
   const supabase = getSupabaseAdmin();
 
-  const { data: entry } = await supabase
+  const { data: entry, error: readError } = await supabase
     .from("entries")
     .select("editor_status, wp_status, published_at")
     .eq("id", entryId)
     .maybeSingle();
-  if (!entry) return;
+  if (readError) throw readError;
+  if (!entry) throw new Error("WordPress entry no longer exists");
 
   const currentEditor = entry.editor_status as EditorStatus;
   const wpStatus = wpState.status;
 
-  // Map WP status → dashboard editor_status (only when it's a forward move).
-  let nextEditor: EditorStatus | null = null;
-  if (wpStatus === "future" && currentEditor !== "published") {
-    nextEditor = "scheduled";
-  } else if (wpStatus === "publish" && currentEditor !== "published") {
-    nextEditor = "published";
-  }
+  const reconciled = reconcilePublication(currentEditor, wpStatus, wpState.date);
+  const nextEditor = reconciled.editorStatus as EditorStatus;
 
   const updates: TablesUpdate<"entries"> = {
+    ...reconciled.publication,
+    ...(wpStatus === "publish" ? { content_status: "published" as const }
+      : ["published", "scheduled"].includes(currentEditor) && wpStatus !== "future"
+        ? { content_status: "submitted" as const } : {}),
     wp_status: wpStatus,
     wp_modified_at: wpState.modified ?? null,
     updated_at: new Date().toISOString(),
@@ -387,11 +388,8 @@ export async function applyWpStateToEntry(
   if (nextEditor && nextEditor !== currentEditor) {
     updates.editor_status = nextEditor;
   }
-  if (wpStatus === "publish" && !entry.published_at) {
-    updates.published_at = wpState.date ?? new Date().toISOString();
-  }
-
-  await supabase.from("entries").update(updates).eq("id", entryId);
+  const { error: updateError } = await supabase.from("entries").update(updates).eq("id", entryId);
+  if (updateError) throw updateError;
 
   if (nextEditor && nextEditor !== currentEditor) {
     await writeAuditRow(
@@ -409,7 +407,7 @@ export async function applyWpStateToEntry(
       label:
         nextEditor === "published"
           ? "published — article is live"
-          : "scheduled in WordPress",
+          : nextEditor === "scheduled" ? "scheduled in WordPress" : "unpublished in WordPress",
       at: new Date().toISOString(),
     });
 

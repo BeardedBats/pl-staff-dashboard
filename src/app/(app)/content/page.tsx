@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { authorizedSiteScope } from "@/lib/auth/authorization";
 import { listViewsForUser } from "@/lib/views/data";
 import { ContentPageClient } from "./content-page-client";
+import { ContentViews } from "@/components/layout/content-views";
 
 export const metadata = {
   title: "Content",
@@ -51,6 +52,7 @@ export default async function ContentPage({
         </div>
       </div>
 
+      <ContentViews active="table" />
       <ContentPageClient
         tiers={tiers}
         categories={categories}

@@ -283,6 +283,22 @@ async function importOnePost(
     .maybeSingle();
 
   if (existing?.id) {
+    const { data: author, error: authorError } = await supabase.from("users")
+      .select("id").eq("wp_user_id", post.author).in("wp_site", [site, "both"]).maybeSingle();
+    if (authorError) throw authorError;
+    if (author) {
+      const { data: links, error: linksError } = await supabase.from("entry_authors")
+        .select("user_id").eq("entry_id", existing.id).eq("role", "primary");
+      if (linksError) throw linksError;
+      // Preserve intentional staff assignments. Repair only an absent primary author.
+      if (!links?.length) {
+        const { error } = await supabase.from("entry_authors").upsert({
+          entry_id: existing.id, user_id: author.id, role: "primary",
+        }, { onConflict: "entry_id,user_id", ignoreDuplicates: true });
+        if (error) throw error;
+        report.authorsMatched++;
+      }
+    }
     report.postsSkipped++;
     return;
   }
@@ -367,11 +383,12 @@ async function importOnePost(
   // the row keeps "My active claims" etc. from showing ghost entries
   // attributed to the system fallback user.
   if (dashboardUserId) {
-    await supabase.from("entry_authors").insert({
+    const { error: authorError } = await supabase.from("entry_authors").insert({
       entry_id: inserted.id as string,
       user_id: dashboardUserId,
       role: "primary",
     });
+    if (authorError) throw authorError;
   }
 
   report.postsImported++;

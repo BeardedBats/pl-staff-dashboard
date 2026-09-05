@@ -255,6 +255,7 @@ import {
 export async function importWpUser(
   site: WpSiteKey,
   lookup: { wpUserId?: number; username?: string },
+  options: { assignRole?: boolean } = {},
 ): Promise<{ ok: true; userId: string; created: boolean } | { ok: false; error: string }> {
   let wpResult: Awaited<ReturnType<typeof fetchWpUserById>>;
 
@@ -272,7 +273,7 @@ export async function importWpUser(
 
   const wpUser: WpUser = wpResult.value;
 
-  if (!isStaffWpUser(wpUser.wp_roles)) {
+  if (options.assignRole !== false && !isStaffWpUser(wpUser.wp_roles)) {
     return {
       ok: false,
       error: "This WP user is not a staff role (administrator / editor / author).",
@@ -347,6 +348,8 @@ export async function importWpUser(
   }
 
   // Seed a default role.
+  // Historical attribution may create directory records without granting access.
+  if (options.assignRole === false) return { ok: true, userId: created.id as string, created: true };
   const role = wpRoleToDashboardRole(wpUser.wp_roles);
   await supabase.from("user_roles").insert({
     user_id: created.id as string,

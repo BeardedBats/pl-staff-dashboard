@@ -75,7 +75,7 @@ const dateBoundsSchema = z.object({
 const pagePerformanceRowSchema = z.object({
   // Creator API page-performance rows may contain either an absolute URL or
   // the hostless article path consumed by normalizeAnalyticsPath().
-  pageUrl: z.string().trim().min(1).max(4096),
+  pageUrl: z.string().trim().min(1).max(4096).nullable(),
   earnings: apiNumberSchema,
   pageviews: apiNonnegativeIntegerSchema,
   // Raptive emits null/omits RPM for zero-traffic rows on some historical

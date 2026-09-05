@@ -30,6 +30,7 @@ import type { AppRole } from "@/lib/auth/current-user";
 import { readApiError } from "@/lib/api/client";
 
 type HeaderProps = {
+  timezone?: string;
   userId: string;
   displayName: string;
   email: string;
@@ -46,6 +47,7 @@ function initialsFromName(name: string): string {
 }
 
 export function Header({
+  timezone = "America/New_York",
   userId,
   displayName,
   email,
@@ -111,6 +113,7 @@ export function Header({
                 ).map((item) => {
                   const Icon = item.icon;
                   const active =
+                    (item.href === "/content" && pathname === "/calendar") ||
                     pathname === item.href ||
                     (item.href !== "/home" &&
                       pathname.startsWith(`${item.href}/`));
@@ -148,7 +151,7 @@ export function Header({
       <div className="flex items-center gap-1">
         <GlobalSearch />
 
-        <NotificationBell userId={userId} />
+        <NotificationBell userId={userId} timezone={timezone} />
 
         <ThemeToggle />
 

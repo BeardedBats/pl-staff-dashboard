@@ -428,7 +428,7 @@ export async function matchRaptiveRowsToEntries(
 
   for (const r of rows) {
     const norm = normalizeAnalyticsPath(r.page_url);
-    const entryId = entryUrlMaps.get(r.wp_site)?.get(norm) ?? null;
+    const entryId = r.page_url.startsWith("raptive:unattributed:") ? null : entryUrlMaps.get(r.wp_site)?.get(norm) ?? null;
     if (entryId) {
       matchedCount += 1;
     } else {
