@@ -114,7 +114,7 @@ export default async function SettingsPage({
 
       {adminAccess && <Link href="/connections" className="inline-block text-sm text-cyan underline underline-offset-4">Manage connections and data recovery</Link>}
       <SettingsTabs value={defaultTab}>
-        <TabsList className="h-auto flex-wrap justify-start gap-1">
+        <TabsList className="h-auto flex-wrap justify-start gap-x-6 gap-y-1">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           {adminAccess ? (

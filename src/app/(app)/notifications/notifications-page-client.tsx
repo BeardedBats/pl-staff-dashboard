@@ -1,4 +1,5 @@
 "use client";
+import { decodeProviderText } from "@/lib/text";
 
 import * as React from "react";
 import Link from "next/link";
@@ -291,7 +292,7 @@ function NotificationListRow({
     <>
       <div className="flex items-center gap-2">
         <p className="break-words text-sm font-medium text-text-cell">
-          {notification.title}
+          {decodeProviderText(notification.title)}
         </p>
         <Badge variant="outline" className="shrink-0">
           {EVENT_TYPE_LABELS[notification.type] ?? notification.type}
@@ -299,7 +300,7 @@ function NotificationListRow({
       </div>
       {notification.body ? (
         <p className="mt-1 break-words text-xs text-text-team">
-          {notification.body}
+          {decodeProviderText(notification.body)}
         </p>
       ) : null}
       <p className="mt-1 font-data text-[10px] text-text-zero">

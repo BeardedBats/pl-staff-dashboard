@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, Check, Inbox, Loader2 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { decodeProviderText } from "@/lib/text";
 import { readApiError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -329,11 +330,11 @@ function NotificationListItem({
         )}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-text-cell">
-            {notification.title}
+            {decodeProviderText(notification.title)}
           </p>
           {notification.body ? (
             <p className="mt-0.5 break-words text-xs text-text-team">
-              {notification.body}
+              {decodeProviderText(notification.body)}
             </p>
           ) : null}
           <p className="mt-1 text-[10px] text-text-zero">
