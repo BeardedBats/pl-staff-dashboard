@@ -116,6 +116,11 @@ test("managers get risk-first operations, useful presets, and confirmed bulk act
       await route.continue();
     });
     await page.getByRole("button", { name: /Views/ }).click();
+    const filtered = page.waitForResponse((response) =>
+      response.request().method() === "GET" &&
+      new URL(response.url()).pathname === "/api/entries" &&
+      new URL(response.url()).searchParams.get("contentStatus") === "writer_needed",
+    );
     await page.getByRole("button", { name: /Needs a writer/ }).click();
     await expect(page.getByRole("combobox", { name: "Filter by content status" })).toHaveText(
       "Writer needed",
@@ -123,6 +128,9 @@ test("managers get risk-first operations, useful presets, and confirmed bulk act
 
     const selectAll = page.getByRole("checkbox", { name: "Select all" });
     await expect(selectAll).toBeDisabled();
+    expect((await filtered).status()).toBe(200);
+    // Claim journeys can empty this preset. Use the full fixture set for bulk cancellation.
+    await page.getByRole("button", { name: "Clear", exact: true }).click();
     await expect(selectAll).toBeEnabled();
     await selectAll.click();
     const setPriority = page.getByRole("button", { name: "Set priority" });
