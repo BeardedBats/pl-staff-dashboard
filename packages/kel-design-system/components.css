@@ -69,7 +69,7 @@
   background: var(--kel-input-fill);
   border-color: var(--kel-border);
   border-radius: var(--kel-radius-secondary);
-  backdrop-filter: contrast(1.55) saturate(1.25);
+  backdrop-filter: var(--kel-backdrop);
   box-shadow: var(--kel-highlight);
 }
 .kel-btn-danger {

@@ -45,7 +45,7 @@ describe("PLPD table and data-value contract", () => {
     const css = source("src/app/globals.css");
 
     for (const rule of [
-      "--plpd-fill-table-header: rgba(15, 45, 100, .4)",
+      "--plpd-fill-table-header: #1B3156",
       "--plpd-table-header-height: 44px",
       "--plpd-table-row-height: 62px",
       "--plpd-duration-row-hover: 120ms",

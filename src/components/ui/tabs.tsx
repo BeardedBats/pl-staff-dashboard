@@ -13,7 +13,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "flex w-full items-end gap-8 overflow-x-auto border-b border-border-tab text-text-inactive-tab",
+      "flex w-full items-end gap-8 overflow-x-auto overflow-y-hidden border-b border-border-tab text-text-inactive-tab",
       className,
     )}
     {...props}

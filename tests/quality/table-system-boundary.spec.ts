@@ -38,10 +38,10 @@ test("production analytics renders the Kel table and numeric-value contract", as
     const header = page.locator(".plpd-table th").first();
     const headerStyle = await computedTableStyle(header);
     expect(Number.parseFloat(headerStyle.height)).toBeCloseTo(44, 0);
-    expect(headerStyle.backgroundColor).toBe("rgba(15, 45, 100, 0.4)");
+    expect(headerStyle.backgroundColor).toBe("rgb(27, 49, 86)");
     expect(headerStyle.color).toBe("rgb(143, 169, 214)");
     expect(headerStyle.fontFamily).toContain("Instrument Sans");
-    expect(headerStyle.fontSize).toBe("14px");
+    expect(headerStyle.fontSize).toBe("12px");
     expect(headerStyle.fontWeight).toBe("600");
 
     const numericCells = row.locator('td[data-numeric="true"]');

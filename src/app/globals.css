@@ -85,7 +85,8 @@
   --plpd-fill-row-hover: var(--kel-hover);
   --plpd-fill-row-best: var(--kel-hover);
   --plpd-fill-row-il: rgba(28, 20, 38, 0.32);
-  --plpd-fill-table-header: rgba(15, 45, 100, .4);
+  /* Sticky headings must fully cover the rows scrolling underneath. */
+  --plpd-fill-table-header: #1B3156;
   --plpd-text-row-il-position: rgba(255, 140, 140, 0.75);
   --plpd-fill-panel: var(--kel-glass-fill);
   --plpd-fill-state: var(--kel-input-fill);
@@ -1113,6 +1114,10 @@ code, kbd, pre, samp {
 /* Kel integration: legacy utility names preserve the existing application API. */
 :root {
   --kel-mesh-image: var(--plpd-mesh-image);
+  /* The source mesh already has contrast and color. Filtering it on every
+     nested surface compounds saturation and turns navy glass royal blue.
+     Keep the portable recipe configurable; this app uses the mesh unfiltered. */
+  --kel-backdrop: none;
 }
 .light {
   --kel-canvas: #F4F7FC;
