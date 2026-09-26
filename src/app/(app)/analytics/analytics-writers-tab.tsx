@@ -4,11 +4,6 @@ import * as React from "react";
 import { Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TableValue } from "@/components/ui/table";
 import { useIsMobile } from "@/lib/hooks/use-is-mobile";
@@ -86,12 +81,7 @@ export function AnalyticsWritersTab({ query }: Props) {
             className="rounded-lg border border-border bg-card p-3"
           >
             <div className="flex items-center gap-2 mb-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={r.avatar_url ?? undefined} alt={r.display_name} />
-                <AvatarFallback className="text-[10px]">
-                  {r.display_name.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+
               <div>
                 <div className="font-medium text-sm text-text-cell leading-tight">
                   {r.display_name}
@@ -143,12 +133,7 @@ export function AnalyticsWritersTab({ query }: Props) {
                 >
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={r.avatar_url ?? undefined} alt={r.display_name} />
-                        <AvatarFallback className="text-[10px]">
-                          {r.display_name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+
                       <span className="font-medium text-text-cell">
                         {r.display_name}
                       </span>

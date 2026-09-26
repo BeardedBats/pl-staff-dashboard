@@ -6,10 +6,7 @@ import type {
   GraphicStatus,
 } from "@/lib/entries/queries";
 
-// PLPD status → semantic mapping (approved artifact §4 + addendum Q1).
-// gray/zero · gold · blue · green · violet · val-pos · red. Exact values live
-// only in the centralized PLPD registry. CONFLICT-equivalent states (polishing,
-// flagged) are always visible — never hidden.
+// Kel status → bold semantic text. Keep labels and workflow values unchanged.
 
 type BadgeVariant = React.ComponentProps<typeof Badge>["variant"];
 
@@ -45,7 +42,7 @@ const EDITOR_VARIANT: Record<EditorStatus, BadgeVariant> = {
   none: "zero",
   ready_for_edit: "gold",
   edited: "blue",
-  scheduled: "valpos", // done, pending go-live (Q1)
+  scheduled: "valpos", // Kel accent blue, distinct from published green.
   published: "green", // LIVE (Q1)
 };
 

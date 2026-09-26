@@ -14,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { UserAvatar } from "@/components/users/user-avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ClaimRecord } from "@/lib/claims/data";
@@ -147,11 +146,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
                   className="flex flex-col gap-3 rounded-md border border-border bg-surface-3/40 p-3 sm:flex-row sm:items-center"
                 >
                   <div className="flex min-w-0 items-center gap-3 sm:flex-1">
-                    <UserAvatar
-                      displayName={claim.claimer_name}
-                      avatarUrl={claim.claimer_avatar}
-                      size="sm"
-                    />
+
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-text-cell">
                         <span className="font-medium">
@@ -223,11 +218,7 @@ export function ManagerInbox({ initialClaims, initialArchives }: Props) {
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <div className="flex min-w-0 items-center gap-3 sm:flex-1">
-                      <UserAvatar
-                        displayName={req.requester_name}
-                        avatarUrl={req.requester_avatar}
-                        size="sm"
-                      />
+
                       <div className="min-w-0 flex-1">
                         <p className="text-sm text-text-cell">
                           <span className="font-medium">

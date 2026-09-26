@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
-import { UserAvatar } from "@/components/users/user-avatar";
 import { ContentStatusBadge, EditorStatusBadge } from "@/components/entries/status-badges";
 import { readApiError } from "@/lib/api/client";
 import { useConfirmation } from "@/components/ui/confirmation-provider";
@@ -183,7 +182,7 @@ export function EditingQueueClient({
                         <div className="mt-1 flex gap-1"><Badge variant="outline" className="font-data">{entry.site.toUpperCase()}</Badge>{entry.priority ? <Badge variant="amber"><AlertTriangle className="h-3 w-3" />Priority</Badge> : null}</div>
                       </td>
                       <td className="px-3 py-3 align-top text-xs text-text-team">
-                        {entry.authors[0] ? <span className="flex items-center gap-1.5"><UserAvatar displayName={entry.authors[0].display_name} avatarUrl={entry.authors[0].avatar_url} size="xs" />{entry.authors[0].display_name}</span> : "Unassigned"}
+                        {entry.authors[0] ? <span className="flex items-center gap-1.5">{entry.authors[0].display_name}</span> : "Unassigned"}
                       </td>
                       <td className="px-3 py-3 align-top text-xs text-text-cell">{entry.publish_date ? formatDate(entry.publish_date, { dateStyle: "medium", timeStyle: "short" }) : "Unscheduled"}</td>
                       <td className="px-3 py-3 align-top"><ContentStatusBadge status={entry.content_status} /></td>

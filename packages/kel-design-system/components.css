@@ -1,0 +1,165 @@
+/* Opt-in recipes. Host apps own semantics, layout, state, and behavior. */
+.kel-canvas {
+  background-color: var(--kel-canvas);
+  background-image: var(--kel-header-fade), var(--kel-blue-wash), var(--kel-mesh-image, none);
+  background-size: cover;
+  background-attachment: fixed;
+  color: var(--kel-text);
+  font: 400 var(--kel-body-size)/var(--kel-body-leading) var(--kel-font-body);
+}
+.kel-glass, .kel-card {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--kel-border);
+  border-radius: var(--kel-radius-card);
+  background: linear-gradient(var(--kel-glass-wash), var(--kel-glass-wash)), var(--kel-glass-fill);
+  backdrop-filter: var(--kel-backdrop);
+  -webkit-backdrop-filter: var(--kel-backdrop);
+  box-shadow: var(--kel-shadow);
+  color: var(--kel-text);
+}
+/* A masked outline preserves translucent fills; no opaque gradient underlay. */
+.kel-glass::after, .kel-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--kel-border-gradient);
+  pointer-events: none;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+.kel-card-title {
+  color: var(--kel-card-title);
+  font: 700 var(--kel-card-title-size)/1.4 var(--kel-font-ui);
+}
+.kel-page-title {
+  color: var(--kel-text);
+  font: 600 var(--kel-page-title-size)/var(--kel-page-title-leading) var(--kel-font-ui);
+}
+.kel-section-label {
+  color: var(--kel-text-muted);
+  font: 500 var(--kel-section-label-size)/1.5 var(--kel-font-ui);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.kel-btn-primary, .kel-btn-secondary, .kel-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: var(--kel-control-height);
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--kel-radius-control);
+  font: 500 var(--kel-body-size)/1.4 var(--kel-font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter var(--kel-duration), background-color var(--kel-duration);
+}
+.kel-btn-primary {
+  color: var(--kel-on-primary);
+  background: var(--kel-primary-gradient);
+  box-shadow: var(--kel-primary-shadow);
+}
+.kel-btn-secondary {
+  color: var(--kel-text);
+  background: var(--kel-input-fill);
+  border-color: var(--kel-border);
+  border-radius: var(--kel-radius-secondary);
+  backdrop-filter: contrast(1.55) saturate(1.25);
+  box-shadow: var(--kel-highlight);
+}
+.kel-btn-danger {
+  color: var(--kel-danger-text);
+  background: var(--kel-danger-gradient);
+  box-shadow: var(--kel-highlight);
+}
+:is(.kel-btn-primary, .kel-btn-secondary, .kel-btn-danger):hover:not(:disabled):not([aria-disabled="true"]) {
+  filter: brightness(1.1);
+}
+:is(.kel-btn-primary, .kel-btn-secondary, .kel-btn-danger):disabled,
+:is(.kel-btn-primary, .kel-btn-secondary, .kel-btn-danger)[aria-disabled="true"] {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.kel-input, .kel-select {
+  box-sizing: border-box;
+  min-height: var(--kel-control-height);
+  padding: 6px 12px;
+  border: 1px solid var(--kel-border);
+  border-radius: var(--kel-radius-control);
+  background: var(--kel-input-fill);
+  color: var(--kel-text);
+  font: 400 var(--kel-body-size)/1.5 var(--kel-font-body);
+  box-shadow: var(--kel-highlight);
+}
+.kel-select { border-radius: var(--kel-radius-select); }
+.kel-select option { background: var(--kel-popover); color: var(--kel-text); }
+.kel-input::placeholder { color: var(--kel-text-muted); opacity: 1; }
+:is(.kel-input, .kel-select):disabled { cursor: not-allowed; opacity: .5; }
+:is(.kel-input, .kel-select)[aria-invalid="true"] { border-color: var(--kel-red); }
+.kel-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--kel-text-muted);
+  font: 500 14px/1.5 var(--kel-font-ui);
+  text-decoration: none;
+}
+.kel-nav-item:hover { background: var(--kel-hover); color: var(--kel-text); }
+.kel-nav-item[active], .kel-nav-item[data-active="true"], .kel-nav-item[aria-current="page"] {
+  background: var(--kel-selection);
+  color: var(--kel-text);
+}
+.kel-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--kel-text);
+  font: 400 var(--kel-body-size)/1.5 var(--kel-font-body);
+}
+.kel-table th {
+  padding: 12px 16px;
+  text-align: left;
+  color: var(--kel-text-muted);
+  font: 500 var(--kel-section-label-size)/1.5 var(--kel-font-ui);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  background: var(--kel-glass-wash);
+}
+.kel-table td { padding: 16px; border-top: 1px solid var(--kel-border-soft); }
+.kel-table tbody tr:hover { background: var(--kel-hover); }
+.kel-table tbody tr[aria-selected="true"] { background: var(--kel-selection); }
+.kel-status {
+  display: inline;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font: 700 var(--kel-body-size)/1.5 var(--kel-font-ui);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.kel-status-muted, .kel-status-needed, .kel-status-none, .kel-status-writer-needed { color: var(--kel-text-muted); }
+.kel-status-pending, .kel-status-claim-pending, .kel-status-ready-for-edit { color: var(--kel-amber); }
+.kel-status-claimed, .kel-status-edited { color: var(--kel-periwinkle); }
+.kel-status-submitted, .kel-status-done, .kel-status-published, .kel-status-success { color: var(--kel-success); }
+.kel-status-polishing { color: var(--kel-violet); }
+.kel-status-scheduled { color: var(--kel-link); }
+.kel-status-flagged { color: var(--kel-red); }
+:is(.kel-btn-primary, .kel-btn-secondary, .kel-btn-danger, .kel-input, .kel-select, .kel-nav-item):focus-visible {
+  outline: 2px solid var(--kel-focus);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.kel-btn-primary, .kel-btn-secondary, .kel-btn-danger, .kel-input, .kel-select, .kel-nav-item) { transition: none; }
+}
+@media (forced-colors: active) {
+  .kel-glass::after, .kel-card::after { display: none; }
+  .kel-glass, .kel-card, .kel-input, .kel-select { border-color: CanvasText; }
+}

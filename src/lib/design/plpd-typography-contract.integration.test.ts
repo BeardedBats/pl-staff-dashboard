@@ -21,15 +21,15 @@ function source(relativePath: string) {
 }
 
 describe("PLPD typography contract", () => {
-  it("loads both approved families and defaults application chrome to DM Sans", () => {
+  it("loads both approved families and defaults application chrome to Inter", () => {
     const layout = source("src/app/layout.tsx");
     const css = source("src/app/globals.css");
 
-    expect(layout).toContain("DM_Sans");
-    expect(layout).toContain("Work_Sans");
+    expect(layout).toContain("Instrument_Sans");
+    expect(layout).toContain("Inter");
     expect(layout).toContain("font-sans");
-    expect(css).toContain("--font-sans: var(--font-dm-sans)");
-    expect(css).toContain("--font-data: var(--font-work-sans)");
+    expect(css).toContain("--font-sans: var(--kel-font-body)");
+    expect(css).toContain("--font-data: var(--kel-font-ui)");
   });
 
   it("reserves monospace for literal code elements", () => {
@@ -46,7 +46,7 @@ describe("PLPD typography contract", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps every literal data table on Work Sans", () => {
+  it("keeps every literal data table on Instrument Sans", () => {
     const violations = sourceFiles(srcRoot).flatMap((file) => {
       const contents = readFileSync(file, "utf8");
       return [...contents.matchAll(/<table\b[^>]*className="([^"]*)"/g)]
@@ -57,7 +57,7 @@ describe("PLPD typography contract", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps standalone numerals and chart labels on Work Sans", () => {
+  it("keeps standalone numerals and chart labels on Instrument Sans", () => {
     const numeralViolations = sourceFiles(srcRoot).flatMap((file) =>
       readFileSync(file, "utf8")
         .split(/\r?\n/)
@@ -85,7 +85,7 @@ describe("PLPD typography contract", () => {
     expect(chartViolations).toEqual([]);
   });
 
-  it("keeps data-bearing site, tier, team, and category pills on Work Sans", () => {
+  it("keeps data-bearing site, tier, team, and category pills on Instrument Sans", () => {
     const dataPill = /(?:tier|site|team_name|team_site|category\.name)/i;
     const violations = sourceFiles(srcRoot).flatMap((file) => {
       const contents = readFileSync(file, "utf8");
@@ -101,20 +101,16 @@ describe("PLPD typography contract", () => {
   it("pins chrome, data, and heavy-weight roles to the guide", () => {
     for (const file of [
       "src/components/ui/button.tsx",
-      "src/components/ui/badge.tsx",
       "src/components/ui/dialog.tsx",
       "src/components/ui/sheet.tsx",
-      "src/components/ui/page-header.tsx",
     ]) {
       expect(source(file), file).toContain("font-sans");
     }
 
     for (const file of [
-      "src/components/ui/card.tsx",
+      "src/components/ui/page-header.tsx",
       "src/components/ui/dropdown-menu.tsx",
-      "src/components/ui/input.tsx",
       "src/components/ui/pagination.tsx",
-      "src/components/ui/select.tsx",
       "src/components/ui/table.tsx",
       "src/components/layout/sidebar.tsx",
     ]) {
@@ -123,7 +119,7 @@ describe("PLPD typography contract", () => {
 
     const css = source("src/app/globals.css");
     expect(css).toMatch(
-      /\.plpd-section-title\s*\{[\s\S]*?font-family: var\(--font-sans\);[\s\S]*?font-weight: var\(--plpd-weight-section\);/,
+      /\.plpd-section-title\s*\{[\s\S]*?font-family: var\(--font-data\);[\s\S]*?font-weight: var\(--plpd-weight-section\);/,
     );
     expect(css).toMatch(
       /\.plpd-hero-numeral\s*\{[\s\S]*?font-family: var\(--font-data\);[\s\S]*?font-weight: var\(--plpd-weight-hero\);/,

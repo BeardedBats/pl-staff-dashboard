@@ -1,0 +1,27 @@
+/* Optional Tailwind v4 adapter. Import after tailwindcss and tokens.css. */
+@theme inline {
+  --color-kel-canvas: var(--kel-canvas);
+  --color-kel-navy: var(--kel-navy);
+  --color-kel-blue: var(--kel-blue);
+  --color-kel-text: var(--kel-text);
+  --color-kel-secondary: var(--kel-text-secondary);
+  --color-kel-muted: var(--kel-text-muted);
+  --color-kel-dim: var(--kel-text-dim);
+  --color-kel-link: var(--kel-link);
+  --color-kel-title: var(--kel-card-title);
+  --color-kel-amber: var(--kel-amber);
+  --color-kel-success: var(--kel-success);
+  --color-kel-periwinkle: var(--kel-periwinkle);
+  --color-kel-red: var(--kel-red);
+  --color-kel-violet: var(--kel-violet);
+  --color-kel-border: var(--kel-border);
+  --font-kel-ui: var(--kel-font-ui);
+  --font-kel-body: var(--kel-font-body);
+  --radius-kel-card: var(--kel-radius-card);
+  --radius-kel-control: var(--kel-radius-control);
+  --shadow-kel-card: var(--kel-shadow);
+  --text-kel-title: var(--kel-page-title-size);
+  --text-kel-title--line-height: var(--kel-page-title-leading);
+  --text-kel-body: var(--kel-body-size);
+  --text-kel-body--line-height: var(--kel-body-leading);
+}

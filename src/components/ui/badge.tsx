@@ -2,35 +2,32 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-// PLPD chip construction: DM Sans 700 10px, .05em tracking, 6px radius,
-// 2.5px/8px padding, translucent fill (~10%) + 1px border (~50%) in the
-// semantic color. Semantic colors (green/red/val-pos) are reserved for
-// status; role chips use brand/neutral tints (see role-badge.tsx).
+// Kel status labels use bold colored text. Keep variants for existing callers.
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-[6px] border px-2 py-[2.5px] font-sans text-[10px] font-bold uppercase tracking-[0.05em] transition-colors",
+  "kel-status inline-flex items-center gap-1",
   {
     variants: {
       variant: {
-        default: "border-border bg-surface-3 text-text-team",
-        neutral: "border-border bg-surface-3 text-text-team",
-        outline: "border-border bg-transparent text-text-team",
+        default: "text-text-team",
+        neutral: "text-text-team",
+        outline: "text-text-team",
         // gray / zero — writer identity, "none"/"needed" empty states
-        zero: "border-[var(--plpd-border-zero)] bg-[var(--plpd-fill-zero)] text-text-zero",
+        zero: "kel-status-muted",
         // brand
-        cyan: "border-cyan/50 bg-cyan/10 text-cyan",
-        cyanHeader: "border-cyan-header/50 bg-cyan-header/10 text-cyan-header",
-        amber: "border-amber/50 bg-amber/10 text-amber",
-        amberOutline: "border-amber bg-transparent text-amber",
-        violet: "border-violet/50 bg-violet/10 text-violet",
+        cyan: "text-cyan",
+        cyanHeader: "text-cyan-header",
+        amber: "kel-status-pending",
+        amberOutline: "kel-status-pending",
+        violet: "kel-status-polishing",
         // semantic — reserved for status
-        green: "border-green/50 bg-green/10 text-green",
-        valpos: "border-val-pos/50 bg-val-pos/10 text-val-pos",
-        gold: "border-gold/50 bg-gold/10 text-gold",
-        blue: "border-blue/50 bg-blue/10 text-blue",
-        red: "border-red/50 bg-red/10 text-red",
+        green: "kel-status-success",
+        valpos: "kel-status-scheduled",
+        gold: "kel-status-pending",
+        blue: "kel-status-claimed",
+        red: "kel-status-flagged",
         // back-compat semantic aliases (generic good/bad badges)
-        success: "border-green/50 bg-green/10 text-green",
-        danger: "border-red/50 bg-red/10 text-red",
+        success: "kel-status-success",
+        danger: "kel-status-flagged",
       },
     },
     defaultVariants: {
@@ -48,7 +45,6 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   return (
     <div
       data-slot="badge"
-      data-plpd-compact-label
       className={cn(badgeVariants({ variant }), className)}
       {...props}
     />

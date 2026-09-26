@@ -786,14 +786,6 @@ export function EntriesTable({
                     </div>
                     {entry.authors.length > 0 ? (
                       <div className="mt-1.5 flex items-center gap-1">
-                        {entry.authors.slice(0, 3).map((a) => (
-                          <UserAvatar
-                            key={a.user_id}
-                            displayName={a.display_name}
-                            avatarUrl={a.avatar_url}
-                            size="xs"
-                          />
-                        ))}
                         <span className="text-[10px] text-text-zero">
                           {entry.authors.map((a) => a.display_name).join(", ")}
                         </span>

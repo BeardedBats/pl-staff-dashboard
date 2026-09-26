@@ -57,7 +57,7 @@ describe("PLPD Never List contract", () => {
   it("prohibits opaque literals, frosted glass, and generic heavy shadows", () => {
     const css = source("src/app/globals.css");
 
-    expect(violations(/\bbg-(?:white|black|slate|gray|zinc|neutral|stone)(?:\b|[-/])/)).toEqual([]);
+    expect(violations(/\bbg-(?:black|slate|gray|zinc|neutral|stone)(?:\b|[-/])/)).toEqual([]);
     expect(violations(/\bshadow-(?:lg|xl|2xl)\b/)).toEqual([]);
     expect(violations(/#[0-9a-f]{3,8}|rgba?\(|(?:linear|radial)-gradient\(/i)).toEqual([]);
     expect(violations(/backdrop-(?:blur|filter)|backdrop-filter/)).toEqual([]);
@@ -100,15 +100,15 @@ describe("PLPD Never List contract", () => {
     }
   });
 
-  it("keeps active tabs amber and Import actions on the four-layer ring", () => {
+  it("uses Kel tabs and portable primary button recipes", () => {
     const tabs = source("src/components/ui/tabs.tsx");
     const buttons = source("src/components/ui/button.tsx");
     const css = source("src/app/globals.css");
 
-    expect(tabs).toContain("data-[state=active]:text-amber");
+    expect(tabs).toContain("data-[state=active]:text-foreground");
     expect(tabs).not.toMatch(/data-\[state=active\]:text-cyan/);
-    expect(buttons).toContain('default: "plpd-btn-import');
-    expect(buttons).toContain('amber: "plpd-btn-cta');
+    expect(buttons).toContain('default: "kel-btn-primary');
+    expect(buttons).toContain('amber: "kel-btn-primary');
     expect(css).toMatch(/\.plpd-btn-import,[\s\S]*?border: none;[\s\S]*?var\(--plpd-shadow-action\)/);
     expect(css).toContain(".plpd-btn-import::before");
     expect(css).toContain(".plpd-btn-import::after");

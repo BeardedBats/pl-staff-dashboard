@@ -1,0 +1,30 @@
+{
+  "build": "kel-visual-2",
+  "capturedAt": "2026-09-26T03:50:44.471Z",
+  "browser": "149.0.7827.55",
+  "deviceScaleFactor": 1,
+  "zoom": 1,
+  "results": [
+    {
+      "check": "tablet-table-scroll",
+      "scrollLeft": 91,
+      "scrollWidth": 817,
+      "clientWidth": 726,
+      "reachedEnd": true
+    },
+    {
+      "check": "mobile-article",
+      "overflow": false
+    },
+    {
+      "check": "mobile-tabs-reachable",
+      "bounds": {
+        "x": 268.46875,
+        "y": 424.21875,
+        "width": 80.6875,
+        "height": 51.6875
+      },
+      "focused": true
+    }
+  ]
+}

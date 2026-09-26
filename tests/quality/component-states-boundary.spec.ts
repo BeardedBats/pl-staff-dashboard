@@ -42,11 +42,11 @@ test("production widgets expose the exact default, hover, and active surface sta
     expect(resting.transitionDuration).toContain("0.15s");
 
     await widget.hover();
-    await expect.poll(async () => (await stateSurface(widget)).transform).not.toBe(
+    await expect.poll(async () => (await stateSurface(widget)).transform).toBe(
       resting.transform,
     );
     const hover = await stateSurface(widget);
-    expect(hover.backgroundImage).toContain("rgba(255, 255, 255, 0.04)");
+    expect(hover.backgroundImage).toContain("rgba(47, 107, 224, 0.12)");
 
     const badgedWidget = page
       .locator('.plpd-stateful-card[data-plpd-state="default"]')
@@ -61,13 +61,13 @@ test("production widgets expose the exact default, hover, and active surface sta
           .first()
           .evaluate((element) => getComputedStyle(element).opacity),
       )
-      .toBe("0.88");
+      .toBe("1");
 
     const activeShadow = await widget.evaluate((element) => {
       element.setAttribute("data-plpd-state", "active");
-      return getComputedStyle(element).boxShadow;
+      return getComputedStyle(element).outlineColor;
     });
-    expect(activeShadow).toContain("rgba(242, 178, 75, 0.3)");
+    expect(activeShadow).toBe("rgb(159, 195, 255)");
 
     await page.screenshot({
       path: testInfo.outputPath("home-component-states.png"),

@@ -20,10 +20,10 @@ function productionTsx(directory: string): string[] {
 }
 
 describe("PLPD responsive and readable-text contract", () => {
-  it("never hides readable copy with ellipsis or line clamps", () => {
+  it("never hides body copy with line clamps", () => {
     const violations = productionTsx(srcRoot).flatMap((file) => {
       const contents = readFileSync(file, "utf8");
-      return /(?:\btruncate\b|line-clamp)/.test(contents)
+      return /line-clamp/.test(contents)
         ? [path.relative(root, file)]
         : [];
     });
@@ -31,7 +31,7 @@ describe("PLPD responsive and readable-text contract", () => {
     expect(violations).toEqual([]);
   });
 
-  it("enforces the 14px readable minimum with only canonical compact chips exempt", () => {
+  it("enforces the 14px readable minimum with only compact notification counts exempt", () => {
     const css = source("src/app/globals.css");
     const badge = source("src/components/ui/badge.tsx");
     const bell = source("src/components/notifications/notification-bell.tsx");
@@ -39,7 +39,7 @@ describe("PLPD responsive and readable-text contract", () => {
     expect(css).toMatch(
       /:where\([\s\S]*?\.text-xs[\s\S]*?\.text-\\\[13px\\\][\s\S]*?\):not\(\[data-plpd-compact-label\]\)[\s\S]*?font-size: var\(--plpd-type-body\)/,
     );
-    expect(badge).toContain("data-plpd-compact-label");
+    expect(badge).not.toContain("data-plpd-compact-label");
     expect(bell).toContain("data-plpd-compact-label");
   });
 

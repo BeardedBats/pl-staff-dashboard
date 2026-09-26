@@ -22,7 +22,7 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
+    <div className="flex h-dvh w-full overflow-hidden text-foreground">
       {/* Persistent navigation is desktop-only; mobile and tablet use the drawer. */}
       <div className="hidden lg:block">
         <Sidebar userRoles={user.roles} userDisplayName={user.display_name} />

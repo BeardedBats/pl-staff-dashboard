@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { UserAvatar } from "@/components/users/user-avatar";
 import { CommentBody } from "./comment-body";
 import { CommentComposer } from "./comment-composer";
 import type { CommentRecord } from "@/lib/comments/data";
@@ -278,11 +277,7 @@ function CommentItem({
       <article className="rounded-md border border-border bg-card p-3">
         <header className="mb-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <UserAvatar
-              displayName={comment.author_name}
-              avatarUrl={comment.author_avatar}
-              size="sm"
-            />
+
             <div>
               <p className="text-sm font-medium text-text-cell">
                 {comment.author_name}
@@ -383,11 +378,7 @@ function CommentItem({
                 <article className="rounded-md border border-border bg-card p-3">
                   <header className="mb-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <UserAvatar
-                        displayName={reply.author_name}
-                        avatarUrl={reply.author_avatar}
-                        size="sm"
-                      />
+
                       <div>
                         <p className="text-sm font-medium text-text-cell">
                           {reply.author_name}

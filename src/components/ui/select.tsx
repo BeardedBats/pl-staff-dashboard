@@ -22,12 +22,10 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      // PLPD dropdown trigger — 144.79° blue badge gradient + inset top
-      // highlight. NO white-fade layer (that is exclusive to Import buttons).
-      "relative flex h-9 w-full items-center justify-between rounded-sm px-3 py-1 font-data text-plpd-body text-text-cell",
+      "kel-select relative flex h-9 w-full items-center justify-between px-3 py-1 text-plpd-body text-text-cell",
       variant === "primary"
-        ? "plpd-dropdown-trigger border-0 font-bold"
-        : "plpd-input-control border border-border-tab bg-surface-3 font-medium text-text-nav",
+        ? "plpd-dropdown-trigger font-medium"
+        : "plpd-input-control font-medium text-text-nav",
       "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
       "disabled:cursor-not-allowed disabled:opacity-50",
       "[&>span]:break-words [&>span]:whitespace-normal",
@@ -37,7 +35,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 text-white" />
+      <ChevronDown className="h-4 w-4 text-current" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));

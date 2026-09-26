@@ -4,7 +4,6 @@ import { ArrowLeft, Mail, MapPin, AtSign, Hash } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminPlusForScope } from "@/lib/auth/authorization";
 import { getUserById } from "@/lib/users/queries";
-import { UserAvatar } from "@/components/users/user-avatar";
 import { RoleBadgeGroup } from "@/components/users/role-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,11 +49,7 @@ export default async function StaffMemberPage({
         {/* Left column — identity card */}
         <Card>
           <CardContent className="flex flex-col items-center p-6 text-center">
-            <UserAvatar
-              displayName={target.display_name}
-              avatarUrl={target.avatar_url}
-              size="xl"
-            />
+
             <h1 className="mt-4 text-lg font-semibold text-text-cell">
               {target.display_name}
             </h1>

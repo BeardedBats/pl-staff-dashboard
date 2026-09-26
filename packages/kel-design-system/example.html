@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kel · Portable CSS example</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="./tokens.css" rel="stylesheet">
+<link href="./components.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px; }
+  main { max-width: 900px; margin: auto; }
+  section { padding: 24px; margin: 24px 0; }
+  nav, .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  label { display: grid; gap: 8px; margin: 16px 0; }
+  .table-wrap { overflow-x: auto; }
+  @media (max-width: 480px) { body { padding: 16px; } section { padding: 16px; } }
+</style>
+<body class="kel-canvas">
+<main>
+  <h1 class="kel-page-title">Kel design system</h1>
+  <p>Standalone CSS. No app framework or JavaScript required.</p>
+  <nav aria-label="Example sections">
+    <a class="kel-nav-item" href="#controls" aria-current="page">Controls</a>
+    <a class="kel-nav-item" href="#statuses">Statuses</a>
+  </nav>
+  <section id="controls" class="kel-card" aria-labelledby="controls-title">
+    <h2 id="controls-title" class="kel-card-title">Component recipes</h2>
+    <label>Title <input class="kel-input" placeholder="Enter an article title"></label>
+    <label>Status <select class="kel-select"><option>Writer needed</option><option>Claimed</option></select></label>
+    <div class="actions">
+      <button class="kel-btn-primary" type="button">Primary example</button>
+      <button class="kel-btn-secondary" type="button">Secondary example</button>
+      <button class="kel-btn-danger" type="button">Danger example</button>
+      <button class="kel-btn-primary" type="button" disabled>Disabled</button>
+    </div>
+    <p>These buttons demonstrate appearance only. The host app supplies actions.</p>
+  </section>
+  <section id="statuses" class="kel-card table-wrap" aria-labelledby="statuses-title">
+    <h2 id="statuses-title" class="kel-card-title">Text-only status</h2>
+    <table class="kel-table">
+      <caption>Example editorial assignments</caption>
+      <thead><tr><th scope="col">Article</th><th scope="col">Author</th><th scope="col">Status</th></tr></thead>
+      <tbody>
+        <tr><td>Starting pitcher rankings</td><td>Nick Pollack</td><td><span class="kel-status kel-status-claimed">Claimed</span></td></tr>
+        <tr><td>Bullpen report</td><td>Sarah Chen</td><td><span class="kel-status kel-status-submitted">Submitted</span></td></tr>
+        <tr><td>Prospect report</td><td>Unassigned</td><td><span class="kel-status kel-status-needed">Writer needed</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>

@@ -5,7 +5,6 @@ import { AtSign, Loader2, Send, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { UserAvatar } from "@/components/users/user-avatar";
 
 type StaffSuggestion = {
   id: string;
@@ -215,11 +214,7 @@ export function CommentComposer({
                       : "text-text-team hover:bg-secondary",
                   )}
                 >
-                  <UserAvatar
-                    displayName={u.display_name}
-                    avatarUrl={u.avatar_url}
-                    size="xs"
-                  />
+
                   <span>{u.display_name}</span>
                 </button>
               </li>

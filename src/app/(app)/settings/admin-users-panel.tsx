@@ -31,7 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserAvatar } from "@/components/users/user-avatar";
 import { RoleBadgeGroup } from "@/components/users/role-badge";
 import type { StaffUserSummary } from "@/lib/users/queries";
 import { EditUserDialog } from "./edit-user-dialog";
@@ -165,11 +164,7 @@ export function AdminUsersPanel({
                 >
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <UserAvatar
-                        displayName={user.display_name}
-                        avatarUrl={user.avatar_url}
-                        size="sm"
-                      />
+
                       <div className="min-w-0">
                         <p className="break-words font-medium text-text-cell">
                           {user.display_name}

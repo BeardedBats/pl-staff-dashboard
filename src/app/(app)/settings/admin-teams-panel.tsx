@@ -41,7 +41,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
-import { UserAvatar } from "@/components/users/user-avatar";
 import type { TeamSummary, TeamDetail, TeamMemberRow } from "@/lib/teams/data";
 import type { StaffUserSummary } from "@/lib/users/queries";
 import type { AppSite } from "@/lib/auth/current-user";
@@ -406,11 +405,7 @@ function TeamDetailPanel({
                   className="flex items-center justify-between gap-3 px-3 py-2"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <UserAvatar
-                      displayName={m.display_name}
-                      avatarUrl={m.avatar_url}
-                      size="sm"
-                    />
+
                     <div className="min-w-0">
                       <p className="break-words text-sm font-medium text-text-cell">
                         {m.display_name}

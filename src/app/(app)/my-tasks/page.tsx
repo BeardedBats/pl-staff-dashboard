@@ -84,10 +84,10 @@ export default async function MyTasksPage() {
 
       {!viewer.onboarding_completed && <SetupChecklist userId={viewer.id} items={setupItemsForRoles(viewer.roles)} />}
       <nav aria-label="Your work queues" className="flex flex-wrap gap-3 text-sm">
-        <Link href="/content" className="rounded-md border border-border bg-card px-4 py-2 text-cyan">Browse assignments</Link>
-        {hasRoleForSite(viewer, "pl", "editor", "manager", "admin", "eic", "operations") && <Link href="/editing-queue" className="rounded-md border border-border bg-card px-4 py-2 text-cyan">Editing queue</Link>}
-        <Link href="/graphics" className="rounded-md border border-border bg-card px-4 py-2 text-cyan">Graphics queue</Link>
-        {hasRoleForSite(viewer, "pl", "admin", "eic", "operations") && <Link href="/connections" className="rounded-md border border-border bg-card px-4 py-2 text-cyan">Check connections</Link>}
+        <Link href="/content" className="kel-btn-secondary px-4 py-2">Browse assignments</Link>
+        {hasRoleForSite(viewer, "pl", "editor", "manager", "admin", "eic", "operations") && <Link href="/editing-queue" className="kel-btn-secondary px-4 py-2">Editing queue</Link>}
+        <Link href="/graphics" className="kel-btn-secondary px-4 py-2">Graphics queue</Link>
+        {hasRoleForSite(viewer, "pl", "admin", "eic", "operations") && <Link href="/connections" className="kel-btn-secondary px-4 py-2">Check connections</Link>}
       </nav>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -238,9 +238,9 @@ function TaskRow({
             ) : (
               <ContentStatusBadge status={entry.content_status} />
             )}
-            <span className="text-xs text-text-team">Next: {showEditorStatus ? entry.editor_status === "edited" ? "Schedule in WordPress" : "Review the article" : entry.content_status === "polishing" ? "Address editor feedback" : "Write in WordPress, then submit for review"}</span>
+            <span className="basis-full text-sm text-text-team">Next: {showEditorStatus ? entry.editor_status === "edited" ? "Schedule in WordPress" : "Review the article" : entry.content_status === "polishing" ? "Address editor feedback" : "Write in WordPress, then submit for review"}</span>
             {entry.checklist_total > 0 ? (
-              <span className="font-data text-[10px] text-text-zero">
+              <span className="basis-full text-sm text-text-zero">
                 {entry.checklist_completed}/{entry.checklist_total} checklist
               </span>
             ) : null}

@@ -45,7 +45,7 @@ const PageHeaderTitle = React.forwardRef<
   <h1
     ref={ref}
     className={cn(
-      "font-sans text-plpd-page-title font-bold tracking-tight text-cyan",
+      "font-data text-plpd-page-title font-semibold tracking-tight text-foreground",
       className,
     )}
     {...props}

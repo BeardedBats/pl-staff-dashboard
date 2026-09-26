@@ -45,7 +45,7 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
       data-tour="sidebar"
       className={cn(
         "plpd-sidebar flex h-screen flex-col border-r border-border-sidebar transition-all duration-300 ease-in-out",
-        collapsed ? "w-16" : "w-60",
+        collapsed ? "w-16" : "w-64",
       )}
     >
       {/* Brand */}
@@ -56,12 +56,12 @@ export function Sidebar({ userRoles, userDisplayName }: SidebarProps) {
         )}
       >
         {collapsed ? (
-          <span className="font-data text-sm font-bold tracking-[0.3px] text-cyan">
+          <span className="font-data text-sm font-semibold text-foreground">
             PL
           </span>
         ) : (
           <Link href="/home" className="flex items-center gap-2">
-            <span className="font-data text-sm font-bold uppercase tracking-[0.3px] text-cyan">
+            <span className="font-data text-sm font-semibold text-foreground">
               Pitcher List
             </span>
             <span className="rounded-[6px] border border-border bg-surface-3 px-1.5 py-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.05em] text-text-team">
@@ -133,7 +133,7 @@ function NavLink({
         data-tour={tourId}
         title={collapsed ? item.label : undefined}
       >
-        <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-white")} />
+        <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-foreground")} />
         {!collapsed && <span className="break-words">{item.label}</span>}
       </Link>
     </NavigationItem>

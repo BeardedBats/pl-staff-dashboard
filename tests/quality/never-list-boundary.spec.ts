@@ -39,7 +39,7 @@ test("production primary action keeps the borderless four-layer Import construct
   });
 });
 
-test("production metadata stays upright while hover brightens and active tabs stay amber", async ({
+test("production metadata stays upright while hover brightens and active tabs follow Kel", async ({
   browser,
 }, testInfo) => {
   const eic = await browser.newContext({
@@ -89,8 +89,8 @@ test("production metadata stays upright while hover brightens and active tabs st
     await expect(row.locator("td").nth(1)).toHaveCSS("font-style", "normal");
 
     const activeTab = archive.getByRole("tab", { name: /Archived/ });
-    await expect(activeTab).toHaveCSS("color", "rgb(255, 194, 119)");
-    await expect(activeTab).toHaveCSS("font-weight", "700");
+    await expect(activeTab).toHaveCSS("color", "rgb(237, 242, 250)");
+    await expect(activeTab).toHaveCSS("font-weight", "600");
 
     await archive.screenshot({
       path: testInfo.outputPath("never-list-upright-metadata.png"),

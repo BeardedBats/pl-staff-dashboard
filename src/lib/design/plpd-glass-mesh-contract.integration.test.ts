@@ -22,15 +22,15 @@ function sourceFiles(directory: string): string[] {
 
 describe("PLPD subtle-glass-over-mesh contract", () => {
   it("preserves the exact source panel and translucent row fills", () => {
-    expect(css).toContain("--plpd-fill-panel: rgba(33, 36, 58, 0.35)");
-    expect(css).toContain("--plpd-fill-state: rgba(33, 36, 58, 0.4)");
-    expect(css).toContain("--row-a: rgba(48, 58, 97, 0.46)");
-    expect(css).toContain("--row-b: rgba(42, 51, 85, 0.38)");
+    expect(css).toContain("--plpd-fill-panel: var(--kel-glass-fill)");
+    expect(css).toContain("--plpd-fill-state: var(--kel-input-fill)");
+    expect(css).toContain("--row-a: rgba(47, 107, 224, .04)");
+    expect(css).toContain("--row-b: transparent");
     expect(css.match(/--card: var\(--plpd-fill-panel\)/g)).toHaveLength(2);
   });
 
   it("keeps the exact mesh, transparent sidebar wash, and precise panel depth", () => {
-    expect(css).toContain("background-image: var(--plpd-mesh-image)");
+    expect(css).toContain("background-image: var(--kel-header-fade), var(--kel-blue-wash), var(--plpd-mesh-image)");
     expect(css).toMatch(/\.plpd-sidebar\s*\{[\s\S]*?background: transparent;/);
     expect(css).toMatch(
       /\.plpd-sidebar::before\s*\{[\s\S]*?background: var\(--plpd-gradient-sidebar\);/,
@@ -40,9 +40,9 @@ describe("PLPD subtle-glass-over-mesh contract", () => {
     );
   });
 
-  it("prohibits frosted-glass surfaces and migrates the legacy mention menu", () => {
+  it("keeps glass sharp without backdrop blur and uses an opaque mention menu", () => {
     const violations = sourceFiles(path.join(root, "src")).flatMap((file) =>
-      /backdrop-(?:blur|filter)|backdrop-filter/.test(
+      /backdrop-blur|backdrop-filter:\\s*blur/.test(
         readFileSync(file, "utf8"),
       )
         ? [path.relative(root, file)]

@@ -45,8 +45,8 @@ describe("PLPD table and data-value contract", () => {
     const css = source("src/app/globals.css");
 
     for (const rule of [
-      "--plpd-fill-table-header: #2E3658",
-      "--plpd-table-header-height: 34.5px",
+      "--plpd-fill-table-header: rgba(15, 45, 100, .4)",
+      "--plpd-table-header-height: 44px",
       "--plpd-table-row-height: 62px",
       "--plpd-duration-row-hover: 120ms",
       "background: var(--row-a)",
@@ -78,8 +78,8 @@ describe("PLPD table and data-value contract", () => {
     const css = source("src/app/globals.css");
     const table = source("src/components/ui/table.tsx");
 
-    expect(css).toContain('--val-pos: #7fc8a9');
-    expect(css).toContain('--val-neg: #d98f97');
+    expect(css).toContain('--val-pos: var(--kel-success)');
+    expect(css).toContain('--val-neg: var(--kel-red)');
     expect(css).toContain('data-value-tone="positive"');
     expect(css).toContain('data-value-tone="negative"');
     expect(css).toContain('data-value-tone="zero"');

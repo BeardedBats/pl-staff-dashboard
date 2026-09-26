@@ -31,8 +31,7 @@ const TabsTrigger = React.forwardRef<
       "plpd-tab-trigger inline-flex shrink-0 items-center justify-center whitespace-nowrap px-0 pb-4 pt-3.5 text-plpd-tab font-medium tracking-[0.34px] transition-colors",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       "disabled:pointer-events-none disabled:opacity-50",
-      // PLPD active tab — amber 700 + warm underline/glow (never cyan)
-      "hover:text-text-cell data-[state=active]:text-amber",
+      "font-kel-ui hover:text-text-cell data-[state=active]:text-foreground",
       className,
     )}
     {...props}

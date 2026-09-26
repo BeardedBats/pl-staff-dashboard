@@ -190,12 +190,12 @@ export function CreateEntryDialog({
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Site *</Label>
+              <Label htmlFor="entry-site">Site *</Label>
               <Select
                 value={form.site}
                 onValueChange={(v) => update("site", v as AppSite)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="entry-site">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -206,12 +206,12 @@ export function CreateEntryDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label>Tier *</Label>
+              <Label htmlFor="entry-tier">Tier *</Label>
               <Select
                 value={form.tier_id}
                 onValueChange={(v) => update("tier_id", v)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="entry-tier">
                   <SelectValue placeholder="Pick a tier…" />
                 </SelectTrigger>
                 <SelectContent>
@@ -227,12 +227,12 @@ export function CreateEntryDialog({
 
           {siteCategories.length > 0 ? (
             <div className="space-y-1.5">
-              <Label>Category</Label>
+              <Label htmlFor="entry-category">Category</Label>
               <Select
                 value={form.category_id || NONE}
                 onValueChange={(v) => update("category_id", v === NONE ? "" : v)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="entry-category">
                   <SelectValue placeholder="Choose a category…" />
                 </SelectTrigger>
                 <SelectContent>
@@ -264,14 +264,14 @@ export function CreateEntryDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Precision</Label>
+              <Label htmlFor="entry-precision">Precision</Label>
               <Select
                 value={form.publish_date_precision}
                 onValueChange={(v) =>
                   update("publish_date_precision", v as PublishDatePrecision)
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger id="entry-precision">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -293,6 +293,7 @@ export function CreateEntryDialog({
               </p>
             </div>
             <Switch
+              aria-label="Priority"
               checked={form.priority}
               onCheckedChange={(v) => update("priority", v)}
             />

@@ -229,8 +229,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
               size="xl"
             />
             <p className="text-sm text-text-zero">
-              Avatar comes from your WordPress account&apos;s Gravatar. To change
-              it, update your Gravatar at{" "}
+              The dashboard shows your name. Your WordPress avatar remains at{" "}
               <a
                 className="text-cyan underline"
                 href="https://gravatar.com"
@@ -239,7 +238,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
               >
                 gravatar.com
               </a>{" "}
-              and hit &quot;Refresh from WordPress&quot; above.
+              and can still sync with &quot;Refresh from WordPress&quot; above.
             </p>
           </div>
 

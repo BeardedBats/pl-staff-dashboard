@@ -1,0 +1,74 @@
+{
+  "results": [
+    {
+      "name": "content",
+      "heading": "Content",
+      "overflow": false,
+      "styles": {
+        "body": {
+          "font": "15px / 23.25px \"DM Sans\", \"DM Sans Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "400",
+          "bg": "rgb(19, 21, 42)",
+          "filter": "none",
+          "padding": "0px"
+        },
+        "h1": {
+          "font": "700 24px / 32px \"DM Sans\", \"DM Sans Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "700",
+          "bg": "rgba(0, 0, 0, 0)",
+          "filter": "none",
+          "padding": "0px"
+        },
+        ".bg-card": {
+          "font": "15px / 23.25px \"DM Sans\", \"DM Sans Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "400",
+          "bg": "rgba(33, 36, 58, 0.35)",
+          "filter": "none",
+          "padding": "4px"
+        },
+        "input": {
+          "font": "15px / 23.25px \"Work Sans\", \"Work Sans Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "400",
+          "bg": "rgb(33, 36, 58)",
+          "filter": "none",
+          "padding": "4px 12px 4px 32px"
+        }
+      }
+    },
+    {
+      "name": "my-work",
+      "heading": "My Work",
+      "overflow": false,
+      "styles": {
+        "body": {
+          "font": "15px / 23.25px \"DM Sans\", \"DM Sans Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "400",
+          "bg": "rgb(19, 21, 42)",
+          "filter": "none",
+          "padding": "0px"
+        },
+        "h1": {
+          "font": "700 24px / 32px \"DM Sans\", \"DM Sans Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "700",
+          "bg": "rgba(0, 0, 0, 0)",
+          "filter": "none",
+          "padding": "0px"
+        },
+        ".bg-card": {
+          "font": "14px / 20px \"DM Sans\", \"DM Sans Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "400",
+          "bg": "rgba(33, 36, 58, 0.35)",
+          "filter": "none",
+          "padding": "8px 16px"
+        },
+        "input": null
+      }
+    },
+    {
+      "name": "article-detail",
+      "url": "http://127.0.0.1:3216/content",
+      "dialogs": 0
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@pitcher-list/kel-design-system",
+  "version": "0.1.0",
+  "description": "Portable Kel tokens and framework-agnostic CSS recipes",
+  "license": "UNLICENSED",
+  "sideEffects": ["*.css"],
+  "files": ["tokens.css", "theme.css", "components.css", "README.md", "example.html"],
+  "exports": {
+    "./tokens.css": "./tokens.css",
+    "./theme.css": "./theme.css",
+    "./components.css": "./components.css"
+  }
+}

@@ -14,7 +14,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       {...props}
       data-plpd-state={state}
       className={cn(
-        "plpd-card rounded-plpd-card border border-border-table text-card-foreground",
+        "kel-card plpd-card rounded-plpd-card border border-border-table text-card-foreground",
         stateful && "plpd-stateful-card",
         className,
       )}
@@ -39,7 +39,7 @@ const CardTitle = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivE
     <div
       ref={ref}
       className={cn(
-        "font-data text-plpd-data font-semibold leading-none text-text-player",
+        "kel-card-title",
         className,
       )}
       {...props}
