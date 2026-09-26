@@ -1,5 +1,5 @@
 <!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# Framework notes
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This project runs on Next.js 16 with Tailwind CSS v4. Some APIs and conventions are newer than older references, so when in doubt, check the version-specific guides under `node_modules/next/dist/docs/` and follow the current APIs.
 <!-- END:nextjs-agent-rules -->
