@@ -1,0 +1,40 @@
+{
+  "stage": "production",
+  "capturedAt": "2026-09-26T04:04:38.727Z",
+  "styles": {
+    ".plpd-table-shell": {
+      "background": "rgba(15, 45, 100, 0.3)",
+      "filter": "none",
+      "overflowX": "auto",
+      "overflowY": "auto",
+      "clientHeight": 813,
+      "scrollHeight": 7032
+    },
+    "thead": {
+      "background": "rgb(27, 49, 86)",
+      "filter": "none",
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "clientHeight": 43,
+      "scrollHeight": 44
+    },
+    "th": {
+      "background": "rgb(27, 49, 86)",
+      "filter": "none",
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "clientHeight": 44,
+      "scrollHeight": 44
+    },
+    "[role=\"tablist\"]": {
+      "background": "rgba(0, 0, 0, 0)",
+      "filter": "none",
+      "overflowX": "auto",
+      "overflowY": "hidden",
+      "clientHeight": 47,
+      "scrollHeight": 48
+    },
+    "violations": []
+  },
+  "errors": []
+}

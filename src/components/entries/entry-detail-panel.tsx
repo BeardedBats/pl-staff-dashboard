@@ -31,7 +31,6 @@ import { cn, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserAvatar } from "@/components/users/user-avatar";
 import {
   Dialog,
   DialogContent,
@@ -890,11 +889,7 @@ function PipelineTab({
                     href={`/staff/${entry.creator.id}`}
                     className="flex items-center gap-1.5 text-text-team hover:text-cyan"
                   >
-                    <UserAvatar
-                      displayName={entry.creator.display_name}
-                      avatarUrl={entry.creator.avatar_url}
-                      size="xs"
-                    />
+
                     {entry.creator.display_name}
                   </Link>
                 </dd>
@@ -1094,13 +1089,7 @@ function AuditTab({ entryId }: { entryId: string }) {
         <li key={evt.id} className="relative">
           <span className="absolute -left-[31px] top-1 h-2 w-2 rounded-full border border-cyan bg-card" />
           <div className="flex items-center gap-2 text-sm">
-            {evt.actor ? (
-              <UserAvatar
-                displayName={evt.actor.display_name}
-                avatarUrl={evt.actor.avatar_url}
-                size="xs"
-              />
-            ) : null}
+
             <span className="font-medium text-text-cell">
               {evt.actor?.display_name ?? "System"}
             </span>
@@ -1307,7 +1296,7 @@ function TrackSummary({
         <ul className="space-y-1">
           {people.map((p) => (
             <li key={p.name} className="flex items-center gap-1.5 text-xs">
-              <UserAvatar displayName={p.name} avatarUrl={p.avatar} size="xs" />
+
               <span className="text-text-team">{p.name}</span>
               <span className="font-data text-[10px] text-text-zero">
                 {p.role}

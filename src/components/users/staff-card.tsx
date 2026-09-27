@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { UserAvatar } from "./user-avatar";
 import { RoleBadgeGroup } from "./role-badge";
 import { Badge } from "@/components/ui/badge";
 import type { StaffUserSummary } from "@/lib/users/queries";
@@ -11,11 +10,7 @@ export function StaffCard({ user }: { user: StaffUserSummary }) {
       className="group relative block rounded-lg border border-border bg-card p-4 transition-colors hover:border-surface-5 hover:bg-surface-3"
     >
       <div className="flex items-start gap-3">
-        <UserAvatar
-          displayName={user.display_name}
-          avatarUrl={user.avatar_url}
-          size="lg"
-        />
+
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <h3 className="break-words text-sm font-semibold text-text-cell">

@@ -13,7 +13,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,17 +40,11 @@ type HeaderProps = {
   userDisplayName?: string;
 };
 
-function initialsFromName(name: string): string {
-  const parts = name.trim().split(/\s+/).slice(0, 2);
-  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "PL";
-}
-
 export function Header({
   timezone = "America/New_York",
   userId,
   displayName,
   email,
-  avatarUrl,
   roles,
   userRoles = [],
   userDisplayName = "",
@@ -159,16 +152,11 @@ export function Header({
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               aria-label="User menu"
-              className="ml-1 rounded-full"
+              className="ml-1 max-w-32 sm:max-w-48"
             >
-              <Avatar className="h-8 w-8">
-                {avatarUrl ? (
-                  <AvatarImage src={avatarUrl} alt={displayName} />
-                ) : null}
-                <AvatarFallback>{initialsFromName(displayName)}</AvatarFallback>
-              </Avatar>
+              <span className="truncate">{displayName}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">

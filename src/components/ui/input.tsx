@@ -10,8 +10,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         ref={ref}
         className={cn(
-          // PLPD input — flat surface-3 + hairline border-tab + inset top highlight
-          "plpd-input-control flex h-9 w-full rounded-sm border border-border-tab bg-surface-3 px-3 py-1 font-data text-plpd-body text-text-cell transition-colors",
+          "kel-input plpd-input-control flex h-9 w-full px-3 py-1 text-plpd-body text-text-cell transition-colors",
           "placeholder:text-text-zero",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
           "disabled:cursor-not-allowed disabled:opacity-50",

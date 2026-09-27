@@ -17,7 +17,7 @@ async function computedTableStyle(locator: Locator) {
   });
 }
 
-test("production analytics renders the exact PLPD table and numeric-value contract", async ({
+test("production analytics renders the Kel table and numeric-value contract", async ({
   browser,
 }, testInfo) => {
   const context = await browser.newContext({
@@ -37,11 +37,11 @@ test("production analytics renders the exact PLPD table and numeric-value contra
 
     const header = page.locator(".plpd-table th").first();
     const headerStyle = await computedTableStyle(header);
-    expect(Number.parseFloat(headerStyle.height)).toBeCloseTo(34.5, 0);
-    expect(headerStyle.backgroundColor).toBe("rgb(46, 54, 88)");
-    expect(headerStyle.color).toBe("rgb(115, 239, 255)");
-    expect(headerStyle.fontFamily).toContain("Work Sans");
-    expect(headerStyle.fontSize).toBe("16px");
+    expect(Number.parseFloat(headerStyle.height)).toBeCloseTo(44, 0);
+    expect(headerStyle.backgroundColor).toBe("rgb(27, 49, 86)");
+    expect(headerStyle.color).toBe("rgb(143, 169, 214)");
+    expect(headerStyle.fontFamily).toContain("Instrument Sans");
+    expect(headerStyle.fontSize).toBe("12px");
     expect(headerStyle.fontWeight).toBe("600");
 
     const numericCells = row.locator('td[data-numeric="true"]');
@@ -54,16 +54,16 @@ test("production analytics renders the exact PLPD table and numeric-value contra
     const numericStyle = await computedTableStyle(pageviews);
     const zeroStyle = await computedTableStyle(sessions);
     expect(Number.parseFloat(numericStyle.height)).toBeCloseTo(62, 0);
-    expect(numericStyle.fontFamily).toContain("Work Sans");
+    expect(numericStyle.fontFamily).toContain("Inter");
     expect(numericStyle.fontSize).toBe("14px");
     expect(numericStyle.textAlign).toBe("right");
-    expect(zeroStyle.color).toBe("rgba(190, 196, 224, 0.78)");
+    expect(zeroStyle.color).toBe("rgb(143, 169, 214)");
     expect(zeroStyle.transitionDuration).toBe("0.12s");
 
     await row.hover();
     await expect
       .poll(async () => (await computedTableStyle(sessions)).backgroundColor)
-      .toBe("rgba(85, 232, 255, 0.06)");
+      .toBe("rgba(47, 107, 224, 0.12)");
 
     await page.screenshot({
       path: testInfo.outputPath("analytics-table-contract.png"),

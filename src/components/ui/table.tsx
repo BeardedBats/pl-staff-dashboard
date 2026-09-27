@@ -5,11 +5,11 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.TableHTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="plpd-table-shell w-full">
+  <div className="kel-glass plpd-table-shell w-full">
     <div className="w-full overflow-x-auto">
       <table
         ref={ref}
-        className={cn("plpd-table w-full border-collapse font-data", className)}
+        className={cn("kel-table plpd-table w-full border-collapse font-data", className)}
         {...props}
       />
     </div>

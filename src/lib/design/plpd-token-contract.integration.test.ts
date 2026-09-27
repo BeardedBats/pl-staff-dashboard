@@ -31,46 +31,30 @@ function sourceFiles(directory: string): string[] {
   });
 }
 
-describe("PLPD design-token contract", () => {
-  it("preserves the guide's canonical colors and measured roles", () => {
+describe("Kel design-token compatibility contract", () => {
+  it("maps legacy utilities to approved Kel colors and measured roles", () => {
     const tokens = rootTokens();
     const expected = {
-      "surface-1": "#13152a",
-      "surface-2": "#181a2c",
-      "surface-3": "#21243a",
-      "surface-4": "#262940",
-      "surface-5": "#2e3150",
-      cyan: "#55e8ff",
-      "cyan-header": "#73efff",
-      amber: "#ffc277",
-      "amber-muted": "rgba(255,194,119,0.82)",
-      "border-sidebar": "rgba(85,232,255,0.12)",
-      "border-tab": "rgba(255,255,255,0.13)",
-      "border-table": "rgba(118,138,190,0.22)",
-      "border-row": "rgba(140,165,210,0.11)",
-      "border-thead": "rgba(157,244,255,0.22)",
-      "row-a": "rgba(48,58,97,0.46)",
-      "row-b": "rgba(42,51,85,0.38)",
-      "row-bn": "rgba(34,40,63,0.3)",
-      green: "#34d399",
-      red: "#f4707c",
-      blue: "#3da9f5",
-      violet: "#a78bfa",
-      gold: "#f5b950",
-      "val-pos": "#7fc8a9",
-      "val-neg": "#d98f97",
-      "plpd-sidebar-width": "320px",
-      "plpd-table-header-height": "34.5px",
+      "surface-1": "var(--kel-canvas)",
+      "surface-2": "var(--kel-deep-navy)",
+      "surface-3": "var(--kel-navy)",
+      cyan: "var(--kel-link)",
+      amber: "var(--kel-amber)",
+      green: "var(--kel-success)",
+      red: "var(--kel-red)",
+      blue: "var(--kel-periwinkle)",
+      violet: "var(--kel-violet)",
+      gold: "var(--kel-amber)",
+      "val-pos": "var(--kel-success)",
+      "val-neg": "var(--kel-red)",
+      "plpd-sidebar-width": "256px",
+      "plpd-table-header-height": "44px",
       "plpd-table-row-height": "62px",
-      "plpd-type-page-title": "36px",
-      "plpd-type-section-title": "24px",
+      "plpd-type-page-title": "26px",
+      "plpd-type-section-title": "15px",
       "plpd-type-body": "14px",
-      "plpd-weight-hero": "800",
-      "plpd-weight-section": "900",
-      "plpd-fill-alert-success": "rgba(52,211,153,0.07)",
-      "plpd-border-alert-success": "rgba(52,211,153,0.28)",
-      "plpd-fill-alert-error": "rgba(244,112,124,0.07)",
-      "plpd-border-alert-error": "rgba(244,112,124,0.28)",
+      "plpd-weight-hero": "700",
+      "plpd-weight-section": "700",
     };
 
     for (const [name, value] of Object.entries(expected)) {
@@ -82,22 +66,22 @@ describe("PLPD design-token contract", () => {
     const tokens = rootTokens();
 
     expect(tokens.get("plpd-gradient-action-blue")).toBe(
-      "linear-gradient(149.7deg,#2452970%,#0a2e63100%)",
+      "var(--kel-primary-gradient)",
     );
     expect(tokens.get("plpd-gradient-dropdown")).toBe(
-      "linear-gradient(144.79deg,#2452970%,#0a2e63100%)",
+      "linear-gradient(var(--kel-input-fill),var(--kel-input-fill))",
     );
     expect(tokens.get("plpd-gradient-highlight")).toBe(
-      "linear-gradient(154.81deg,#4071ba0%,#204b8c100%)",
+      "linear-gradient(var(--kel-selection),var(--kel-selection))",
     );
     expect(tokens.get("plpd-shadow-panel")).toBe(
-      "0001pxrgba(7,9,18,0.3),018px30pxrgba(0,0,0,0.28)",
+      "var(--kel-shadow)",
     );
 
     const mesh = tokens.get("plpd-mesh-image");
     expect(mesh).toMatch(/^url\("data:image\/svg\+xml,/);
     expect(mesh).toContain("%3csvg%20width%3d%222364%22%20height%3d%222589%22");
-    expect(css).toContain("background-image: var(--plpd-mesh-image)");
+    expect(css).toContain("background-image: var(--kel-header-fade), var(--kel-blue-wash), var(--plpd-mesh-image)");
     expect(css).toContain("--text-plpd-page-title: var(--plpd-type-page-title)");
     expect(css).toContain("--spacing-plpd-table-row: var(--plpd-table-row-height)");
     expect(css).toContain("--shadow-plpd-card: var(--plpd-shadow-card)");
@@ -126,7 +110,7 @@ describe("PLPD design-token contract", () => {
     expect(documentation).toContain("Derived application tokens");
 
     const layout = readFileSync(path.join(root, "src/app/layout.tsx"), "utf8");
-    expect(layout).toContain('weight: ["400", "500", "600", "700", "900"]');
-    expect(layout).toContain('weight: ["400", "500", "600", "700", "800"]');
+    expect(layout).toContain('variable: "--font-instrument-sans"');
+    expect(layout).toContain('variable: "--font-inter"');
   });
 });

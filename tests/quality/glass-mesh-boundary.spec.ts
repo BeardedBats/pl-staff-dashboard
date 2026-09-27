@@ -79,7 +79,7 @@ test("authenticated sidebar and legacy page panels preserve the mesh", async (
     expect(body.backgroundImage).toContain("data:image/svg+xml");
     expect(alphaFromColor(sidebar.backgroundColor)).toBe(0);
     expect(sidebarWash).not.toBe("none");
-    expect(alphaFromColor(calendarPanel.backgroundColor)).toBeCloseTo(0.35, 2);
+    expect(alphaFromColor(calendarPanel.backgroundColor)).toBeCloseTo(0.30, 2);
     expect(alphaFromColor(header.backgroundColor)).toBeLessThan(1);
     expect(await hasHorizontalOverflow(page)).toBe(false);
     await page.screenshot({

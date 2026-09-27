@@ -31,7 +31,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { UserAvatar } from "@/components/users/user-avatar";
 import { GraphicStatusBadge } from "@/components/entries/status-badges";
 import type {
   GraphicRequestRecord,
@@ -311,11 +310,7 @@ export function GraphicRequestCard({
             <div className="flex items-center gap-1.5">
               <Hand className="h-3 w-3" />
               <span>Claimed by</span>
-              <UserAvatar
-                displayName={request.claimed_by_name}
-                avatarUrl={request.claimed_by_avatar}
-                size="xs"
-              />
+
               <span className="text-text-team">{request.claimed_by_name}</span>
             </div>
           ) : null}

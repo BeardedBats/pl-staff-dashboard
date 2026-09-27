@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Pagination } from "@/components/ui/pagination";
-import { UserAvatar } from "@/components/users/user-avatar";
 import { formatDate } from "@/lib/utils";
 import type { EntrySummary } from "@/lib/entries/queries";
 import type { AppRole, AppSite } from "@/lib/auth/current-user";
@@ -462,14 +461,7 @@ function ArchivedTable({
               <td className="px-3 py-3 align-top">
                 {entry.authors.length > 0 ? (
                   <div className="flex items-center gap-1.5">
-                    {entry.authors.slice(0, 2).map((a) => (
-                      <UserAvatar
-                        key={a.user_id}
-                        displayName={a.display_name}
-                        avatarUrl={a.avatar_url}
-                        size="xs"
-                      />
-                    ))}
+
                     <span className="text-xs text-text-team">
                       {entry.authors.map((a) => a.display_name).join(", ")}
                     </span>
@@ -626,14 +618,7 @@ function HistoricalTable({
               <td className="px-3 py-3 align-top">
                 {entry.authors.length > 0 ? (
                   <div className="flex items-center gap-1.5">
-                    {entry.authors.slice(0, 2).map((a) => (
-                      <UserAvatar
-                        key={a.user_id}
-                        displayName={a.display_name}
-                        avatarUrl={a.avatar_url}
-                        size="xs"
-                      />
-                    ))}
+
                     <span className="text-xs text-text-team">
                       {entry.authors.map((a) => a.display_name).join(", ")}
                     </span>

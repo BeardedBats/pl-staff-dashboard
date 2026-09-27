@@ -8,19 +8,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // PLPD Import construction (4 layers) — brand-blue primary
-        default: "plpd-btn-import font-bold active:scale-[0.98]",
+        default: "kel-btn-primary",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-surface-4 border border-border",
+          "kel-btn-secondary",
         outline:
-          "plpd-hover-surface border border-border bg-transparent text-foreground",
+          "kel-btn-secondary",
         ghost:
           "plpd-hover-surface bg-transparent text-foreground",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "kel-btn-danger",
         link: "text-cyan underline-offset-4 hover:underline",
-        // Warm CTA — same Import construction, amber gradient
-        amber: "plpd-btn-cta font-bold active:scale-[0.98]",
+        // Keep the public variant; Kel uses blue for primary actions.
+        amber: "kel-btn-primary",
       },
       size: {
         default: "min-h-10 px-4 py-3 text-plpd-body",

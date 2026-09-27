@@ -1,24 +1,20 @@
 import type { Metadata } from "next";
-import { DM_Sans, Work_Sans } from "next/font/google";
+import { Instrument_Sans, Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ConfirmationProvider } from "@/components/ui/confirmation-provider";
 import "./globals.css";
 
-// PLPD typography: DM Sans for chrome/everything, Work Sans for DATA text.
-// Weight cap ≤700 with two exceptions — section titles (DM Sans 900) and
-// hero numerals (Work Sans 800) — so those weights are loaded here.
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+// Kel: self-hosted UI and body fonts, shared by the portable CSS tokens.
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700", "900"],
 });
 
-const workSans = Work_Sans({
-  variable: "--font-work-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -41,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${workSans.variable} h-full antialiased`}
+      className={`${instrumentSans.variable} ${inter.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full bg-background text-foreground font-sans">

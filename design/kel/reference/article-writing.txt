@@ -1,0 +1,467 @@
+const imgArticleDetailWritingKel = "https://www.figma.com/api/mcp/asset/59f67d55-ff8d-414a-961c-077cd9c7f89b.svg";
+const imgFrame = "https://www.figma.com/api/mcp/asset/21e8eead-6d13-4853-94e1-ceac31cdfd4e.svg";
+const imgFrame1 = "https://www.figma.com/api/mcp/asset/5cf23ada-4784-438e-8753-d21ec0eacd1c.svg";
+const imgEllipse = "https://www.figma.com/api/mcp/asset/09e6e1ea-ac70-41da-b9fe-865370670f7d.svg";
+const imgEllipse1 = "https://www.figma.com/api/mcp/asset/d8f95474-92fc-48bc-b862-e97099d1464b.svg";
+
+export default function ArticleDetailWritingKel() {
+  return (
+    <div className="bg-[#0b1734] relative size-full" data-node-id="2093:2" data-name="Article Detail — Writing (Kel)">
+      <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgArticleDetailWritingKel} />
+      <div className="absolute bg-[rgba(30,75,176,0.1)] inset-0" data-node-id="2093:11" data-name="Canvas / Blue wash" />
+      <div className="absolute bg-gradient-to-b from-[rgba(21,26,51,0.7)] h-[168px] left-0 right-0 to-[rgba(21,26,51,0)] top-0" data-node-id="2093:12" data-name="Header fade" />
+      <div className="absolute bg-[rgba(15,45,100,0.22)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex flex-col items-start left-0 overflow-clip top-0 w-[256px]" data-node-id="2093:13" data-name="Sidebar">
+        <div className="content-stretch flex gap-[8px] h-[64px] items-center overflow-clip pl-[18px] pr-[16px] relative shrink-0 w-full" data-node-id="2093:14" data-name="Frame">
+          <div className="relative rounded-[8px] shrink-0 size-[26px]" data-node-id="2093:15" style={{ backgroundImage: "linear-gradient(135deg, rgb(47, 107, 224) 0%, rgb(30, 75, 176) 71.429%)" }} data-name="Frame" />
+          <p className="[word-break:break-word] font-['Instrument_Sans:SemiBold'] font-semibold leading-[normal] relative shrink-0 text-[#edf2fa] text-[15px] whitespace-nowrap" data-node-id="2093:16" style={{ fontVariationSettings: '"wdth" 100' }}>
+            Pitcher List
+          </p>
+          <div className="bg-[rgba(47,107,224,0.16)] border border-[rgba(159,195,255,0.4)] border-solid content-stretch flex items-start overflow-clip px-[7px] py-[2px] relative rounded-[6px] shrink-0" data-node-id="2093:17" data-name="Frame">
+            <p className="[word-break:break-word] font-['Instrument_Sans:SemiBold'] font-semibold leading-[normal] relative shrink-0 text-[#9fc3ff] text-[10px] whitespace-nowrap" data-node-id="2093:18" style={{ fontVariationSettings: '"wdth" 100' }}>
+              STAFF
+            </p>
+          </div>
+        </div>
+        <div className="content-stretch flex flex-col gap-[2px] items-start overflow-clip pb-[12px] pt-[10px] px-[10px] relative shrink-0 w-full" data-node-id="2093:19" data-name="Frame">
+          <div className="bg-[rgba(47,107,224,0.22)] content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:20" data-name="Frame">
+            <div className="border-[#edf2fa] border-[1.5px] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:21" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#edf2fa] text-[14px] whitespace-nowrap" data-node-id="2093:22" style={{ fontVariationSettings: '"wdth" 100' }}>
+              My Work
+            </p>
+          </div>
+          <div className="content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:23" data-name="Frame">
+            <div className="border-[1.5px] border-[rgba(143,169,214,0.75)] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:24" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[14px] text-[rgba(143,169,214,0.9)] whitespace-nowrap" data-node-id="2093:25" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Team Overview
+            </p>
+          </div>
+          <div className="content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:26" data-name="Frame">
+            <div className="border-[1.5px] border-[rgba(143,169,214,0.8)] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:27" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[14px] text-[rgba(143,169,214,0.9)] whitespace-nowrap" data-node-id="2093:28" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Content
+            </p>
+          </div>
+          <div className="content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:29" data-name="Frame">
+            <div className="border-[1.5px] border-[rgba(143,169,214,0.75)] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:30" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[14px] text-[rgba(143,169,214,0.9)] whitespace-nowrap" data-node-id="2093:31" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Editing Queue
+            </p>
+          </div>
+          <div className="content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:32" data-name="Frame">
+            <div className="border-[1.5px] border-[rgba(143,169,214,0.75)] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:33" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[14px] text-[rgba(143,169,214,0.9)] whitespace-nowrap" data-node-id="2093:34" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Graphic Requests
+            </p>
+          </div>
+          <div className="content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:35" data-name="Frame">
+            <div className="border-[1.5px] border-[rgba(143,169,214,0.75)] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:36" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[14px] text-[rgba(143,169,214,0.9)] whitespace-nowrap" data-node-id="2093:37" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Published Archive
+            </p>
+          </div>
+          <div className="content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:38" data-name="Frame">
+            <div className="border-[1.5px] border-[rgba(143,169,214,0.75)] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:39" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[14px] text-[rgba(143,169,214,0.9)] whitespace-nowrap" data-node-id="2093:40" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Analytics
+            </p>
+          </div>
+          <div className="content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:41" data-name="Frame">
+            <div className="border-[1.5px] border-[rgba(143,169,214,0.75)] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:42" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[14px] text-[rgba(143,169,214,0.9)] whitespace-nowrap" data-node-id="2093:43" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Staff Directory
+            </p>
+          </div>
+          <div className="content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:44" data-name="Frame">
+            <div className="border-[1.5px] border-[rgba(143,169,214,0.75)] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:45" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[14px] text-[rgba(143,169,214,0.9)] whitespace-nowrap" data-node-id="2093:46" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Notifications
+            </p>
+          </div>
+          <div className="content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:47" data-name="Frame">
+            <div className="border-[1.5px] border-[rgba(143,169,214,0.75)] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:48" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[14px] text-[rgba(143,169,214,0.9)] whitespace-nowrap" data-node-id="2093:49" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Settings
+            </p>
+          </div>
+          <div className="content-stretch flex gap-[10px] h-[40px] items-center overflow-clip px-[10px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:50" data-name="Frame">
+            <div className="border-[1.5px] border-[rgba(143,169,214,0.75)] border-solid relative rounded-[4px] shrink-0 size-[15px]" data-node-id="2093:51" data-name="Frame" />
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[14px] text-[rgba(143,169,214,0.9)] whitespace-nowrap" data-node-id="2093:52" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Connections
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="absolute content-stretch flex flex-col gap-[16px] items-start left-[256px] overflow-clip pb-[40px] pt-[44px] px-[40px] top-0 w-[1184px]" data-node-id="2093:53" data-name="Main">
+        <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#9fc3ff] text-[13px] whitespace-nowrap" data-node-id="2093:221" style={{ fontVariationSettings: '"wdth" 100' }}>
+          ← My Work
+        </p>
+        <div className="content-stretch flex items-start justify-between overflow-clip relative shrink-0 w-full" data-node-id="2093:222" data-name="Frame">
+          <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-[8px] items-start leading-[normal] min-w-px overflow-clip relative whitespace-nowrap" data-node-id="2093:223" data-name="Frame">
+            <p className="font-['Instrument_Sans:SemiBold'] font-semibold relative shrink-0 text-[#edf2fa] text-[24px]" data-node-id="2093:224" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Ranking every NL East closer for 2026
+            </p>
+            <div className="content-stretch flex gap-[10px] items-center overflow-clip relative shrink-0 text-[12px]" data-node-id="2093:225" data-name="Frame">
+              <p className="font-['Instrument_Sans:SemiBold'] font-semibold relative shrink-0 text-[#fcac51]" data-node-id="2093:226" style={{ fontVariationSettings: '"wdth" 100' }}>
+                Priority
+              </p>
+              <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad]" data-node-id="2093:227">
+                ·
+              </p>
+              <p className="font-['Inter:Medium'] font-medium not-italic relative shrink-0 text-[#c4d4e8]" data-node-id="2093:228">
+                Feature — Standard
+              </p>
+              <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad]" data-node-id="2093:229">
+                ·
+              </p>
+              <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#8fa9d6]" data-node-id="2093:230">
+                PL
+              </p>
+              <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad]" data-node-id="2093:231">
+                ·
+              </p>
+              <p className="font-['Instrument_Sans:SemiBold'] font-semibold relative shrink-0 text-[#9fc3ff]" data-node-id="2093:232" style={{ fontVariationSettings: '"wdth" 100' }}>
+                WP draft
+              </p>
+            </div>
+          </div>
+          <div className="content-stretch flex gap-[8px] items-start overflow-clip relative shrink-0" data-node-id="2093:233" data-name="Frame">
+            <div className="bg-[rgba(15,45,100,0.34)] border border-[rgba(207,224,255,0.2)] border-solid content-stretch flex items-start overflow-clip px-[12px] py-[8px] relative rounded-[9px] shrink-0" data-node-id="2093:234" data-name="Frame">
+              <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#c4d4e8] text-[13px] whitespace-nowrap" data-node-id="2093:235" style={{ fontVariationSettings: '"wdth" 100' }}>
+                Edit in WordPress
+              </p>
+            </div>
+            <div className="bg-[rgba(15,45,100,0.34)] border border-[rgba(207,224,255,0.2)] border-solid content-stretch flex items-start overflow-clip px-[12px] py-[8px] relative rounded-[9px] shrink-0" data-node-id="2093:236" data-name="Frame">
+              <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#c4d4e8] text-[13px] whitespace-nowrap" data-node-id="2093:237" style={{ fontVariationSettings: '"wdth" 100' }}>
+                Preview
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-[rgba(15,45,100,0.3)] border border-[rgba(207,224,255,0.16)] border-solid content-stretch flex gap-[8px] items-center overflow-clip p-[12px] relative rounded-[12px] shrink-0 w-full" data-node-id="2093:238" data-name="Frame">
+          <div className="[word-break:break-word] content-stretch flex gap-[8px] items-center leading-[normal] overflow-clip px-[14px] py-[9px] relative rounded-[10px] shadow-[0px_4px_14px_0px_rgba(47,107,224,0.4)] shrink-0 whitespace-nowrap" data-node-id="2093:239" style={{ backgroundImage: "linear-gradient(174.4497867629677deg, rgb(47, 107, 224) 0%, rgb(30, 75, 176) 72.993%)" }} data-name="Frame">
+            <p className="font-['Instrument_Sans:SemiBold'] font-semibold relative shrink-0 text-[14px] text-white" data-node-id="2093:240" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Submit for review
+            </p>
+            <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[11px] text-[rgba(255,255,255,0.7)]" data-node-id="2093:241">
+              2 to check
+            </p>
+          </div>
+          <div className="bg-[rgba(15,45,100,0.34)] border border-[rgba(207,224,255,0.2)] border-solid content-stretch flex items-start overflow-clip px-[12px] py-[8px] relative rounded-[9px] shrink-0" data-node-id="2093:242" data-name="Frame">
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#c4d4e8] text-[13px] whitespace-nowrap" data-node-id="2093:243" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Request graphic
+            </p>
+          </div>
+          <div className="flex-[1_0_0] h-px min-w-px relative" data-node-id="2093:244" data-name="Frame" />
+          <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#e8737b] text-[13px] whitespace-nowrap" data-node-id="2093:245" style={{ fontVariationSettings: '"wdth" 100' }}>
+            Archive…
+          </p>
+        </div>
+        <div className="content-stretch flex gap-[24px] items-start overflow-clip relative shrink-0 w-full" data-node-id="2093:246" data-name="Frame">
+          <div className="content-stretch flex flex-col gap-[8px] items-start overflow-clip relative shrink-0" data-node-id="2093:247" data-name="Frame">
+            <p className="[word-break:break-word] font-['Instrument_Sans:SemiBold'] font-semibold leading-[normal] relative shrink-0 text-[#edf2fa] text-[15px] whitespace-nowrap" data-node-id="2093:248" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Pipeline
+            </p>
+            <div className="bg-[#9fc3ff] h-[2px] relative rounded-[1px] shrink-0 w-[58px]" data-node-id="2093:249" data-name="Rectangle" />
+          </div>
+          <div className="content-stretch flex flex-col items-start overflow-clip relative shrink-0" data-node-id="2093:250" data-name="Frame">
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#8fa9d6] text-[15px] whitespace-nowrap" data-node-id="2093:251" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Comments
+            </p>
+          </div>
+          <div className="content-stretch flex flex-col items-start overflow-clip relative shrink-0" data-node-id="2093:252" data-name="Frame">
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#8fa9d6] text-[15px] whitespace-nowrap" data-node-id="2093:253" style={{ fontVariationSettings: '"wdth" 100' }}>
+              SEO
+            </p>
+          </div>
+          <div className="content-stretch flex flex-col items-start overflow-clip relative shrink-0" data-node-id="2093:254" data-name="Frame">
+            <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#8fa9d6] text-[15px] whitespace-nowrap" data-node-id="2093:255" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Audit
+            </p>
+          </div>
+        </div>
+        <div className="border border-[rgba(221,233,255,0.4)] border-solid content-stretch flex flex-col gap-[10px] items-start overflow-clip p-[16px] relative rounded-[16px] shadow-[0px_8px_24px_-6px_rgba(0,0,0,0.25)] shrink-0 w-full" data-node-id="2093:256" style={{ backgroundImage: "linear-gradient(90deg, rgba(47, 107, 224, 0.09) 0%, rgba(47, 107, 224, 0.09) 100%), linear-gradient(90deg, rgba(15, 45, 100, 0.28) 0%, rgba(15, 45, 100, 0.28) 100%)" }} data-name="Frame">
+          <div className="[word-break:break-word] content-stretch flex items-start justify-between leading-[normal] overflow-clip relative shrink-0 w-full whitespace-nowrap" data-node-id="2093:257" data-name="Frame">
+            <div className="content-stretch flex flex-col gap-[2px] items-start overflow-clip relative shrink-0" data-node-id="2093:258" data-name="Frame">
+              <p className="font-['Instrument_Sans:SemiBold'] font-semibold relative shrink-0 text-[#edf2fa] text-[15px]" data-node-id="2093:259" style={{ fontVariationSettings: '"wdth" 100' }}>
+                Publication readiness
+              </p>
+              <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#8fa9d6] text-[13px]" data-node-id="2093:260">
+                3 blockers before publication.
+              </p>
+            </div>
+            <p className="font-['Instrument_Sans:SemiBold'] font-semibold relative shrink-0 text-[#fcac51] text-[13px]" data-node-id="2093:261" style={{ fontVariationSettings: '"wdth" 100' }}>
+              Next: Required checklist
+            </p>
+          </div>
+          <div className="content-start flex flex-wrap gap-[10px] items-start overflow-clip relative shrink-0 w-full" data-node-id="2093:262" data-name="Frame">
+            <div className="bg-[rgba(15,45,100,0.35)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[8px] items-start overflow-clip px-[10px] py-[9px] relative rounded-[10px] shrink-0 w-[340px]" data-node-id="2093:263" data-name="Frame">
+              <div className="h-[16px] relative shrink-0 w-[8px]" data-node-id="2093:265" data-name="Frame">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgFrame} />
+              </div>
+              <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-px items-start leading-[normal] min-w-px overflow-clip relative whitespace-nowrap" data-node-id="2093:266" data-name="Frame">
+                <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#edf2fa] text-[13px]" data-node-id="2093:267" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  Writer assigned
+                </p>
+                <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad] text-[11px]" data-node-id="2093:268">
+                  Assigned
+                </p>
+              </div>
+            </div>
+            <div className="bg-[rgba(15,45,100,0.35)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[8px] items-start overflow-clip px-[10px] py-[9px] relative rounded-[10px] shrink-0 w-[340px]" data-node-id="2093:269" data-name="Frame">
+              <div className="h-[16px] relative shrink-0 w-[8px]" data-node-id="2093:271" data-name="Frame">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgFrame1} />
+              </div>
+              <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-px items-start leading-[normal] min-w-px overflow-clip relative whitespace-nowrap" data-node-id="2093:272" data-name="Frame">
+                <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#edf2fa] text-[13px]" data-node-id="2093:273" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  Required checklist
+                </p>
+                <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad] text-[11px]" data-node-id="2093:274">
+                  3/5 complete
+                </p>
+              </div>
+            </div>
+            <div className="bg-[rgba(15,45,100,0.35)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[8px] items-start overflow-clip px-[10px] py-[9px] relative rounded-[10px] shrink-0 w-[340px]" data-node-id="2093:275" data-name="Frame">
+              <div className="h-[16px] relative shrink-0 w-[8px]" data-node-id="2093:277" data-name="Frame">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgFrame1} />
+              </div>
+              <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-px items-start leading-[normal] min-w-px overflow-clip relative whitespace-nowrap" data-node-id="2093:278" data-name="Frame">
+                <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#edf2fa] text-[13px]" data-node-id="2093:279" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  Editorial review
+                </p>
+                <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad] text-[11px]" data-node-id="2093:280">
+                  Not submitted
+                </p>
+              </div>
+            </div>
+            <div className="bg-[rgba(15,45,100,0.35)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[8px] items-start overflow-clip px-[10px] py-[9px] relative rounded-[10px] shrink-0 w-[340px]" data-node-id="2093:281" data-name="Frame">
+              <div className="h-[16px] relative shrink-0 w-[8px]" data-node-id="2093:283" data-name="Frame">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgFrame1} />
+              </div>
+              <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-px items-start leading-[normal] min-w-px overflow-clip relative whitespace-nowrap" data-node-id="2093:284" data-name="Frame">
+                <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#edf2fa] text-[13px]" data-node-id="2093:285" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  Graphics
+                </p>
+                <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad] text-[11px]" data-node-id="2093:286">
+                  0/1 approved
+                </p>
+              </div>
+            </div>
+            <div className="bg-[rgba(15,45,100,0.35)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[8px] items-start overflow-clip px-[10px] py-[9px] relative rounded-[10px] shrink-0 w-[340px]" data-node-id="2093:287" data-name="Frame">
+              <div className="h-[16px] relative shrink-0 w-[8px]" data-node-id="2093:289" data-name="Frame">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgFrame} />
+              </div>
+              <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-px items-start leading-[normal] min-w-px overflow-clip relative whitespace-nowrap" data-node-id="2093:290" data-name="Frame">
+                <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#edf2fa] text-[13px]" data-node-id="2093:291" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  Publish date
+                </p>
+                <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad] text-[11px]" data-node-id="2093:292">
+                  Target set
+                </p>
+              </div>
+            </div>
+            <div className="bg-[rgba(15,45,100,0.35)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[8px] items-start overflow-clip px-[10px] py-[9px] relative rounded-[10px] shrink-0 w-[340px]" data-node-id="2093:293" data-name="Frame">
+              <div className="h-[16px] relative shrink-0 w-[8px]" data-node-id="2093:295" data-name="Frame">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgFrame} />
+              </div>
+              <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-px items-start leading-[normal] min-w-px overflow-clip relative whitespace-nowrap" data-node-id="2093:296" data-name="Frame">
+                <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#edf2fa] text-[13px]" data-node-id="2093:297" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  WordPress draft
+                </p>
+                <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad] text-[11px]" data-node-id="2093:298">
+                  Connected
+                </p>
+              </div>
+            </div>
+            <div className="bg-[rgba(15,45,100,0.35)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[8px] items-start overflow-clip px-[10px] py-[9px] relative rounded-[10px] shrink-0 w-[340px]" data-node-id="2093:299" data-name="Frame">
+              <div className="h-[16px] relative shrink-0 w-[8px]" data-node-id="2093:301" data-name="Frame">
+                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgFrame} />
+              </div>
+              <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-px items-start leading-[normal] min-w-px overflow-clip relative whitespace-nowrap" data-node-id="2093:302" data-name="Frame">
+                <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#edf2fa] text-[13px]" data-node-id="2093:303" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  WordPress sync
+                </p>
+                <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad] text-[11px]" data-node-id="2093:304">
+                  Current
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="content-stretch flex gap-[16px] items-start overflow-clip relative shrink-0 w-full" data-node-id="2093:305" data-name="Frame">
+          <div className="content-stretch flex flex-[1_0_0] flex-col gap-[14px] items-start min-w-px overflow-clip relative" data-node-id="2093:306" data-name="Frame">
+            <div className="[word-break:break-word] border border-[rgba(221,233,255,0.4)] border-solid content-stretch flex flex-col gap-[10px] items-start leading-[normal] overflow-clip p-[16px] relative rounded-[16px] shadow-[0px_8px_24px_-6px_rgba(0,0,0,0.25)] shrink-0 w-full whitespace-nowrap" data-node-id="2093:307" style={{ backgroundImage: "linear-gradient(90deg, rgba(47, 107, 224, 0.09) 0%, rgba(47, 107, 224, 0.09) 100%), linear-gradient(90deg, rgba(15, 45, 100, 0.28) 0%, rgba(15, 45, 100, 0.28) 100%)" }} data-name="Frame">
+              <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#6f86ad] text-[11px] tracking-[0.6px]" data-node-id="2093:308" style={{ fontVariationSettings: '"wdth" 100' }}>
+                PIPELINE
+              </p>
+              <div className="content-stretch flex gap-[16px] items-start overflow-clip relative shrink-0 w-full" data-node-id="2093:309" data-name="Frame">
+                <div className="content-stretch flex flex-[1_0_0] flex-col gap-[6px] items-start min-w-px overflow-clip relative" data-node-id="2093:310" data-name="Frame">
+                  <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#6f86ad] text-[11px] tracking-[0.5px]" data-node-id="2093:311" style={{ fontVariationSettings: '"wdth" 100' }}>
+                    Content
+                  </p>
+                  <p className="font-['Instrument_Sans:SemiBold'] font-semibold relative shrink-0 text-[#7fa0ff] text-[14px]" data-node-id="2093:312" style={{ fontVariationSettings: '"wdth" 100' }}>
+                    Claimed
+                  </p>
+                  <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#8fa9d6] text-[12px]" data-node-id="2093:313">
+                    Nick Pollack · Primary
+                  </p>
+                </div>
+                <div className="content-stretch flex flex-[1_0_0] flex-col gap-[6px] items-start min-w-px overflow-clip relative" data-node-id="2093:314" data-name="Frame">
+                  <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#6f86ad] text-[11px] tracking-[0.5px]" data-node-id="2093:315" style={{ fontVariationSettings: '"wdth" 100' }}>
+                    Editor
+                  </p>
+                  <p className="font-['Instrument_Sans:SemiBold'] font-semibold relative shrink-0 text-[#6f86ad] text-[14px]" data-node-id="2093:316" style={{ fontVariationSettings: '"wdth" 100' }}>
+                    —
+                  </p>
+                  <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#8fa9d6] text-[12px]" data-node-id="2093:317">
+                    Not in editing queue yet
+                  </p>
+                </div>
+                <div className="content-stretch flex flex-[1_0_0] flex-col gap-[6px] items-start min-w-px overflow-clip relative" data-node-id="2093:318" data-name="Frame">
+                  <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#6f86ad] text-[11px] tracking-[0.5px]" data-node-id="2093:319" style={{ fontVariationSettings: '"wdth" 100' }}>
+                    Graphics
+                  </p>
+                  <p className="font-['Instrument_Sans:SemiBold'] font-semibold relative shrink-0 text-[#8fa9d6] text-[14px]" data-node-id="2093:320" style={{ fontVariationSettings: '"wdth" 100' }}>
+                    1 request
+                  </p>
+                  <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#8fa9d6] text-[12px]" data-node-id="2093:321">
+                    Needed
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[6px] items-start overflow-clip relative shrink-0 w-full" data-node-id="2093:322" data-name="Frame">
+              <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#6f86ad] text-[11px] tracking-[0.6px] whitespace-nowrap" data-node-id="2093:323" style={{ fontVariationSettings: '"wdth" 100' }}>
+                BRIEF
+              </p>
+              <div className="border border-[rgba(221,233,255,0.4)] border-solid content-stretch flex flex-col items-start overflow-clip p-[16px] relative rounded-[16px] shadow-[0px_8px_24px_-6px_rgba(0,0,0,0.25)] shrink-0 w-full" data-node-id="2093:324" style={{ backgroundImage: "linear-gradient(90deg, rgba(47, 107, 224, 0.09) 0%, rgba(47, 107, 224, 0.09) 100%), linear-gradient(90deg, rgba(15, 45, 100, 0.28) 0%, rgba(15, 45, 100, 0.28) 100%)" }} data-name="Frame">
+                <p className="[word-break:break-word] font-['Inter:Regular'] font-normal leading-[normal] not-italic relative shrink-0 text-[#c4d4e8] text-[14px] w-full" data-node-id="2093:325">
+                  Rank all five NL East closers for 2026 with a short blurb on each. Lead with the biggest riser and note any bullpen risk.
+                </p>
+              </div>
+            </div>
+            <div className="content-stretch flex flex-col gap-[6px] items-start overflow-clip relative shrink-0 w-full" data-node-id="2093:326" data-name="Frame">
+              <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#6f86ad] text-[11px] tracking-[0.6px] whitespace-nowrap" data-node-id="2093:327" style={{ fontVariationSettings: '"wdth" 100' }}>
+                PRE-SUBMISSION CHECKLIST (3/5)
+              </p>
+              <div className="bg-[rgba(15,45,100,0.3)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[10px] items-center overflow-clip px-[12px] py-[9px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:328" data-name="Frame">
+                <div className="relative shrink-0 size-[16px]" data-node-id="2093:329" data-name="Ellipse">
+                  <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse} />
+                </div>
+                <p className="[word-break:break-word] flex-[1_0_0] font-['Inter:Regular'] font-normal leading-[normal] min-w-px not-italic relative text-[#6f86ad] text-[14px]" data-node-id="2093:330">
+                  Player names verified
+                </p>
+              </div>
+              <div className="bg-[rgba(15,45,100,0.3)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[10px] items-center overflow-clip px-[12px] py-[9px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:331" data-name="Frame">
+                <div className="relative shrink-0 size-[16px]" data-node-id="2093:332" data-name="Ellipse">
+                  <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse} />
+                </div>
+                <p className="[word-break:break-word] flex-[1_0_0] font-['Inter:Regular'] font-normal leading-[normal] min-w-px not-italic relative text-[#6f86ad] text-[14px]" data-node-id="2093:333">
+                  Stat table added
+                </p>
+              </div>
+              <div className="bg-[rgba(15,45,100,0.3)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[10px] items-center overflow-clip px-[12px] py-[9px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:334" data-name="Frame">
+                <div className="relative shrink-0 size-[16px]" data-node-id="2093:335" data-name="Ellipse">
+                  <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse} />
+                </div>
+                <p className="[word-break:break-word] flex-[1_0_0] font-['Inter:Regular'] font-normal leading-[normal] min-w-px not-italic relative text-[#6f86ad] text-[14px]" data-node-id="2093:336">
+                  Links checked
+                </p>
+              </div>
+              <div className="bg-[rgba(15,45,100,0.3)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[10px] items-center overflow-clip px-[12px] py-[9px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:337" data-name="Frame">
+                <div className="relative shrink-0 size-[16px]" data-node-id="2093:338" data-name="Ellipse">
+                  <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse1} />
+                </div>
+                <p className="[word-break:break-word] flex-[1_0_0] font-['Inter:Regular'] font-normal leading-[normal] min-w-px not-italic relative text-[#c4d4e8] text-[14px]" data-node-id="2093:339">
+                  Featured image requested
+                </p>
+                <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#fcac51] text-[11px] whitespace-nowrap" data-node-id="2093:340" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  Required
+                </p>
+              </div>
+              <div className="bg-[rgba(15,45,100,0.3)] border border-[rgba(207,224,255,0.12)] border-solid content-stretch flex gap-[10px] items-center overflow-clip px-[12px] py-[9px] relative rounded-[10px] shrink-0 w-full" data-node-id="2093:341" data-name="Frame">
+                <div className="relative shrink-0 size-[16px]" data-node-id="2093:342" data-name="Ellipse">
+                  <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse1} />
+                </div>
+                <p className="[word-break:break-word] flex-[1_0_0] font-['Inter:Regular'] font-normal leading-[normal] min-w-px not-italic relative text-[#c4d4e8] text-[14px]" data-node-id="2093:343">
+                  SEO title set
+                </p>
+                <p className="[word-break:break-word] font-['Instrument_Sans:Medium'] font-medium leading-[normal] relative shrink-0 text-[#fcac51] text-[11px] whitespace-nowrap" data-node-id="2093:344" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  Required
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="[word-break:break-word] content-stretch flex flex-col gap-[14px] items-start leading-[normal] overflow-clip relative shrink-0 w-[340px]" data-node-id="2093:345" data-name="Frame">
+            <div className="border border-[rgba(221,233,255,0.4)] border-solid content-stretch flex flex-col gap-[10px] items-start overflow-clip p-[16px] relative rounded-[16px] shadow-[0px_8px_24px_-6px_rgba(0,0,0,0.25)] shrink-0 w-full whitespace-nowrap" data-node-id="2093:346" style={{ backgroundImage: "linear-gradient(90deg, rgba(47, 107, 224, 0.09) 0%, rgba(47, 107, 224, 0.09) 100%), linear-gradient(90deg, rgba(15, 45, 100, 0.28) 0%, rgba(15, 45, 100, 0.28) 100%)" }} data-name="Frame">
+              <p className="font-['Instrument_Sans:Medium'] font-medium relative shrink-0 text-[#6f86ad] text-[11px] tracking-[0.6px]" data-node-id="2093:347" style={{ fontVariationSettings: '"wdth" 100' }}>
+                META
+              </p>
+              <div className="content-stretch flex items-center justify-between not-italic overflow-clip relative shrink-0 text-[13px] w-full" data-node-id="2093:348" data-name="Frame">
+                <p className="font-['Inter:Regular'] font-normal relative shrink-0 text-[#8fa9d6]" data-node-id="2093:349">
+                  Publish
+                </p>
+                <p className="font-['Inter:Medium'] font-medium relative shrink-0 text-[#c4d4e8]" data-node-id="2093:350">
+                  Sep 26, 2026, 6:00 PM
+                </p>
+              </div>
+              <div className="content-stretch flex items-center justify-between not-italic overflow-clip relative shrink-0 text-[13px] w-full" data-node-id="2093:351" data-name="Frame">
+                <p className="font-['Inter:Regular'] font-normal relative shrink-0 text-[#8fa9d6]" data-node-id="2093:352">
+                  Words
+                </p>
+                <p className="font-['Inter:Medium'] font-medium relative shrink-0 text-[#c4d4e8]" data-node-id="2093:353">
+                  1,240
+                </p>
+              </div>
+              <div className="content-stretch flex items-center justify-between not-italic overflow-clip relative shrink-0 text-[13px] w-full" data-node-id="2093:354" data-name="Frame">
+                <p className="font-['Inter:Regular'] font-normal relative shrink-0 text-[#8fa9d6]" data-node-id="2093:355">
+                  Updated
+                </p>
+                <p className="font-['Inter:Medium'] font-medium relative shrink-0 text-[#c4d4e8]" data-node-id="2093:356">
+                  Sep 25, 2026, 4:12 PM
+                </p>
+              </div>
+              <div className="content-stretch flex items-center justify-between not-italic overflow-clip relative shrink-0 text-[13px] w-full" data-node-id="2093:357" data-name="Frame">
+                <p className="font-['Inter:Regular'] font-normal relative shrink-0 text-[#8fa9d6]" data-node-id="2093:358">
+                  Created by
+                </p>
+                <p className="font-['Inter:Medium'] font-medium relative shrink-0 text-[#c4d4e8]" data-node-id="2093:359">
+                  Nick Pollack
+                </p>
+              </div>
+            </div>
+            <div className="border border-[rgba(221,233,255,0.4)] border-solid content-stretch flex flex-col gap-[10px] items-start overflow-clip p-[16px] relative rounded-[16px] shadow-[0px_8px_24px_-6px_rgba(0,0,0,0.25)] shrink-0 w-full" data-node-id="2093:360" style={{ backgroundImage: "linear-gradient(90deg, rgba(47, 107, 224, 0.09) 0%, rgba(47, 107, 224, 0.09) 100%), linear-gradient(90deg, rgba(15, 45, 100, 0.28) 0%, rgba(15, 45, 100, 0.28) 100%)" }} data-name="Frame">
+              <div className="content-stretch flex font-['Instrument_Sans:Medium'] font-medium items-center justify-between overflow-clip relative shrink-0 w-full whitespace-nowrap" data-node-id="2093:361" data-name="Frame">
+                <p className="relative shrink-0 text-[#6f86ad] text-[11px] tracking-[0.6px]" data-node-id="2093:362" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  GRAPHICS (1)
+                </p>
+                <p className="relative shrink-0 text-[#9fc3ff] text-[12px]" data-node-id="2093:363" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  Request
+                </p>
+              </div>
+              <div className="bg-[rgba(15,45,100,0.4)] border border-[rgba(207,224,255,0.14)] border-solid content-stretch flex flex-col gap-[4px] items-start overflow-clip px-[12px] py-[10px] relative rounded-[12px] shrink-0 w-full" data-node-id="2093:364" data-name="Frame">
+                <p className="font-['Instrument_Sans:Medium'] font-medium min-w-full relative shrink-0 text-[#edf2fa] text-[13px] w-[min-content]" data-node-id="2093:365" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  NL East bullpen usage table
+                </p>
+                <p className="font-['Instrument_Sans:SemiBold'] font-semibold relative shrink-0 text-[#8fa9d6] text-[12px] whitespace-nowrap" data-node-id="2093:366" style={{ fontVariationSettings: '"wdth" 100' }}>
+                  Needed
+                </p>
+                <p className="font-['Inter:Regular'] font-normal not-italic relative shrink-0 text-[#6f86ad] text-[11px] whitespace-nowrap" data-node-id="2093:367">
+                  Due Sep 25, 5:00 PM
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+SUPER CRITICAL: The generated React+Tailwind code MUST be converted to match the target project's technology stack and styling system.
+1. Analyze the target codebase to identify: technology stack, styling approach, component patterns, and design tokens
+2. Convert React syntax to the target framework/library
+3. Transform all Tailwind classes to the target styling system while preserving exact visual design
+4. Follow the project's existing patterns and conventions
+DO NOT install any Tailwind as a dependency unless the user instructs you to do so.
+
+Node ids have been added to the code as data attributes, e.g. `data-node-id="1:2"`.
+Images and SVGs will be stored as constants, e.g. const image = 'https://www.figma.com/api/mcp/asset/550e8400-e29b-41d4-a716-446655440000.png'. These constants will be used in the code as the source for the image, ex: <img src={image} />. Image assets are stored on a remote server for 7 days and can be fetched using the provided URLs until they expire.

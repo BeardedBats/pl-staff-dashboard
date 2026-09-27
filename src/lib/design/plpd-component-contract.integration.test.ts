@@ -106,7 +106,7 @@ describe("PLPD component contract", () => {
     expect(badge).toContain('data-slot="badge"');
     expect(css).toContain("var(--plpd-duration-hover)");
     expect(css).toContain("var(--plpd-fill-nav-hover)");
-    expect(css).toContain("opacity: 0.88");
+    expect(css).toContain("opacity: 1");
     expect(css).toContain("box-shadow: var(--plpd-shadow-nav-active)");
     expect(emptyState).toContain("plpd-state-frame");
     expect(emptyState).toContain('data-plpd-state="empty"');

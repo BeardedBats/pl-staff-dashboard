@@ -1,0 +1,108 @@
+{
+  "results": [
+    {
+      "name": "content",
+      "heading": "Content",
+      "overflow": false,
+      "styles": {
+        "body": {
+          "font": "15px / 23.25px Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "400",
+          "bg": "rgb(11, 23, 52)",
+          "filter": "none",
+          "padding": "0px"
+        },
+        "h1": {
+          "font": "600 26px / 32px \"Instrument Sans\", \"Instrument Sans Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "600",
+          "bg": "rgba(0, 0, 0, 0)",
+          "filter": "none",
+          "padding": "0px"
+        },
+        ".bg-card": {
+          "font": "15px / 23.25px Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "400",
+          "bg": "rgba(15, 45, 100, 0.3)",
+          "filter": "contrast(1.54) saturate(1.35)",
+          "padding": "4px"
+        },
+        "input": {
+          "font": "14px / 21px Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "400",
+          "bg": "rgba(15, 45, 100, 0.38)",
+          "filter": "none",
+          "padding": "4px 12px 4px 32px"
+        }
+      }
+    },
+    {
+      "name": "my-work",
+      "heading": "My Work",
+      "overflow": false,
+      "styles": {
+        "body": {
+          "font": "15px / 23.25px Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "400",
+          "bg": "rgb(11, 23, 52)",
+          "filter": "none",
+          "padding": "0px"
+        },
+        "h1": {
+          "font": "600 26px / 32px \"Instrument Sans\", \"Instrument Sans Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "600",
+          "bg": "rgba(0, 0, 0, 0)",
+          "filter": "none",
+          "padding": "0px"
+        },
+        ".bg-card": {
+          "font": "15px / 23.25px Inter, \"Inter Fallback\", ui-sans-serif, system-ui, sans-serif",
+          "fontWeight": "400",
+          "bg": "rgba(15, 45, 100, 0.3)",
+          "filter": "contrast(1.54) saturate(1.35)",
+          "padding": "12px"
+        },
+        "input": null
+      }
+    },
+    {
+      "name": "article-detail",
+      "url": "http://127.0.0.1:3215/content",
+      "dialogs": 0
+    },
+    {
+      "name": "article-accessibility",
+      "violations": []
+    },
+    {
+      "route": "/content",
+      "violations": []
+    },
+    {
+      "route": "/my-tasks",
+      "violations": []
+    },
+    {
+      "route": "/staff",
+      "violations": []
+    },
+    {
+      "route": "/notifications",
+      "violations": []
+    },
+    {
+      "route": "/settings",
+      "violations": []
+    },
+    {
+      "route": "/content",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "route": "/my-tasks",
+      "width": 390,
+      "overflow": false
+    }
+  ],
+  "errors": []
+}

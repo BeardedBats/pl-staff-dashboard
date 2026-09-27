@@ -1,0 +1,60 @@
+{
+  "capturedAt": "2026-09-26T03:46:38.903Z",
+  "browser": "149.0.7827.55",
+  "results": [
+    {
+      "check": "opaque-user-menu",
+      "background": "rgb(16, 37, 75)"
+    },
+    {
+      "check": "menu-Escape-focus-return",
+      "passed": true
+    },
+    {
+      "check": "dialog-a11y",
+      "violations": []
+    },
+    {
+      "check": "dialog-focus-contained",
+      "passed": true
+    },
+    {
+      "check": "dialog-Escape",
+      "passed": true
+    },
+    {
+      "check": "light-a11y",
+      "violations": []
+    },
+    {
+      "check": "responsive-content",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "check": "responsive-content",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "check": "responsive-content",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "check": "mobile-nav",
+      "visible": true
+    },
+    {
+      "check": "reduced-motion",
+      "duration": "0s"
+    },
+    {
+      "check": "standalone-css",
+      "bodyColor": "rgb(11, 23, 52)",
+      "cardRadius": "16px",
+      "violations": []
+    }
+  ],
+  "errors": []
+}

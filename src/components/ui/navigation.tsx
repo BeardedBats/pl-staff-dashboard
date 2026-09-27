@@ -29,9 +29,9 @@ function NavigationItem({
       aria-current={active ? "page" : undefined}
       data-active={active ? "true" : "false"}
       className={cn(
-        "flex min-h-11 items-center gap-3 rounded-sm px-3 py-2 text-plpd-body font-medium transition-all duration-150",
+        "kel-nav-item flex min-h-11 items-center gap-3 rounded-sm px-3 py-2 text-plpd-body font-medium transition-all duration-150",
         active
-          ? "plpd-nav-active text-white"
+          ? "plpd-nav-active text-foreground"
           : "plpd-hover-surface text-text-nav hover:text-text-cell",
         compact && "justify-center px-2",
         className,

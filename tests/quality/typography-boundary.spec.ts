@@ -18,12 +18,12 @@ test("anonymous chrome and wordmark load the assigned font families", async (
 
   await expect(
     fontFamily(page.getByRole("heading", { name: "Staff Dashboard" })),
-  ).resolves.toContain("DM Sans");
+  ).resolves.toContain("Instrument Sans");
   await expect(fontFamily(page.getByText("Pitcher List", { exact: true }))).resolves.toContain(
-    "Work Sans",
+    "Instrument Sans",
   );
   await expect(fontFamily(page.getByRole("button", { name: "Sign in" }))).resolves.toContain(
-    "DM Sans",
+    "Inter",
   );
   await page.screenshot({
     path: testInfo.outputPath("login-typography.png"),
@@ -53,15 +53,15 @@ test("authenticated chrome, form data, tables, and data pills keep their boundar
 
     await expect(
       fontFamily(page.getByRole("heading", { name: "Settings" })),
-    ).resolves.toContain("DM Sans");
+    ).resolves.toContain("Instrument Sans");
     await expect(fontFamily(page.getByPlaceholder("Search staff by name or email…"))).resolves.toContain(
-      "Work Sans",
+      "Inter",
     );
     await expect(fontFamily(page.locator("table").first())).resolves.toContain(
-      "Work Sans",
+      "Instrument Sans",
     );
     await expect(fontFamily(page.locator("table .font-data").first())).resolves.toContain(
-      "Work Sans",
+      "Instrument Sans",
     );
     await page.screenshot({
       path: testInfo.outputPath("settings-typography.png"),
